@@ -1,0 +1,629 @@
+src:	Applet Error: %s
+ja:	Applet エラー: %s
+
+src:	Applet function \"%s\" raised exception: %s
+ja:	Applet 関数 \"%s\" が例外 %s を発生しました
+
+src:	Applet function \"%s\" not found
+ja:	Applet 関数 \"%s\" が見つかりません。
+
+src:	No function defined for this applet
+ja:	この Applet のための関数が定義されていません。
+
+src:	%s was rejected
+ja:	%s は拒否された
+
+src:	repeated
+ja:	この先ずっと
+
+src:	temporary
+ja:	一時的に
+
+src:	Security check for %s
+ja:	%s のためのセキュリティーチェック
+
+src:	%s\n%s\n
+ja:	%s\n%s\n
+
+src:	Security Rights asked by %s
+ja:	%s に聞かれたセキュリティー権
+
+src:	Not a bytecode file
+ja:	バイトコードファイルではありません
+
+src:	Inconsistent import: %s
+ja:	不十分なモジュールロード: %s
+
+src:	Unavailable unit: %s 
+ja:	使用可能でないモジュール: %s
+
+src:	Unsafe file
+ja:	危険なファイル
+
+src:	Error while linking: %s
+ja:	%s をリンク中にエラー発生
+
+src:	Corrupted interface
+ja:	インタフェースが壊れています
+
+src:	Cannot find file %s in search path
+ja:	検索パス中に %s を見つけられませんでした
+
+src:	Error while loading shared library: %s
+ja:	%s を動的リンク中にエラー発生
+
+src:	Already loading a module
+ja:	既にモジュールを読み込み中です
+
+src:	Failed to load Caml module %s\n%s
+ja:	Caml モジュールをロードできませんでした %s\n%s
+
+src:	Unsigned bytecode file %s
+ja:	署名のないバイトコードファイルです %s
+
+src:	Unexpected MIME type %s for %s
+ja:	%s は %s に対する MIME タイプとして予期していたものではありません
+
+src:	PGP diagnostic for %s\n%s
+ja:	PGP 診断 for %s\n%s
+
+src:	Can't initialize .mmm_remote
+ja:	.mmm_remote を初期化できません
+
+src:	MMM Navigator
+ja:	も〜
+
+src:	Confirm
+ja:	確認
+
+src:	Do you really want to quit ?
+ja:	本当に終りたいのですか？
+
+src:	Yep
+ja:	はい
+
+src:	Nope
+ja:	いいえ
+
+src:	Invalid link
+ja:	不正確なリンク
+
+src:	Document cannot be reloaded from its url\n(probably a POST request)
+ja:	文書はこの URL から再読できません\n(たぶん POST 要請なのでしょう)
+
+src:	Open File
+ja:	ファイルを開ける
+
+src:	MMM
+ja:	も〜
+
+src:	About
+ja:	について
+
+src:	New Window
+ja:	新しい窓
+
+src:	Open Selection
+ja:	選択を開ける
+
+src:	Open File...
+ja:	ファイルを開ける →
+
+src:	Save document...
+ja:	文書を保存 →
+
+src:	Preferences...
+ja:	設定 →
+
+src:	Close Window
+ja:	窓を閉める
+
+src:	Quit
+ja:	終了
+
+src:	Navigate
+ja:	航海
+
+src:	Home
+ja:	家
+
+src:	Back
+ja:	戻る
+
+src:	Forward
+ja:	進む
+
+src:	History
+ja:	歴史
+
+src:	Document
+ja:	文書
+
+src:	Abort
+ja:	中止
+
+src:	Reload
+ja:	再読
+
+src:	Update
+ja:	更新チェック
+
+src:	Redisplay
+ja:	再描画
+
+src:	Add to hotlist
+ja:	ホットリストに加える
+
+src:	Load Images
+ja:	画像を読み込む
+
+src:	View Source
+ja:	原型を見る
+
+src:	Others
+ja:	その他
+
+src:	Load Authorizations...
+ja:	認証を読み込む →
+
+src:	Edit Authorizations...
+ja:	認証を編集する →
+
+src:	Save Authorizations...
+ja:	認証を保存する →
+
+src:	Caml Modules
+ja:	Caml モージュール
+
+src:	Load Caml Extension
+ja:	Caml 拡張を読み込む
+
+src:	Help
+ja:	ヘルプ
+
+src:	Version information
+ja:	バージョン情報
+
+src:	Help on MMM
+ja:	も〜のヘルプ
+
+src:	Home Page of MMM
+ja:	も〜のホームページ
+
+src:	User
+ja:	使用者
+
+src:	Open URL:
+ja:	URL を開く:
+
+src:	Can't view initial document: %s
+ja:	初期文書 %s が見れません
+
+src:	Request for %s\nreturned %d %s.\nDo you wish to save ?
+ja:	%s に対する要請は %d %s を返しました。\n保存しますか？
+
+src:	Invalid request %s\n%s
+ja:	不正確な要請 %s\n%s
+
+src:	The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed.
+ja:	文章 %s \nは現在他の目的で取得中。\nも〜はこの取得が終了するまであなたの要請を受理できません
+
+src:	Open this Link
+ja:	このリンクを開く
+
+src:	Save this Link
+ja:	このリンクを保存する
+
+src:	New window with this Link
+ja:	このリンクを新しいウィンドウに表示する
+
+src:	Headers of document
+ja:	文書のヘッダ
+
+src:	Copy this Link to clipboard
+ja:	このリンクをクリップボードにコピーする
+
+src:	Error occurred during save of temporary buffer (%s)
+ja:	一時領域に保存中にエラー発生 (%s)
+
+src:	Error occurred when opening temporary file
+ja:	一時ファイルを開く時にエラー発生
+
+src:	Can't save a mailto: url
+ja:	mailto: URL はセーブできません
+
+src:	Document has been flushed from cache
+ja:	文書はキャッシュから消されました
+
+src:	Can't update document\n(probably a POST request)
+ja:	文書を更新できません\n(おそらく POST 要請なのでしょう)
+
+src:	Malformed link error
+ja:	???変なリンクエラー???
+
+src:	MMM Preference Error
+ja:	も〜設定エラー
+
+src:	Ok
+ja:	了解
+
+src:	Not an integer: %s
+ja:	整数ではありません: %s
+
+src:	Not a float: %s
+ja:	浮動小数点数ではありません: %s
+
+src:	Bad preference file
+ja:	変な設定ファイルです
+
+src:	Can't open preference file: %s
+ja:	設定ファイル %s が開けられません
+
+src:	Use
+ja:	使う
+
+src:	Reset
+ja:	初期化する
+
+src:	Dismiss
+ja:	消し去る
+
+src:	Protocols
+ja:	プロトコル
+
+src:	Internal settings and debugging
+ja:	内部設定とデバッグ
+
+src:	HTML parsing and display
+ja:	HTML の読み込みと表示
+
+src:	Images
+ja:	画像
+
+src:	Cache settings
+ja:	キャッシュの設定
+
+src:	External programs
+ja:	外部プログラム
+
+src:	Applets
+ja:	Applet
+
+src:	MMM Preferences
+ja:	も〜 設定
+
+src:	Load a preference file
+ja:	設定ファイルを読む
+
+src:	Save preferences to file
+ja:	設定ファイルを保存
+
+src:	File
+ja:	ファイル
+
+src:	Section
+ja:	セクション
+
+src:	Load
+ja:	読み込み
+
+src:	Save
+ja:	保存
+
+src:	Font %s is not available
+ja:	フォント %s は利用できません
+
+src:	Submit
+ja:	投稿する
+
+src:	MMM Navigator@%s
+ja:	ナビゲータ も〜＠%s
+
+src:	Cannot redisplay document (pending)
+ja:	文書を再表示できません (待機中)
+
+src:	Document not in cache anymore
+ja:	もはや文書はキャッシュにはありません
+
+src:	Cannot view document source (pending)
+ja:	原始文書を見ることはできません (待機中)
+
+src:	Element %s not in DTD
+ja:	%s という要素は DTD にはありません
+
+src:	Commit
+ja:	変更を反映する
+
+src:	No Errors
+ja:	エラーなし
+
+src:	%d errors
+ja:	エラー %d 個
+
+src:	Display Errors
+ja:	エラーを表示する
+
+src:	An applet attempts to rebind the event used by the navigation function %s to %s
+ja:	Applet が航海関数 %s に使われていたイベントを %s に張り直そうとします
+
+src:	Error in base 64 encoding
+ja:	Base 64 エンコーディング中にエラーが発生
+
+src:	Authorization for %s \"%s\" on %s:%d/%s
+ja:	%s \"%s\" のための %s:%d/%s 上の認証
+
+src:	Looking for %s ...
+ja:	%s を探している...
+
+src:	%s found
+ja:	%s が見つかった
+
+src:	Unknown host: %s
+ja:	%s なんてホストは知らないよ
+
+src:	Contacting host...
+ja:	ホストに接続中...
+
+src:	connection established
+ja:	接続成功
+
+src:	Connection refused to %s
+ja:	%s への接続を拒否された
+
+src:	Timeout during connect to %s
+ja:	%s に接続中に時間切れ
+
+src:	Cannot establish connection
+ja:	接続することができません
+
+src:	Failed
+ja:	失敗
+
+src:	Request for %s failed\n%s
+ja:	%sの要請は失敗した\n%s
+
+src:	Reading headers...
+ja:	ヘッダを読んでいる...
+
+src:	Timeout while waiting for headers of %s
+ja:	%s のヘッダを待っている間に時間切れです
+
+src:	Error while reading headers of %s\n%s
+ja:	ヘッダを読み込み中にエラー発生 %s\n%s
+
+src:	Writing request...
+ja:	要請を書き込んでいる...
+
+src:	Missing host in url
+ja:	URL にホストがありません
+
+src:	INTERNAL ERROR\nHttp.request (not a distant http url): %s
+ja:	内部エラー\nHttp.request (not a distant http url): %s
+
+src:	INTERNAL ERROR\nHttp.request09 (not a distant http url): %s
+ja:	内部エラー\nHttp.request09 (not a distant http url): %s
+
+src:	MMM Error
+ja:	も〜 エラー
+
+src:	MMM Notify
+ja:	も〜 知らせる
+
+src:	MMM Choice
+ja:	も〜 選択
+
+src:	A)bort
+ja:	中止
+
+src:	R)etry
+ja:	再試行
+
+src:	I)gnore
+ja:	無視
+
+src:	No hotlist command defined
+ja:	ホットリストコマンドが定義されていません
+
+src:	%s\nadded to hotlist with title\n%s
+ja:	%s\nはタイトル%s\nでホットリストに追加されました
+
+src:	cannot open dir
+ja:	ディレクトリが開けません
+
+src:	cannot exec file
+ja:	ファイルを実行できません
+
+src:	cannot stat file
+ja:	ファイルの状態が掴めません
+
+src:	cannot open file
+ja:	ファイルを開けられません
+
+src:	Can't send mail (saved in $HOME/dead.letter)
+ja:	メールが送れない ($HOME/dead.letter に保存しました)
+
+src:	Can't send mail, can't save dead.letter
+ja:	メールが送れない上に、dead.letterも保存できませんでした
+
+src:	Mail sent
+ja:	メールを送りました
+
+src:	Send
+ja:	送る
+
+src:	No address given for mailto:
+ja:	mailto: のためアドレスがない
+
+src:	About to send mail with POST data to\n%s
+ja:	今まさに%sへPOSTデータと共にメールを送らんとしている
+
+src:	Unsupported method for mailto:
+ja:	サポートされていない mailto: の method
+
+src:	An applet attempts to replace the HTTP reponse processor for code %d
+ja:	Applet が コード %d に対する HTTP 反応プロセッサを変えようとしています
+
+src:	unknown protocol
+ja:	知らないプロトコルです
+
+src:	HTTP Error \"%s\"
+ja:	HTTP エラー \"%s\"
+
+src:	Request fulfilled.\n(%s)
+ja:	要請は満たされました。\n(%s)
+
+src:	Destination for your POST request has changed\nfrom %s\nto %s\nConfirm action ?
+ja:	POST 要請の行き先は %s から %s に変わっています。\nいいですか？
+
+src:	An applet attempts to replace the decoder associated with type %s
+ja:	Applet がタイプ %s に関するデコーダを変えようとしています
+
+src:	Can't find embedded document %s
+ja:	埋め込まれた文書 %s が見つかりません
+
+src:	An applet attempts to replace the embbeded viewer associated with MIME type %s/%s
+ja:	Applet が MIME type %s/%s に関する内部ビューワを変更しようとしています
+
+src:	Embed Error: no viewer for type %s/%s
+ja:	埋込エラー: %s/%s に関するビューワがありません
+
+src:	Embed Error: no type for document %s
+ja:	埋込エラー: 文書 %s のタイプがありません
+
+src:	Embed Error: malformed type %s (%s)
+ja:	埋込エラー: %s (%s) の MIME タイプが変です
+
+src:	Embed Error: %s\n(%s)
+ja:	埋込エラー: %s\n(%s)
+
+src:	Embed Error: invalid link
+ja:	埋込エラー: 不正確なリンク
+
+src:	Cannot redisplay document (on file)
+ja:	ドキュメント(on file)を表示できません
+
+src:	Error during retrieval of %s
+ja:	%s を取得する間にエラー発生
+
+src:	Cannot save to %s\n(%s)
+ja:	保存できません %s\n(%s)
+
+src:	Save document
+ja:	文書を保存する
+
+src:	URL %s\nsaved as %s
+ja:	URL %s\n%s に保存されました 
+
+src:	Saving %s\nto %s
+ja:	%s を\n%s に保存しています
+
+src:	Saving...
+ja:	保存中...
+
+src:	Document saved
+ja:	文書を保存しました
+
+src:	Save to file
+ja:	ファイルに保存する
+
+src:	Saving %s\n for external display with MIME type %s
+ja:	外部ビューワ用に MIME タイプ %s として\n%s を保存中
+
+src:	Running metamail with MIME media-type: %s
+ja:	MIME メディアタイプ %s として metamail を起動中
+
+src:	Retrieving %s\n for external display with MIME type %s
+ja:	外部表示のために\n %s \nを MIME type %s として取得中
+
+src:	End of transmission
+ja:	通信の終了
+
+src:	MMM Warning
+ja:	も〜 警告
+
+src:	No MIME type given for the document\n%s
+ja:	文書に対して MIME タイプがありません\n%s
+
+src:	Retry with type
+ja:	タイプつきで再挑戦
+
+src:	MIME type
+ja:	MIME タイプ
+
+src:	Displaying...
+ja:	表示中...
+
+src:	Displaying externally
+ja:	外部表示中
+
+src:	Malformed type: %s
+ja:	MIME タイプが変: %s
+
+src:	Document log %s
+ja:	文書履歴 %s
+
+src:	not a legal absolute uri
+ja:	正しい絶対 URL ではありません
+
+src:	no context and not an absolute url
+ja:	文脈がないし絶対 URL ではありません
+
+src:	Grant %s read access to the file\n%s
+ja:	%s次のファイルの読み込み許可を与えますか\n%s
+
+src:	Grant %s read access to files matching\n%s
+ja:	%s次のパターンにマッチするファイルの読み込み許可を与えますか\n%s
+
+src:	Grant %s write access to the file\n%s
+ja:	%s次のファイルの書き込み許可を与えますか\n%s
+
+src:	Grant %s write access to files matching\n%s
+ja:	%s次のパターンにマッチするファイルの書き込み許可を与えますか\n%s
+
+src:	Grant %s read access to document\n%s
+ja:	%s次のドキュメントの読み込み許可を与えますか\n%s
+
+src:	Grant %s read access to documents matching\n%s
+ja:	%s次のパターンにマッチするドキュメントの読み込み許可を与えますか\n%s
+
+src:	Grant %s addition of HTML tag\n%s
+ja:	%s次のHTMLタグを加えてもよいですか\n%s
+
+src:	Grant %s addition of HTML tags matching\n%s
+ja:	%s次のパターンにマッチするHTMLタグを加えてもよいですか\n%s
+
+src:	Grant %s redefinition of HTML tag\n%s
+ja:	%s次のHTMLタグを置き換えてもよいですか\n%s
+
+src:	Grant %s redefinition of HTML tags matching\n%s
+ja:	%s次のパターンにマッチするHTMLタグを置き換えてもよいですか\n%s
+
+src:	Grant %s addition of style\n%s
+ja:	%s次のスタイルを加えてもよいですか\n%s
+
+src:	Grant %s addition of styles matching\n%s
+ja:	%s次のスタイルを加えてもよいですか\n%s
+
+src:	Grant %s redefinition of style\n%s
+ja:	%s次のスタイルを置き換えてもよいですか\n%s
+
+src:	Grant %s redefinition of styles matching\n%s
+ja:	%s次のパターンにマッチするスタイルを置き換えてもよいですか\n%s
+
+src:	Misc. settings
+ja:	その他の設定
+
+src:	Internationalization
+ja:	国際化
+
+src:	Japanese mode
+ja:	日本語モード
+
+src:	Print document
+ja:	印刷する
+
+src:	Internationalization (Japanese)
+ja:	日本語化
+
+src:	Always Use Proxy
+ja:	常に Proxy を使用する

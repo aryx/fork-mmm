@@ -1,0 +1,203 @@
+<HTML>
+<HEAD>
+<TITLE>Caractéristiques techniques de MMM</TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/tech-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Caractéristiques techniques de MMM</H1>
+
+<H2>Documents de références, standards</H2>
+Le développement de <B>MMM</B> a été dicté par le respect des différents
+standards en vigueur ou proposés pour les applications Web. Ces standards sont
+pour la plupart définis par des RFCs ou des recommandations du 
+<A HREF="http://www.w3.org/">Consortium Web</A> :
+<UL>
+<LI> HTML 2.0 Proposed standard
+(<A HREF="ftp://ds.internic.net/rfc/rfc1866.txt">rfc 1866</A>)
+<LI> HTML 3.2 Reference specification (W3C Recommendation)
+<A HREF="http://www.w3.org/pub/WWW/TR/REC-html32.html">REC-html32.html</A>
+<LI> HTTP/1.0 Proposed standard
+(<A HREF="ftp://ds.internic.net/rfc/rfc1945.txt">rfc 1945</A>)
+<LI> rfc1630 on Universal Resource Identifiers
+(<A HREF="http://ds.internic.net/rfc/rfc1630.txt">rfc 1630</A>)
+<LI> rfc1738 on Uniform Resource Locators
+(<A HREF="ftp://ds.internic.net//rfc/rfc1738.txt">rfc 1738</A>)
+<LI> rfc1808 on Relative URL
+(<A HREF="ftp://ds.internic.net//rfc/rfc1808.txt">rfc 1808</A>)
+</UL>
+
+<P>
+Toutefois, il faut noter que le butineur MMM n'est pas toujours conforme à
+ces spécifications. Quelques lacunes connues sont décrites  
+<A HREF="#compliance"><B>ci-dessous</B></A>. Si vous trouvez d'autres cas
+de non-respect des standard, merci de me les 
+<A HREF="mailto:Francois.Rouaix@inria.fr">rapporter</A>, en donnant si possible
+</P>
+
+<UL>
+<LI> la nature du problème,
+<LI> un pointeur précis vers la spécification correspondante, ou autre référence (comme une discussion du Working Group HTML ou un avis d'autorité)
+<LI> un document (ou une URL pointant sur un document) qui met le problème en
+évidence.
+</UL>
+
+<H2>Attention</H2>
+<P>
+<B>MMM</B> est beaucoup moins tolérant que les autres navigateurs pour les
+documents incorrects. Aussi, si <B>MMM</B> se plaint d'erreurs dans un document
+ou n'affiche pas ce document correctement selon vous, alors que Mozilla ou
+Explorer ne disent rien, le coupable n'est pas forcément <B>MMM</B>, ce peut
+être le document.
+
+De plus, et ca ne sera jamais assez répété:
+<BLOCKQUOTE>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+L'implantation des tables est boguée.<BR>
+Voilà. Vous êtes prévenus.<BR>
+Et en plus elle est lente.<BR>
+Et elle consomme beaucoup de mémoire.<BR>
+</BLOCKQUOTE>
+Merci de ne pas vous plaindre au sujet des tables. Je crois sincèrement
+qu'il n'y a aucun moyen de les supporter correctement avec la version
+courante de Tk (4.2).
+
+<H2>Composants</H2>
+Logiquement parlant, le butineur est formé de plusieurs composants
+relativement indépendants.
+<UL>
+<LI> <A HREF="#protocols">protocoles de communication</A>
+<LI> <A HREF="#html">afficheur HTML</A>
+<LI> <A HREF="#viewers">autres afficheurs</A>
+<LI> <A HREF="#cache">cache</A>
+</UL>
+
+
+
+<H2><A NAME="protocols">Protocoles</A></H2>
+<UL>
+<LI> Dans la famille des protocoles TCP/IP utilisés pour le Web (globalement
+parlant), <B>MMM</B> n'implémente que HTTP 1.0. Les requêtes pour d'autres
+protocoles (ftp, wais, gopher) sont redirigées vers le proxy. Plusieurs
+requêtes peuvent être gérées simultanément. Les lectures et écritures sur le
+réseau ne sont pas bloquantes, à l'exception de l'interrogation du DNS.
+
+<LI> Pour une requête HTTP, le butineur tente d'abord une connexion directe
+vers l'hôte, et, en cas d'échec, redirige la requête vers le proxy. L'étape
+de connexion directe n'a pas lieu si le butineur est configuré en
+mode <EM>Always Use Proxy</EM>.
+
+<LI> L'authentification au niveau du proxy, proposée dans HTTP 1.1 est 
+implantée.
+
+<LI> Les extensions spécifiques du protocol HTTP, proposées par certains
+vendeurs (ex: Refresh, push/pull) ne sont pas supportées.
+
+<LI> Une requête de type <TT>file:</TT> est interprétée comme suit: si l'hôte
+est "localhost"(<TT>file://localhost/path</TT>), ou laissé non spécifié
+(<TT>file:///path</TT>), alors <EM>path</EM> est considéré comme un chemin
+absolu sur le système de fichiers local. Note: <TT>file:/some/path</TT>
+n'est <B>pas</B> une URL valide, mais pour des raisons de compatibilité,
+est quand même acceptée.
+
+Si l'hôte est spécifié, alors l'URL est considérée comme une URL pour le
+protocle FTP et traitée en conséquence.
+
+<LI> Les requêtes de type <TT>telnet:</TT> ne sont pas supportées.
+</UL>
+
+
+<H2><A NAME="html">Afficheur HTML</A></H2>
+
+<B>MMM</B> implémente un afficheur HTML (documents de type text/html),
+conforme à HTML 2.0, et sur quelques points à HTML 3.2. L'analyse lexicale
+et syntaxique de HTML se fait en respect (en principe) de SGML (sous
+ensemble utilisé par les standards HTML) et des DTD respectives de HTML 2.0
+et HTML 3.2. Seules les règles de minimisation de SGML sont utilisées.
+L'analyse syntaxique ne vérifie pas les attributs des balises (l'afficheur
+par contre en vérifie naturellement certains).
+
+La capacité d'afficher des images <EM>in-line</EM> est exactement déterminée
+par les types d'images supportés par Tk. Actuellement, Tk sait charger des
+images <TT>GIF</TT>, de type MIME <TT>image/gif</TT>, (sauf les GIF
+interlacés et les GIF animés, et avec un traitement approximatif des GIF
+transparents), les images <TT>PNM</TT> et <TT>XBM</TT>. Des extensions  
+de Tk sous forme de bibliothèque partagées chargées dynamiquement peuvent
+permettre l'affichage de nouveaux formats d'image. Actuellement, il est
+ainsi possible de charger des images <TT>PNG</TT> et <TT>JPEG</TT> (non
+progressives, et autres restrictions).
+
+Dans les versions récentes de <B>MMM</B>, les GIFs animés sont supportés
+grâce à une gestion spéciale.
+
+<H3>Chargement des images</H3>
+Il existe plusieurs mode de chargement des images, configurable dans les
+Préférences. Le chargement des images se fait par une file d'attente, avec
+une limite sur le nombre maximum de connexions réseaux réservées aux images
+in-line.
+
+<H2><A NAME="viewers">Autres afficheurs</A></H2>
+Pour les autres types de documents (hormis <TT>text/plain</TT> pour lequel
+il existe également un afficheur interne), <B>MMM</B> fait appel à
+<TT>metamail</TT>. Une configuration correcte de <TT>metamail</TT>, à
+travers le fichier <TT>~/.mailcap</TT>, permet de visualiser correctement la
+plupart des documents présents sur le Web. 
+
+<H2><A NAME="cache">Cache</A></H2>
+Il existe deux niveaux de cache dans <B>MMM</B>: le premier niveau est un
+cache graphique, qui consiste à garder un certain nombre de documents affichés
+par fenêtre du navigateur en réserve. Le deuxième niveau est un cache en
+mémoire, qui garde un certain nombre de documents, uniquement de type
+text/html.
+
+<H2>Bugs connus</H2>
+<DL>
+
+<DT><A NAME="compliance">Non respect des standards HTML</A>
+<DD> Les problèmes suivants sont connus
+<UL>
+
+<LI> &lt;!DOCTYPE&gt; n'est pas analysé conformément aux règles SGML. A ma
+connaissance, aucun des principaux butineur ne traite <TT>DOCTYPE</TT>
+correctement.
+
+<LI> &lt;! gabuzomeu &gt; est affiché comme du texte (en tout état de cause,
+ce n'est pas un commentaire bien formé)
+
+<LI> il est possible que la gestion des espaces ne soit pas toujours
+correcte.
+
+<LI> ALIGN dans &lt;IMG&gt; n'est pas conforme (en particulier, dans HTML
+3.2, le texte devrait s'"enrouler" autour des images. Tk ne permet pas de le
+faire facilement).
+
+<LI> L'attribut <TT>background</TT> de <TT>BODY</TT> n'est pas traité.
+
+<LI> L'attribut <TT>width</TT> de <TT>PRE</TT> n'est pas traité.
+
+<LI> L'attribut <TT>enctype</TT> de <TT>FORM</TT> est toujours égal
+à <TT>applications/x-www-form-urlencoded</TT>.
+
+<LI> Le case <TT>type=file</TT> de <TT>INPUT</TT> n'est pas traité.
+
+</UL>
+
+<DT>Protocole HTTP
+<DD>Seul le sous-ensemble le plus communément utilisé de HTTP/1.0 est
+implémenté. Seules les méthodes <TT>GET</TT>, <TT>HEAD</TT> and
+<TT>POST</TT> sont supportées.
+
+</DL>
+
+</BODY>
+</HTML>

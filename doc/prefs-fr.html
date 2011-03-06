@@ -1,0 +1,352 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (Préférences) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/prefs-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Préférences</H1>
+
+<H2 align=left>Fichiers de préférences</H2>
+<B>MMM</B> utilise deux fichiers de préférences : le premier est
+commun à tous les utilisateurs d'une machine et sert essentiellement
+de configuration initiale de base (réglages communs). Le deuxième est
+personnel : il est modifié par l'utilisateur, soit grâce aux panneaux
+de configuration, soit par édition directe.
+
+<H2 align=left>Panneaux de configuration</H2>
+Les panneaux de configuration sont obtenus en activant le menu
+<B>Préférences</B>. La partie gauche permet de sélectionner le panneau
+d'une famille de réglages. La partie droite permet d'éditer les réglages
+pour la famille courante.
+
+<P>
+Une modification de réglage est immédiatement active (mais ne s'applique
+pas rétroactivement aux fenêtres du brouteur déjà ouvertes).
+
+<P>
+Pour conserver les réglages d'une session sur l'autre, utiliser le bouton
+<B>Sauver</B>. Pour revenir aux derniers réglages sauvés, utiliser le bouton
+<B>Reset</B>. Pour changer de fichier de préférences, utiliser le menu.
+
+<H3>Familles de réglages</H3>
+<BLOCKQUOTE>
+Note: les noms des réglages restent en anglais quel que soit le souhait
+de langage de l'utilisateur.
+</BLOCKQUOTE>
+
+<OL>
+     <LI> <A HREF="#protocols">Protocoles</A>
+     <LI> <A HREF="#html">Analyse et affichage HTML</A>
+     <LI> <A HREF="#images">Images</A>
+     <LI> <A HREF="#progs">Programmes externes</A>
+     <LI> <A HREF="#cache">Réglages du cache</A>
+     <LI> <A HREF="#applets">Applets</A>
+     <LI> <A HREF="#misc">Réglages divers</A>
+     <LI> <A HREF="#internal">Réglages internes et déboguage</A>
+</OL>
+
+<H2 align=left><A NAME="protocols">1- Protocoles</A></H2>
+<DL>
+<DT> Proxy host
+<DT> Proxy port
+<DD> Définit le proxy Web à utiliser, d'une part pour tous les protocoles
+que <B>MMM</B> n'implante pas directement
+(<TT>ftp</TT>,<TT>wais</TT>,<TT>gopher</TT>,...), d'autre part pour 
+atteindre les machines non-accessibles (restrictions dues à firewall).
+
+
+<DT> Always use proxy
+<DD> Si ce réglage est actif, <B>MMM</B> n'essaiera jamais une connexion
+directe à un serveur. Cette option devrait être utilisée lorsqu'on utilise
+un lien réseau lent (p.ex. dialup PPP). En général, dès lors qu'on a accès
+à un proxy avec cache, il faut toujours l'utiliser.
+
+
+<DT> HTTP Send Referer
+<DD> Le protocole HTTP spécifie que l'on peut indiquer dans une requête à un
+serveur le contexte de cette requête (ie. le document dans lequel on a
+trouvé l'ancre sur laquelle on a clické). C'est utile pour l'administrateur
+du serveur (il peut savoir qui pointe sur lui, notamment lorsque les liens
+deviennent invalides), mais c'est aussi une atteinte à la vie privée.
+Si le réglage est actif, <B>MMM</B> envoie l'information de contexte au
+serveur.
+
+
+<DT> User Agent
+<DD> Le nom donné par <B>MMM</B> lorsqu'il se connecte à un serveur.
+
+
+<DT> Timeout on headers (seconds)
+<DD> Combien de temps faut-il attendre le début d'une réponse à une requête
+avant d'envisager d'abandonner. A ce moment, si rien n'a été reçu, une boîte
+de dialogue apparaît, et permet de :
+<UL>
+<LI> ré-essayer (pendant à nouveau cette durée)
+<LI> ignorer (ré-essayer sans limitation de durée)
+<LI> arrêter
+</UL>
+
+<DT> Password lifetime (minutes)
+<DD> Les mots de passe utilisés pour se connecter sur les sites protégés (ou
+sur un proxy protégé) ont une durée de vie limitée.
+
+
+<DT> Password save file
+<DD> (non utilisé)
+
+
+<DT> Local binaries path
+<DD> Une liste de répertoires séparés par des :. Lorsqu'on demande un
+document d'adresse <TT>file:/le/chemin</TT> dont le chemin est inclus dans
+un de ces répertoires, <B>MMM</B> va exécuter le fichier comme un CGI (voir
+documentation des serveurs Web; il s'agit du protocole
+<EM>non-parse-headers</EM>, c'est-à-dire que le programme doit renvoyer une
+réponse HTTP complète) au lieu de l'afficher simplement. Voici un exemple
+d'un tel CGI:
+<PRE>
+#!/bin/sh
+echo "HTTP/1.0 200 Found"
+echo "Content-Type: text/html"
+echo
+cat << EOF
+... some valid HTML ...
+EOF
+</PRE>
+</DL>
+
+<H2 align=left><A NAME="html">2- Analyse et affichage HTML</A></H2>
+<DL>
+<DT> DTD
+<DD> <B>MMM</B> connait plusieurs DTD HTML. On peut choisir celle utilisée
+pour l'analyse syntaxique des documents HTML affichés.
+
+<DT> Strict HTML lexing
+<DD> L'analyseur lexical de <B>MMM</B> utilise quelques
+techniques de récupération d'erreur pour essayer d'afficher raisonnablement
+des documents incorrects. Si ce réglage est actif, la récupération d'erreur
+est désactivée. Par exemple, une balise avec un attribut <TT>ADD_DATE</TT>
+provoquera une erreur, parce que le caractère <TT>_</TT> est illégal à cet
+endroit.
+
+
+<DT> Attempt tables
+<DD> Active l'affichage des tables. Dans le cas contraire, les tables sont
+affichées à la façon des &lt;DL&gt;, &lt;DT&gt;, &lt;DT&gt;.
+
+
+<DT> Ignore relative TD width
+<DD> Suite à un changement de dernière minute dans les spécifications de
+HTML 3.2, il est devenu illégal de spécifier une largeur en pourcentage
+dans une cellulle de table &lt;TD&gt;. De plus, l'interprétation de ces
+quantités varie selon les auteurs. Il vaut mieux garder ce réglage actif,
+c'est-à-dire ignorer les largeurs relatives.
+
+<DT> Attempt smooth scroll
+<DD> Active le mode "défilement souple" (un défaut de Tk
+rend le défilement par défaut quasi inutilisable en présence de grosses
+tables ou images). Ce mode est très couteux. Il vaut mieux utiliser le
+bouton prévu pour activer le défilement souple individuellement sur une
+fenêtre plutôt que de le choisir par défaut.
+
+
+<DT> Frames as links
+<DD> Si cette option est active, <B>MMM</B> n'affichera pas les
+<EM>frames</EM>, mais ajoutera dans le menu <B>Links</B> des entrées
+pour aller sur chacune des <EM>frames</EM> du document. Si cette option est
+inactive, <B>MMM</B> affichera les <EM>frames</EM>.
+
+<DT> Background color
+<DD> Couleur par défaut du fond des documents.
+
+<DT> Entry and Textarea color
+<DD> Couleur par défaut des zones de saisie des formulaires.
+
+
+<DT> Follow document colors
+<DD> Indique si <B>MMM</B> doit suivre les indications de couleur dans les
+documents. Il peut être utile de désactiver cette option pour économiser 
+ses yeux, ou tout simplement parce que le document est invisible sinon.
+
+
+<DT> Choix des polices de caractères
+<DD> Pour chaque police, on peut choisir la famille, la taille, et d'autres
+réglages. Dans le case de <B>Bold</B>, <TT>Italic</TT> et <TT>Fixed</TT>, le
+réglage définit seulement une <B>modification</B> de la police
+courante. Dans le cas de <TT>Fixed</TT>, la police <B>doit</B> être à chasse
+fixe.
+
+</DL>
+
+<H2 align=left><A NAME="images">3- Images</A></H2>
+<DL>
+<DT> No images at all
+<DD> Si ce réglage est actif, aucune image incluse ne sera chargée. Sinon,
+un des modes suivants sera utilisé
+
+<DT> Image loading
+<DD> Définit le mode de chargement des images
+<DL>
+<DT> After document, manual
+<DD> Les images ne sont pas chargées avec le document. Il faut invoquer
+explicitement le chargement des images (menu <B>Charger les images</B>),
+ou charger individuellement une image (<TT>Control + Bouton 1</TT>).
+Certains images déjà dans le cache pourront toutefois être affichées
+automatiquement.
+
+<DT> After document, automatic
+<DD> Les images seront chargées automatiquement dès que le document lui-même
+aura été affiché
+
+
+<DT> During document loading
+<DD> Les images seront chargées au fur et à mesure de l'affichage du document
+</DL>
+
+
+<DT> Max image connections
+<DD> Définit le nombre maximum de connexions simultanées dédiées au
+chargement des images. Lorsque ce nombre est atteint, les requêtes de
+chargement d'image seront mises dans une queue et traitées au fur et à
+mesure pour ne pas dépasser la limite.
+
+
+<DT> Max image connections (same host)
+<DD> Définit le nombre maximum de connexions simultanées dédiées au
+chargement des images pour un site donné. Pour ne pas surcharger les
+serveurs, il est préférable de limiter cette valeur à 2 ou 3.
+Lorsque ce nombre est atteint, les requêtes de chargement d'image <B>pour ce
+site </B>seront mises dans une queue et traitées au fur et à
+mesure pour ne pas dépasser la limite. Pour les autres sites, c'est l'autre
+limite qui règle le chargement.
+
+
+<DT> Gamma correction
+<DD> Facteur correctif pour traiter la clarté des images (mettre une valeur
+plus grande que 1 pour rendre les images plus claires).
+
+
+<DT> JPEG converter
+<DD> Tk ne sachant pas charger des images au format JPEG, nous avons besoin
+d'un convertisseur d'images. Ce convertisseur est appelé avec un argument
+(fichier contenant l'image), et doit produire un format (normalement GIF ou PNM)
+sur sa sortie standard.
+</DL>
+
+<H2 align=left><A NAME="progs">4- Programmes externes</A></H2>
+<DL>
+<DT> Mailto program
+<DD> Indique le nom du programme à invoquer lorsque l'utilisateur active
+un lien de type <TT>mailto:</TT>. Si ce programme n'est pas spécifié,
+<B>MMM</B> ouvrira une fenêtre simple pour composer le message, et utilisera
+la commande Unix standard <TT>mail</TT> pour l'envoyer. Si un programme
+est indiqué, il sera invoqué : il est responsable de la composition
+<B>et</B> de l'envoi du message
+(voir les <A HREF="progs-fr.html#mail">exemples</A>).
+
+
+<DT> Hotlist program
+<DD> <B>MMM</B> n'implante pas de système de marque page. Il faut utiliser
+un programme externe (voir les <A HREF="progs-fr.html#hotlist">exemples</A>).
+
+
+<DT> Printing program
+<DD> <B>MMM</B> n'implante pas l'impression des documents. Il faut utiliser
+un programme externe (voir les <A HREF="progs-fr.html#printing">exemples</A>).
+</DL>
+
+<H3>Définition des programmes</H3>
+Dans tous ces réglages, on peut écrire une commande shell arbitraire et pas
+seulement un nom de programme. Dans chaque cas, l'invocation de la commande
+fera intervenir une substitution de variables dans la commande. Les
+variables définies dans chacune de ces commandes sont:
+<DL>
+<DT> Mailto program
+<DD> <DL compact>
+<DT> <TT>$TO</TT>
+<DD> l'adresse du destinataire
+<DT> <TT>$SUBJECT</TT>
+<DD> le sujet du message
+</DL>
+
+<DT> Hotlist program
+<DD> <DL compact>
+<DT> <TT>$URL</TT>
+<DD> l'url du document
+<DT> <TT>$TITLE</TT>
+<DD> le titre du document (ou son URL si le titre n'est pas défini par le document)
+</DL>
+
+
+<DT> Printing program
+Le document recoit le contenu du document sur son entrée standard.
+<DD> <DL compact>
+<DT> <TT>$URL</TT>
+<DD> l'url du document
+</DL>
+
+</DL>
+
+<BLOCKQUOTE>
+Attention: la substitution a lieu lors de l'invocation. Ensuite, la commande
+<B>ne dispose pas</B> des variables dans son environnement.
+</BLOCKQUOTE>
+
+
+<H2 align=left><A NAME="cache">5- Réglages du cache</A></H2>
+
+Le cache de MMM fonctionne conserve les documents les plus récemments
+consultés dans la limite d'un certain nombre.
+
+<DL>
+<DT> Max number of documents
+<DD> Indique le nombre maximum de documents conservés dans le cache
+
+<DT> Delete how much when full
+<DD> Indique combien de documents doivent être enlevés du cache pour faire
+de la place
+
+<DT> Keep only history
+<DD> Si cette option est active, le cache ne gardera que les documents
+actuellement affichés dans une des fenêtres du brouteur. Lorsqu'on ferme
+une fenêtre, les documents affichés dans cette fenêtre sont enlevés du cache
+(sauf s'ils sont encore affichés dans une autre fenêtre). Cette option ne
+doit être utilisée que si on dispose d'un proxy-cache (et d'une bonne
+connectivité avec ce proxy).
+
+
+<DT> Max cached widgets per window
+<DD> Indique le nombre de documents pour lesquels <B>MMM</B> doit garder
+la version graphique en mémoire. Plus cette valeur est grande, plus les
+aller-retours dans l'historique sont rapides, mais plus la quantité de
+mémoire occupée grossit. Le minimum est 1, qui signifie qu'on ne garde
+que le document affiché sous forme graphique.
+
+</DL>
+
+<H2 align=left><A NAME="applets">6- Applets</A></H2>
+
+<H2 align=left><A NAME="misc">7- Réglages Divers</A></H2>
+<DL>
+<DT> Use balloon helps
+<DD> Active les ballons d'aide.
+
+<DT> Use GIF animation
+<DD> Active les images animées
+
+<DT> Automatic GIF animation display
+<DD> Si cette option est active, l'animation des images est lancée
+automatiquement. Sinon, il faut cliquer avec le bouton 2 pour lancer
+l'animation.
+
+</DL>
+
+<H2 align=left><A NAME="internal">8- Réglages internes</A></H2>
+Ces options ne sont pas documentées, et ne doivent pas être modifiées.
+
+</BODY>
+</HTML>

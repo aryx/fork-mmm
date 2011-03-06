@@ -1,0 +1,272 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (resources) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/res.html">
+<LINK REL="TOC"
+      HREF="docindex.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>MMM : resources</H1>
+<P>
+Beyond settings that can be configured in the preference control panels, some
+advanced options can be modified or set only by directly editing the preference file.
+
+These resources are located necessarily in the first part of the preference file,
+that is <B>before</B> the line
+<PRE>
+!!! Don't edit below this line !!!
+</PRE>
+A resource definition has the form:
+<PRE>
+*name: value
+</PRE>
+or, if it spans over multiple lines:
+<PRE>
+*name: this is \
+       a long resource definition
+</PRE>
+Lines beginning with an exclamation mark (!) are comments.
+
+
+<H2 align=center>External viewers</H2>
+Since <B>MMM</B> knows how to display only HTML and plain text (as well as
+in-lined images), it delegates the display of all other document types to
+external viewers. The choice of a viewer for a given document type is the
+responsability of the <TT>metamail</TT> program, whose configuration is
+defined in the <TT>$HOME/.mailcap</TT> file. Report to <TT>man mailcap</TT>
+for more details.
+<P>
+However, it is possible to tell to <B>MMM</B>
+<UL>
+<LI> what types of documents should be saved to disk instead of
+displayed. It's the <TT>savedTypes</TT> resource.
+<LI> what types of documents actually are displayable. It's the
+<TT>externalViewers</TT> resouce.
+</UL>
+When receiving a document whose type does not belong to one of the above
+categories, <B>MMM</B> asks more directions from the user between attempting
+to handle the document.
+
+<H3>Example</H3>
+<PRE>
+!! Types for which we should save to disk
+*savedTypes: \
+    application/zip, \
+    application/x-tar
+!! Types for which metamail knows a viewer
+!! The star (*) can be used only in MIME subtype
+*externalViewers: \
+    audio/x-midi, audio/midi, \
+    image/*, \
+    video/*, \
+    application/postscript, \
+    application/pdf, \
+    application/x-dvi, \
+    application/x-world, application/x-vrml, \
+    application/x-ical, \
+    application/mac-binhex
+</PRE>
+
+<H2 align=center>Menu shortcuts</H2>
+Menu shortcuts are key combinations or sequences to activate a menu entry
+directly from the keyboard. <B>MMM</B> offers shortcuts for most menu
+entries, but if they are not convenient, they can be redefined through
+resources.
+<P>
+Each action has a Name. For this action, the shortcut is specified by the resource
+par la ressource <TT>shortcutName</TT>, whose value is the description of a
+Tk event (see Tk documentation : <TT>man n bind</TT>).
+<P>
+The names of the actions are:
+<TABLE border=2>
+<TR><TH>Menu title</TH>		<TH>Action name</TH>
+<TR><TD>About</TD>		<TD>About</TD>
+<TR><TD>New Window</TD>		<TD>NewWindow</TD>
+<TR><TD>Open Selection</TD>	<TD>OpenSelection</TD>
+<TR><TD>Open File...</TD>	<TD>OpenFile</TD>
+<TR><TD>Save</TD>		<TD>Save</TD>
+<TR><TD>Print</TD>		<TD>Print</TD>
+<TR><TD>Close Window</TD>	<TD>Close</TD>
+<TR><TD>Quit</TD>		<TD>Quit</TD>
+
+<TR><TD>Home</TD>		<TD>Home</TD>
+<TR><TD>Back</TD>		<TD>Back</TD>
+<TR><TD>Forward</TD>		<TD>Forward</TD>
+
+<TR><TD>Reload</TD>		<TD>Reload</TD>
+<TR><TD>Abort</TD>		<TD>Abort</TD>
+<TR><TD>Update</TD>		<TD>Update</TD>
+<TR><TD>Redisplay</TD>		<TD>Redisplay</TD>
+<TR><TD>Add to Hotlist</TD>	<TD>AddToHotlist</TD>
+<TR><TD>Load images</TD>	<TD>LoadImages</TD>
+<TR><TD>View source</TD>	<TD>ViewSource</TD>
+</TABLE>
+<H3>Example</H3>
+<PRE>
+!! Definition of a shortcut for Home (key F2)
+*shortcutHome : &lt;F2&gt;
+</PRE>
+
+<H3>Warning</H3>
+There are many key combinations used in some part of the <B>MMM</B>
+interface. It is thus not guaranteed that a new definition of a shortcut
+will work as expected.
+
+<H2 align=center>Navigation bindings</H2>
+Navigation actions available with the mouse can also be redefined. For a
+given action name, the resource is
+<TT>bind&lt;nom&gt;</TT>, and its value is the description of a Tk event
+(see Tk doumentation : <TT>man n bind</TT>).
+
+The names of navigation actions are:
+
+<TABLE border=2>
+<TR><TH>Action name</TH>	<TH>Action purpose</TH>
+<TR><TD>goto</TD>
+    <TD>displays the document pointed to by this link in the same window,<BR>
+        except when specified otherwise by the document author (frames)</TD> 
+<TR><TD>save</TD>
+    <TD>save the document pointed to by this link <BR> (after asking a file name in
+        a dialog box)</TD> 
+<TR><TD>gotonew</TD>
+    <TD>displays the document pointed to by this link in a new window</TD>
+<TR><TD>hypermenu</TD>
+    <TD>pops up a link activation menu, containing the above functionalities
+        and possible more</TD>
+</TABLE>
+
+Other context-dependent action are available:
+<TABLE border=2>
+<TR><TH>Action name</TH> <TH>Context</TH> <TH>Action purpose</TH>
+
+<TR><TD>tachy_about</TD>
+    <TD>in the tachymeter</TD>
+    <TD>displays the about</TD>
+<TR><TD>tachy_gc</TD>
+    <TD>in the tachymeter</TD>
+    <TD>opens the memory gauge window</TD> 
+<TR><TD>tachy_new</TD>
+    <TD>in the tachymeter</TD>
+    <TD>opens a new window</TD>
+<TR><TD>tachy_sel</TD>
+    <TD>in the tachymeter</TD>
+    <TD>opens a new window on the document pointed to by <BR> 
+        the contents of the current X selection</TD>
+<TR><TD>stopanim</TD>
+    <TD>on animated images</TD>
+    <TD>stops the animation</TD>
+<TR><TD>restartanim </TD>
+    <TD>on animated images</TD>
+    <TD>starts the animation</TD>
+<TR><TD>copyimgurl</TD>
+    <TD>on images</TD>
+    <TD>copies the address of the image in the X selection
+    </TD>
+<TR><TD>loadimage</TD>
+    <TD>on a non-loaded image</TD>
+    <TD>loads this image</TD>
+<TR><TD>alt_imap</TD>
+    <TD>on a non-loaded active image</TD>
+    <TD>displays the menu of links defined by this active image</TD>
+</TABLE>
+
+<H3>Example</H3>
+<PRE>
+!! Open a new window : use button 2 instead of default button 3
+*bind&lt;gotonew&gt;: &lt;2&gt;
+</PRE>
+
+<H3>Warning</H3>
+Many mouse bindings are used elsewhere in the <B>MMM</B> interface. It is
+therefore not guaranteed that a new definition will work as expected.
+
+<H2 align=center>Fonts</H2>
+Font setting is accessible by a preference control panel. However, the list
+of possible choices of settings is governed by resources.
+
+<DL>
+<DT> font families
+<DD> The resource is <TT>fontFamilies</TT>, and its value is a comma (,)
+separated list of families
+<DT> font sizes
+<DD> The resource is <TT>fontPixels</TT>, and its value is a comma (,)
+separated list of sizes
+</DL>
+
+A simple method for computing these lists is to use <TT>xlsfonts</TT>:
+<PRE>
+$ xlsfonts | awk -F- 'NF==15 {print $3}' | sort -u
+# displays the list of families available on your system
+$ xlsfonts | awk -F- 'NF==15 {print $8}' | sort -u
+# displays the list of sizes available on your system
+</PRE>
+Of course, if your X server knows how to compute fonts on the fly when they
+are requested, you are not constrainted by these values that reflect <B>only</B>
+the pre-computed fonts.
+
+<H3>Example</H3>
+<PRE>
+!! Family choice
+*fontFamilies: *, \
+	courier, \
+	helvetica, \
+	lucida, lucidatypewriter,\
+	new century schoolbook,\
+	times, \
+	fixed
+!! Size choice
+*fontPixels: 8,10,11,12,13,14,15,16,17,18,19,20,24,26,30,34,40
+</PRE>
+
+
+
+<H2 align=center><A NAME="source">Source Editing</A></H2>
+The <B>View source</B> menu gives access to the HTML source of a document in
+an editor window. You can see this source annotated in colors, with a
+different color for each HTML element.
+<P>
+For each element <EM>e</EM>, the resource name is 
+<TT>Source&lt;e&gt;</TT> and its value is a color
+<H3>Example</H3>
+<PRE>
+! bleu pour les ancres
+*Source&lt;a&gt;: #4e5cd7
+! vert pour les entetes
+*Source&lt;h1&gt;: PaleGreen4
+*Source&lt;h2&gt;: PaleGreen3
+*Source&lt;h3&gt;: PaleGreen2
+*Source&lt;h4&gt;: PaleGreen1
+! autres
+*Source&lt;p&gt;: SandyBrown
+*Source&lt;img&gt;: yellow
+! orange pour les tables
+*Source&lt;table&gt;: #f05e28
+*Source&lt;tr&gt;: #f05e28
+*Source&lt;td&gt;: #f05e28
+*Source&lt;th&gt;: #f05e28
+! rose pour les formes
+*Source&lt;form&gt;: #f05cd7
+*Source&lt;input&gt;: #f05cd7
+*Source&lt;select&gt;: #f05cd7
+*Source&lt;option&gt;: #f05cd7
+*Source&lt;textarea&gt;: #f05cd7
+</PRE>
+
+
+<H2 align=center>Tk settings</H2>
+You can also naturally specifiy resources that will be interpreted by Tk
+itself (check the Tk manuals).
+
+<H3>Example for a small screen (laptop)</H3>
+<PRE>
+*font: -*-helvetica-medium-r-normal-*-10-*-*-*-*-*-*-*
+*padX:1
+*padY:0
+*buttons.BorderWidth: 2
+</PRE>
+
+</BODY>
+</HTML>

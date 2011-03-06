@@ -1,0 +1,35 @@
+To run surfboard with MMM
+
+* Make.
+
+* Copy surfboard and surfboard_remote in your path.
+
+* Set External programs -- Hotlist program of MMM prefs. as surfboard_remote.
+
+* run mmm with -external option:
+	% mmm -external
+
+* run surfboard
+
+To add pages to the surfboard
+	In MMM, press Alt+a or choose Document -- Add to hotlist.
+
+To visit a page in the surfboard
+	Double click the entry.
+
+To open/close a directory in the surfboard
+	Double click the directory
+
+To select more than one pages
+	Use shift+click
+
+To delete selected (highlightened) pages
+	Alt+d (No undo!!!)
+
+To move selected pages
+	Drag+Drop 
+		To drop just on one of [*] or [@] 
+			moves the selected pages INTO the directory.
+		To drop on the other part
+			moves the selected pages just AFTER the directory
+				or page under the cursor.

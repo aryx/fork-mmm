@@ -1,0 +1,56 @@
+PREREQUISITES
+
+You must have already installed
+ * Objective Caml 3.04
+    ftp://ftp.inria.fr/lang/caml-light
+
+ * A version of Tcl/Tk, compatible with camltk (Tcl8.3/Tk8.3, ...,
+   Tcl7.5/Tk4.1, or Tcl7.6/Tk4.2)
+    ftp://ftp.smli.com/pub/tcl or various mirrors
+
+ * camltk41 (the library for interfacing Objective Caml to Tcl/Tk) 
+   included in the Objective Caml bazar
+
+Also, you need a modern make (gmake is good).
+
+INSTALLATION INSTRUCTIONS
+
+1- Extract the archive mmm418-src.tar.gz somewhere.
+This creates the "mmm418" directory.
+
+2- Configure the system. This is trivial if camltk418 has been installed
+properly. In the "mmm418" directory, create your Makefile.config
+file by copying Makefile.config.tpl and following the instructions given there.
+
+3- Build the system. From the "mmm418" directory, do:
+   make all
+   (and make opt to build the native version)
+This creates the binary files "mmm.bin", "mmm_remote", "htparse",
+"sboard/surfboard", "sboard/surfboard_remote"
+
+4- To be sure everything works well, you can try
+   ./mmm.bin
+
+If it fails with error message
+./mmm: can't load library 'libtk4.2.so'
+or something similar, this means that you must set the LD_LIBRARY_PATH
+in your shell environment, e.g.
+$ export LD_LIBRARY_PATH=/usr/local/lib
+% setenv LD_LIBRARY_PATH /usr/local/lib
+
+
+5- You can now install MMM.
+     make install
+     (and make installopt to install the native version)
+
+If you want to give a default proxy configuration:
+make setup
+
+
+6- Additional stuff : modules
+     cd modules; make
+You can copy these modules to your ~/.mmm/418 directory. They will be
+automatically loaded when you invoke mmm.
+     mkdir -p ~/.mmm/418
+     cd modules; cp *.cmo ~/.mmm/418
+

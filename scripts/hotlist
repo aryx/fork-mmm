@@ -1,0 +1,2 @@
+#!/bin/sh
+echo "<A HREF=\"$1\">$2</A><BR>" >> $HOME/.hotlist.html

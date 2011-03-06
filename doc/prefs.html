@@ -1,0 +1,317 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (Preferences) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/prefs.html">
+<LINK REL="TOC"
+      HREF="docindex.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Preferences</H1>
+
+<H2 align=left>Preferences files</H2>
+<B>MMM</B> uses two preferences files : the first one is common to
+all users of a system, and provides essentially a minimum common setup.
+The second one is personal : it is modified by the user, either with
+the preference control panels, or by hand-editing the file.
+
+<H2 align=left>Preference panels</H2>
+Preference panels are obtained by activating the <B>Preferences</B> menu.
+The left part selects the panel for a given family of settings. The right
+part shows the settings of a family.
+
+<P>
+The modification of a setting is active immediately, but does not
+necessarily apply retro-actively to already existing windows.
+
+<P>
+To save the preferences for further sessions, use the <B>Save</B> button. To
+revert to previously saved preferences, use the <B>Reset</B> button. To
+change the preference file, use the menu.
+
+<H3>Preference Families</H3>
+
+<OL>
+     <LI> <A HREF="#protocols">Protocols</A>
+     <LI> <A HREF="#html">HTML parsing and display</A>
+     <LI> <A HREF="#images">Images</A>
+     <LI> <A HREF="#progs">External programs</A>
+     <LI> <A HREF="#cache">Cache settings</A>
+     <LI> <A HREF="#applets">Applets</A>
+     <LI> <A HREF="#misc">Misc. settings</A>
+     <LI> <A HREF="#internal">Internal settings and debugging</A>
+</OL>
+
+<H2 align=left><A NAME="protocols">1- Protocols</A></H2>
+<DL>
+<DT> Proxy host
+<DT> Proxy port
+<DD> Defines the Web proxy to contact for all protocols that <B>MMM</B> does
+not implement (<TT>ftp</TT>,<TT>wais</TT>,<TT>gopher</TT>,...), as well as
+for accessing unreachable machines (e.g. because of firewall restrictions)).
+
+
+<DT> Always use proxy
+<DD> If this setting is active, <B>MMM</B> never tries a direct connection
+to a server. This mode should be used on a slow network (e.g. PPP dialup).
+In general, if you have access to a caching proxy, then you should activate
+this setting. 
+
+<DT> HTTP Send Referer
+<DD> The HTTP protocol specifies that the browser can indicate in a request
+to a server the context of this request (e.g. the document containing
+the anchor on which we clicked). This is useful for the webmasters of the
+sites you browser, because they can determine what servers point to her
+their site, trace dangling links, ...) but it's also a privacy violation.
+<B>MMM</B> will send this so-called <TT>Referer</TT> information <B>only</B>
+if this setting is active.
+
+<DT> User Agent
+<DD> The browser name given by <B>MMM</B> when connecting to a server.
+
+<DT> Timeout on headers (seconds)
+<DD> Defines how much time we should wait for the beginning of an answer
+before wondering if we should really continue. After this time is elapsed
+(and if nothing was received), a dialog box offers the choice to:
+<UL>
+<LI> Retry (for again this amout of time)
+<LI> Ignore (retry with no time limit, waiting either for a connection
+shutdown or for the document to be received)
+<LI> Abort (abort the request)
+</UL>
+
+<DT> Password lifetime (minutes)
+<DD> Passwords used to connect to private sites have a limited lifetime.
+
+<DT> Password save file
+<DD> (not used)
+
+<DT> Local binaries path
+<DD> A colon(:) separated list of directories. When you ask for a document
+at a <TT>file:</TT> address, which path is included in one of these
+directories, <B>MMM</B> will execute this file as a CGI instead of
+attempting to display the file (see the CGI protocol for more details; this
+is the <EM>non-parsed-headers</EM> mode of CGI, meaning that the program
+must produce a complete HTTP answer with status and headers). This is a trivial
+example of such a program:
+<PRE>
+#!/bin/sh
+echo "HTTP/1.0 200 Found"
+echo "Content-Type: text/html"
+echo
+cat << EOF
+... some valid HTML ...
+EOF
+</PRE>
+</DL>
+
+<H2 align=left><A NAME="html">2- HTML parsing and display</A></H2>
+<DL>
+<DT> DTD
+<DD> <B>MMM</B> knows several HTML DTDs. You can choose the one used to
+parse HTML documents.
+
+<DT> Strict HTML lexing
+<DD> The lexical analysis implements some error recovery to attempt to
+display incorrect documents reasonably. If this setting is active, no
+error recovery takes place. For example, a tag with the attribute
+<TT>ADD_DATE</TT> will be flagged as an error because the <TT>_</TT>
+character is illegal in attribute names.
+
+<DT> Attempt tables
+<DD> Activates the display of tables. Otherwise, tables are displayed
+similarly to &lt;DL&gt;, &lt;DT&gt;, &lt;DT&gt;.
+
+
+<DT> Ignore relative TD width
+<DD> Since a last minute change in the HTML 3.2 specifications, it has
+become illegal to specify the width of a table cell (&lt;TD&gt;) as a
+percentage. Moreover the interpretation of this quantity (percentage of
+what ?) differs among authors and browsers. You'd better keep this
+setting active, meaning that percentage width in table cell is ignored.
+
+<DT> Attempt smooth scroll
+<DD> Activates the "smooth scroll" mode (a defect in Tk makes scrolling
+unusable when large images or tables are included in a document). This
+mode is costly : you should rather use the "smooth scroll" button
+(two arrows icon) to change scrolling mode individually for documents
+where normal scroll doesn't work.
+
+<DT> Frames as links
+<DD> If this setting is active, <B>MMM</B> does not render frames,
+but adds in the <B>Links</B> menu an entry for each frame of the document.
+Otherwise, <EM>frames</EM> are rendered.
+
+<DT> Background color
+<DD> Unless otherwise specified by a document's author, this is the
+background color (you should really put "white" here).
+
+<DT> Entry and Textarea color
+<DD> Background color of text entries in forms.
+
+<DT> Follow document colors
+<DD> Indicates if <B>MMM</B> should follow the color indications given by
+authors. It may be useful to activate this settings to spare your eyes,
+or simply because the document is unreadable otherwise.
+
+<DT> Font choices
+<DD> For each font, you may select the family, size in pixels, and other
+settings. In the case of <B>Bold</B>, <TT>Italic</TT> and <TT>Fixed</TT>, 
+the settings only define a <B>modification</B> of the current font (so, in
+particular, you should not specify a size). In the case of <TT>Fixed</TT>,
+the font <B>should</B> be a fixed font (same width for all characters).
+</DL>
+
+<H2 align=left><A NAME="images">3- Images</A></H2>
+<DL>
+<DT> No images at all
+<DD> If this setting is active, no in-lined image will be loaded. Otherwise,
+one of the image loading modes is used.
+
+<DT> Image loading
+<DD> Defines the image loading mode.
+<DL>
+<DT> After document, manual
+<DD> Images are not loaded with the document. You must explicitly invoke
+image loading through the menu, or select a particular image with
+<TT>Control + Button 1</TT>. However, images already present in the cache
+may still be displayed automatically since they don't involved network transfer.
+
+<DT> After document, automatic
+<DD> Images will be loaded and displayed automatically, as soon as the
+document itself has been displayed.
+
+<DT> During document loading
+<DD> Images will be loaded and displayed as soon as they are encountered
+in the document.
+</DL>
+
+<DT> Max image connections
+<DD> Defines the maximum number of simultaneous network connections
+dedicated to image loading. When this number is reached, requests for image
+loading are queued are dealt with so as to respect the limit.
+
+<DT> Max image connections (same host)
+<DD> Defines the maximum number of simultaneous network connections
+dedicated to image loading on a given site. In order to save bandwith,
+this value should be either 2 or 3. When this number is reached, 
+requests for image loading <B>on this site</B> are queued are dealt with so
+as to respect the limit. For other sites, the other limit applies.
+
+<DT> Gamma correction
+<DD> Corrective factor for image brightness. Use a value greater than 1 to
+make images brighter.
+
+<DT> JPEG converter
+<DD> Tk does not know how to load JPEG images, so we need an external
+converter. This converter (<TT>djpeg</TT> by default) is called with 
+an argument (file containing the image), and must produce an image
+understandable by Tk (e.g. GIF or PNM) on its standard output.
+</DL>
+
+<H2 align=left><A NAME="progs">4- External programs</A></H2>
+<DL>
+<DT> Mailto program
+<DD> Defines the name of the program to execute when the user actiaves a
+<TT>mailto:</TT> link. If not specified, <B>MMM</B> opens a simple window
+for composing the message, and uses the standard Unix <TT>mail</TT> command
+to deliver it. Otherwise, the program is executed : it is responsible both
+for message composition <B>and</B> delivery (check the <A
+HREF="progs.html#mail">examples</A>).
+
+
+<DT> Hotlist program
+<DD> <B>MMM</B> does not provide a builtin hotlist or bookmarks system. You
+have to use an external program for this purpose (check the <A
+HREF="progs.html#hotlist">examples</A>). 
+
+
+<DT> Printing program
+<DD> <B>MMM</B> does not implement document printing. You have to use an
+external program for this purpose (check the <A
+HREF="progs.html#printing">examples</A>).
+</DL>
+
+<H3>External program definitions</H3>
+In all these settings, you can provide an arbitrary shell command, and not
+simply the name of a program. In each case, the invocation of this command
+will involve a substitution of variables in this command. The variables
+defined for each of these commands are:
+<DL>
+<DT> Mailto program
+<DD> <DL compact>
+<DT> <TT>$TO</TT>
+<DD> destination address
+<DT> <TT>$SUBJECT</TT>
+<DD> message subject
+</DL>
+
+<DT> Hotlist program
+<DD> <DL compact>
+<DT> <TT>$URL</TT>
+<DD> document url
+<DT> <TT>$TITLE</TT>
+<DD> document title (or URL if the document does not provide a title)
+</DL>
+
+
+<DT> Printing program
+The program receives the content of the document on its standard input.
+<DD> <DL compact>
+<DT> <TT>$URL</TT>
+<DD> document url
+</DL>
+
+</DL>
+
+
+<H2 align=left><A NAME="cache">5- Cache settings</A></H2>
+
+<B>MMM</B> keeps in a cache the more recently seen documents, up to a given limit.
+<DL>
+<DT> Max number of documents
+<DD> Defines the maximum number of documents kept in the cache
+
+<DT> Delete how much when full
+<DD> Defines how many documents should be removed from the cache when it
+gets full
+
+<DT> Keep only history
+<DD> If this setting is active, the cache only keeps the documents
+currently in the history of one of <B>MMM</B>'s windows. When you close
+a window, its documents are removed from the cache (except if they are
+present in the history of another window). This setting should be used
+only of you have a good bandwidth with your cacheing proxy.
+
+<DT> Max cached widgets per window
+<DD> Defines the number of documents for which <B>MMM</B> should keep
+the graphical version in memory. If this value is large, navigation
+in history is fast, but <B>MMM</B> occupies more memory. The lowest
+value is 1, meaning that only the currently displayed document is 
+kept in memory in graphical form.
+
+</DL>
+
+<H2 align=left><A NAME="applets">6- Applets</A></H2>
+
+<H2 align=left><A NAME="misc">7- Misc. settings</A></H2>
+<DL>
+<DT> Use balloon helps
+<DD> Self explanatory.
+
+<DT> Use GIF animation
+<DD> Self explanatory.
+
+<DT> Automatic GIF animation display
+<DD> If this setting is active, the animations are started
+automatically. Otherwise, you must use button 2 on each animation to start
+it. An image animated whenever the mouse cursor turns to a watch.
+</DL>
+
+<H2 align=left><A NAME="internal">8- Internal settings and debugging</A></H2>
+These settings are not documented and should not be modified.
+
+</BODY>
+</HTML>

@@ -1,0 +1,37 @@
+!include ..\..\..\csl\config\Makefile.nt
+!include ..\Makefile.config.nt
+
+OBJS=tsort.cmo tables.cmo lexer.cmo parser.cmo  compile.cmo intf.cmo \
+     maincompile.cmo
+
+tkcompiler.exe : $(OBJS)
+	$(CAMLC) $(LINKFLAGS) -o tkcompiler.exe $(OBJS)
+
+lexer.ml: lexer.mll
+	$(CAMLLEX) lexer.mll
+
+parser.ml parser.mli: parser.mly
+	$(CAMLYACC) -v parser.mly
+
+clean : 
+	rm -f *.cm*  parser.ml parser.mli lexer.ml tkcompiler.exe parser.output
+
+scratch :
+	rm -f *.cm*  parser.ml parser.mli lexer.ml tkcompiler.exe
+
+install: 
+	cp tkcompiler.exe $(INSTALLDIR)
+
+.SUFFIXES :
+.SUFFIXES : .mli .ml .cmi .cmo .mlp
+
+.mli.cmi:
+	$(CAMLCOMP) $(COMPFLAGS) $<
+
+.ml.cmo:
+	$(CAMLCOMP) $(COMPFLAGS) $<
+
+depend: parser.ml parser.mli lexer.ml
+	$(CAMLDEP) *.mli *.ml > .depend
+
+!include .depend

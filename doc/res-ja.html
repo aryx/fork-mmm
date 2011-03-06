@@ -1,0 +1,288 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (resources) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/res-ja.html">
+<LINK REL="TOC"
+      HREF="docindex-ja.html">
+<LINK REV="Author" HREF="mailto:Jun.Furuse@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>も〜 : リソースの設定</H1>
+<P>
+設定パネルでの変更の他にも、さらなる設定が設定ファイルを直接
+いじることで可能です。
+
+これらのリソースは設定ファイルの
+<PRE>
+!!! Don't edit below this line !!!
+</PRE>
+という行の<B>前</B>に書きこみます。
+リソースは
+<PRE>
+*名前: 値
+</PRE>
+という形をしています。なお、複数行にまたがる値については、
+<PRE>
+*名前: これは \
+       長い長いリソースの値なのよ
+</PRE>
+のように、バックスラッシュ <TT>\</TT> で改行をエスケープできます。
+なお、ビックリマーク ! で始まる行はコメントと見なされます。
+
+<H2 align=center>外部ビューワ</H2>
+<B>も〜</B> は HTML とプレインテキスト、そしてインラインイメージしか表示
+する方法を知りません。そのため、それ以外のデータ形式については、外部の
+プログラム(ビューワ)の助けが必要です。ビューワは <TT>$HOME/.mailcap</TT>
+ファイルに基づいて、 <TT>metamail</TT> プログラムによって選ばれなけれ
+ばなりません。<TT>man mailcap</TT> で要細を確認してください。
+(ない場合で外部ビューワを自動的に立ち上げたい場合は
+別途インストールが必要です。)
+<P>
+しかしながら、さらに <B>も〜</B> に
+<UL>
+<LI> どのメディアタイプの文書は表示せずにディスクに直接セーブするか
+    (<TT>savedTypes</TT> リソース)
+<LI> どのメディアタイプは実際に <TT> metamail </TT> を使って表示可能なのか
+    (<TT>externalViewers</TT> リソース)
+</UL>
+を指定してやることができます。
+これらのいずれのグループにも属さないメディアタイプのデータを受けとった
+場合は <B>も〜</B> はユーザーにディスクにセーブするか、それとも
+<TT>metamail</TT> に表示させてみるかを聞いてきます。
+
+<H3>例</H3>
+<PRE>
+!! このタイプはディスクにセーブ
+*savedTypes: \
+    application/zip, \
+    application/x-tar
+!! metamail がどう扱ったらよいか知っているタイプ
+!! 星 * は subtype にしか使えません
+*externalViewers: \
+    audio/x-midi, audio/midi, \
+    image/*, \
+    video/*, \
+    application/postscript, \
+    application/pdf, \
+    application/x-dvi, \
+    application/x-world, application/x-vrml, \
+    application/x-ical, \
+    application/mac-binhex
+</PRE>
+
+<H2 align=center>メニューショートカット</H2>
+メニューショートカットはキーを押すことで、メニューアイテムをマウスで
+アクセスせずに直接起動する機能です。<B>も〜</B> はほとんどのメニュー
+アイテムにショートカットが割り当てられていますが、これらもリソース
+により変更が可能です。
+<P>
+それぞれのショートカットには名前が付いています。それぞれ、
+<TT>shortcut名前</TT> というリソースを変更するとショートカットのキー
+バインディングを変更することができます。
+リソース値は Tk イベントの書きかたと同じです。(Tk のドキュメント、
+<TT>man n bind</TT> をご覧下さい。)
+<P>
+各ショートカットの名前は、
+<TABLE border=2>
+<TR><TH>Menu title</TH>		<TH>Action name</TH>
+<TR><TD>について/About</TD>		<TD>About</TD>
+<TR><TD>新しい窓/New Window</TD>		<TD>NewWindow</TD>
+<TR><TD>選択を開ける/Open Selection</TD>	<TD>OpenSelection</TD>
+<TR><TD>ファイルを開ける/Open File...</TD>	<TD>OpenFile</TD>
+<TR><TD>文書を保存/Save</TD>		<TD>Save</TD>
+<TR><TD>印刷/Print document</TD>		<TD>Print</TD>
+<TR><TD>窓を閉じる/Close Window</TD>	<TD>Close</TD>
+<TR><TD>終了/Quit</TD>		<TD>Quit</TD>
+
+<TR><TD>家/Home</TD>		<TD>Home</TD>
+<TR><TD>戻る/Back</TD>		<TD>Back</TD>
+<TR><TD>進む/Forward</TD>		<TD>Forward</TD>
+
+<TR><TD>再読/Reload</TD>		<TD>Reload</TD>
+<TR><TD>中止/Abort</TD>		<TD>Abort</TD>
+<TR><TD>更新チェック/Update</TD>		<TD>Update</TD>
+<TR><TD>再描画/Redisplay</TD>		<TD>Redisplay</TD>
+<TR><TD>ホットリストに加える/Add to Hotlist</TD>	<TD>AddToHotlist</TD>
+<TR><TD>画像を読み込む/Load images</TD>	<TD>LoadImages</TD>
+<TR><TD>原型を見る/View source</TD>	<TD>ViewSource</TD>
+</TABLE>
+<H3>例</H3>
+<PRE>
+!! F2 でホームドキュメントに戻る
+*shortcutHome : &lt;F2&gt;
+</PRE>
+
+<H3>注意</H3>
+<B>も〜</B> では既にいくつかのキーバインディングが使用されています。
+もし既に定義されたバインディングと同じバインディングを設定した場合、
+何が起るかは神のみぞ知る、です。
+
+<H2 align=center>ナビゲーション・バインディング</H2>
+ハイパーリンクに対するナビゲーション・アクション
+(表示、セーブなど)のバインディングもリソースにより設定可能です。
+それぞれのアクションには名前が付いています。それぞれ、
+<TT>bind&lt;名前&gt;</TT>というリソースを変更するとアクションのバインディング
+を変更することができます。
+リソース値は Tk イベントの書きかたと同じです。(Tk のドキュメント、
+<TT>man n bind</TT> をご覧下さい。)
+<P>
+各アクションの名前は、
+
+<TABLE border=2>
+<TR><TH>名前</TH>	<TH>その内容</TH>
+<TR><TD>goto</TD>
+<TD> 同じブラウザウィンドウにリンク先の内容を表示します。</TD>
+<TR><TD>save</TD>
+<TD> リンク先の内容をファイルにセーブします。ファイル名を聞いてきます
+    ので答えて下さい。</TD>
+<TR><TD>gotonew</TD>
+<TD> 新しいブラウザウィンドウを開いてそこにリンク先の内容を表示します。</TD>
+<TR><TD>hypermenu</TD>
+<TD>リンク起動メニューを開きます</TD>
+</TABLE>
+
+これ以外にも特定の条件で使えるバインディングがあります。
+<TABLE border=2>
+<TR><TH>名前</TH> <TH>条件</TH> <TH>その内容</TH>
+
+<TR><TD>tachy_about</TD>
+    <TD>タコメータで</TD>
+    <TD><B>も〜</B>について を表示します</TD>
+<TR><TD>tachy_gc</TD>
+    <TD>タコメータで</TD>
+    <TD>ごみ集め情報のウィンドウを表示します</TD> 
+<TR><TD>tachy_new</TD>
+    <TD>タコメータで</TD>
+    <TD>新しいブラウザウィンドウを開きます</TD>
+<TR><TD>tachy_sel</TD>
+    <TD>タコメータで</TD>
+    <TD>X selection に含まれる内容を URL とみなして、そのページを
+	新しいウィンドウに表示します</TD>
+<TR><TD>stopanim</TD>
+    <TD>アニメーション・イメージで</TD>
+    <TD>アニメーションを止める</TD>
+<TR><TD>restartanim </TD>
+    <TD>アニメーション・イメージで</TD>
+    <TD>アニメーションを動かす</TD>
+<TR><TD>copyimgurl</TD>
+    <TD>インライン・イメージ上で</TD>
+    <TD>イメージ　URL を X の selection にコピーする
+    </TD>
+<TR><TD>loadimage</TD>
+    <TD>ロードされていないイメージ上で</TD>
+    <TD>イメージをロードする</TD>
+<TR><TD>alt_imap</TD>
+    <TD>ロードされていないアンカー付きイメージ上で</TD>
+    <TD>アンカー付きイメージに定義されたリンクをメニューに表示</TD>
+</TABLE>
+
+<H3>例</H3>
+<PRE>
+!! デフォルトのボタン3の代りにボタン2で新たなウィンドウを作成
+*bind&lt;gotonew&gt;: &lt;2&gt;
+</PRE>
+
+<B>も〜</B> では既にいくつかのマウスバインディングが使用されています。
+もし既に定義されたバインディングと同じバインディングを設定した場合、
+何が起るかは神のみぞ知る、です。
+
+<H2 align=center>フォント</H2>
+フォントの設定は設定パネルから変えることができますが、
+パネルで選択での選択候補リスト自体を変えることができます。
+
+<DL>
+<DT> フォンファミリー
+<DD> <TT>fontFamilies</TT> リソースにコンマで切ったフォントファミリー
+    のリストを指定できます。
+<DT> フォントサイズ
+<DD> <TT>fontPixels</TT> リソースにコンマで切ったサイズのリストを
+    指定できます。
+</DL>
+
+<TT>xlsfonts</TT> コマンドを使ってこのリストの作成の参考にしてください。
+<PRE>
+$ xlsfonts | awk -F- 'NF==15 {print $3}' | sort -u
+# 使用できるファミリーを表示します。
+$ xlsfonts | awk -F- 'NF==15 {print $8}' | sort -u
+# 使用できるフォントサイズを表示します。
+</PRE>
+もちろん、 X サーバーが自動的に存在しないサイズのフォントを作成する場合は、
+このコマンドの結果のみを使う必要はありません。
+
+<H3>例</H3>
+<PRE>
+!! 使用できるファミリ
+*fontFamilies: *, \
+	courier, \
+	helvetica, \
+	lucida, lucidatypewriter,\
+	new century schoolbook,\
+	times, \
+	fixed
+!! 使用できるサイズ
+*fontPixels: 8,10,11,12,13,14,15,16,17,18,19,20,24,26,30,34,40
+</PRE>
+
+<H2 align=center>日本語フォント</H2>
+
+日本語のフォントには、JISX0208-1983 のフォントが使用されます。
+またサイズは、有効な日本語のフォントサイズリストの中から
+同じ<TT>&lt;H?&gt;</TT>アンカーで使われる西欧文字フォントのサイズに
+一番近いものが選ばれます。有効な日本語のフォントサイズリストは
+リソース<TT>kanjiFontPixels</TT>で設定可能です。
+
+<H3>例</H3>
+<PRE>
+!! 使用できる漢字サイズ
+!! 12 pixel フォントが手に入ったら、 12, 14, 16, 24 にしよう。
+*kanjiFontPixels: 14,16,24
+</PRE>
+
+<H2 align=center><A NAME="source">ソースの編集</A></H2>
+<B>原型を見る</B>を選ぶと HTML のソースを編集することができますが、
+このソースの各タグやエラーの位置を示す色をリソースで変更できます。
+<P>
+エレメント <EM>e</EM> のリソース名は
+<TT>Source&lt;e&gt;</TT> で、色名を値に取ります。
+<H3>例</H3>
+<PRE>
+! アンカーは青
+*Source&lt;a&gt;: #4e5cd7
+! ヘッダは緑
+*Source&lt;h1&gt;: PaleGreen4
+*Source&lt;h2&gt;: PaleGreen3
+*Source&lt;h3&gt;: PaleGreen2
+*Source&lt;h4&gt;: PaleGreen1
+! その他
+*Source&lt;p&gt;: SandyBrown
+*Source&lt;img&gt;: yellow
+! テーブルにはオレンジかな
+*Source&lt;table&gt;: #f05e28
+*Source&lt;tr&gt;: #f05e28
+*Source&lt;td&gt;: #f05e28
+*Source&lt;th&gt;: #f05e28
+! フォームは赤だ。
+*Source&lt;form&gt;: #f05cd7
+*Source&lt;input&gt;: #f05cd7
+*Source&lt;select&gt;: #f05cd7
+*Source&lt;option&gt;: #f05cd7
+*Source&lt;textarea&gt;: #f05cd7
+</PRE>
+
+
+<H2 align=center>Tk のセッティング</H2>
+Tk に元から付いているリソースの変更ももちろん可能です。
+(詳しくは、Tk のマニュアルを見てください。)
+
+<H3>Laptop、小さい画面用</H3>
+<PRE>
+*font: -*-helvetica-medium-r-normal-*-10-*-*-*-*-*-*-*
+*padX:1
+*padY:0
+*buttons.BorderWidth: 2
+</PRE>
+
+</BODY>
+</HTML>

@@ -1,0 +1,22 @@
+*               Second release
+ - Updated to O'Caml 1.06 (C interface changes)
+ - Added support for ocamlopt
+ - Added support for Windows NT (except some accessory parts of ocamltk41)
+ - Added support for BLT Drag&Drop
+ - Added -o and -I options to tkcompiler
+ - Added support for Japanese mode autodetection (jtk)
+ - Added support for raw pixmap
+ - Bug fixes:
+     * focus in Frx_ctext
+     * jpf/Balloon fix
+     * Text.insert (tag parameter was incorrect)
+ - Internal changes
+     * removed Hashtblc now that space leaks in Hashtbl have been fixed
+     * added display of compactions in Frx_mem
+     * access to Tcl variables is now done in C (Tcl_Get/SetVar)
+       instead of interpreted Tcl  "set var". It should be possible to 
+       compile with Tcl/Tk8.0. Fixed variable traces management (free didn't
+       remove traces).
+ - Compilation does not need Tk source tree.
+
+* 1996/12/02	First release (with MMM v0.40)

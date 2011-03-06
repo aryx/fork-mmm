@@ -1,0 +1,18 @@
+!include ..\..\..\csl\config\Makefile.nt
+!include ..\Makefile.config.nt
+
+all: tk.ml .depend
+
+tkgen.ml: ..\Widgets.src ..\compiler\tkcompiler.exe
+	..\compiler\tkcompiler.exe -o . -I .. ..\Widgets.src
+
+tk.ml .depend: tkgen.ml ../support/report.ml ../builtin/builtin_*.ml
+	echo open Widget > tk.ml
+	echo open Protocol >> tk.ml
+	echo open Support >> tk.ml
+	echo open Textvariable >> tk.ml
+	cat ../support/report.ml >> tk.ml
+	cat ../builtin/builtin_*.ml >> tk.ml
+	cat tkgen.ml >> tk.ml
+#	cat ../builtin/builtina_*.ml >> tk.ml
+	$(CAMLDEP) *.mli *.ml > .depend

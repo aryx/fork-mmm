@@ -1,0 +1,6 @@
+jtk.cmo: jtk.cmi 
+jtk.cmx: jtk.cmi 
+kanji.cmo: kanji.cmi 
+kanji.cmx: kanji.cmi 
+tkgen.cmo: tkgen.cmi 
+tkgen.cmx: tkgen.cmi 

@@ -1,0 +1,80 @@
+Installation document for ocamltk416
+
+PREREQUISITES
+
+You must have already installed
+ * Objective Caml 2.04 or higher (3.0, for example)
+    ftp://ftp.inria.fr/lang/caml-light
+
+ * Tcl8.0/Tk8.0
+    ftp://ftp.scriptics.com/pub/tcl or various mirrors
+   (Earlier Tcl/Tk versions may still work, such as 7.5/4.1 and 7.6/4.2,
+    but we recommend using 8.0).
+
+INSTALLATION INSTRUCTIONS
+
+1- Extract the archive ocamltk416.tar.gz somewhere (for example in 
+the .../otherslibs directory of your Objective Caml source tree).
+This will create the "camltk416" directory.
+
+2- Configure the system. To complete this step, you need to know the
+locations of
+ * the installed Objective Caml libraries (e.g. /usr/local/lib/ocaml). The
+ safest way to determine this location is to run "ocamlc -v".
+
+Edit the file site.config, and set the corresponding variable
+(OCAMLLIBDIR). The rest of the configuration is supposed to
+be automated by the "configure" script; this scripts attempts to find
+the correct information for compiling and linking against Tk. If it fails,
+e.g. because your installation uses exotic paths, then you can help
+"configure" by setting other variables in site.config, like:
+CPPFLAGS="-I/path/to/tclinclude -I/path/to/tkinclude"
+LDFLAGS=-L/path/to/tcllib -L/path/to/tklib
+
+If you are compiling for several platforms, you can of course keep several
+site.config files. Don't forget to remove config.cache between compilation 
+runs.
+
+Then run
+$ ./configure --with-config=site.config
+
+This generates the files "Makefile.config",  "Makefile.camltk", and
+"tkanim/ext/Makefile".
+
+If the automatic configuration fails, look at config.log to see what
+happened, check and edit site.config and rerun configure.
+
+If you just can't get "configure" to work, then look at the example files
+Makefile.config.ex, Makefile.camltk.ex, tkanim/ext/Makefile.ex
+and generate the required files Makefile.config, Makefile.camltk,
+and tkanim/ext/Makefile following the indications.
+
+Other settable variables in site.config are:
+INSTALLDIR: the final location of libraries
+LIBEXT: for japanese version of Tcl/Tk
+
+3- Build the system. From the "camltk416" directory, do:
+   make all
+   (make opt to produce the native version)
+
+4- To be sure everything works well, you can try the examples
+   cd examples; make; ./helloworld
+
+If the examples program fail with error message
+./helloworld: can't load library 'libtk8.0.so'
+or something similar, this means that you must set the LD_LIBRARY_PATH
+in your shell environment, e.g.
+$ export LD_LIBRARY_PATH=/usr/local/lib
+% setenv LD_LIBRARY_PATH /usr/local/lib
+
+
+5- You can now install CamlTk.
+   make install
+   (make installopt to produce the native version)
+
+This will create /usr/local/lib/ocaml/camltk41/ (or the equivalent
+for your installation of Objective Caml) and copy there the various library
+files, as well as Makefile.camltk and ocamltktop, an Objective Caml toplevel
+with Tk linked-in.
+
+

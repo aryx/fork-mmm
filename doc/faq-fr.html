@@ -1,0 +1,189 @@
+<HTML>
+<HEAD>
+<TITLE>Faq MMM</TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/faq-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Faq MMM</H1>
+
+<UL>
+<LI> <A HREF="#pronounce">Comment prononcer MMM ?</A>
+<LI> <A HREF="#backspace">Ma touche "backspace" ne marche pas</A>
+<LI> <A HREF="#accents">Comment taper des caractères accentués (éèà...)</A>
+<LI> <A HREF="#metamail">Je ne vois pas les DVIs et PostScript</A>
+<LI> <A HREF="#gunzip">Je ne vois pas les documents compressés (.gz, .Z)</A>
+<LI> <A HREF="#hotlist">Où est ma hotlist ?</A>
+<LI> <A HREF="#readnews">Pourquoi ne puis-je pas lire les news avec MMM ?</A>
+<LI> <A HREF="#fromnews">Comment connecter MMM et mon lecteur de news ?</A>
+<LI> <A HREF="#pig">MMM n'est-il pas gourmand en mémoire ?</A>
+<LI> <A HREF="#pig2">Pourquoi l'affichage des tables est-il si nul ?</A>
+<LI> <A HREF="#tachymeter">Pourquoi y-a-t'il un seul tachymètre ?</A>
+</UL>
+
+
+
+<H2 align=left>Comment prononcer MMM ?</H2>
+<A NAME="pronounce"></A>
+<B>MMM</B> ne doit pas être prononcé "trois m", ni "m trois", car les deux
+sont déjà liés à des produits existants. "m m m", bien que bon, pourrait
+porter à confusion. 
+
+La prononciation officielle est donc 
+<A HREF="meuh.wav">celle-ci (WAV)</A> (ou, dans d'autres formats audio
+<A HREF="meuh.aiff">AIFF</A>,
+<A HREF="meuh.au">ULAW</A>). Toutefois, dans la conversation, vous
+préférerez probablement utiliser "meuh".
+
+<H2 align=left>Ma touche "backspace" ne marche pas</H2>
+<A NAME="backspace"></A>
+Si c'est le cas, alors votre touche "backspace" est en fait une touche
+<TT>&lt;Delete&gt;</TT>, ou a été configurée pour se comporter comme telle
+(vérifier avec <TT>xev</TT>).
+La correction évidente est de faire de votre touche "backspace" une vraie
+touche <TT>&lt;BackSpace&gt;</TT>. Si vous ne voulez pas changer la touche,
+il faudra utiliser <TT>Control-h</TT>. Ou encore : éditez un
+fichier <TT>$HOME/.camltrc</TT>, dans lequel vous ajoutez:
+<PRE>
+bind Entry &lt;Delete&gt; [bind Entry &lt;BackSpace&gt;]
+bind Text &lt;Delete&gt; [bind Text &lt;BackSpace&gt;]
+</PRE>
+Puis relancez <B>MMM.</B>
+
+<H2 align=left>Comment taper des caractères accentués (éèà...)</H2>
+<A NAME="accents"></A>
+Les caractères accentués sont supportés par les serveurs X11 modernes, à
+l'aide de la fonction <EM>Compose</EM>. Sur XFree86 (Linux et BSD), cette
+fonction est liée à la touche <TT>ScrollLock</TT>. Vous pouvez par exemple taper:
+<PRE>
+&lt;ScrollLock&gt; &lt;'&gt; &lt;e&gt; ou &lt;ScrollLock&gt; &lt;e&gt; &lt;'&gt;
+</PRE>
+(ce sont trois appuis de touches consécutifs, contrairement à d'autres
+modificateurs tels que <TT>Alt</TT> ou <TT>Control</TT>) et cela produit
+"é". Il est possible de lier la fonction <EM>Compose</EM> à une autre
+touche, en utilisant <TT>xmodmap</TT>. Par exemple, en supposant qu'un touche
+inutilisée de votre clavier a le keycode 116, vous ajouteriez
+<PRE>
+keycode 116 = Multi_key
+</PRE>
+dans votre fichier de configuration de xmodmap, ou vous executeriez simplement
+<PRE>
+$ xmodmap -e 'keycode 116 = Multi_key'
+</PRE>
+Utilisez <TT>xev</TT> pour déterminer les keycodes des touches inutilisées.
+
+<H2 align=left>Je ne vois pas les DVIs et PostScript</H2>
+<A NAME="metamail"></A>
+Vérifiez votre fichier <TT>~/.mailcap</TT>. Le <TT>mailcap</TT> par défaut
+de la distribution de <TT>metamail</TT> ne convient pas à la navigation
+Web. Un  <TT>.mailcap</TT> adéquat devrait contenir quelque chose comme:
+<PRE>
+application/postscript; ghostview %s
+application/x-dvi; xdvi %s
+# And if you are in fun mode, assuming these tools are installed
+image/*; xv %s
+video/mpeg; mpeg_play %s
+video/*; xanim %s
+# Etc...
+</PRE>
+
+<H2 align=left>Je ne vois pas les documents compressés (.gz, .Z)</H2>
+<A NAME="gunzip"></A>
+MMM <B>requiert</B> l'existence de <TT>gunzip</TT> dans votre <TT>PATH</TT>.
+
+<H2 align=left>Où est ma hotlist ?</H2>
+<A NAME="hotlist"></A>
+<B>MMM</B> n'a pas de notion prédéfinie de <EM>hotlist</EM>, mais supporte
+des gestionnaires de hotlist externes. Lorsque vous sélectionnez le menu
+<B>Marquer la page</B>, <B>MMM</B> invoque le gestionnaire de hotlist
+qui a été défini dans les <B>Préférences</B>. Voir <A HREF="progs-fr.html#hotlist">les exemples</A>.
+
+<H2 align=left>Pourquoi ne puis-je pas lire les news avec MMM ?</H2>
+<A NAME="readnews"></A>
+Utilisez un vrai newsreader.
+
+<H2 align=left>Comment connecter MMM et mon lecteur de news ?</H2>
+<A NAME="fromnews"></A>
+Pour GNUS 5, ajouter les lignes suivantes dans votre <TT>.emacs</TT>
+<PRE>
+; Connecting GNUS and MMM (copied on the Grail version)
+(defun mmm:send-url-to-mmm (url)
+  (message "Sending URL to MMM...")
+  (save-excursion
+    (set-buffer (get-buffer-create "*Shell Command Output*"))
+    (erase-buffer)
+    ;; don't worry about this failing...
+    (call-process "mmm_remote" nil 0 nil url)
+    (message "Sending URL to MMM... done")))
+
+(setq gnus-button-url 'mmm:send-url-to-mmm)
+</PRE>
+Lancez bien <B>mmm</B> avec l'option <TT>-external</TT>.
+En cliquant dans Gnus sur une URL avec le bouton 2, MMM ouvrira une nouvelle fenêtre pour afficher le document correspondant.
+
+<!--
+<H2 align=left>Why don't transparent GIF work ?</H2>
+It seems that there exists partial support for <EM>transparent GIF</EM> in
+Tk4.0, although it is not documented. The trick goes as follows: the Tcl
+variable <TT>TRANSPARENT_GIF_COLOR</TT> must be set to the background color
+of the widget in which the GIF will be displayed. Thus, the image will not
+really be transparent, but since its transparent color is mapped to the
+background, it will at least appear transparent over a uniform background.
+
+If you don't use a particular setting of colors, you can therefore get
+transparent GIFs by adding the following line in your <TT>.camltkrc</TT> file:
+<PRE>
+set TRANSPARENT_GIF_COLOR [. cget -background]
+</PRE>
+
+If, on the other hand, you want to use a specific background color for
+displaying HTML, as I do, you should so something along the lines:
+<PRE>
+set mybackground white
+# This makes all Text widgets use the background
+option add *Text.background $mybackground startupFile
+# This seems to fix the background color of bitmaps inside texts
+# although it actually changes the background of *all* embedded widgets
+option add *Text*background $mybackground startupFile
+# Hack transparent GIFs
+set TRANSPARENT_GIF_COLOR $mybackground
+</PRE>
+-->
+
+<H2 align=left>MMM n'est-il pas gourmand en mémoire ?</H2>
+<A NAME="pig"></A>
+Difficile à dire. Caml a un ramasse-miettes et de nombreux efforts ont été
+faits pour éliminer de possibles fuites de mémoires dues à certaines tables
+globales (comme les callback ou le cache). Néanmoins, un longue session avec
+chargement d'images actifs a tendance a faire croître le processus MMM au
+delà du raisonnable (&gt;15M). Il y a au moins une explication plausible:
+comme notre machine d'affichage HTML n'est pas excessivement rapide, MMM
+garde toutes les fenêtres de l'historique vivantes, pour que le déplacement
+Précédent/Suivant soit simplement l'affaire de faire passer une fenêtre en
+premier plan. Avec ce comportement, Tk garde beaucoup de fenêtres ouvertes
+simultanément, parfois avec des images in-line; et ceci représente beaucoup
+de mémoire. Lorsque les fenêtres sont détruites, cette mémoire est
+libérée. Mais bien sûr, sur les vieux systèmes Unix, la
+taille d'un processus ne décroit jamais.
+<P>
+À partir de la version 0.40, il est possible de mettre une limite au nombre
+maximum de fenêtres gardées comme <EM>cache graphique</EM> afin de tenter
+de contrôler la taille du processus.
+
+<H2 align=left><A NAME="pig2">Pourquoi l'affichage des tables est-il si nul ?</A></H2>
+<B>MMM</B> ne fait aucun calcul de taille de fonte, d'image, ou de mise en
+page pour afficher du HTML. Il se contente d'utiliser le widget <TT>Text</TT> de
+Tk. Dans certaines situations, cela pousse Tk hors de ses limites. De plus,
+de nombreuses pages HTML sont mal formées, et la stratégie de récupération
+d'erreur ne peut pas non plus lire dans la pensée de l'auteur de la page.
+
+<H2 align=left>Pourquoi y-a-t'il un seul tachymètre ?</H2>
+<A NAME="tachymeter"></A>
+C'est plus facile pour moi.
+
+</BODY>
+</HTML>

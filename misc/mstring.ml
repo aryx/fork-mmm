@@ -1,0 +1,119 @@
+(*
+ * String utilities
+ *)
+
+(* split a string according to char_sep predicate *)
+let split_str char_sep str =
+  let len = String.length str in
+  if len = 0 then [] else
+    let rec skip_sep cur =
+      if cur >= len then cur
+      else if char_sep str.[cur] then skip_sep (succ cur)
+      else cur  in
+    let rec split beg cur =
+      if cur >= len then 
+	if beg = cur then []
+	else [String.sub str beg (len - beg)]
+      else if char_sep str.[cur] 
+	   then 
+	     let nextw = skip_sep cur in
+	      (String.sub str beg (cur - beg))
+		::(split nextw nextw)
+	   else split beg (succ cur) in
+    let wstart = skip_sep 0 in
+    split wstart wstart
+
+(* extract the . suffix (dot excluded) of a string *)
+let get_suffix s =
+  try
+    let dotpos = succ (String.rindex s '.') in
+      String.sub s dotpos (String.length s - dotpos)
+  with
+    Not_found -> ""
+
+(* HEX/DEC conversions *)
+let hex_to_dec c = match c with
+    '0'..'9' -> Char.code c - 48
+  | 'a'..'f' -> Char.code c - 87 (* 87 = Char.code 'a' - 10 *)
+  | 'A'..'F' -> Char.code c - 55 (* 55 = Char.code 'A' - 10 *)
+  | _ -> failwith "hex_to_dec"
+
+let dec_to_hex i =
+  if i < 10 then Char.chr (i + 48)  (* 48 = Char.code '0' *)
+  else Char.chr (i + 55)            (* 55 = Char.code 'A' - 10 *)
+
+(* Converting a hex stored string *)
+let hex_to_string s =
+  let len = String.length s / 2 in
+  let res = String.create len in
+    for i = 0 to len - 1 do
+      res.[i] <- Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1])
+      done;
+    res
+
+let gensym =
+  let cnter = ref 0 in
+  (fun n ->
+    incr cnter;
+    n ^ string_of_int !cnter)
+
+let egensym s =
+  let cnter = ref 0 in
+  (fun () ->
+    incr cnter;
+    s ^ string_of_int !cnter)
+
+let rem_trailing_sp s =
+  let l = String.length s in
+  let pos = ref (l - 1) in
+  while !pos >= 0 && List.mem s.[!pos] [' '; '\t'] do decr pos done;
+  if !pos = l - 1 then s
+  else String.sub s 0 (succ !pos)
+
+let catenate_sep sep =
+  function 
+      [] -> ""
+    | x::l -> List.fold_left (fun s s' -> s^sep^s') x l
+
+(* Filters CRLF:
+ *  CR -> LF
+ *  CRLF -> LF
+ *  LF -> LF
+ * We do this on successive chunks of a stream, so we need to consider
+ * the case when the chunk finishes on CR.
+ * Assume len > 0
+ *)
+
+let norm_crlf lastwascr buf offs len =
+  let rpos = ref offs
+  and wpos = ref 0
+  and dest = String.create (len + 1) (* we need one more char *)
+  and limit = offs + len - 1  
+  and lastiscr = ref false in
+  if lastwascr then
+    if buf.[!rpos] = '\n' then begin
+      dest.[!wpos] <- '\n';
+      incr rpos; incr wpos
+    end
+    else begin
+      dest.[!wpos] <- '\n'; incr wpos
+    end;
+
+  while !rpos < limit do
+    match buf.[!rpos] with
+      '\n' -> dest.[!wpos] <- '\n'; incr rpos; incr wpos
+    | '\r' -> 
+	if buf.[!rpos + 1] = '\n'
+	then begin dest.[!wpos] <- '\n'; rpos := !rpos + 2; incr wpos end
+	else begin dest.[!wpos] <- '\n'; incr rpos; incr wpos end
+    | c -> dest.[!wpos] <- c; incr rpos; incr wpos 
+  done;
+  begin match buf.[offs+len-1] with
+    '\n' -> dest.[!wpos] <- '\n'; incr wpos
+  | '\r' -> lastiscr := true
+  | c -> dest.[!wpos] <- c; incr wpos
+  end;
+  String.sub dest 0 !wpos, !lastiscr
+
+
+

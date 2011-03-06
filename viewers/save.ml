@@ -1,0 +1,242 @@
+open Lexing
+open Unix
+open Document
+open Url
+open Www
+open Feed
+
+(* Save to file fname, and apply continuation cont to this file *)
+(* unprotected against Sys_error *)
+let f cont dh fname endmsg =
+  let oc = open_out_bin fname in
+  let buffer = String.create 1024
+  and red = ref 0 
+  and size =   
+    try Http_headers.contentlength dh.document_headers
+    with Not_found -> 40000 (* duh *)
+  in
+  dh.document_feed.feed_schedule
+    (fun () ->
+      try
+	let n = dh.document_feed.feed_read buffer 0 1024 in
+	if n = 0 then begin
+	  dclose true dh;
+	  close_out oc;
+	  Document.end_log dh endmsg;
+	  cont fname (* cont is responsible for deleting fname *)
+	end
+	else begin
+          output oc buffer 0 n;
+      	  red := !red + n;
+	  Document.progress_log dh (!red * 100 / size)
+	end
+      with
+	Unix_error(_,_,_) | Sys_error _ ->
+	  dclose true dh;
+	  close_out oc;
+	  Document.destroy_log dh false;
+	  Msys.rm fname;
+	  Error.default#f (I18n.sprintf
+			     "Error during retrieval of %s" 
+			     (Url.string_of dh.document_id.document_url))
+	    )
+
+(* Used for external viewers in batch mode. Deprecated *)
+let tofile cont dh fname endmsg =
+  try
+    f cont dh fname endmsg
+  with Sys_error msg -> 
+    dclose true dh;
+    Document.destroy_log dh false;
+    Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg)
+
+let rec interactive cont dh =
+  (* The initial content of the requester *)
+  let url = Url.string_of dh.document_id.document_url in
+  let path = 
+    match dh.document_id.document_url.path with Some p -> p | None -> "" in
+
+  Fileselect.f (I18n.sprintf "Save document")
+    (function 
+	[] ->
+	  (* by closing dh, we might break the cache *)
+          dclose true dh
+      | [fname] ->
+	  begin try 
+	    let endmsg = (I18n.sprintf "URL %s\nsaved as %s" url fname) in
+	    f cont dh fname endmsg;
+	    Document.add_log dh 
+	          (I18n.sprintf "Saving %s\nto %s" url fname)
+		  (* channel is not closed ! *)
+	          (fun () -> Msys.rm fname)
+	  with Sys_error msg -> 
+	    Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
+	    interactive cont dh
+	  end
+      | l -> raise (Failure "multiple selection"))
+    "*"
+    (Filename.basename path)
+    false false    
+
+
+let transfer wr dh dest =
+  wr.www_logging (I18n.sprintf "Saving...");
+  match dest with
+    None -> interactive (fun s -> wr.www_logging "") dh
+  | Some (fd, flag) ->
+      (* if flag we should output the headers as well *)
+      if flag then begin
+	List.iter (fun h -> 
+	  Munix.write_string fd h; Munix.write_string fd "\n")
+	  (List.rev dh.document_headers);
+	Munix.write_string fd "\n";
+      end;
+      let buffer = String.create 1024 in
+      dh.document_feed.feed_schedule
+      	(fun () ->
+	  try
+	    let n = dh.document_feed.feed_read buffer 0 1024 in
+	    if n = 0 then begin
+	      dclose true dh;
+	      close fd;
+	    end
+	 else ignore (write fd buffer 0 n)
+	with
+	 Unix_error(_,_,_) | Sys_error _ ->
+	   dclose true dh;
+	   close fd;
+	   Error.default#f (I18n.sprintf
+	       "Error during retrieval of %s" 
+		  (Url.string_of dh.document_id.document_url))
+	   )
+
+let save_from_string url s f =
+  try
+   let oc = open_out_bin f in
+     begin try
+      output_string oc s;
+      Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+			             (Url.string_of url) f)
+     with
+       Sys_error e ->
+      	 Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+     end;
+     close_out oc
+  with
+    Sys_error e ->
+      	 Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+
+let copy_file url src dst =
+  try
+    let ic = open_in_bin src
+    and oc = open_out_bin dst 
+    and buf = String.create 2048 in
+    let rec copy () =
+      let n = input ic buf 0 2048 in
+      if n <> 0 then begin output oc buf 0 n; copy() end
+    in
+    begin try 
+     copy();
+     Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+			            (Url.string_of url) dst)
+    with 
+     Sys_error e ->
+      Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+    end;
+    close_in ic; 
+    close_out oc
+  with
+    Sys_error e ->
+      Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+
+
+(* Cmd can be composite. We add the URL at the end *)
+let pipe_from_string url data cmd =
+  let urls = Url.string_of url in
+  try
+    (* we have to open a pipe and write to it *)
+    let fd_in, fd_out = pipe() in
+    let len = String.length data and pos = ref 0 in
+    (* now fork the command *)
+    match Low.fork() with
+      0 ->
+	dup2 fd_in stdin; close fd_in; close fd_out;
+	ignore (Munix.system_eval cmd ["URL", urls] false);
+	exit 0
+    | n ->
+	close fd_in;
+      	Fileevent.add_fileoutput fd_out (fun () ->
+	  if !pos < len then begin
+	    let n = min 512 (len - !pos) in
+	    try
+	      let w = write fd_out data !pos n in
+	      pos := !pos + w
+	    with
+	      Unix_error (_,_,_) -> (* can't write *)
+		Fileevent.remove_fileoutput fd_out;
+		close fd_out;
+		Error.default#f (I18n.sprintf "Error during |%s in %s" cmd urls)
+	  end else begin (* we're done *)
+	    Fileevent.remove_fileoutput fd_out;
+	    close fd_out
+	  end)
+  with
+  | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
+      Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+
+
+let pipe_from_file url f cmd =
+  let urls = Url.string_of url in
+  try
+    (* just open the file and read from it *)
+    match Low.fork() with
+      0 ->
+	let fd = openfile f [O_RDONLY] 0 in
+	dup2 fd stdin; close fd;
+	ignore (Munix.system_eval cmd ["URL", urls] false);
+	exit 0
+    | n ->
+	()
+  with
+  | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
+      Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+
+let document did arg =
+  let open_selection_box act =
+    Fileselect.f (I18n.sprintf "Save or pipe to file")
+      (function [] -> ()
+      	      | [s] -> act s
+	      | l -> raise (Failure "multiple selection"))
+      "*" (* should be better *)
+      (Filename.basename (Url.string_of did.document_url))
+      false
+      true
+  in
+  let proceed f = match arg with
+    None -> open_selection_box f
+  | Some s -> f s
+  in
+  try
+    match Cache.find did with
+      {document_data = MemoryData buf} ->
+        proceed
+	  (fun s ->
+	    if String.length s <> 0 && s.[0] == '|' then
+	      pipe_from_string did.document_url (Ebuffer.get buf)
+		(String.sub s 1 (String.length s - 1))
+	    else
+	      save_from_string did.document_url (Ebuffer.get buf) s)
+	  
+    |  {document_data = FileData (f, _)} ->
+        proceed 
+	  (fun s ->
+	    if String.length s <> 0 && s.[0] == '|' then
+	      pipe_from_file did.document_url f 
+		(String.sub s 1 (String.length s - 1))
+	    else
+	      copy_file did.document_url f s)
+  with
+    Not_found ->
+      Error.default#f ("Document is not in cache.")
+	
+let print_command = ref ""

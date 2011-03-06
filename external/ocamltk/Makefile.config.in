@@ -1,0 +1,36 @@
+## Where you installed ObjectiveCaml
+LIBDIR=@OCAMLLIBDIR@
+
+## Where you want to install CamlTk41 libraries and binaries
+INSTALLDIR=@INSTALLDIR@
+
+### What to use to compile and link with X
+X11_LIBS=-ccopt "@X_LIBS@" -cclib "@THE_X_LIBS@"
+X_CFLAGS=-ccopt "@X_CFLAGS@"
+
+### What to use to compile and link with Tk
+TCLTKINCLUDES=-ccopt "@CPPFLAGS@"
+TKLIBS=-ccopt "@LDFLAGS@" -cclib "@LIBS@"
+
+### Making a library
+RANLIB=@RANLIB@
+
+### Shouldn't need to change anything below
+## Tools from the Objective Caml distribution
+EXCRC=$(LIBDIR)/extract_crc
+EXPUNGE=$(LIBDIR)/expunge
+
+CAMLC=ocamlc
+CAMLCOMP=$(CAMLC) -c
+CPP=/lib/cpp -P -Dunix
+CAMLYACC=ocamlyacc -v
+CAMLLEX=ocamllex
+CAMLLIBR=$(CAMLC) -a
+CAMLDEP=ocamldep
+COMPFLAGS=
+LINKFLAGS=
+
+CAMLOPT=ocamlopt
+CAMLOPTLIBR=$(CAMLOPT) -a
+
+## End of configuration section

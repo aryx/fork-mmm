@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>
+MMM Browser Home Page</title>
+<link rev="made" href="mailto:Francois.Rouaix@inria.fr">
+</head>
+<body BGCOLOR="#FFFFFF">
+
+<h1><img src="www.gif" align=bottom>
+ MMM Browser Home Page <img src="mmm.gif" align=top>
+</h1>
+
+<h2>Version 0.418 released in December 2001</h2>
+
+<h2><a
+href="ftp://ftp.inria.fr/INRIA/Projects/cristal/mmm/">Download</a></h2>
+<p>
+<b>MMM</b> is a <b>WWW</b> browser implemented in <a
+href="../ocaml/"><b>Objective Caml</b></a> using its <b>CamlTk41</b> interface
+to Tcl/Tk. <br>
+<b>MMM</b> is written by <a
+href="http://pauillac.inria.fr/~rouaix/"><b>Fran&ccedil;ois Rouaix</b></a>,
+with help from <a href="http://pauillac.inria.fr/~furuse/"><strong>Jun Furuse</strong></a>
+and <A HREF="http://wwwfun.kurims.kyoto-u.ac.jp/~garrigue/"><strong>Jacques Garrigue</strong></A>.<br>
+The port to O'Caml V3.0 is due to <a href="http://pauillac.inria.fr/~furuse/"><strong>Jun Furuse</strong></a> and <a href="http://pauillac.inria.fr/~weis/"><strong>Pierre Weis</strong></a>.<br>
+This software is Copyright &copy; INRIA, but essentially free.</p>
+<p>
+The main features of the browser are:</p>
+<dl>
+<dt>Runs on most Unix/X11 platforms</dt>
+<dd>
+We have tested <b>MMM</b> in the past on <tt>DEC/OSF</tt> (alpha), <tt>SunOS
+4.1.x</tt> (sparc), <tt>Solaris</tt> (sparc), <tt>Linux a.out and ELF</tt>
+(486, Pentium). It has been tested by users on <tt>HPUX</tt>,
+<tt>SGI/IRIX</tt>, <tt>FreeBSD</tt> and <tt>IBM AIX</tt>.
+</dd>
+<dt>Supports full HTML 2.0, most of HTML 3.2, frames (since 0.41)</dt>
+<dd>
+This includes forms, in-lined images, tables. Some will find table display in
+MMM preposterous. It is, in some sense. Check the <a
+href="v418/faq.html">FAQ</a> for more information on this.
+</dd>
+<dt>Supports <em><a href="v418/demo.html">applets</a></em> in <em>Objective
+Caml</em></dt>
+<dd>
+A wide variety of applets can be written, including graphics (animated or
+interactive) and browser extensions. Applets are <b>safe</b>, with the help of
+strong typing and authentication.
+</dd>
+<dd>
+<STRONG>Warning (Version 4.15)</STRONG>: due to modification in the Caml linker
+technology, all applets have now access to the Unix module, that
+contains dangerous functions. Carefully check the applets before
+accepting them into the browser.
+</dd>
+<dt>Supports CGI calling</dt>
+<dd>
+<b>MMM</b> supports the so-called <em>non-parsed-headers</em> CGIs, (e.g.
+programs that return a full HTTP response); this is useful when you have
+programs generating HTML and you don't want to go through the hassle of
+installing a complete web server.
+</dd>
+<dt>Localization</dt>
+<dd>
+<b>MMM</b> is available with messages and buttons in english, french and
+japanese. An option on the command line selects the language you wish. It's
+trivial to add localization for any other "western" language using the
+ISOLatin1 alphabet.
+</dd>
+<dt>Japanese support</dt>
+<dd>
+When linked with the japanese Tcl/Tk libraries, <b>MMM</b> supports the
+various encodings of japanese documents. For more info on japanese support,
+check <a href="http://pauillac.inria.fr/mmm/jmmm/">the <b>JMMM</b> home
+page</a>.
+</dd>
+<dt>Source display and editing</dt>
+<dd>
+With <b>MMM</b>, you can easily view <b>and edit</b> the HTML source of
+documents. You can make corrections to the HTML and have the browser redisplay
+the modified version. In case of <tt>file:</tt> URLs, you can save the
+modified version as well.
+</dd>
+<dt>Free</dt>
+<dd>
+This isn't exactly "free software" in the GNU sense, nevertheless:
+<ul>
+<li>
+the source is available for free (binary versions are available for some
+platforms)
+<li>
+anyone can use <b>MMM</b> for free
+<li>
+anyone can freely redistribute <em>unmodified</em> source and binary
+distributions of <b>MMM</b>
+</ul>
+
+Check the <a href="LICENSE.txt">LICENSE</a> for full details.
+</dd>
+</dl>
+<p>
+</p>
+<blockquote>
+
+Please note that the software is a product currently being developed. INRIA
+shall not be responsible in any way concerning conformity, and in particular
+shall not be liable should the software not comply with the requirements of
+the user, INRIA not being obliged to repair any possible direct or indirect
+damage.
+</blockquote>
+
+<h2>A <a href="v418/javacomp.html">comparison</a> between applets in Caml
+and Java</h2>
+
+<h2><a href="v418/docindex.html">Documentation</a></h2>
+
+<h2 align=left>Other information</h2>
+<ul>
+<li>
+<a href="papers/"><b>Papers</b></a>
+<li>
+<a href="related.html"><b>Related work</b></a>
+<li>
+<a href="misc.html"><b>Miscelleanea</b></a>
+<li>
+<a href="v418/faq.html"><b>FAQ</b></a>
+<li>
+<a href="dump.gif"><b>Screenshot</b></a> of an <b>MMM</b> window.
+<li>
+<a href="releases.html"><b>Release notes</b></a> of previous versions.
+<li>
+<a href="htparse.html"><b>htparse documentation</b></a> (htparse is a command
+line version of the HTML parser used in MMM)
+<li>
+<a href="v418/bugs.html"><b>Known bugs</b></a>
+</ul>
+<p>
+If you use <b>MMM</b> regularly, please <a
+href="mailto:Francois.Rouaix@inria.fr">drop me</a> a note.</p>
+
+<h6 align=right>Java is a trademark of Sun Microsystems, Inc.</h6>
+<!--#include virtual="/~rouaix/footer.html" -->
+</body>
+</html>

@@ -1,0 +1,127 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (examples of external programs) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/progs-ja.html">
+<LINK REL="TOC"
+      HREF="docindex-ja.html">
+<LINK REV="Author" HREF="mailto:Jun.Furuse@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>外部プログラムの例</H1>
+
+<H2 align=left><A NAME="mail">1- メール</A></H2>
+<H3>デフォルトモード</H3>
+デフォルトでは <B>Mailto プログラム</B> は空になっています。
+この時、<B>も〜</B> は <TT>mail</TT> コマンドをメールの実際の配送に使い
+ますが、環境変数 <TT>MMM_MAIL</TT> でこのコマンドを変更することができます。
+コマンドは、
+<PRE>
+      % &lt;メールコマンド&gt; -s &lt;サブジェクト&gt; &lt;相手アドレス&gt;  
+</PRE>
+の形で実行され、標準入力にメール内容が送られます。
+初期値、<TT>mail</TT>は相対パスで書かれてい
+るため、環境によっては、この形式でメールを送るプログラムでない可能
+性があります。御注意下さい。
+
+<H3>ELM</H3>
+ELM を使う場合、
+<TT>xterm -e elm</TT> を <B>Mailto program</B> に設定してください。
+
+<H3>MH と exmh</H3>
+ELM よりちと複雑です。私(Fran&ccedil;ois Rouaix)は
+次のようにしています。
+<DL>
+<DT> <B>Mailto プログラム</B> に以下の内容のシェルスクリプト <TT>compmail</TT>
+    を設定します。
+<DD> <PRE>
+
+SUBJECT=
+TO=
+
+# Parse command line
+while test $# -gt 0; do
+  case $1 in 
+    -s) shift; SUBJECT=$1;;
+     *) TO=$1; shift;;
+  esac
+done
+
+# Prepare the template
+draft=`mhpath +drafts new`
+/lib/cpp -P -DTO="$TO" -DSUBJECT="$SUBJECT" \
+    $HOME/Mail/components.template > $draft
+
+# Set cur for -use
+folder +drafts `basename $draft`
+
+# If only plain MH is used:
+# exec xterm -e comp use
+# If exmh is used
+exec wish << wish_eof
+    wm withdraw .
+    send exmh Msg_Compose -use
+    exit 0
+wish_eof
+</PRE>
+
+
+<DT> <TT>components.template</TT> ファイルを <TT>~/Mail</TT>
+    に作ります。
+<DD> MH の <TT>components</TT> ファイルと同じですが、
+    <TT>TO</TT> と <TT>SUBJECT</TT> の部分が異ります：
+<PRE>
+To: TO
+cc:
+Subject: SUBJECT
+--------
+</PRE>
+
+</DL>
+
+
+<H2 align=left><A NAME="hotlist">2- ホットリスト</A></H2>
+
+<H3>簡単なスクリプト</H3>
+簡単なホットリストコマンドは次の通り。
+<PRE>
+#!/bin/sh
+echo "&lt;A HREF=\"$1\"&gt;$2&lt;/A&gt;&lt;BR&gt;" &gt;&gt; $HOME/.hotlist.html
+</PRE>
+
+さらに、
+<PRE>
+WWW_HOME=$HOME/.hotlist.html
+export WWW_HOME
+</PRE>
+とすることで (sh の場合) あなたのホームページに指定しておけば、
+<B>家 (Home)</B> ボタンを押すことで、このリストを
+見ることができまし、 <B>再読 (Reload)</B> ボタンで更新することができます。
+
+<H3>Surfboard</H3>
+古瀬 淳はホットリストマネージャ <B>Surfboard</B> を開発しています。
+これは  <TT>surfboard</TT> と <TT>surfboard_remote</TT> という
+2つのプログラムからなっていて、<B>も〜</B> で使うことができます。
+<TT>surfboard</TT> は <B>も〜</B> と別個に動かさなければなりません。
+<TT>surfboard_remote</TT> を <B>ホットリストコマンド (Hotlist command)</B>
+として設定し、なおかつ、 <TT>mmm</TT> を動かす時には、
+<TT>-external</TT> オプションを付けてやって、<TT>surfboard</TT> が
+<B>も〜</B> に表示命令を送れるようにする必要があります。
+<B>も〜</B> 用の唯一のグラフィカルインターフェースなれどバグ多し。
+
+<H2 align=left>印刷</H2>
+素晴しい <TT>html2ps</TT> をお使いになることをお勧めします。
+設定例は、
+<PRE>
+html2ps -n -D -b $URL > /tmp/$$.ps && gv /tmp/$$.ps && rm /tmp/$$.ps
+</PRE>
+です。
+<TT>html2ps</TT> の結果をそのままプリンタに出すのではなく、
+Postscript ビューア (ここでは <TT>gv</TT> ですが、 <TT>ghostview</TT> 
+でも可。)に通してやっています。
+<P>
+日本語モードでの注意:
+私は <TT>html2ps</TT> が日本語化されているかどうかは知りません。
+</BODY>
+</HTML>

@@ -1,0 +1,41 @@
+#!/usr/local/bin/perl5
+
+#
+# find the I18ned strings in MMM source
+#
+# usage: geti18n *.ml */*.ml
+#
+
+for $i (@ARGV){
+#  print STDERR "$i ...\n";
+  open (IN, $i);
+  $cont = "";
+  while(<IN>){
+    chop;
+    $cont = "$cont $_";
+  }
+  while(1){
+    if( $cont =~ /(I18n.sprintf|(Japan|I18n).menu_option)[ \t]+/ ){
+      $ident = $1; 	
+      $cont = $';
+      if( $cont =~ /^([^\"][^ \t]*)/ ){
+        print STDERR "*** Warn *** : Abstract use : \"$ident $1 ...\" in $i\n"; 
+      }
+      if( $cont =~ /"((\\"|[^"])+)"/ ){
+  	$mes = $1;
+  	$mes =~ s/\\[ \t]+//g;
+  	if( $flag{$mes} ){
+  	  print STDERR "Warn: we have already had $mes in ( $flag{$mes})\n"; 
+  	} else {
+  	  print "src:\t$mes\n";
+	}
+  	$flag{$mes} = "$flag{$mes}$i ";
+  	$cont = $';
+      }
+    } else {
+      goto Next;
+    }
+  }
+  Next:
+  close $i;
+}

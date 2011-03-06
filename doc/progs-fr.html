@@ -1,0 +1,118 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (Exemples de programmes externes) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/progs-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Exemples de programmes externes</H1>
+
+<H2 align=left>1- Courrier</H2>
+<H3>Mode par défaut - réglage de l'envoi</H3>
+Par défaut, si le réglage <B>Mailto program</B> des préférences est vide,
+<B>MMM</B> utilisera <TT>mail</TT> pour envoyer un message. Toutefois,
+si la variable d'environnement <TT>MMM_MAIL</TT> est définie, <B>MMM</B>
+utilisera le programme défini dans cette variable pour envoyer le message.
+Le protocol d'appel pour cette commande est
+<PRE>
+commande -s &lt;sujet&gt; &lt;destinataire&gt;
+</PRE>
+et la commande recevra le corps du message sur son entrée standard
+
+<H3>ELM</H3>
+Utiliser <TT>xterm -e elm</TT> comme réglage.
+
+<H3>MH et exmh</H3>
+C'est un peu plus compliqué. J'utilise la solution suivante:
+<DL>
+<DT> Un shell script appelé <TT>compmail</TT>, mis dans le réglage <B>Mailto
+program</B>
+<DD> <PRE>
+
+SUBJECT=
+TO=
+
+# Parse command line
+while test $# -gt 0; do
+  case $1 in 
+    -s) shift; SUBJECT=$1;;
+     *) TO=$1; shift;;
+  esac
+done
+
+# Prepare the template
+draft=`mhpath +drafts new`
+/lib/cpp -P -DTO="$TO" -DSUBJECT="$SUBJECT" \
+    $HOME/Mail/components.template > $draft
+
+# Set cur for -use
+folder +drafts `basename $draft`
+
+# If only plain MH is used:
+# exec xterm -e comp use
+# If exmh is used
+exec wish << wish_eof
+    wm withdraw .
+    send exmh Msg_Compose -use
+    exit 0
+wish_eof
+</PRE>
+
+
+<DT> A fichier <TT>components.template</TT>, à installer dans <TT>~/Mail</TT>
+<DD> similaire au fichier <TT>components</TT> à part les occurrences de
+<TT>TO</TT> et <TT>SUBJECT</TT>:<PRE>
+To: TO
+cc:
+Subject: SUBJECT
+--------
+</PRE>
+
+</DL>
+
+
+<H2 align=left><A NAME="#hotlist">2- Hotlist</A></H2>
+
+<H3>Script simple</H3>
+Un programme trivial de hotlist est le shell-script suivant:
+<PRE>
+#!/bin/sh
+echo "&lt;A HREF=\"$1\"&gt;$2&lt;/A&gt;&lt;BR&gt;" &gt;&gt; $HOME/.hotlist.html
+</PRE>
+Ensuite, définir ce fichier comme sa home-page, en ajoutant dans son
+environnement:
+<PRE>
+WWW_HOME=$HOME/.hotlist.html
+export WWW_HOME
+</PRE>
+Par la suite, activer <B>Home</B> pour voir sa hotlist, puis
+<B>Recharger</B> pour la remettre à jour si nécessaire.
+
+<H3>Surfboard</H3>
+Jun Furuse propose un gestionnaire de hotlist appelé <B>Surfboard</B> qui
+comporte deux programmes: <TT>surfboard</TT> et <TT>surfboard_remote</TT>.
+Pour être utilisé avec <B>MMM</B>, <TT>surfboard</TT> doit être lancé,
+et il faut indiquer <TT>surfboard_remote</TT> comme programme externe dans
+les préférences de <B>MMM</B>. De plus, il faut lancer <TT>mmm</TT> avec
+l'option <TT>-external</TT> pour que <TT>surfboard</TT> puisse contrôler
+<B>MMM</B> à distance (ie. demander à <B>MMM</B> d'afficher une des pages
+de la hotlist).
+
+
+<H2 align=left>Impression</H2>
+Je recommande d'utiliser l'excellent <TT>html2ps</TT>, dans sa version
+<TT>1.0b1</TT> ou plus récente si elle existe.
+Une configuration possible est
+<PRE>
+html2ps -n -D -b $URL > /tmp/$$.ps && gv /tmp/$$.ps && rm /tmp/$$.ps
+</PRE>
+Plutôt que d'imprimer directement ce que produit <TT>html2ps</TT>, on passe
+par un afficheur Postscript (ici <TT>gv</TT>, mais ce pourrait être <TT>ghostview</TT>).
+
+
+</BODY>
+</HTML>

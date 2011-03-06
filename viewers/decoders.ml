@@ -1,0 +1,80 @@
+open Unix
+open Document
+open Feed
+open Http_headers
+
+(* Insert a decoding if necessary.
+ * We don't do it in http, since we don't want do decompress when we
+ * save for example.
+ *)
+
+let decoders = Hashtbl.create 37
+
+(* Note: we must use the feed interface to read from the old dh,
+ * and not read directly from the feed_internal file descriptor, because
+ * the feed might implement side effects (such as caching).
+ * Since we are reading and writing to the same process, we might get
+ * deadlocked if we don't watch writes.
+ *)
+let gzip dh =
+  let (gread, mwrite) = pipe()
+  and (mread, gwrite) = pipe()
+  in
+  Unix.set_close_on_exec mread;
+  Unix.set_close_on_exec mwrite;
+  
+  match Low.fork() with
+    0 ->  
+      dup2 gread stdin; dup2 gwrite stdout;
+      Munix.execvp "gunzip" [| "gunzip"; "-c" |];
+      dh (* fake *)
+  | n ->  
+      close gread; close gwrite;
+     (* it is safe to close feed because the son has a copy *)
+      let newdh =
+      	{ document_id = dh.document_id;
+	  document_referer = dh.document_referer;
+          document_status = dh.document_status;
+	  document_headers = rem_contentencoding dh.document_headers;
+	  document_feed = Feed.of_fd mread;
+	  document_fragment = dh.document_fragment;
+	  document_logger = dh.document_logger }
+      in
+      let buffer = String.create 4096 in
+      let rec copy () =
+	  try
+	    let n = dh.document_feed.feed_read buffer 0 4096 in
+            if n = 0 then (dclose true dh; close mwrite)
+            else begin
+	      dh.document_feed.feed_unschedule();
+	      Fileevent.add_fileoutput mwrite
+		(fun () -> 
+		  ignore (write mwrite buffer 0 n);
+		  Fileevent.remove_fileoutput mwrite;
+		  dh.document_feed.feed_schedule copy)
+	    end
+	  with
+	    Unix_error(e,_,_) -> dclose true dh; close mwrite
+      in
+      dh.document_feed.feed_schedule copy;
+      newdh
+  
+
+let _ =  List.iter (fun (s,t) -> Hashtbl.add decoders s t)
+  [ "COMPRESS", gzip;
+    "X-COMPRESS", gzip;
+    "GZIP", gzip;
+    "X-GZIP", gzip]
+
+let add = Hashtbl.add decoders
+
+let insert dh =
+(* CERN proxy sets Content-Encoding when return code = 500 ! *)
+  if dh.document_status >= 400 then dh else
+  try
+    Hashtbl.find decoders
+       (String.uppercase (contentencoding dh.document_headers)) dh
+  with
+    Not_found -> dh
+  | Unix_error(_,_,_) -> dh
+

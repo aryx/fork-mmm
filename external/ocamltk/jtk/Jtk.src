@@ -1,0 +1,32 @@
+type Widget external
+type TextTag external
+type TagOrId external
+type Index external
+
+type jtkOptions {
+#  KanjiFont			["-kanjifont"; string]
+  KanjiFont			["-font"; string]
+}
+
+type KanjiCode {
+  JIS 	["JIS"]
+  SJIS 	["SJIS"]  	
+  EUC	["EUC"]
+  ANY	["ANY"]	
+}
+
+module kanji {
+  function () widget_kanjifont [widget; "configure"; jtkOptions list]
+  function () canvas_item [widget(canvas); "itemconfigure"; TagOrId; jtkOptions list] 
+  function () menu_entry [widget(menu); "entryconfigure"; Index(menu); jtkOptions list] 
+  function () text_tag [widget(text); "tag"; "configure"; TextTag; jtkOptions list]
+
+  # I put here the required functions only. 
+
+  function (KanjiCode) code ["kanji"; "code"; string]
+  function (string) conversion 
+	["kanji"; "conversion"; KanjiCode; KanjiCode; string]
+  function () internal_code_set ["kanji"; "internalCode"; KanjiCode]
+  function (KanjiCode) internal_code_get ["kanji"; "internalCode"; KanjiCode]
+  function (int) string_length ["kanji"; "string"; "length"; string]
+}

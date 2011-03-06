@@ -1,0 +1,52 @@
+#!/usr/local/bin/perl5
+
+#
+# find translations which are available in an old msgs file
+#
+# usage: findtrans srcfile oldmsgsfile
+#
+
+$srcfile = $ARGV[0];
+$oldfile = $ARGV[1];
+
+# pass 1 -- read old data
+
+open (IN, $oldfile) || die ;
+while(<IN>){
+  chop;
+  if( /^src:[ \t]+(.*)$/ ){
+    $src = $1;
+    # find translation...
+    while(<IN>){
+      if( /^([A-z]+:[ \t]+.*)$/ ){
+  	$tns = $1;
+  	goto Out;
+      }
+    }
+    print STDERR "There is no translation for $src\n";
+    exit -1;
+   Out:
+    if( $tbl{$src} ne "" ){
+      print STDERR "Warn: There is more than one translation for $src\n";
+      print STDERR "\t$tbl{$src}\n";
+      print STDERR "\t$tns\n";
+    } else {
+      $tbl{$src} = $tns;
+    }
+  }
+}
+close IN;
+
+# pass 2 -- read new srcfile
+
+open (IN, $srcfile) || die;
+while(<IN>){
+  chop;
+  if( /^src:[ \t]+(.*)$/ ){
+    print "$_\n";
+    $src = $1;
+    print "$tbl{$src}\n\n";
+  }
+}
+close IN;
+

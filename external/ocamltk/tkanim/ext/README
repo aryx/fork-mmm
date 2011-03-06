@@ -1,0 +1,23 @@
+This is very simple Tcl/Tk extention for Animated GIF files.
+
+It add only one command.
+
+	animation create file
+
+This command read an animated gif file specified by file and decode it.
+If it succeeds, the result is,
+
+	Result ::= logicalWidth logicalHeight { Frame+ } loop
+	Frame ::= {image leftPos topPos delay}
+
+For example, in animwish
+
+% animation create mmm.anim.gif
+64 64 {{image1 64 64 0 0 10} {image2 64 64 0 0 10} ... } 0
+
+This means mmm.anim.gif has 64x64 width and height, the first two frames
+in mmm.anim.gif has also 64x64 width and height and should be put at (0,0),
+and both of them have 10 x 10 msec delay.
+  
+This library has no commands for displaying animated gif files. All things
+should be done in CamlTk !

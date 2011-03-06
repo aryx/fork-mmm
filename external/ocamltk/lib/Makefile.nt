@@ -1,0 +1,60 @@
+!include ..\..\..\csl\config\Makefile.nt
+!include ..\Makefile.config.nt
+
+COMPFLAGS= -I ../support
+
+TKLINKOPT=../support/libcamltk41.lib $(TKLIBS)
+
+SUPPORT=../support/support.cmo ../support/widget.cmo ../support/protocol.cmo \
+        ../support/textvariable.cmo ../support/timer.cmo \
+        ../support/fileevent.cmo
+
+SUPPORTX = $(SUPPORT:.cmo=.cmx)
+
+all : tk41.cma ocamltktop.exe
+
+opt : tk41.cmxa
+
+!include .\modules
+
+WIDGETOBJSX = $(WIDGETOBJS:.cmo=.cmx)
+
+tk41.cma : $(SUPPORT) $(WIDGETOBJS) tk.cmo 
+	$(CAMLLIBR) -o tk41.cma $(SUPPORT) tk.cmo $(WIDGETOBJS)
+
+tk41.cmxa : $(SUPPORTX) $(WIDGETOBJSX) tk.cmx
+	$(CAMLOPTLIBR) -o tk41.cmxa $(SUPPORTX) tk.cmx $(WIDGETOBJSX)
+
+
+## Until ocamltktop is fixed (next release), we in-line it
+## (otherwise our trick with -ccopt is broken)
+
+ocamltktop.exe : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk41.lib
+	$(CAMLC) -custom -linkall -o ocamltktop.exe \
+	       -I ../support $(TKLINKOPT) \
+	       toplevellib.cma tk41.cma topmain.cmo wsock32.lib
+
+# All .{ml,mli} files are generated in this directory
+clean : 
+	rm -f *.cm* *.ml *.mli *.o *.lib tk41.cmo  ocamltktop.exe
+
+install: tk41.cma ocamltktop.exe
+	cp *.cmi *.mli tk41.cma ocamltktop.exe $(INSTALLDIR)
+
+installopt: tk41.cmxa
+	cp tk41.cmxa tk41.lib $(INSTALLDIR)
+
+.SUFFIXES :
+.SUFFIXES : .mli .ml .cmi .cmo .cmx .mlp
+
+.mli.cmi:
+	$(CAMLCOMP) $(COMPFLAGS) $<
+
+.ml.cmo:
+	$(CAMLCOMP) $(COMPFLAGS) $<
+
+.ml.cmx:
+	$(CAMLOPT) -c $(COMPFLAGS) $<
+  
+
+!include .depend

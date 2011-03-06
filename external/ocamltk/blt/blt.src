@@ -1,0 +1,133 @@
+type widget external
+type Anchor external
+type FillMode external
+type Units external
+type CellIndex external
+
+type BoundingList {
+   NoBounding [""]
+   FixedBound [[Units]]
+   Bound [[Units;Units]]
+   BoundNominal [[Units;Units;Units]]
+   }
+
+type ColumnIndex {
+   All     ["all"]
+   Columns [[int list]]
+   }
+
+type ResizeMode {
+   ResizeNone ["none"]
+   ResizeExpand ["expand"]
+   ResizeShrink ["shrink"]
+   ResizeBoth ["both"]
+   }
+
+# Deliberately overload with Tk.options constructors
+subtype bltoptions(table) {
+   Anchor	["-anchor"; Anchor]
+   ColumnSpan	["-columnspan"; int]
+   Fill		["-fill"; FillMode]
+   IPadX	["-ipadx"; Units]
+   IPadY	["-ipady"; Units]
+   PadX		["-padx"; Units]
+   PadY		["-pady"; Units]
+   ReqHeight	["-reqheight"; BoundingList]
+   ReqWidth	["-reqwidth"; BoundingList]
+   RowSpan	["-rowspan"; int]
+   }
+
+subtype bltoptions(column) {
+   PadX
+   Resize ["-resize"; ResizeMode]
+   Width  ["-width"; BoundingList]
+   }
+
+subtype bltoptions(row) {
+   PadY
+   Resize
+   Height ["-height"; BoundingList]
+   }
+
+
+module table {
+   # Make widget a table widget
+   function () init ["blt_table"; widget]
+   # Add a slave
+   function () add ["blt_table"; widget; widget; CellIndex; bltoptions(table)
+list]
+   # Configure a column
+   function () column_configure
+	["blt_table"; "column"; widget; "configure"; ColumnIndex; 
+	 bltoptions(column) list]
+   # Number of columns
+   function (int) column_dimension
+	["blt_table"; "column"; widget; "dimension"]
+   # Sizes
+   function (int list) column_sizes
+	["blt_table"; "column"; widget; "sizes"; ColumnIndex]
+   # Configure
+   function () configure 
+	["blt_table"; "configure"; widget list; bltoptions(table) list]
+   function () forget ["blt_table"; "forget"; widget]
+   function (widget list) all_masters ["blt_table"; "masters"]
+   function (widget list) masters ["blt_table"; "masters"; string]
+   # Configure a row
+   function () row_configure
+	["blt_table"; "row"; widget; "configure"; ColumnIndex; 
+	 bltoptions(row) list]
+   # Number of rows
+   function (int) row_dimension
+	["blt_table"; "row"; widget; "dimension"]
+   # Sizes
+   function (int list) row_sizes
+	["blt_table"; "row"; widget; "sizes"; ColumnIndex]
+   function (widget list) all_slaves
+	["blt_table"; "slaves"; widget]
+   function (widget list) slaves
+	["blt_table"; "slaves"; widget; string]
+   }
+
+type dataType external
+type bltdd_options {
+   Button ["-button"; int]
+   PackageCmd ["-packagecmd"; function(widget)]
+   RejectBackground ["-rejectbg"; Color]
+   RejectForeground ["-rejectfg"; Color]
+   RejectStipple ["-rejectstipple"; Bitmap]
+   SelfTarget ["-selftarget"; bool]
+   Send ["-send"; [dataType list]]
+   SiteCommand ["-sitecommand"; function(int,widget)]
+   TokenAnchor ["-tokenanchor"; Anchor]
+   TokenBackground ["-tokenbg"; Color]
+   TokenBorderWidth ["-tokenborderwidth"; Units]
+   TokenCursor ["-tokencursor"; Cursor]
+}
+
+type handler {
+   BuiltinHandler [string]
+   OtherHandler [function(string,widget,string)]
+}
+
+module dragDrop {
+   function (widget list) source ["blt_drag&drop";  "source"]
+   function () create_source ["blt_drag&drop"; "source"; widget; "config";
+	                      bltdd_options list]
+   function () source_handler ["blt_drag&drop"; "source"; widget; "handler";
+	                       dataType; handler]
+   
+   function (widget list) target ["blt_drag&drop";  "target"]
+   function () target_handler ["blt_drag&drop"; "target"; widget; "handler";
+	                       dataType; function()]
+   # this one is private do dd
+   function () handle ["blt_drag&drop"; "target"; widget; "handle"; dataType]
+
+   function () drag ["blt_drag&drop"; "drag"; widget; int; int]
+   function () drop ["blt_drag&drop"; "drop"; widget; int; int]
+   function (bool) active ["blt_drag&drop"; "active"]
+
+   function () errors ["blt_drag&drop"; "errors"; function()]
+
+   function () location_set ["blt_drag&drop"; "location"; int; int]
+   function (int list) location_query ["blt_drag&drop"; "location"]
+}

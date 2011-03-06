@@ -1,0 +1,148 @@
+dnl     This file is an input file used by the GNU "autoconf" program to
+dnl     generate the file "configure", which in turn produces the files
+dnl     "Makefile.config" and "Makefile.camltk".
+dnl	If you don't have autoconf installed, simply use the "configure"
+dnl	script.
+dnl     Usage: 
+dnl	  $ autoconf configure.in > configure
+dnl	  edit site.config
+dnl       $ ./configure -with-config=site.config
+dnl     NOTE: autoconf 2.4 CHOKES on this. Use a newer version (e.g 2.7).
+
+dnl This is the file that must exist in srcdir
+AC_INIT(Widgets.src)
+
+dnl Rather use gcc
+AC_PROG_CC
+AC_HAVE_HEADERS(unistd.h limits.h)
+
+dnl Defaults for variables, overriden in site.config
+LIBEXT=
+INSTALLDIR='$(LIBDIR)/camltk'
+
+dnl We need locations in the first place
+AC_ARG_WITH(config,
+   [    --with-config=Site specific locations of various software. Check the INSTALL instructions],
+   if test -f $withval; then
+     SITECFG=$withval
+     . $withval
+   else
+    AC_MSG_ERROR($withval does not exist)
+   fi,
+   AC_MSG_ERROR(
+You must provide a file giving the location of various software using the option --with-config=file. Check the INSTALL instructions))
+
+if test -z "$OCAMLLIBDIR"; then
+  AC_MSG_ERROR("OCAMLLIBDIR is still undefined. Edit $SITECFG")
+fi
+
+dnl builtin rule for X
+AC_PATH_XTRA
+WITH_X="$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+
+dnl builtin rule for ranlib
+AC_PROG_RANLIB
+
+dnl As soon as we use this, we must have install-sh available. Damn.
+dnl AC_CANONICAL_HOST
+
+LIBS="-lm"
+
+### We probably need more
+AC_CHECK_LIB(dl, dlopen, LIBS="-ldl $LIBS")
+
+### Check for Tcl7.5(7.6) and Tk4.1(4.2)
+AC_MSG_CHECKING(Tcl and Tk includes and libraries)
+
+AC_CHECK_HEADERS(tcl.h,,
+  AC_MSG_ERROR(Can't find tcl.h. Check the CPPFLAGS variable in $SITECFG))
+
+AC_CHECK_HEADERS(tk.h,,
+  AC_MSG_ERROR(Can't find tk.h. Check the CPPFLAGS variable in $SITECFG))
+
+tcl75="tcl75$LIBEXT"
+tcl75d="tcl7.5$LIBEXT"
+tcl76="tcl76$LIBEXT"
+tcl76d="tcl7.6$LIBEXT"
+tcl80="tcl80$LIBEXT"
+tcl80d="tcl8.0$LIBEXT"
+
+dnl We use Tcl_GetFile to be sure to get version >= 7.5
+dnl But for 8.0, it doesn't work anymore. Use Tcl_GetObjResult.
+dnl This still fails if tcl.so and tk.so are for 8.0.
+dnl use X_EXTRA_LIBS to get -lnsl and -lsocket on Solaris
+AC_CHECK_LIB($tcl80, Tcl_GetObjResult, LIBS="-l$tcl80 $LIBS",
+ AC_CHECK_LIB($tcl80d, Tcl_GetObjResult, LIBS="-l$tcl80d $LIBS",
+  AC_CHECK_LIB($tcl76, Tcl_GetFile, LIBS="-l$tcl76 $LIBS",
+   AC_CHECK_LIB($tcl76d, Tcl_GetFile, LIBS="-l$tcl76d $LIBS",
+    AC_CHECK_LIB($tcl75, Tcl_GetFile, LIBS="-l$tcl75 $LIBS",
+     AC_CHECK_LIB($tcl75d, Tcl_GetFile, LIBS="-l$tcl75d $LIBS",
+      AC_CHECK_LIB(tcl$LIBEXT, Tcl_GetFile, LIBS="-ltcl$LIBEXT $LIBS",
+       AC_MSG_ERROR(Can't find a tcl library.
+Check config.log to see what happened, and try setting LDFLAGS in $SITECFG),
+       $X_EXTRA_LIBS -lm),
+      $X_EXTRA_LIBS -lm),
+     $X_EXTRA_LIBS -lm),
+    $X_EXTRA_LIBS -lm),
+   $X_EXTRA_LIBS -lm),
+  $X_EXTRA_LIBS -lm),
+ $X_EXTRA_LIBS -lm)
+
+
+tk80="tk80$LIBEXT"
+tk80d="tk8.0$LIBEXT"
+tk42="tk42$LIBEXT"
+tk42d="tk4.2$LIBEXT"
+tk41="tk41$LIBEXT"
+tk41d="tk4.1$LIBEXT"
+
+
+dnl We use Tk_SetGrid to be sure to get version >= 4.1
+dnl X_CFLAGS is need if includes are not in /usr/include/X11
+AC_CHECK_LIB($tk80, Tk_SetGrid, LIBS="-l$tk80 $LIBS",
+ AC_CHECK_LIB($tk80d, Tk_SetGrid, LIBS="-l$tk80d $LIBS",
+  AC_CHECK_LIB($tk42, Tk_SetGrid, LIBS="-l$tk42 $LIBS",
+   AC_CHECK_LIB($tk42d, Tk_SetGrid, LIBS="-l$tk42d $LIBS",
+    AC_CHECK_LIB($tk41, Tk_SetGrid, LIBS="-l$tk41 $LIBS",
+     AC_CHECK_LIB($tk41d, Tk_SetGrid, LIBS="-l$tk41d $LIBS",
+      AC_CHECK_LIB(tk$LIBEXT, Tk_SetGrid, LIBS="-ltk$LIBEXT $LIBS",
+       AC_MSG_ERROR(Can't find a tk library.
+Check config.log to see what happened, and try setting LDFLAGS in $SITECFG),
+       $X_CFLAGS $WITH_X -lm),
+      $X_CFLAGS $WITH_X -lm),
+     $X_CFLAGS $WITH_X -lm),
+    $X_CFLAGS $WITH_X -lm),
+   $X_CFLAGS $WITH_X -lm),
+  $X_CFLAGS $WITH_X -lm),
+ $X_CFLAGS $WITH_X -lm)
+
+dnl This is the file that we produce
+dnl These are the variables that are substituted in Makefile.config.in to
+dnl produce Makefile.config
+
+dnl The OCaml library
+AC_SUBST(OCAMLLIBDIR)
+
+dnl Install dir
+AC_SUBST(INSTALLDIR)
+
+dnl Info collected about X
+dnl The includes and options
+AC_SUBST(X_CFLAGS)
+
+dnl The libraries
+dnl special trick to substitute -L and -l ...
+dnl All options (for cc compilation)
+AC_SUBST(WITH_X)
+dnl X link options
+AC_SUBST(X_LIBS)
+THE_X_LIBS="$X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+AC_SUBST(THE_X_LIBS)
+
+dnl Tcl/Tk
+dnl CPPFLAGS, LIBS and LDFLAGS are substituted by default
+
+dnl Info collected about ranlib
+AC_SUBST(RANLIB)
+dnl LIBS is subsituted by default
+AC_OUTPUT(Makefile.config Makefile.camltk tkanim/ext/Makefile)

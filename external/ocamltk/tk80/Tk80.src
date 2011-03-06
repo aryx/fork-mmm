@@ -1,0 +1,49 @@
+type Widget external
+type font external
+
+type weight {
+  Normal			["normal"]
+  Medium			["medium"]
+  Bold				["bold"]
+}
+
+type slant {
+  Roman				["roman"]
+  Italic			["italic"]
+}
+
+type fontOptions {
+  Family			["-family"; string]
+  Size				["-size"; int]
+  Weight			["-weight"; weight]
+  Slant				["-slant"; slant]
+  Underline			["-underline"; bool]
+  Overstrike			["-overstrike"; bool]
+# later, JP only
+  Charset			["-charset"; string]
+# Beaware of the order of Compound ! Put it as the first option
+  Compound			["-compound"; [font list]]
+  Copy				["-copy"; string]
+}		
+
+module font {
+  function (string) actual ["font"; "actual"; font; fontOptions list]
+  function (string) actual_displayof ["font"; "actual"; font; 
+					"-displayof"; widget; 
+					fontOptions list]
+  function () configure ["font"; "configure"; font; fontOptions list]
+  function (font) create ["font"; "create"; fontOptions list]
+  function () delete ["font"; "delete"; font]
+  function (string list) families ["font"; "families"]	
+  function (string list) families_displayof ["font"; "families";
+						"-displayof"; widget]
+  function (int) measure ["font"; "measure"; font; string ]
+  function (int) measure_displayof ["font"; "measure"; font;
+                                    "-displayof"; widget; string ]
+  function (int) metrics ["font"; "measure"; font; string ]
+  function (int) metrics_displayof ["font"; "measure"; font; 
+				    "-displayof"; widget; string ]
+  function (string list) names ["font"; "names"]
+# JP
+  function () failsafe ["font"; "failsafe"; string]
+}

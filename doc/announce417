@@ -1,0 +1,112 @@
+[Version française ci-dessous]
+
+New 0.418 Release of MMM
+
+What is MMM ?
+-------------
+MMM is a Web Browser entirely written in Caml by François Rouaix. It
+has some cool features, such as its low memory footprints (well not so
+low in fact), its Caml applet system, its automatic HTML 3.2 checking
+and editing facility. In addition, it is safer than usual browsers
+since it does not support Java.
+
+On the other hand MMM has some drawbacks, such as the lack of Java
+support, its bad support for frames, and its terrible way of handling
+tables.
+
+Why using MMM ?
+---------------
+Anyway, MMM has some fervent supporters in the Caml community; in the
+first place because it proves that some non trivial programs such as a
+browser that must use a complex graphical interface can be written in
+our favorite functional language; also because it never crashes.
+
+More importantly, we love MMM for its ability to detect
+``uninteresting'' pages: normally extremely fancy pages cannot be
+displayed at all by MMM. So, you gain some of your precious time by
+just looking at another, more interesting, corner of the Web!
+
+An additional way of using MMM is to verify that your WEB pages are
+not too ``my browser only'': if your pages are displayed correctly by
+MMM, it is a good indication that they will be displayed the same with
+other browsers.
+
+The new release:
+----------------
+
+We are pleased to announce the new 0.418 version of MMM. It is a bug
+fix and up to date version of MMM that runs with Tcl/Tk 8.3 or later
+and the 3.04 version of the Objective Caml compiler.
+
+MMM home page is at http://pauillac.inria.fr/mmm/
+MMM source files can be found at
+ftp://ftp.inria.fr/INRIA/Projects/cristal/mmm/
+
+Minor changes:
+
+-- update the applets system for the 3.04 version of Objective Caml.
+
+Enjoy MMM.
+
+Jun P. Furuse && Pierre Weis.
+
+[Version française]
+
+Nouvelle version 0.418 de MMM
+
+Qu'est-ce que MMM ?
+-------------------
+MMM est un brouteur Web entièrement écrit en Caml par François
+Rouaix. Il présente plusieurs traits très attirants, comme ses besoins
+en mémoire limités (enfin respectables tout de même dans certains
+cas), son système d'applettes en Caml (possibilités de voir s'exécuter
+son code Caml dans le navigateur) et son mécanisme automatique de
+vérification du code HTML 3.2 (avec possibilites de correction à la
+volée). De surcroît, MMM est plus sûr que les brouteurs habituels car
+il ne permet pas l'utilisation de Java.
+
+D'un autre côté MMM a certains désavantages, par exemple
+l'impossibilité d'utiliser Java, son traitement imparfait des frimes
+et sa façon formidable de traiter les tables (formidable est pris ici
+au sens éthymologique: ``qui fait peur'').
+
+Pourquoi utiliser MMM ?
+-----------------------
+Tant pis pour ses faiblesses, MMM a des supporters inconditionnels
+dans la communauté des implémenteurs de Caml; d'abord parcequ'il est
+une preuve par l'exemple qu'on peut effectivement écrire des
+programmes aussi complexes qu'un navigateur Web avec son interface
+graphique complexe, à l'aide de notre langage fonctionnel
+favori; aussi bien sûr parceque MMM ne fait jamais d'erreur à
+l'exécution.
+
+Par dessus tout, nous aimons MMM pour sa capacité à détecter les pages
+``inintéressantes'': normalement les pages extrêmement fantaisistes et
+sophistiquées ne peuvent pas être visualisées du tout avec MMM. Si
+bien que MMM vous fait gagner beaucoup de votre précieux temps en vous
+incitant à aller visiter un autre coin plus intéressant de la toile!
+
+Une autre façon extrêmement féconde d'utiliser MMM est de visionner et
+de vérifier ses propres pages Web avec, pour éviter qu'elles ne soient
+lisibles uniquement sur votre propre brouteur: si MMM parvient à
+afficher correctement vos pages, c'est une bonne indication qu'elles
+seront affichées pratiquement à l'identique par les autres brouteurs.
+
+La nouvelle version:
+--------------------
+Nous avons le plaisir d'annoncer la nouvelle version 0.418 de la
+bibliothèque Caml/Tk. C'est une version qui corrige les erreurs
+connues et remet à jour le code, avec quelques extensions mineures.
+
+La page Web de MMM est http://pauillac.inria.fr/mmm/
+
+Les fichiers sources de MMM sont en
+ftp://ftp.inria.fr/lang/caml-light/bazar-ocaml/ocamltk
+
+Changements mineurs:
+
+-- mise à jour du système d'applettes pour la version 3.04 d'Objective Caml.
+
+Amusez-vous bien avec MMM.
+
+Jun P. Furuse && Pierre Weis.

@@ -1,0 +1,16 @@
+addpage.cmo: ../misc/error.cmi misc.cmo ../misc/mstring.cmi ../misc/msys.cmi \
+    ../misc/munix.cmo tree.cmo treeview.cmo 
+addpage.cmx: ../misc/error.cmx misc.cmx ../misc/mstring.cmx ../misc/msys.cmx \
+    ../misc/munix.cmx tree.cmx treeview.cmx 
+connection.cmo: misc.cmo tree.cmo 
+connection.cmx: misc.cmx tree.cmx 
+main.cmo: addpage.cmo ../lang.cmi misc.cmo tree.cmo treeview.cmo 
+main.cmx: addpage.cmx ../lang.cmx misc.cmx tree.cmx treeview.cmx 
+tree.cmo: ../html/dtd.cmi ../misc/ebuffer.cmi ../html/html.cmi \
+    ../html/html_eval.cmi ../misc/log.cmi misc.cmo ../www/uri.cmi 
+tree.cmx: ../html/dtd.cmx ../misc/ebuffer.cmx ../html/html.cmx \
+    ../html/html_eval.cmx ../misc/log.cmx misc.cmx ../www/uri.cmx 
+treeview.cmo: connection.cmo ../misc/log.cmi misc.cmo tree.cmo ../version.cmi 
+treeview.cmx: connection.cmx ../misc/log.cmx misc.cmx tree.cmx ../version.cmx 
+version.cmo: ../misc/mstring.cmi 
+version.cmx: ../misc/mstring.cmx 

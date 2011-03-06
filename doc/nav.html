@@ -1,0 +1,130 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (navigation) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/nav.html">
+<LINK REL="TOC"
+      HREF="docindex.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>MMM : navigation</H1>
+
+<H2 align=left>Hypertext links and active objects</H2>
+<A NAME="nav"></A>
+In an HTML document, hypertext links (or <EM>anchors</EM>) are usually
+displayed in blue and underlined. The author of the document may have
+specified a different color, but in any case:
+<UL>
+<LI> the mouse cursor becomes a "hand"
+<LI> the destination address appears at the bottom of the window
+</UL>
+
+There are also active objects, like images; some are simple buttons, and
+you can see the same feedback as for anchors in text. Others contain
+different actives zones : the mouse cursor is then an arrow oriented to
+the top and left. Either the image is not yet loaded, and then clicking
+with button 1 will pop up a menu with the different possible links, or
+the image is loaded, and it suffices to click at the appropriate zone.
+
+<P>
+There are several ways to activate an anchor, summarized below:
+
+<DL compact>
+<DT> Button-1
+<DD> displays the document pointed to by this link in the same window,
+except when specified otherwise by the document author (frames)
+
+<DT> Shift + Button 1
+<DD> save the document pointed to by this link (after asking a file name in
+a dialog box)
+
+<DT> Button 3
+<DD> displays the document pointed to by this link in a new window
+
+<DT> Control + Button 1
+<DD> pops up a link activation menu, containing the above functionalities
+and possible more
+
+</DL>
+
+The particular choice of mouse buttons and additionnal modifier keys 
+is configurable by the user, by editing the preference file and
+writing the adequate <A HREF="res.html">resources</A> 
+
+<H2 align=left>Tool bar</H2>
+The tool bar offers the following navigation buttons:
+<DL compact>
+
+<DT> Home
+<DD> goes to the <B>Home</B> document, as defined <A HREF="cli.html#home">here</A>
+
+<DT> Back
+<DD> goes to the previous document (does not work with <EM>frames</EM>)
+
+<DT> Forward
+<DD> goes the next document (does not work with <EM>frames</EM>)
+</DL>
+
+These actions are also available from the <B>Navigation</B> menu,
+and so is direct access to history navigation.
+Menu shortchuts are configurable by <A HREF="res.html">resource
+definitions</A> in the preference file.
+
+<H2 align=left>Other interface elements</H2>
+<H3>Reload, Update</H3>
+<B>Reload</B> causes a complete reload of the document from its original
+server, in particular asking the proxy not to consult its cache.
+
+<P>
+<B>Update</B> asks the server if the document has been modified since it has
+been displayed in <B>MMM</B> (in particular, if <B>MMM</B> initially got
+this document from the proxy's cache, this action checks with the server
+if the document is up to date). Some servers do not know how to answer
+this kind of requests (albeit defined in the HTTP/1.0 standard), and will
+always return a new copy of the document, even if identical.
+
+<H3>HTML Documents</H3>
+<H4>Headers</H4>
+The displayed title of the document is also a menu in which you can see
+the HTTP headers of the document. Some headers are also active
+(e.g. <TT>Refresh</TT>). 
+
+<H4>Smooth scroll</H4>
+The icon with two small arrows (as in scrollbars) changes the scroll mode
+for this document. In the presence of large tables or images (e.g. whose
+size is larger that <B>MMM</B>'s window size), scrolling doesn't work
+properly and one must switch to <EM>smooth scroll</EM> to see the entire
+contents of the document. This mode can be activated by default in the
+<A HREF="prefs.html#html">preferences</A>, but is very costly.
+
+<H4>Links</H4>
+Right of this icon, the <B>Links</B> button, if active, pops up a menu
+displaying additionnal links possibly specified in the document. If
+<EM>frames</EM> were not activated, this menu contains in particular an
+entry for each <EM>frame</EM> of the document.
+
+<H4>Searching</H4>
+Typing <TT>Control-S</TT> in the HTML display window pops up a dialog box
+for searching text in the displayed document (search will <B>not</B> look
+into <EM>table cells</EM> nor <EM>frames</EM>).
+
+<H4>Progress report bar</H4>
+At the bottom left part of the window, <B>MMM</B> displays a bar
+reporting on the progress of retrieval of the required document. 
+This bar becomes red if an error was detected during analysis and
+display of the document (meaning then that the document may not be
+properly displayed)
+
+<H4>Source display</H4>
+The <B>View Source</B> menu opens a window on the HTML source of the
+document. This source may be annotated in colors (see <A
+HREF="res.html#source">how</A>).
+The locations of the errors are also displayed (<U>underlined</U>), and
+the corresponding error message is displayed when the mouse cursor goes
+over the error location. You can edit the source and redisplay the modified
+version; also, if the document was accessed through a <TT>file:</TT> URL,
+you can save the modified document at its location.
+</BODY>
+</HTML>

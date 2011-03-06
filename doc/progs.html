@@ -1,0 +1,114 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (examples of external programs) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/progs.html">
+<LINK REL="TOC"
+      HREF="docindex.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Examples of external programs</H1>
+
+<H2 align=left>1- Mail</H2>
+<H3>Default mode - delivery setting</H3>
+By default, when the <B>Mailto program</B> setting is left empty,
+<B>MMM</B> uses <TT>mail</TT> to deliver a message. However, if the
+environment variale <TT>MMM_MAIL</TT> is set, <B>MMM</B> uses it as the
+delivery command. The calling convention is :
+<PRE>
+command -s &lt;subject&gt; &lt;address&gt;
+</PRE>
+and the command receives the body of the message in its standard input.
+
+<H3>ELM</H3>
+Use <TT>xterm -e elm</TT> in the <B>Mailto program</B> setting.
+
+<H3>MH and exmh</H3>
+It's a bit more complex. I use the following setup:
+<DL>
+<DT> A shell script named <TT>compmail</TT>, given in the <B>Mailto
+program</B> setting :
+<DD> <PRE>
+
+SUBJECT=
+TO=
+
+# Parse command line
+while test $# -gt 0; do
+  case $1 in 
+    -s) shift; SUBJECT=$1;;
+     *) TO=$1; shift;;
+  esac
+done
+
+# Prepare the template
+draft=`mhpath +drafts new`
+/lib/cpp -P -DTO="$TO" -DSUBJECT="$SUBJECT" \
+    $HOME/Mail/components.template > $draft
+
+# Set cur for -use
+folder +drafts `basename $draft`
+
+# If only plain MH is used:
+# exec xterm -e comp use
+# If exmh is used
+exec wish << wish_eof
+    wm withdraw .
+    send exmh Msg_Compose -use
+    exit 0
+wish_eof
+</PRE>
+
+
+<DT> A file <TT>components.template</TT>, to copy to <TT>~/Mail</TT>
+<DD> similar to MH's <TT>components</TT> file, except for the occurrences of
+<TT>TO</TT> and <TT>SUBJECT</TT>:<PRE>
+To: TO
+cc:
+Subject: SUBJECT
+--------
+</PRE>
+
+</DL>
+
+
+<H2 align=left><A NAME="hotlist">2- Hotlist</A></H2>
+
+<H3>Simple script</H3>
+A simple hotlist command would be:
+<PRE>
+#!/bin/sh
+echo "&lt;A HREF=\"$1\"&gt;$2&lt;/A&gt;&lt;BR&gt;" &gt;&gt; $HOME/.hotlist.html
+</PRE>
+Then, define this file as your home page, by adding to your environement:
+<PRE>
+WWW_HOME=$HOME/.hotlist.html
+export WWW_HOME
+</PRE>
+Then, activate <B>Home</B> to see your hotlist, and <B>Reload</B> 
+to update it.
+
+<H3>Surfboard</H3>
+Jun Furuse offers a hotlist manager named <B>Surfboard</B>, consisting in
+two programs: <TT>surfboard</TT> and <TT>surfboard_remote</TT>.
+To be used with <B>MMM</B>, <TT>surfboard</TT> should be run separately,
+and you should give <TT>surfboard_remote</TT> as <B>Hotlist command</B>
+setting. Moreover, you should run <TT>mmm</TT> with the
+<TT>-external</TT> option so that <TT>surfboard</TT> can remote control
+<B>MMM</B> (ie. ask <B>MMM</B> to display one of the hotlist's documents).
+
+<H2 align=left>Printing</H2>
+I recommend the excellent <TT>html2ps</TT>, in its <TT>1.0b1</TT> version
+(or newer if available). A possible setting is :
+<PRE>
+html2ps -n -D -b $URL > /tmp/$$.ps && gv /tmp/$$.ps && rm /tmp/$$.ps
+</PRE>
+Instead of directly printing the result of <TT>html2ps</TT>, we go through 
+a Postscript viewer (here <TT>gv</TT>, but it could be <TT>ghostview</TT>).
+The temporary file trick is there to facilitate further previewing
+in <TT>gv</TT>.
+
+</BODY>
+</HTML>

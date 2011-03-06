@@ -1,0 +1,23 @@
+#!/bin/sh
+# This is the script to compile applets that arrive in source form
+# It receives two arguments : the name of the source file, the name of 
+# the bytecode file to be produced
+# The location of the mdk needs to be configured at install time.
+MDKDIR=_MDKDIR_
+# The tmp file has an arbitrary name that must be turned into a .ml name
+# The resulting bytecode must be renamed as $2
+src=$1.ml
+cmo=$1.cmo
+cmi=$1.cmi
+mv $1 $src
+ocamlc -c -nopervasives -I $MDKDIR $src
+rm -f $cmi
+mv $src $1
+if [ -f $cmo ] 
+then
+  mv $cmo $2
+  exit 0
+else
+  rm -f $cmo
+  exit 1
+fi

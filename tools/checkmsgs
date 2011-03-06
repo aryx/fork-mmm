@@ -1,0 +1,51 @@
+#!/usr/local/bin/perl
+# FRX: stolen from Caml Light tools directory
+# Run this from main directory as tools/checkmsgs
+# Scan the msgs.txt file
+
+open(MSG, "msgs.txt") || die("can't open msgs.txt");
+while(<MSG>) {
+  next if /^\s*$/;
+  while (s/\\$//) {
+    $cont = <MSG>;
+    $cont =~ s/^\s*//;
+    $_ .= $cont;
+  }
+  if (m/^([a-z]+):\s*/) {
+    if ($1 eq "src") {
+      $sourcemsg = $';
+      push(@sourcemsgs, $sourcemsg);
+    } else {
+      $languages{$1} = 1;
+      $translations{"$1/$sourcemsg"} = $';
+    }
+  } else {
+    print STDERR "Ill-formed line: $_";
+  }
+}
+close(MSGS);
+
+# Check that all messages have translations in all languages,
+# and that %x appear in the same positions.
+
+foreach $msg (@sourcemsgs) {
+  $sourceformats = do formats($msg);
+  foreach $lang (keys(%languages)) {
+    $transl = $translations{"$lang/$msg"};
+    if (!$transl) {
+      print STDERR "No translation in $lang for $msg";
+    } else {
+      if (do formats($transl) ne $sourceformats) {
+        print STDERR "Format clash between $msg and $transl";
+      }
+    }
+  }
+}
+
+sub formats {
+  $_ = $_[0];
+  s/^[^%]*//;
+  s/%(.)[^%]*/$1/g;
+  return $_;
+}
+   

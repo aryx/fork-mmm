@@ -1,0 +1,620 @@
+src:	Applet Error: %s
+fr:	Erreur Applet: %s
+
+src:	Applet function \"%s\" raised exception: %s
+fr:	La fonction \"%s\" de l'applet a levé l'exception: %s
+
+src:	Applet function \"%s\" not found
+fr:	Impossible de trouver la fonction \"%s\" dans l'applet
+
+src:	Applets
+fr:	Applets
+
+src:	Error during loading of initial modules\n%s: %s %s
+fr:	Erreur pendant le chargement des modules initiaux\n%s: %s %s
+
+src:	%s was rejected
+fr:	%s a été rejeté
+
+src:	%s is not available
+fr:	%s n'est pas disponible
+
+src:	Error during loading of bytecode
+fr:	Erreur pendant le chargement du bytecode
+
+src:	repeated
+fr:	répété
+
+src:	temporary
+fr:	temporaire
+
+src:	Security check for %s
+fr:	Vérification de sécurité pour %s
+
+src:	%s\n%s\n
+fr:	%s\n%s\n
+
+src:	Security Rights asked by %s
+fr:	Droits d'accès demandés par %s
+
+src:	Not a bytecode file
+fr:	Pas un fichier de bytecode
+
+src:	Inconsistent import: %s
+fr:	Import incompatible: %s
+
+src:	Unavailable unit: %s 
+fr:	Module non disponible: %s 
+
+src:	Unsafe file
+fr:	Fichier dangereux
+
+src:	Error while linking: %s Undefined global: %s
+fr:	Erreur durant la liaison: %s Global %s non défini
+
+src:	Error while linking: %s Unavailable primitive: %s
+fr:	Erreur durant la liaison: %s Primitive %s non disponible
+
+src:	Corrupted interface
+fr:	Interface illisible
+
+src:	Cannot find file %s in search path
+fr:	Impossible de trouver le fichier %s dans le chemin de recherche
+
+src:	Error while loading shared library: %s
+fr:	Erreur durant le chargement de la bibliothèque partagée %s
+
+src:	Already loading a module
+fr:	Déjà en cours de chargement de module
+
+src:	Failed to load Caml module %s\n%s
+fr:	Impossible de charger le module Caml %s\n%s
+
+src:	Unsigned bytecode file %s
+fr:	Fichier de bytecode non signé %s
+
+src:	Unexpected MIME type %s for %s
+fr:	Type MIME %s inattendu pour %s
+
+src:	PGP diagnostic for %s\n%s
+fr:	Diagnostic PGP pour %s\n%s
+
+src:	Confirm
+fr:	Confirmation
+
+src:	%s already exists. This may mean that there is another MMM already running. Do you want to remove this file and create again ? (Note that you must be sure there is no other MMM with -external option)
+fr:	%s existe déjà. Il y a probablement un autre MMM actif. Voulez vous vraime ré-ecrire ce fichier ?
+
+src:	Yes
+fr:	Oui
+
+src:	No, I give up to use -external option
+fr:	Non, j'ignore l'option -external
+
+src:	Can't initialize %s\n%s
+fr:	Impossible d'initialiser %s\n%s
+
+src:	MMM Browser@%s
+fr:	Brouteur MMM@%s
+
+src:	Do you really want to quit ?
+fr:	Voulez-vous vraiment quitter ?
+
+src:	Yep
+fr:	Ouais
+
+src:	Nope
+fr:	Nan
+
+src:	MMM Browser
+fr:	Brouteur MMM
+
+src:	Invalid link
+fr:	Lien invalide
+
+src:	Document cannot be reloaded from its url\n(probably a POST request)
+fr:	Le document ne peut être rechargé à partir de son url\n(probablement une requête POST)
+
+src:	Can't update document\n(probably a POST request)
+fr:	Impossible de mettre à jour le document\n(probablement une requête POST)
+
+src:	Open File
+fr:	Ouvrir Fichier
+
+src:	MMM
+fr:	MMM
+
+src:	About
+fr:	À Propos
+
+src:	New Window
+fr:	Nouvelle fenêtre
+
+src:	Open Selection
+fr:	Ouvrir Sélection
+
+src:	Open File...
+fr:	Ouvrir Fichier...
+
+src:	Save document...
+fr:	Sauver document...
+
+src:	Print document
+fr:	Imprimer document
+
+src:	Preferences...
+fr:	Préférences...
+
+src:	Close Window
+fr:	Fermer fenêtre
+
+src:	Quit
+fr:	Quitter
+
+src:	Navigate
+fr:	Navigation
+
+src:	Home
+fr:	Home
+
+src:	Back
+fr:	Précédent
+
+src:	Forward
+fr:	Suivant
+
+src:	History
+fr:	Historique
+
+src:	Document
+fr:	Document
+
+src:	Abort
+fr:	Arrêter
+
+src:	Reload
+fr:	Recharger
+
+src:	Update
+fr:	Mettre à jour
+
+src:	Redisplay
+fr:	Ré-afficher
+
+src:	Add to hotlist
+fr:	Marquer la page
+
+src:	Load Images
+fr:	Charger les images
+
+src:	View Source
+fr:	Voir le source
+
+src:	Others
+fr:	Autres
+
+src:	Load Authorizations...
+fr:	Charger des autorisations...
+
+src:	Edit Authorizations...
+fr:	Éditer les autorisations...
+
+src:	Save Authorizations...
+fr:	Sauver les autorisations...
+
+src:	Caml Modules
+fr:	Modules Caml
+
+src:	Load Caml Extension
+fr:	Charger extension Caml
+
+src:	Help
+fr:	Aide
+
+src:	Version information
+fr:	Version
+
+src:	Help on MMM
+fr:	Guide MMM
+
+src:	Home Page of MMM
+fr:	Page de référence MMM
+
+src:	User
+fr:	Utilisateur
+
+src:	Open URL:
+fr:	Ouvrir URL:
+
+src:	Can't view initial document: %s\n%s
+fr:	Impossible d'ouvrir le document initial: %s\n%s
+
+src:	Protocols
+fr:	Protocoles
+
+src:	Internal settings and debugging
+fr:	Réglages internes et déboguage
+
+src:	HTML parsing and display
+fr:	Analyse et affichage HTML
+
+src:	Internationalization
+fr:	Internationalisation
+
+src:	Images
+fr:	Images
+
+src:	Cache settings
+fr:	Réglages du cache
+
+src:	External programs
+fr:	Programmes externes
+
+src:	Misc. settings
+fr:	Réglages divers
+
+src:	Applets are not available in the native version
+fr:	Les applets ne sont pas disponibles dans cette version
+
+src:	Cache error occurred during save of temporary buffer (%s)
+fr:	Erreur du cache durant la sauvegarde du tampon (%s)
+
+src:	Cache error occurred when opening temporary file\n%s: %s (%s)
+fr:	Erreur du cache durant l'ouverture du fichier temporaire\n%s: %s (%s)
+
+src:	The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed.
+fr:	Le document %s\nest en cours de transmission pour une autre action.\nMMM ne peut traiter votre requête avant la fin de la transmission.
+
+src:	Invalid request %s\n%s
+fr:	Requête invalide %s\n%s
+
+src:	Request for %s\nreturned %d %s.\nDo you wish to save ?
+fr:	La requête pour %s\na retourné %d %s.\nVoulez-vous sauver ?
+
+src:	Open this Link
+fr:	Ouvrir ce lien
+
+src:	Save this Link
+fr:	Sauver ce lien
+
+src:	New window with this Link
+fr:	Nouvelle fenêtre avec ce lien
+
+src:	Headers of document
+fr:	En-têtes du document
+
+src:	Copy this Link to clipboard
+fr:	Copier ce lien dans le clipboard
+
+src:	Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)
+fr:	Le document n'est plus dans le cache, et doit être rechargé\n(probablement une requête POST)
+
+src:	Document %s has not changed.\n
+fr:	Le document %s n'a pas changé.\n
+
+src:	Document %s is relocated to:\n%s
+fr:	Le document %s est maintenant à:\n%s
+
+src:	Document %s\nhas been flushed from cache
+fr:	Le document %s n'est plus dans le cache
+
+src:	Malformed link error
+fr:	Lien mal formé
+
+src:	Preference Error
+fr:	Erreur de préférence
+
+src:	Ok
+fr:	Ok
+
+src:	Not an integer: %s
+fr:	Pas un entier: %s
+
+src:	Not a float: %s
+fr:	Pas un flottant: %s
+
+src:	Can't open preference file: %s
+fr:	Impossible d'ouvrir le fichier de préférences: %s
+
+src:	Can't open preference file: %s (%s)
+fr:	Impossible d'ouvrir le fichier de préférences: %s (%s)
+
+src:	MMM Preferences
+fr:	Préférences MMM
+
+src:	File
+fr:	Fichier
+
+src:	Load a preference file
+fr:	Charger un fichier de préférences
+
+src:	%s : no such preference file
+fr:	%s : ce fichier n'existe pas
+
+src:	Save preferences to file
+fr:	Sauver les préférences
+
+src:	Load
+fr:	Charger
+
+src:	Save
+fr:	Sauver
+
+src:	Save As
+fr:	Sauver sous ...
+
+src:	Dismiss
+fr:	Annuler
+
+src:	Reset
+fr:	RàZ
+
+src:	Submit
+fr:	Valider
+
+src:	Document not in cache anymore
+fr:	Le document n'est plus dans le cache
+
+src:	Cannot view document source (pending)
+fr:	Impossible d'afficher le document (en attente)
+
+src:	Font %s is not available
+fr:	La police %s n'est pas disponible
+
+src:	Commit
+fr:	Valider
+
+src:	No Errors
+fr:	Pas d'erreurs
+
+src:	%d errors
+fr:	%d erreurs
+
+src:	Display Errors
+fr:	Afficher les erreurs
+
+src:	Error in base 64 encoding
+fr:	Erreur dans le codage en base 64
+
+src:	Authorization for %s \"%s\" on %s:%d/%s
+fr:	Autorisation pour %s \"%s\" sur %s:%d/%s
+
+src:	Looking for %s ...
+fr:	Je cherche %s ...
+
+src:	%s found
+fr:	%s trouvé
+
+src:	Unknown host: %s
+fr:	Hôte inconnu: %s
+
+src:	Contacting host...
+fr:	Contact hôte...
+
+src:	connection established
+fr:	connexion établie
+
+src:	Connection refused to %s
+fr:	Connexion à %s refusée
+
+src:	Timeout during connect to %s
+fr:	Timeout pendant la connexion à %s
+
+src:	Cannot establish connection\n%s:%s
+fr:	Impossible d'établir la connexion\n%s:%s
+
+src:	Failed
+fr:	Échec
+
+src:	Request for %s failed\n%s
+fr:	Échec de la requête %s\n%s
+
+src:	Reading headers...
+fr:	Lecture en-têtes...
+
+src:	Timeout while waiting for headers of %s
+fr:	Timeout pendant l'attente des en-têtes de %s
+
+src:	Error while reading headers of %s\n%s
+fr:	Erreur durant la lecture de l'entête de %s\n%s
+
+src:	Writing request...
+fr:	Écriture des en-têtes
+
+src:	Missing host in url
+fr:	L'url ne définit pas de machine distante
+
+src:	INTERNAL ERROR\nHttp.request (not a distant http url): %s
+fr:	INTERNAL ERROR\nHttp.request (pas une url http distante): %s
+
+src:	INTERNAL ERROR\nHttp.request09 (not a distant http url): %s
+fr:	INTERNAL ERROR\nHttp.request09 (pas une url http distante): %s
+
+src:	MMM Error
+fr:	Erreur MMM
+
+src:	MMM Notify
+fr:	Message MMM
+
+src:	MMM Choice
+fr:	Choix MMM
+
+src:	A)bort
+fr:	A)bort
+
+src:	R)etry
+fr:	R)etry
+
+src:	I)gnore
+fr:	I)gnore
+
+src:	No hotlist command defined
+fr:	Pas de commande marque page définie
+
+src:	%s\nadded to hotlist with title\n%s
+fr:	%s\najouté comme marque page avec le titre\n%s
+
+src:	cannot open dir
+fr:	Impossible d'ouvrir le répertoire
+
+src:	cannot exec file
+fr:	Impossible d'exécuter le programme
+
+src:	cannot stat file
+fr:	Impossible de déterminer le type du fichier
+
+src:	cannot open file
+fr:	Impossible d'ouvrir le fichier
+
+src:	Can't send mail (saved in $HOME/dead.letter)
+fr:	Impossible d'envoyer le courrier (sauvé dans $HOME/dead.letter)
+
+src:	Can't send mail, can't save dead.letter
+fr:	Impossible d'envoyer le courrier et de sauver dead.letter
+
+src:	Mail sent
+fr:	Courrier posté
+
+src:	Send
+fr:	Envoyer
+
+src:	No address given for mailto:
+fr:	Pas d'adresse donnée pour mailto:
+
+src:	About to send mail with POST data to\n%s
+fr:	Envoi de courrier avec données POST à\n%s
+
+src:	Unsupported method for mailto:
+fr:	Méthode non supportée pour mailto:
+
+src:	unknown protocol
+fr:	protocol inconnu
+
+src:	HTTP Error \"%s\"
+fr:	Erreur HTTP \"%s\"
+
+src:	Request fulfilled.\n(%s)
+fr:	Requête acceptée.\n(%s)
+
+src:	Destination for your POST request has changed\nfrom %s\nto %s\nConfirm action ?
+fr:	La destination de votre requête POST a changé\nde %s\nà %s\nConfirmer l'action ?
+
+src:	Permission denied
+fr:	Accès refusé
+
+src:	No function defined for this applet
+fr:	Pas de fonction définie par cette applet
+
+src:	Error while linking: %s
+fr:	Erreur durant l'édition de lien: %s
+
+src:	Can't find embedded document %s
+fr:	Impossible de trouver le document inclus %s
+
+src:	Embed Error: no viewer for type %s/%s
+fr:	Erreur Embed: pas d'afficheur pour le type %s/%s
+
+src:	Embed Error: no type for document %s
+fr:	Erreur Embed: pas de type pour le document %s
+
+src:	Embed Error: malformed type %s (%s)
+fr:	Erreur Embed: type mal formé %s (%s)
+
+src:	Embed Error: no viewer for type %s
+fr:	Erreur Embed: pas d'afficheur pour le type %s
+
+src:	Embed Error: %s\n(%s)
+fr:	Erreur Embed: %s\n(%s)
+
+src:	Embed Error: invalid link
+fr:	Erreur Embed: lien invalide
+
+src:	Error during retrieval of %s
+fr:	Erreur durant la transmission de %s
+
+src:	Cannot save to %s\n(%s)
+fr:	Impossible de sauver vers %s\n(%s)
+
+src:	Save document
+fr:	Sauver document
+
+src:	URL %s\nsaved as %s
+fr:	URL %s\nsauvée dans %s
+
+src:	Saving %s\nto %s
+fr:	Sauvegarde de %s\ndans %s
+
+src:	Saving...
+fr:	Sauvegarde...
+
+src:	Document %s\nsaved in\n%s
+fr:	Sauvegarde de %s\ndans\n%s\nterminée
+
+src:	Error during |%s in %s
+fr:	Erreur pendant |%s in %s
+
+src:	Can't execute command %s for %s
+fr:	Impossible d'exécuter la commande %s sur %s
+
+src:	Save or pipe to file
+fr:	Sauver dans un fichier ou un pipe
+
+src:	Saving %s\nfor external display with MIME type %s
+fr:	Sauvegarde de %s\npour affichage externe avec le type MIME %s
+
+src:	Running metamail with MIME media-type: %s
+fr:	Lancement de metamail avec le media-type MIME: %s
+
+src:	Retrieving %s\nfor external display with MIME type %s
+fr:	Transmission de %s\npour affichage externe avec le type MIME %s
+
+src:	End of transmission
+fr:	Fin de transmission
+
+src:	MMM Warning
+fr:	Avertissement MMM
+
+src:	No MIME type given for the document\n%s
+fr:	Pas de type MIME donné pour le document\n%s
+
+src:	Retry with type
+fr:	Ré-essayer avec un type
+
+src:	Save to file
+fr:	Sauver dans un fichier
+
+src:	MIME type
+fr:	Type MIME
+
+src:	MMM Viewers
+fr:	Afficheurs MMM
+
+src:	No behavior specified for MIME type\n%s\ngiven for the document\n%s
+fr:	Pas de comportement défini pour le type MIME\n%s\n du document\n%s
+
+src:	Retry with another type
+fr:	Ré-essayer avec un autre type
+
+src:	Display with metamail
+fr:	Affichage avec metamail
+
+src:	Displaying...
+fr:	Affichage...
+
+src:	Displaying externally
+fr:	Affichage externe
+
+src:	Malformed type: %s
+fr:	Type mal formé: %s
+
+src:	Invalid MIME type %s\n%s
+fr:	Type MIM invalide %s\n%s
+
+src:	Document log %s
+fr:	Information sur le document %s
+
+src:	not a legal absolute uri
+fr:	pas un uri absolu
+
+src:	no context and not an absolute url
+fr:	url relative sans contexte

@@ -1,0 +1,334 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (Preferences) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/prefs-ja.html">
+<LINK REL="TOC"
+      HREF="docindex-ja.html">
+<LINK REV="Author" HREF="mailto:Jun.Furuse@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Preferences</H1>
+
+<H2 align=left>設定ファイル</H2>
+<B>も〜</B> には二つの設定ファイルがあります。一つはサイト全てのユーザー
+に有効な物で、全ユーザーに共通する設定（proxy など)を行なうための物です。
+次が、個々のユーザー独自の物です。これは設定ウィンドウを使うか、
+テキストエディタなどで手で変更することでユーザー毎の設定を行なうことが
+できます。
+
+<H2 align=left>設定パネル</H2>
+設定パネルはメニューの <B>設定(Preferences)</B> の項目を選ぶと現れます。
+左側に設定グループ、右側に各グループの設定内容が表示され、変更すること
+ができます。
+
+<P>
+いくつかの設定については、直ちに変更がブラウザに反映されるわけではあり
+ません。例えば文書ディスプレイの背景色を変えた場合、新しい文書を読むか、
+再描画を行なわない限り新しい背景色は使用されません。
+
+<P>
+設定内容を保存したい場合は<B>保存(Save)</B>ボタンを押して下さい。
+間違った設定をしてしまって元に戻したい場合は<B>Reset</B>ボタンを押して
+下さい。使用する設定ファイルを変更する場合はメニューから読み込んで下さい。
+
+<H3>設定グループ</H3>
+
+<OL>
+     <LI> <A HREF="#protocols">プロトコル(Protocols)</A>
+     <LI> <A HREF="#html">HTML の読み込みと表示(HTML parsing and display)</A>
+     <LI> <A HREF="#html">日本語化(Internationalization (Japanese))</A>
+     <LI> <A HREF="#images">画像(Images)</A>
+     <LI> <A HREF="#progs">外部プログラム(External programs)</A>
+     <LI> <A HREF="#cache">キャッシュの設定(Cache settings)</A>
+     <LI> <A HREF="#applets">Applets</A>
+     <LI> <A HREF="#misc">その他の設定(Misc. settings)</A>
+     <LI> <A HREF="#internal">内部設定とデバッグ(Internal settings and debugging)</A>
+</OL>
+
+<H2 align=left><A NAME="protocols">1- プロトコル(Protocols)</A></H2>
+<DL>
+<DT> Proxy ホスト (Proxy host)
+<DT> Proxy ポート (Proxy port)
+<DD> <B>も〜</B> が使えないプロトコル (ftp:, wais:, gopher: など)  
+     に対して使用する proxy のホストネーム、ポート番号を指定します。
+     また http: プロトコルについても直接つながらないホストにアクセスする
+     ために使われます。
+
+<DT> 常に Proxy を使用する (Always use proxy)
+<DD> セットされた場合は <B>も〜</B> は http サーバに直接接続することはなく
+     なります。このオプションは DNS リクエストが遅い場合(つまり PPP 回線
+     を通じた場合など)に使われます。また Proxy サーバがキャッシュ機能を
+     持つ場合にも恩恵を受けるために使用します。
+
+<DT> 参照元を送る(HTTP Send Referer)
+<DD> セットされた場合、サーバに送られるリクエストにはどのような文脈
+     でリクエストされているかが含まれます。例えば、HTML 文書のアンカーを
+     クリックした場合、リクエストの文脈はその文書の URL です。このオプションを
+     設定することによってサーバ管理者はリクエストされたページがどのページから
+     参照されているかがわかりますが、あなたがどこから来たのかもわかって
+     しまいます。
+
+<DT> User Agent
+<DD> <B>も〜</B> がサーバに接続する時に名乗るブラウザ名です。
+
+<DT> ヘッダ時間切れ (秒)(Timeout on headers (seconds))
+<DD> ネットワークが遅い場合、ドキュメントヘッダが送られてくるのに
+     時間がかかる場合があります。時間切れに達した場合、ウィンドウが
+     表示され、
+    <UL>
+      <LI><TT>再挑戦</TT>（同じ時間切れ時間で）、
+      <LI><TT>中止</TT>（接続を断念する）、
+      <LI><TT>無視</TT>（時間切れを無視して接続を待つ）
+    </UL>
+     のいずれかを選択することができます。
+
+<DT> パスワード有効時間 (分) (Password lifetime (minutes))
+<DD> <B>も〜</B> はパスワード時限失効が実装されています。
+     ある時間が過ぎると、<B>も〜</B> は失効したパスワードをメモリから
+     消去します。
+
+<DT> パスワード保存ファイル (Password save file)
+<DD> 使用されていません。
+    
+<DT> ローカル CGI パス (Local binaries path)
+<DD> も〜はローカルファイルシステム上に CGI スクリプトを置いて実行することが
+     できます。<TT>file:</TT>プロトコルでアクセスして下さい。
+     この CGI は普通の物と違って HTTP サーバのように完全なヘッダを
+     返さなければいけません。
+     例えば、
+<PRE>
+#!/bin/sh
+echo "HTTP/1.0 200 Found"
+echo "Content-Type: text/html"
+echo
+cat << EOF
+... some valid HTML ...
+EOF
+</PRE>
+こんな感じです。
+</DL>
+
+<H2 align=left><A NAME="html">2- HTML の読み込みと表示 (HTML parsing and display)</A></H2>
+<DL>
+<DT> DTD
+<DD> <B>も〜</B> は複数の DTD に基づいて HTML ファイルを検証することが
+    できます。使用する DTD を選んで下さい。
+
+<DT> 厳密な HTML 解析 (Strict HTML lexing)
+<DD> <B>も〜</B>通常は HTML のエラーが発見されると自動的にエラーを
+    修正しようとしますが、このオプションを ON にすると、HTML 解析が
+    厳密になり、エラー修復も行ないません。例えば <TT>ADD_DATE</TT>
+    のような文字 <TT>_</TT> を含むようなタグは不正になります。
+
+<DT> 表を頑張って出す (Attempt tables)
+<DD> デフォルトでは <TT>&lt;TABLE&gt;</TT> の各タグは
+    <TT>&lt;DL&gt;</TT>, <TT>&lt;DT&gt;</TT>, <TT>&lt;DD&gt;</TT>
+    タグとして表示されます。
+     このオプションを ON にすると表を整形して出力します。
+     しかしこれは凄くテキトーです。
+
+<DT> Ignore relative TD width
+<DD> HTML 3.2 の仕様の〆切直前の変更によって、テーブルセル 
+    (&lt;TD&gt;) の幅の指定をパーセンテージで指定することは
+    文法上間違いとなりました。さらに、この「パーセンテージ」
+    とはなんに対する物なのかという認識が HTML文書作者やブラウザー作者
+    によってまちまちです。このスイッチは ON にして、この
+    値を無視した方が良いでしょう。
+
+<DT> スムーススクロールに挑戦する (Attempt smooth scroll)
+<DD>  Tk の制限で、大きいイメージや表を持つブラウザウィンドウは正しく
+     スクロールできません。このオプションはこの問題を解決し、スムース
+     スクロールを提供しますが、大きいファイルの表示に非常に
+     時間がかかるようになります。普段は OFF にして、必要な時にのみ、
+    タイトルバーの横のスクロールモード切替えボタンを使用した方が
+    よいでしょう。
+
+<DT> フレームをリンクで表示する (Frames as links)
+<DD> このスイッチが ON の場合、 <B>も〜</B> はフレームの描画を行ないま
+    せん。そのかわり、<B>Links</B> メニューにそれぞれのフレームへの
+    リンクが作成されます。OFF の場合、フレームが表示されます。
+
+<DT> 背景色 (Background color)
+<DD> HTML 文書に背景色が指定されていない場合に使われる背景色を決めます。
+    デフォルトは白(white)です。
+
+<DT> テキストフォーム色 (Entry and Textarea color)
+<DD> テキストを入力するためのフォームの背景色を設定します。
+
+<DT> 文書が指定する色を使用する (Follow document colors)
+<DD> ON にした場合、<B>も〜</B> は HTML 文書に指定された色を使用して
+    描画を行ないます。これを ON にするとページによっては目がチカチカしたり、
+    読めない情報があったりします。
+
+<DT> フォント設定 (Font choices)
+<DD> それぞれのフォントについて、family, size (pixel 単位) などが
+    設定できます。<B>Bold</B>, <TT>Italic</TT>, <TT>Fixed</TT>
+    の場合は、設定は <B>modification</B> の部分のみが変更されます
+    （つまり、ここではサイズを指定してはいけません。）
+    <TT>Fixed</TT> の場合はさらにフォントは fixed サイズフォント
+    でなければなりません。
+<DD> 日本語フォント選択について：
+    日本語のフォントは、以上の西欧文字フォントのサイズ情報を元に
+    JISX0208-1983 のフォントが自動的に使用されます。
+    （いちいち日本語のフォント設定のプログラムを書くのは面倒なんよ。）
+</DL>
+
+<H2 align=left><A NAME="images">3- 画像 (Images)</A></H2>
+<DL>
+<DT> 全くイメージを表示しない (No images at all)
+<DD> 文書中イメージは全く表示されなくなります。 OFF の場合、
+    次のいずれかの画像読み込み方式が選ばれます。
+
+<DT> イメージ読み込み (Image loading)
+<DD> 画像読み込み方式は３つあります。
+<DL>
+<DT> After document, manual
+<DD> イメージを表示するには <TT>画像を読み込む</TT> ボタンを押すか、
+    それぞれの画像毎に <TT> Control + Button 1</TT> を押さねば
+    なりません。ただしキャッシュされているイメージは自動的に表示されます。
+
+<DT> After document, automatic
+<DD> イメージは文書が表示された後、自動的に読み込まれ、表示されます。
+
+<DT> During document loading
+<DD> イメージは文書を読み込み中に内部に見つかった場合すぐに
+    取得しようとします。
+</DL>
+
+<DT> イメージ用最大接続数 (Max image connections)
+<DD> イメージを取得するために同時に開かれる接続の数です。
+    表示すべきイメージがこれ以上の数ある場合、残りは順番待ちに
+    状態になります。
+
+<DT> 同ホストでのイメージ用最大接続数 (Max image connections (same host))
+<DD> 同一サーバーに対するイメージ取得のための接続最大数を指定します。
+    大きい値を指定するとサーバを停滞させ、おそらく反応は逆に悪くなる
+    ので、2 か 3 位の値をお勧めします。
+
+<DT> γ補正 (Gamma correction)
+<DD> γ補正だ！ 1 以上の値を入れると画像が明るくなるよ。
+
+<DT> JPEG コンバータ (JPEG converter)
+<DD> Tk は JPEG ファイルを読めないので、
+     <TT>も〜</TT> は Tk が読み込める形にするため
+     <TT>JPEG</TT> コンバータを必要とします。
+     初期値は <TT>djpeg</TT> です。
+     コンバータは <TT>JPEG</TT> ファイルを引数にもらい、
+     変換したイメージを標準出力に出力しなければいけません。
+</DL>
+
+<H2 align=left><A NAME="progs">4- 外部プログラム (External programs)</A></H2>
+<DL>
+<DT> Mailto プログラム (Mailto program)
+<DD> <TT>mailto:</TT> リンクにアクセスした時に使用される外部プログラム
+    を指定します。
+<DD> この Mailto プログラムはメールを編集し、実際に投稿する機能がなけ
+    ればなりません。(<A HREF="progs-ja.html#mail">例</A> を参照してく
+    ださい。)
+<DD> 指定されていない場合、<B>も〜</B> は簡単なメールエディタ
+    ウィンドウを表示して、内容を
+    <A HREF="progs-ja.html#mail"><TT>mail</TT> コマンド</A>で相手に送ります。
+    
+
+<DT> Hotlist プログラム (Hotlist program)
+<DD> <B>も〜</B> はビルトインのホットリストもしくはブックマークシステム
+    を持っていません。外部プログラムを使って、ページの登録を行うことが
+    できます。(<A HREF="progs-ja.html#hotlist">例</A> を参照してく
+    ださい。)
+
+<DT> 印刷プログラム (Printing program)
+<DD> <B>も〜</B> 自身には文書印刷の機能がありません。文書の印刷を行いたい
+    場合はここに印刷用の外部プログラムを指定してください。
+    (<A HREF="progs-ja.html#printing">例</A>を参照してください。)
+</DL>
+
+<H3>外部プログラムの条件</H3>
+これらの設定値にはコマンド名だけでなく、任意のシェルコマンド(パイプ、
+リダイレクトを含む)を入れることができます。また、それぞれ、
+特別なシェル変数(以下)に値が代入されて実行されるので、これらの
+変数を指定して外部プログラムに指示を与えることができます。
+
+<DL>
+<DT> Mailto プログラム
+<DD> <DL compact>
+<DT> <TT>$TO</TT>
+<DD> 送り先のメールアドレス
+<DT> <TT>$SUBJECT</TT>
+<DD> メッセージのサブジェクト
+</DL>
+
+<DT> Hotlist プログラム
+<DD> <DL compact>
+<DT> <TT>$URL</TT>
+<DD> 文書の url
+<DT> <TT>$TITLE</TT>
+<DD> 文書のタイトル (もしくはタイトルがない場合は URL 自身)
+</DL>
+
+
+<DT> Printing プログラム
+このプログラムはさらに標準入力から文書ソースを受け取ります。
+<DD> <DL compact>
+<DT> <TT>$URL</TT>
+<DD> 文書の URL 
+</DL>
+
+</DL>
+
+
+<H2 align=left><A NAME="cache">5- キャッシュの設定 (Cache settings)</A></H2>
+
+<B>も〜</B> は一番最近に表示した文書を一定数キャッシュに保存します。
+<DL>
+<DT> 文書最大数 (Max number of documents)
+<DD> キャッシュに一度に蓄えられる最大の文書数を指定します。
+
+<DT> キャッシュを消す割合 (Delete how much when full)
+<DD> キャッシュがいっぱいになった時、一度にどれだけの文書をキャッシュ
+    から取り除くかを指定します。
+
+<DT> 履歴にのみ残す (Keep only history)
+<DD> この設定が ON の時には、訪ずれたページの記録のみが記憶され、
+    文書のソースはキャッシュされません。
+    ブラウザウィンドウを閉じると、そのウィンドウ
+    に残っている文書は全て忘れ去られます。(他のブラウザウィンドウに
+    表示されている時を除きます)ネットワークが太いか、キャッシュ
+    プロキシーが動いている時以外はお勧めできません。
+
+<DT> ブラウザウィンドウごとの最大キャッシュウィンドウ数
+    (Max cached widgets per window)
+<DD> <B>も〜</B> が一度にメモリに残すグラフィカルなページ表示の
+    最大数を指定します。この値が大きい場合、履歴をたどるアクセス
+    は高速になりますが、非常に大きなメモリを食います。
+    この値の最低値は 1 で、実際に表示されている文書以外、
+    グラフィックの形でのキャッシングは行なわれません
+    (常に描画しなおす)。
+</DL>
+
+<H2 align=left><A NAME="applets">6- Applets</A></H2>
+
+<H2 align=left><A NAME="misc">7- その他の設定 (Misc. settings)</A></H2>
+<DL>
+<DT> バルーンヘルプを使う (Use balloon helps)
+<DD> 読んで字の若し。
+
+<DT> GIF アニメーションを使う (Use GIF animation)
+<DD> 読んで字の若し。ちなみにフランスでは「ギフ」って発音するよ。
+
+<DT> 自動 GIF アニメーション表示 (Automatic GIF animation display)
+<DD> これが ON の場合、 GIF アニメーションは表示された時点から
+    アニメーションを開始しています。OFF にすると、アニメーションは
+    始め止っています。どちらの場合もマウスボタン 2 でアニメーションを
+    動かしたり止めたりすることができます。なお、GIF アニメーション
+    の上では、マウスカーソルは時計の形になります。GIF アニメーション
+    を嬉しげに使ったページに行って、コンピュータの負荷に閉口したこと
+    のある人は OFF にすることをお勧めします。
+</DL>
+
+<H2 align=left><A NAME="internal">8- 内部設定とデバッグ (Internal settings and debugging)</A></H2>
+秘密です。秘密を知っている人以外、これらの値を変えてはいけません。
+
+</BODY>
+</HTML>

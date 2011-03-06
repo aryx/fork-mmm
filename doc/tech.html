@@ -1,0 +1,185 @@
+<HTML>
+<HEAD>
+<TITLE>MMM : Technical characteristics</TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/tech.html">
+<LINK REL="TOC"
+      HREF="docindex.html">
+<LINK REV="made" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>MMM : Technical characteristics</H1>
+
+<H2>Reference documentation, standards</H2>
+During the design and development of <B>MMM</B>, we attempted to comply to
+the available (or proposed) standards for Web applications. Most of these
+standards are
+defined in RFCs or recommendations from the 
+<A HREF="http://www.w3.org/">Web Consortium</A>:
+<UL>
+<LI> HTML 2.0 Proposed standard
+(<A HREF="ftp://ds.internic.net/rfc/rfc1866.txt">rfc 1866</A>)
+<LI> HTML 3.2 Reference specification (W3C Recommendation)
+<LI> HTTP/1.0 Proposed standard
+(<A HREF="ftp://ds.internic.net/rfc/rfc1945.txt">rfc 1945</A>)
+<LI> rfc1630 on Universal Resource Identifiers
+(<A HREF="http://ds.internic.net/rfc/rfc1630.txt">rfc 1630</A>)
+<LI> rfc1738 on Uniform Resource Locators
+(<A HREF="ftp://ds.internic.net//rfc/rfc1738.txt">rfc 1738</A>)
+<LI> rfc1808 on Relative URL
+(<A HREF="ftp://ds.internic.net//rfc/rfc1808.txt">rfc 1808</A>)
+</UL>
+
+<P>
+However, the browser is not fully compliant. Some known problems are listed
+<A HREF="#compliance"><B>below</B></A>. If you find more problems, please
+report them to <A HREF="mailto:Francois.Rouaix@inria.fr">me</A>, giving
+</P>
+
+<UL>
+<LI> the nature of the problem,
+<LI> a relevant reference in one of the documents or some other valuable
+material (such as a discussion of the HTML working groups)
+<LI> and an URL pointing to a document exhibiting the problem.
+</UL>
+
+<H2>Warning</H2>
+<P>
+<B>MMM</B> is a lot less tolerant than most other browsers. Thus, if
+<B>MMM</B> complains about errors in a document, or doesn't display
+"correctly" a document according to you, whereas Mozilla or Explorer just
+handle it, the culprit is not necessarily <B>MMM</B> : it may be the
+document.
+
+Moreover, and I can't repeat this enough:
+<BLOCKQUOTE>
+The implementation of tables is bogus.<BR>
+The implementation of tables is bogus.<BR>
+The implementation of tables is bogus.<BR>
+The implementation of tables is bogus.<BR>
+The implementation of tables is bogus.<BR>
+The implementation of tables is bogus.<BR>
+There. You've been warned. <BR>
+And it's slow.<BR>
+And it uses heaps of memory.<BR>
+</BLOCKQUOTE>
+Please don't complain about tables. I strongly believe there is not proper
+way to support tables with the Tk toolkit, as of version 4.{0,1,2}.
+
+<H2>Components</H2>
+Architecturally speaking, the browser is formed of several relatively
+independent components:
+<UL>
+<LI> <A HREF="#protocols">communication protocols</A>
+<LI> <A HREF="#html">HTML viewer</A>
+<LI> <A HREF="#viewers">other viewers</A>
+<LI> <A HREF="#cache">cache</A>
+</UL>
+
+
+<H2><A NAME="protocols">Protocols</A></H2>
+<UL>
+<LI> Among the internet protocols used for the Web, <B>MMM</B> implements
+only HTTP 1.0. Other protocols are always deferred to the proxy (ftp, wais,
+gopher,...). Several requests can be handled simultaneously. Read and writes
+on the network are non-blocking, except for DNS interrogations.
+
+<LI> For an HTTP request, the browser first attempts a direct connection to
+the server, and in case of failure, redirects the request to the proxy.
+The direct connection step never occurs if the browser is configured in mode
+<EM>Always Use Proxy</EM>.
+
+<LI> Proxy authentication as proposed in HTTP 1.1 is implemented.
+
+<LI> Vendor specific extensions of HTTP (such as : Refresh, push/pull) are
+not supported.
+
+<LI> A request of type <TT>file:</TT> is interpreted as follows: if the host is
+"localhost" (<TT>file://localhost/path</TT>), or left unspecified
+(<TT>file:///path</TT>), then <EM>path</EM> is considered as an absolute 
+path on the local file system. Note: <TT>file:/some/path</TT> is <B>not</B>
+a vlid URL, but is accepted for compatibility reason.
+<P>
+If the host is specified, then the URL is considered as an <TT>ftp:</TT>
+URL, and forwarded to the proxy.
+
+<LI> URLS of type <TT>telnet:</TT> are not supported at all.
+</UL>
+
+
+<H2><A NAME="html">HTML Viewer</A></H2>
+<B>MMM</B> implements an HTML viewer (documents of type text/html)
+conforming to HTML 2.0, and on some points to HTML 3.2. Lexical and
+syntactical analysis respect (in principle) the subset of SGML used
+in the definition of HTML, and a given DTD (HTML 2.0 or 3.2). Only
+SGML minimisation rules are implemented. Syntactical analysis does not
+check tag attributes (although the viewer has to check some of them,
+obviously).
+
+The capabilities of displaying <EM>in-lined</EM> images are exactly the
+capabilities of Tk image loading. Currently, only <TT>GIF</TT>, of
+MIME type <TT>image/gif</TT> (except for interlaced GIFS, animated GIFS, and
+an approximative treatment of transparent GIFs), <TT>PNM</TT> and
+<TT>XBM</TT> images formats are supported. 
+More image formats can be supported through Tk extensions (external
+dynamically linked libraries). For example support for <TT>PNG</TT> and
+<TT>JPEF</TT> (non progressive) can be obtained through libraries.
+
+In recent versions of <B>MMM</B>, animated GIFs are supported with 
+additionnal specific code
+
+<H3>Image loading</H3>
+There are several modes for image loading, configured in the Preference
+panels. Image loading uses an internal queue, with a limit on the maximum
+number of simultaneous network connections dedicated to images.
+
+<H2><A NAME="viewers">Other viewers</A></H2>
+For other types of document (except <TT>text/plain</TT> for which 
+there is also a builtin viewer), <B>MMM</B> calls <TT>metamail</TT>.
+A proper configuration of <TT>metamail</TT> (through the <TT>~/.mailcap</TT>
+file) can provide viewers for most of document types used on the Web.
+
+<H2><A NAME="cache">Cache</A></H2>
+There are two cache levels in <B>MMM</B> : the first level is a graphical
+cache, where we keep the displayed version of a document. The second level
+is a traditional cache (in memory or on disk), where we keep document
+sources (only for text documents).
+
+<H2>Known Bugs</H2>
+<DL>
+
+<DT><A NAME="compliance">HTML compliance problems</A>
+<DD> The following problems are known:
+<UL>
+
+<LI> &lt;!DOCTYPE&gt; is not parsed properly. To my knowledge, none of the
+main browsers actually parse <TT>DOCTYPE</TT>.
+
+<LI> &lt;! gabuzomeu &gt; is displayed as text (in any case, this is not
+a well-formed comment)
+
+<LI> management of spaces might not be always correct.
+
+<LI> ALIGN in &lt;IMG&gt; is not conformant (in particular, in HTML
+3.2, the text should wrap around images. Tk doesn't allow this).
+
+<LI> The <TT>background</TT> attribute of <TT>BODY</TT> is not handled.
+
+<LI> The <TT>width</TT> attribute of <TT>PRE</TT> is not handled.
+
+<LI> The <TT>enctype</TT> attribute of  <TT>FORM</TT> is always equal to
+<TT>applications/x-www-form-urlencoded</TT>.
+
+<LI> The <TT>type=file</TT> case in <TT>INPUT</TT> is not handled.
+
+</UL>
+
+<DT>HTTP Protocol
+<DD>Only the most used subset of HTTP/1.0 is implemented. Only the
+<TT>GET</TT>, <TT>HEAD</TT> and <TT>POST</TT> methods are supported.
+
+</DL>
+
+</BODY>
+</HTML>

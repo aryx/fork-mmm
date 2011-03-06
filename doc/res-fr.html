@@ -1,0 +1,281 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (ressources) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/res-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>MMM : ressources</H1>
+<P>
+En dehors des réglages disponibles par les panneaux de configuration, il
+est également possible d'éditer le fichier de préférence pour certaines
+options avancées.
+
+Ces ressources sont situées nécessairement dans la première partie du
+fichier de préférences, c'est-à-dire <B>avant</B> la ligne
+<PRE>
+!!! Don't edit below this line !!!
+</PRE>
+Une ressource est de la forme :
+<PRE>
+*nom: valeur
+</PRE>
+ou, si elle doit occuper plusieurs lignes :
+<PRE>
+*nom: ceci est\
+      une longue ressource.
+</PRE>
+Les lignes commencant par un point d'exclamation (!) sont des commentaires.
+
+
+
+<H2 align=center>Afficheurs externes</H2>
+<B>MMM</B> ne sachant afficher que du HTML et du texte simple (et les images
+lorsqu'elles sont incluses dans le document), il délègue l'affichage de tous
+les autres types de documents à des programmes externes. L'association d'un
+afficheur externe à un type de document particulier est géré par le 
+programme <TT>metamail</TT>, dont la configuration est donnée par le
+fichier <TT>$HOME/.mailcap</TT>. Se reporter à <TT>man mailcap</TT> pour
+plus de détails.
+<P>
+Néanmoins, il est possible de dire à <B>MMM</B>
+<UL>
+<LI> quels types de documents doivent être sauvés sur disque plutôt
+qu'affichés. C'est la ressource <TT>savedTypes</TT>.
+<LI> quels types de documents disposent d'un afficheur externe. C'est
+la ressource <TT>externalViewers</TT>.
+</UL>
+Dans le cas où un document possédant un type qui n'est dans aucune des
+catégories mentionnées ci-dessus, <B>MMM</B> demandera plus d'informations
+à l'utilisateur avant de continuer.
+
+<H3>Exemple</H3>
+<PRE>
+!! Types pour lesquels on doit sauver sur disque
+*savedTypes: \
+    application/zip, \
+    application/x-tar
+!! Types pour lesquels metamail connait un afficheur
+!! L'etoile (*) ne peut etre utilisee que dans les sous-types.
+*externalViewers: \
+    audio/x-midi, audio/midi, \
+    image/*, \
+    video/*, \
+    application/postscript, \
+    application/pdf, \
+    application/x-dvi, \
+    application/x-world, application/x-vrml, \
+    application/x-ical, \
+    application/mac-binhex
+</PRE>
+
+<H2 align=center>Raccourcis menu</H2>
+Les raccourcis sont des combinaisons de touches permettant de lancer une
+action existante dans un menu sans utiliser la souris. <B>MMM</B> propose
+des raccourcis pour la plupart des menus, mais s'ils ne conviennent pas,
+l'utilisateur peut choisir les siens.
+<P>
+Chaque action possède un nom. Pour cette action, le raccourci est spécifié
+par la ressource <TT>shortcutNom</TT>, dont la valeur est une description
+d'évènement Tk (voir documentation de Tk : <TT>man n bind</TT>).
+<P>
+Les noms d'action sont les suivants:
+<TABLE border=2>
+<TR><TH>Titre du menu</TH>	<TH>Nom de l'action</TH>
+<TR><TD>About</TD>		<TD>About</TD>
+<TR><TD>Nouvelle fenêtre</TD>	<TD>NewWindow</TD>
+<TR><TD>Ouvrir Sélection</TD>	<TD>OpenSelection</TD>
+<TR><TD>Ouvrir Fichier...</TD>	<TD>OpenFile</TD>
+<TR><TD>Sauver document...</TD> <TD>Save</TD>
+<TR><TD>Imprimer document </TD>	<TD>Print</TD>
+<TR><TD>Fermer fenêtre</TD>	<TD>Close</TD>
+<TR><TD>Quitter</TD>		<TD>Quit</TD>
+
+<TR><TD>Home</TD>		<TD>Home</TD>
+<TR><TD>Précédent</TD>		<TD>Back</TD>
+<TR><TD>Suivant</TD>		<TD>Forward</TD>
+
+<TR><TD>Recharger</TD>		<TD>Reload</TD>
+<TR><TD>Arrêter</TD>		<TD>Abort</TD>
+<TR><TD>Mettre à jour</TD>	<TD>Update</TD>
+<TR><TD>Ré-afficher</TD>	<TD>Redisplay</TD>
+<TR><TD>Marquer la page</TD>	<TD>AddToHotlist</TD>
+<TR><TD>Charger les images</TD>	<TD>LoadImages</TD>
+<TR><TD>Voir le source</TD>	<TD>ViewSource</TD>
+</TABLE>
+<H3>Exemple</H3>
+<PRE>
+!! Definition d'un raccourci pour Home (touche F2)
+*shortcutHome : &lt;F2&gt;
+</PRE>
+
+<H3>Avertissement</H3>
+Il existe de nombreuses combinaisons de touches déjà utilisées par ailleurs
+dans <B>MMM</B>. Il n'est donc pas garanti qu'une nouvelle définition de
+raccourci fonctionne toujours.
+
+<H2 align=center>Boutons de navigation</H2>
+Les actions de navigation disponibles à la souris sont également
+redéfinissables. Pour un nom d'action donné, le nom de la ressource est
+<TT>bind&lt;nom&gt;</TT>, et sa valeur  est une description
+d'évènement Tk (voir documentation de Tk : <TT>man n bind</TT>).
+
+Les noms des fonctions de navigation sont les suivants:
+
+<TABLE border=2>
+<TR><TH>Nom de l'action</TH>	<TH>Role de l'action</TH>
+<TR><TD>goto</TD>
+    <TD>affiche le document pointé par ce lien dans la même fenêtre, <BR>
+	sauf indication spécifique de l'auteur du document (frames)</TD> 
+<TR><TD>save</TD>
+    <TD>sauve le document pointé par le lien <BR> (après demande d'un nom de
+        fichier par une boîte de dialogue)</TD> 
+<TR><TD>gotonew</TD>
+    <TD>affiche le document pointé par ce lien dans une nouvelle fenêtre</TD>
+<TR><TD>hypermenu</TD>
+    <TD>affiche un menu d'activation du lien, pouvant contenir d'autres
+     fonctions de navigation </TD>
+</TABLE>
+
+D'autres fonctions contextuelles accessibles à la souris:
+<TABLE border=2>
+<TR><TH>Nom de l'action</TH> <TH>Contexte</TH> <TH>Role de l'action</TH>
+
+<TR><TD>tachy_about</TD>
+    <TD>dans le tachymètre</TD>
+    <TD>affiche le about</TD>
+<TR><TD>tachy_gc</TD>
+    <TD>dans le tachymètre</TD>
+    <TD>ouvre une fenêtre d'information sur la mémoire</TD> 
+<TR><TD>tachy_new</TD>
+    <TD>dans le tachymètre</TD>
+    <TD>ouvre une nouvelle fenêtre</TD>
+<TR><TD>tachy_sel</TD>
+    <TD>dans le tachymètre</TD>
+    <TD>ouvre une nouvelle fenêtre sur le document pointé <BR> 
+         par l'adresse contenue dans la sélection courante</TD>
+<TR><TD>stopanim</TD>
+    <TD>sur les images animées</TD>
+    <TD>stoppe l'animation</TD>
+<TR><TD>restartanim </TD>
+    <TD>sur les images animées</TD>
+    <TD>lance l'animation</TD>
+<TR><TD>copyimgurl</TD>
+    <TD>sur les images</TD>
+    <TD>copie l'url de l'image dans la sélection
+    </TD>
+<TR><TD>loadimage</TD>
+    <TD>sur une image non chargée</TD>
+    <TD>charge cette image</TD>
+<TR><TD>alt_imap</TD>
+    <TD>sur une image active non chargée</TD>
+    <TD>affiche le menu proposé par cette image</TD>
+</TABLE>
+
+<H3>Exemple</H3>
+<PRE>
+!! Ouvrir une nouvelle fenetre avec ce lien : utilise le bouton 2 
+!! au lieu du bouton 3 par defaut
+*bind&lt;gotonew&gt;: &lt;2&gt;
+</PRE>
+
+<H3>Avertissement</H3>
+Beaucoup d'actions de la souris sont déjà utilisées par ailleurs
+dans <B>MMM</B>. Il n'est donc pas garanti qu'une nouvelle définition
+fonctionne toujours.
+
+<H2 align=center>Polices de caractères</H2>
+Le réglage individuel des polices de caractères est fait dans le panneau
+de configuration des préférences. Toutefois, les choix possibles de polices
+et de tailles apparaissant dans le panneau sont réglables par des
+ressources:
+
+<DL>
+<DT> familles de polices
+<DD> La ressource est <TT>fontFamilies</TT>, et sa valeur est une liste
+de noms de familles séparés par des virgules
+<DT> tailles des polices
+<DD> La ressource est <TT>fontPixels</TT>, et sa valeur est une liste
+de tailles séparées par des virgules
+</DL>
+
+Une méthode simple pour calculer ces listes est d'utiliser
+<TT>xlsfonts</TT>:
+<PRE>
+$ xlsfonts | awk -F- 'NF==15 {print $3}' | sort -u
+# affichera la liste des familles disponibles sur votre système
+$ xlsfonts | awk -F- 'NF==15 {print $8}' | sort -u
+# affichera la liste des tailles disponibles sur votre système
+</PRE>
+Bien sûr, si votre serveur X sait calculer des fontes au vol lorsqu'elles
+sont demandées, vous n'êtes pas contraints par ces valeurs qui n'indiquent
+<B>que</B> les fontes déjà disponibles.
+
+<H3>Exemple</H3>
+<PRE>
+!! Choix de la famille
+*fontFamilies: *, \
+	courier, \
+	helvetica, \
+	lucida, lucidatypewriter,\
+	new century schoolbook,\
+	times, \
+	fixed
+!! Choix de la taille des polices
+*fontPixels: 8,10,11,12,13,14,15,16,17,18,19,20,24,26,30,34,40
+</PRE>
+
+
+
+<H2 align=center><A NAME="source">Edition du source</A></H2>
+Le menu <B>Voir le source</B> permet d'accéder au source HTML du document
+affiché. Il est possible de voir ce document avec des annotations de
+couleurs pour les différents éléments HTML.
+<P>
+Pour chaque élément <EM>e</EM>, le nom de la ressource est
+<TT>Source&lt;e&gt;</TT> et sa valeur est une couleur.
+<H3>Exemple</H3>
+<PRE>
+!! Annotations du source en couleurs
+! bleu pour les ancres
+*Source&lt;a&gt;: #4e5cd7
+! vert pour les entetes
+*Source&lt;h1&gt;: PaleGreen4
+*Source&lt;h2&gt;: PaleGreen3
+*Source&lt;h3&gt;: PaleGreen2
+*Source&lt;h4&gt;: PaleGreen1
+! autres
+*Source&lt;p&gt;: SandyBrown
+*Source&lt;img&gt;: yellow
+! orange pour les tables
+*Source&lt;table&gt;: #f05e28
+*Source&lt;tr&gt;: #f05e28
+*Source&lt;td&gt;: #f05e28
+*Source&lt;th&gt;: #f05e28
+! rose pour les formes
+*Source&lt;form&gt;: #f05cd7
+*Source&lt;input&gt;: #f05cd7
+*Source&lt;select&gt;: #f05cd7
+*Source&lt;option&gt;: #f05cd7
+*Source&lt;textarea&gt;: #f05cd7
+</PRE>
+
+
+<H2 align=center>Réglages Tk</H2>
+On peut naturellement indiquer des ressources qui seront interprétées
+par Tk lui même (voir les manuels Tk). 
+
+<H3>Exemple pour un petit écran (laptop)</H3>
+<PRE>
+*font: -*-helvetica-medium-r-normal-*-10-*-*-*-*-*-*-*
+*padX:1
+*padY:0
+*buttons.BorderWidth: 2
+</PRE>
+
+</BODY>
+</HTML>

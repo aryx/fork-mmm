@@ -1,0 +1,169 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (options de lancement) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/cli-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>MMM : options de lancement</H1>
+<BLOCKQUOTE>
+Note: le lancement de MMM se fait normalement par un shell script
+configuré lors de l'installation, qui à son tour lance un des binaires
+installé sur votre machine. Le shell script peut donner des valeurs par
+défaut à certaines de ces options.
+</BLOCKQUOTE>
+
+<H2 align=left>Listes des options</H2>
+Cette liste est obtenue en lancant <TT>mmm -help</TT>.
+Dans ce qui suit, les caractères &lt; et &gt; font bien sûr partie de la
+notation de la documentation, et ne doivent pas être tapés.
+<PRE>
+   <A HREF="#proxy">-proxy</A> &lt;hostname&gt;     Proxy host
+   <A HREF="#proxy">-port</A> &lt;port&gt;          Proxy port
+   <A HREF="#display">-d</A> &lt;foo:0&gt;            Display
+   <A HREF="#display">-display</A> &lt;foo:0&gt;      Display
+   <A HREF="#suffixes">-suffixes</A> &lt;file&gt;      Suffix file
+   <A HREF="#external">-external</A>             Accept remote command (mmm_remote &lt;url&gt;)</
+   <A HREF="#lang">-lang</A> &lt;lang&gt;          I18n language
+   <A HREF="#msgfile">-msgfile</A> &lt;file&gt;       I18n message file
+   <A HREF="#prefs">-prefs</A> &lt;file&gt;         Preference File
+   <A HREF="#helpurl">-helpurl</A> &lt;url&gt;        Help URL
+   <A HREF="#palette">-palette</A> &lt;color&gt;      Tk Palette
+   <A HREF="#nomodule">-nomodule</A>             Don't load initial modules
+   <A HREF="#focus">-clicktofocus</A>         Click to Focus mode (default is Focus Follows Mouse)
+   <A HREF="#geometry">-geometry</A> &lt;wxh+x+y&gt;   Initial geometry for the first navigator
+</PRE>
+
+Si <B>MMM</B> a été lancé à partir du shell-script, comme il est recommandé,
+une autre option est disponible:
+<PRE>
+   <A HREF="#fast">-fast</A>		Version native
+</PRE>
+
+
+<H2 align=left>Description des options</H2>
+
+<DL>
+
+<DT> <A NAME=display> <TT>-d &lt;display&gt;</TT> </A>
+<DT> <TT>-display &lt;display&gt;</TT>
+<DD> Indique l'écran X sur lequel <B>MMM</B> doit s'afficher
+(p. ex: <TT>-display foo:0</TT>).
+
+<DT> <A NAME=geometry> <TT>-geometry &lt;WxH+X+Y&gt;</TT> </A>
+<DD> Indique la géométrie écran de la première fenêtre ouverte par
+<B>MMM</B>. Voir <A HREF="tips-fr.html">ici</A> pour une manière astucieuse
+d'intégrer <B>MMM</B> dans son écran.
+
+<DT> <A NAME=external> <TT>-external</TT></A>
+<DD> Indique que <B>MMM</B> doit accepter des requêtes de son compagnon
+<TT>mmm_remote</TT>. Les communications entre les deux programmes utilisent
+un tuyau nommé <TT>$HOME/.mmm/remote</TT>.
+
+<DT> <A NAME=prefs> <TT>-prefs &lt;fichier&gt;</TT> </A>
+<DD> Indique le nom du fichier de préférences à utiliser pour cette session.
+Si cette option n'est pas spécifiée, <B>MMM</B> prendra comme valeur par
+défaut <TT>$HOME/.mmm/MMM.ad</TT>.
+Ce nom est éventuellement combiné avec le langage indiqué par l'option
+<A HREF="#lang"><TT>-lang</TT></A>. Ainsi, si <TT>-lang fr</TT> est utilisé,
+<B>MMM</B> prendra comme fichier de préférence soit
+<TT>$HOME/.mmm/MMM.ad.fr</TT> s'il existe, soit <TT>$HOME/.mmm/MMM.ad</TT>.
+
+<DT> <A NAME=palette> <TT>-palette &lt;couleur&gt;</TT> </A>
+<DD> Indique la couleur de base de la palette utilisée par <B>MMM</B>.
+Le défaut est un gris "traditionnel". Certains préfèrent le blanc, l'ocre,
+etc..
+
+<DT> <A NAME=focus> <TT>-clicktofocus</TT> </A>
+<DD> Indique qu'il faut cliquer dans une fenêtre pour y diriger les
+évènements claviers (façon Macintosh), au lieu du mode par défaut, où les
+évènements sont (la plupart du temps) dirigés vers la fenêtre qui contient
+le pointeur de la souris.
+
+<DT> <A NAME=suffixes> <TT>-suffixes &lt;fichier&gt;</TT> </A>
+<DD> Indique le nom d'un fichier décrivant l'association d'un type MIME à
+un suffixe donné (p.ex. <TT>foo.gif</TT> est de type <TT>image/gif</TT>).
+Le défaut est <TT>$HOME/.mmm/mime.types</TT>. Si ce fichier n'existe pas,
+<B>MMM</B> ne reconnaîtra qu'un certain nombre de suffixes prédéfinis.
+La syntaxe de ce ficher est la suivante: 
+<UL>
+
+<LI> toute ligne commencant par un dièse (#) est un commentaire
+<PRE>
+# ceci est un commentaire
+</PRE>
+
+<LI> toute autre ligne est de la forme
+<PRE>
+type/sous-type    suffixe1 suffixe2
+</PRE>
+comme dans l'exemple suivant :
+<PRE>
+image/jpeg        jpeg jpg jpe
+</PRE>
+</UL>
+
+<DT> <A NAME=nomodule> <TT>-nomodule</TT> </A>
+<DD> Désactive le chargement automatique des extensions de <B>MMM</B>.
+Par défaut, lors du lancement, <B>MMM</B> (version bytecode seulement)
+charge tout fichier <TT>.cmo</TT> trouvé dans le répertoire
+<TT>$HOME/.mmm/418</TT> (418 étant le numéro de version).
+Ces fichiers sont des applets Caml
+étendant <B>MMM</B> (nouveaux afficheurs, extension de l'afficheur HTML, ...).
+
+<DT> <A NAME=lang> <TT>-lang &lt;langue&gt;</TT> </A>
+<DD> Indique la langue souhaitée pour l'affichage des boutons, menus et
+messages. Par défaut, cette valeur est la variable d'environnement
+<TT>$LANG</TT> si elle existe. Si <B>MMM</B> n'a pas de définition pour
+cette langue, l'anglais sera utilisé. Cette option affecte aussi le choix
+du fichier de préférences, comme décrit <A HREF="#prefs">ci-dessus</A>.
+
+<DT> <A NAME=msgfile> <TT>-msgfile &lt;fichier&gt;</TT> </A>
+<DD> Indique le nom du fichier contenant les traductions des messages en
+plusieurs langues. Cette option est habituellement réglée une fois pour toutes
+dans le shell-script de lancement de <B>MMM</B>.
+
+<DT> <A NAME=proxy> <TT>-proxy &lt;machine&gt;</TT> </A>
+<DT> <A NAME=port> <TT>-port &lt;numéro de port&gt;</TT> </A>
+<DD> Indique le proxy Web à utiliser. Cette option est habituellement
+définie dans le shell-script de lancement de <B>MMM</B>. L'utilisateur
+peut ensuite modifier ces valeurs grâce aux panneaux de réglage des
+préférences, et n'a donc pas à utiliser ces options.
+
+<DT> <A NAME=helpurl> <TT>-helpurl &lt;URL&gt;</TT> </A>
+<DD> Indique l'adresse d'un document d'aide (habituellement ces documents !)
+qui est accessible directement dans <B>MMM</B> avec le menu d'aide.
+
+
+<DT> <A NAME="#fast"><TT>-fast</TT></A>
+<DD> Indique qu'il faut lancer la version de <B>MMM</B> compilée avec
+<TT>ocamlopt</TT>. Dans ce cas, les <EM>applets</EM> ne sont pas disponibles
+(ni les extensions de <B>MMM</B> chargées au lancement). En dehors des
+applets, les deux versions de <B>MMM</B> sont en principe entièrement
+identiques. La version native est un peu plus rapide.
+
+
+<DT> Url initiale
+<DD> Enfin, la dernière options facultative est l'adresse du document
+initial à afficher. Ce peut être une URL (http: etc...) ou simplement un
+nom de fichier.
+
+</DL>
+
+<H2 align=left>Autres</H2>
+<DL>
+<DT> <A NAME="home">Variable <TT>WWW_HOME</TT></A>
+<DD> La variable d'environnement WWW_HOME, si elle existe, indique l'adresse
+du document affiché lorsqu'on invoque le menu <B>Home</B> de <B>MMM</B>.
+
+<DT> Variable <TT>MMM_MAIL</TT>
+<DD> Voir <A HREF="progs-fr.html">les programmes externes</A>
+
+</DL>
+
+</BODY>
+</HTML>

@@ -1,0 +1,191 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (command line options) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/cli-ja.html">
+<LINK REL="TOC"
+      HREF="docindex-ja.html">
+<LINK REV="Author" HREF="mailto:Jun.Furuse@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>も〜 : コマンドラインオプション</H1>
+<BLOCKQUOTE>
+注意： <B>も〜</B> は通常 install 時に調整された起動スクリプトを使用し
+て下さい。起動スクリプトは <B>も〜</B> のバイナリを動かしますが、この際、
+バイトコード版かネイティブコード版を呼び出します( -fast オプションを
+見て下さい )。以下のいくつかのコマンドラインオプションは
+起動スクリプトを使用した場合、デフォルトの値を持っています。
+</BLOCKQUOTE>
+
+<H2 align=left>オプションリスト</H2>
+<TT>mmm -help</TT> でこのリストが表示されます。
+もちろん、&lt; と &gt; は実際にタイプしてはいけません。
+<PRE>
+   <A HREF="#proxy">-proxy</A> &lt;foo&gt;            Proxy ホスト
+   <A HREF="#proxy">-port</A> &lt;foo&gt;             Proxy ポート
+   <A HREF="#display">-d</A> &lt;foo:0&gt;            接続する X Display
+   <A HREF="#display">-display</A> &lt;foo:0&gt;      接続する X Display
+   <A HREF="#suffixes">-suffixes</A> &lt;file&gt;     Suffix ファイル
+   <A HREF="#external">-external</A>              外部コマンドを受け付ける (mmm_remote &lt;url&gt;)
+   <A HREF="#lang">-lang</A> &lt;lang&gt;             言語指定
+   <A HREF="#msgfile">-msgfile</A> &lt;file&gt;       国際化メッセージファイル
+   <A HREF="#prefs">-prefs</A> &lt;file&gt;           設定ファイル
+   <A HREF="#helpurl">-helpurl</A> &lt;url&gt;        Help URL
+   <A HREF="#palette">-palette</A> &lt;color&gt;      Tk パレット
+   <A HREF="#nomodule">-nomodule</A>             初期化時にモジュールを読み込まない
+   <A HREF="#focus">-clicktofocus</A>         Click to Focus モード (デフォルトでは Focus Follows モード)
+   <A HREF="#geometry">-geometry</A> &lt;<em>w</em>x<em>h</em>+<em>x</em>+<em>y</em>&gt;   一番はじめに表示されるブラウザの初期ジオメトリ
+</PRE>
+
+<B>も〜</B> が起動スクリプトから使用（推奨）した場合、次のオプションが
+さらに使えます。
+<PRE>
+   <A HREF="#fast">-fast</A>		ネイティブコード版を立ち上げる
+</PRE>
+
+
+<H2 align=left>各オプションの説明</H2>
+
+<DL>
+
+<DT> <A NAME=display> <TT>-d &lt;display&gt;</TT> </A>
+<DT> <TT>-display &lt;display&gt;</TT>
+<DD> <B>も〜</B>が接続する X のディスプレイを指定します。
+(例: <TT>-display foo:0</TT>).
+
+<DT> <A NAME=geometry> <TT>-geometry &lt;WxH+X+Y&gt;</TT> </A>
+<DD> <B>も〜</B>が一番始めに表示するブラウザウィンドウの位置を指定しま
+    す。デスクトップに格好良く <B>も〜</B> を配置するには
+    <A HREF="tips-ja.html">豆知識</A> を参照して下さい。
+
+<DT> <A NAME=external> <TT>-external</TT></A>
+<DD> 外部コマンド<TT>mmm_remote</TT> を使って、<B>も〜</B> を外から
+    操作できるようになります。二つのプログラム間の通信は名前付きパイプ 
+    <TT>$HOME/.mmm/remote</TT> を通じて行なわれます。
+
+<DT> <A NAME=prefs> <TT>-prefs &lt;file&gt;</TT> </A>
+<DD> 使用する設定ファイルを指定します。このオプションが指定されなかっ
+    た場合は <TT>$HOME/.mmm/MMM.ad</TT> を使用します。また、この
+    ファイル名は <A HREF="#lang"><TT>-lang</TT></A> オプションの
+    値と組み合わせても使用されます。例えば、<TT>-lang ja</TT> が
+    指定されていた場合、<B>も〜</B> はまず <TT>$HOME/.mmm/MMM.ad.ja</TT>
+    があるかどうか探し、あった場合、それを設定ファイルに使用します。
+    なかった場合は <TT>$HOME/.mmm/MMM.ad</TT> が使用されます。
+
+<DT> <A NAME=palette> <TT>-palette &lt;color&gt;</TT> </A>
+<DD> <B>も〜</B> パレットの基本色を指定します。
+    初期値は "伝統的" 灰色。(伝統的といえば bisque のような気もしますが。)
+    白とか赤とかが好きな人はどうぞ。
+
+<DT> <A NAME=focus> <TT>-clicktofocus</TT> </A>
+<DD> デフォルトではキーを入力したい場合には入力したいウィンドウに
+    マウスカーソルを持っていってフォーカスをそのウィンドウに移します
+    (follow mouse モード)。Click to focus モードは Macintosh のように
+    対象ウィンドウをクリックしてフォーカスを移すモードです。
+
+<DT> <A NAME=suffixes> <TT>-suffixes &lt;file&gt;</TT> </A>
+<DD> ファイル拡張子と MIME タイプの関連づけを行なうファイルを指定します。
+    (例えば <TT>foo.gif</TT> は普通 <TT>image/gif</TT>のタイプを持ちます。)
+    デフォルトの suffix ファイルは <TT>$HOME/.mmm/mime.types</TT> です。
+    このファイルが存在しない場合は <B>も〜</B> 内部に設定された値のみを
+    使います。
+    このファイルの文法は以下の通り：
+<UL>
+
+<LI> # で始まる行はコメントです。
+<PRE>
+# this is a comment
+</PRE>
+
+<LI> それ以外の行は次の形をしていなければいけません。
+<PRE>
+type/subtype    拡張子1 拡張子2 ...
+</PRE>
+例)
+<PRE>
+image/jpeg        jpeg jpg jpe
+</PRE>
+</UL>
+
+<DT> <A NAME=nomodule> <TT>-nomodule</TT> </A>
+<DD> <B>も〜</B> 拡張モジュールの自動読み込みを禁止します。
+    デフォルトでは初期化時に <B>も〜</B> (バイトコード版のみ)
+    は <TT>$HOME/.mmm/418</TT> ディレクトリに存在する全ての <TT>.cmo</TT>
+    ファイルを読み込みます。(418 は<B>も〜</B>のバージョン番号です。)
+    <TT>.cmo</TT> ファイルは <B>も〜</B> を拡張するための Caml
+    アプレットで、新しいビューアや、HTML 表示エンジンの拡張などが
+    行なえます。
+
+<DT> <A NAME=lang> <TT>-lang &lt;language&gt;</TT> </A>
+<DD> ボタンやメニュー、メッセージなどに表示される言語を指定します。
+    デフォルトでは環境変数 <TT>$LANG</TT> が使われます。<B>も〜</B>
+    の知らない言語が指定された場合、英語が使われます。
+    この値は<A HREF="#prefs">設定ファイルの選択</A>にも使われます。<BR>
+
+    <BLOCKQUOTE>日本語モードに関して：
+    環境変数 <TT>$LANG</TT> が <TT>ja</TT> で始まる文字列で、
+    <B>も〜</B>を起動スクリプトから使用した場合、
+    <TT>-lang ja</TT> が自動的に 与えられます。
+    また、<TT>-lang</TT> オプションの値に関係なく、<B>も〜</B> は
+    日本語 HTML の表示が可能です。(tcsh 風に書くと、)
+    <P><PRE>
+    % setenv LANG japanese 
+    % mmm
+    </PRE>
+    とした場合、日本語メッセージで動作します。
+    <P><PRE>
+    % unsetenv LANG
+    % mmm -lang fr
+    </PRE>
+    の場合でも、<B>も〜</B>は日本語表示可能ですが、メッセージはフランス語で
+    表示されます。(<TT>$LANG</TT> が <TT>ja</TT> で始まっていて、
+    英語メッセージを使いたい場合は <TT>-lang en</TT> とでもして下さい。
+    見つからないので英語メッセージモードになります。)<P>
+    <TT>$LANG</TT>を<TT>C</TT>にセットして<B>も〜</B>を立ち上げると
+    オリジナルモードになります。日本語の表示、解釈は行なわれません。
+    </BLOCKQUOTE>
+    
+<DT> <A NAME=msgfile> <TT>-msgfile &lt;file&gt;</TT> </A>
+<DD> 使用するメッセージファイルを指定します。このオプションは 起動
+    スクリプトがバイナリを呼び出す時に自動的に付けるので、普通は
+    使う必要はありません。
+
+<DT> <A NAME=proxy> <TT>-proxy &lt;machine&gt;</TT> </A>
+<DT> <A NAME=port> <TT>-port &lt;port number&gt;</TT> </A>
+<DD> Web proxy サーバを指定します。通常は起動スクリプト内に設定値を
+    書き込んで使用して下さい。また、<B>も〜</B>の設定パネルからも
+    変更が可能です。
+
+<DT> <A NAME=helpurl> <TT>-helpurl &lt;URL&gt;</TT> </A>
+<DD> <B>も〜</B> の <TT>Help</TT> メニューからアクセスできる
+    お助け文書（今読んでる奴）のアドレスを指定します。
+    通常、起動スクリプト内で設定して下さい。
+
+<DT> <A NAME="fast"><TT>-fast</TT></A>
+<DD> ネイティブコード版 <B>も〜</B> を立ち上げます。(ネイティブコード版
+    とは、<TT>ocamlopt</TT> コンパイラでコンパイルされた <B>も〜</B>の
+    ことです。) ネイティブコード版では、<EM>アプレット</EM>と
+    <B>も〜</B> 機能拡張モジュールは使用できません。
+    アプレット部分を除けば、両方の <B>も〜</B>とも全く同じで、
+    ネイティブコード版の方が早いです。
+
+<DT> Initial Url
+<DD> 最後のオプション<!--(ただここに出てくる順番が最後なだけ)-->は
+    最初のブラウザウィンドウに表示されるページのアドレスを指定する物です。
+    URL (http: など) や、普通のファイル名が使えます。
+</DL>
+
+<H2 align=left>その他</H2>
+<DL>
+<DT> <A NAME="home">環境変数 <TT>WWW_HOME</TT></A>
+<DD> 環境変数 <TT>WWW_HOME</TT> が設定されている場合、
+    <B>家 (Home)</B> ボタンを押した時に表示される文書のアドレスとみなします。
+
+<DT> 環境変数 <TT>MMM_MAIL</TT>
+<DD> <A HREF="progs-ja.html">外部プログラム</A>の項を見て下さい。
+
+</DL>
+
+</BODY>
+</HTML>

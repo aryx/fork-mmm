@@ -1,0 +1,196 @@
+<HTML>
+<HEAD>
+<TITLE>MMM : Technical characteristics</TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/tech-ja.html">
+<LINK REL="TOC"
+      HREF="docindex-ja.html">
+<LINK REV="made" HREF="mailto:Jun.Furuse@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>も〜 : 技術的なことに関して</H1>
+
+<H2>参考文献</H2>
+<B>も〜</B> のデザインについては以下のウェブに関する技術スタンダード
+に従うようにしています。これらのほとんどのものは RFC もしくは
+<A HREF="http://www.w3.org/">ウェブ・コンソーシアム</A>
+の推薦するものです。
+<UL>
+<LI> HTML 2.0 Proposed standard
+(<A HREF="ftp://ds.internic.net/rfc/rfc1866.txt">rfc 1866</A>)
+<LI> HTML 3.2 Reference specification (W3C Recommendation)
+<LI> HTTP/1.0 Proposed standard
+(<A HREF="ftp://ds.internic.net/rfc/rfc1945.txt">rfc 1945</A>)
+<LI> rfc1630 on Universal Resource Identifiers
+(<A HREF="http://ds.internic.net/rfc/rfc1630.txt">rfc 1630</A>)
+<LI> rfc1738 on Uniform Resource Locators
+(<A HREF="ftp://ds.internic.net//rfc/rfc1738.txt">rfc 1738</A>)
+<LI> rfc1808 on Relative URL
+(<A HREF="ftp://ds.internic.net//rfc/rfc1808.txt">rfc 1808</A>)
+</UL>
+
+<P>
+しかしながら、ブラウザは完全にこれらの基準に従っているわけではありません。
+いくつか<A HREF="#compliance">問題(下記)</A>があります。
+何か問題を発見したばあい、
+<A HREF="mailto:Jun.Furuse@inria.fr">私</A>に、
+</P>
+
+<UL>
+<LI> どういった問題なのか
+<LI> 参考となるようなドキュメントや情報 (HTML ワーキンググループでの
+    議論など)
+<LI> 表示する際に問題があった URL 
+</UL>
+
+を送ってください。
+
+<H2>注意</H2>
+<P>
+<B>も〜</B> は他のブラウザよりも親切ではありません。
+よって、「Mozilla とか Explorer が正しく表示できる文書を
+<B>も〜</B> はエラーだと言ったり、表示できないよー」と思っても、
+それは <B>も〜</B> が悪いのではなく、その文書そのものが
+腐っている場合があります。
+それら、何度言ってもきりがないのですが、
+<BLOCKQUOTE>
+テーブルの実装は腐ってるよ<BR>
+テーブルの実装は腐ってるぜ<BR>
+テーブルの実装は腐ってるの<BR>
+テーブルの実装は腐ってるっす<BR>
+テーブルの実装は腐ってるで<BR>
+テーブルの実装は腐ってるでゴンス<BR>
+というわけ。ちゃんと事前に言ったからね。<BR>
+それから遅いよ。<BR>
+んでもってメモリも食うよ。<BR>
+</BLOCKQUOTE>
+頼むからテーブルがちゃんと表示できないというレポートは見飽きているから
+送らないで下さい。Tk のバージョン 4.{0,1,2} を使って、テーブルを
+ちゃんと表示する方法はないに違いないのです。
+
+<H2>実装部分</H2>
+ブラウザは次の独立した部分から成り立っています。
+<UL>
+<LI> <A HREF="#protocols">コミュニケーション・プロトコル</A>
+<LI> <A HREF="#html">HTML ビューア</A>
+<LI> <A HREF="#viewers">その他のビューワ</A>
+<LI> <A HREF="#cache">キャッシュ</A>
+</UL>
+
+
+<H2><A NAME="protocols">コミュニケーソン・プロトコル</A></H2>
+<UL>
+<LI> ウェブではさまざまなプロトコルが使用されていますが、<B>も〜</B>
+    に実装されているのは HTTP 1.0 のみです。それ以外のプロトコル
+    (ftp, wais, gopher,...)などは Proxy サーバを介してやる必要があります。
+    <P>
+    いくつかのリクエストは並行して処理することができ、
+    DNS を引く以外のネットワーク上の読み込み、書き込みは
+    ノン・ブロッキングで行なわれます。
+
+<LI> ブラウザは HTTP レクエストをまず直接サーバに送ろうとします。
+    もしそれができないばあいはプロキシに再送します。
+    もし、<EM>常にプロキシを使う (Always Use Proxy)</EM> オプション
+    が ON になっている場合は、始めからプロキシに送ります。
+
+<LI> HTTP 1.1 で提案されている Proxy authentication が実装されています。
+
+<LI> 某企業(複数)が勝手に拡張した HTTP プロトコル(Refresh, push/pull など)
+    は実装されていません。
+
+<LI> <TT>file:</TT> プロトコルのリクエストは次のように解釈されます。
+    もしホスト名が "localhost" (<TT>file://localhost/path</TT>)の場合
+    か指定されていない(<TT>file:///path</TT>)場合、<EM>path</EM>は
+    ローカルファイルシステムの絶対パスを表すと見なします。
+    注意： <TT>file:/some/path</TT> は <B>not</B>
+    正確な URL ではありませんが、受け付けます。
+<P>
+もし <TT>localhost</TT> 以外のホスト名が指定されている場合は、
+この URL は <TT>ftp:</TT> プロトコルと同様に扱われます。
+
+<LI> <TT>telnet:</TT> プロトコルは全くサポートされていません。
+</UL>
+
+
+<H2><A NAME="html">HTML ビューワ</A></H2>
+<B>も〜</B> は HTML (text/html タイプの文書) ビューワは HTML 2.0
+といくつかの HTML 3.2 で定義されたエレメントを理解します。
+字句および文法解析は HTML の定義で使われている SGML の部分集合と
+DTD (HTML 2.0 か 3.2) に沿って行われます。
+タグアトリビュート値については、ビューワはそれらをチェックすべき
+ですが、文法のチェックは行われません。
+
+<EM>インライン</EM>・イメージの表示は Tk のイメージ表示機能を
+そのまま使っています。現在、<TT>GIF</TT> 形式 (つまり、MIME タイプ
+<TT>image/gif</TT>) (インタレース, アニメーテッド, トランスパレント
+には対応していません。)、 <TT>PNM</TT> 形式、
+<TT>XBM</TT> 形式の画像に対応しています。
+それ以外の画像フォーマットは Tk 拡張 (外部ダイナミックリンクライブラリ)
+を使って対応させることができます。例えば <TT>PNG</TT> と
+<TT>JPEG</TT> (非 progressive) はこういったライブラリを使うと
+表示可能です。
+
+最近の <B>も〜</B> では、アニメーテッド GIF ファイルを特別なデコーダ
+を用意することで表示可能になっています。
+
+<H3>イメージのロード</H3>
+イメージのロードのポリシーにはいくつかの戦略が用意されていて、
+これらは設定パネルで変更可能です。
+イメージのロードは内部の順番待ち行列があり、同時に発生するネットワーク
+コネクションの上限があります。
+
+<H2><A NAME="viewers">この他のビューワ</A></H2>
+これ以外のメディアタイプの文書 (<TT>text/plain</TT>を除く) では
+<B>も〜</B> は <TT>metamail</TT> を呼び出し、表示を行なわせます。
+(<TT>metamail</TT> は <TT>~/.mailcap</TT> ファイルを見て、それぞれの
+メディアタイプによってどんなビューワを立ち上げるかを判断します。)
+
+<H2><A NAME="cache">キャッシュ</A></H2>
+<B>も〜</B> のキャッシュには段階が二つあります。まず、グラフィカル・
+キャッシュ。これは実際に表示された文書の画面そのものです。
+そして次が、普通の意味でのキャッシュ、文書をソースの形で、
+メモリやディスクに一時保存するものです。
+
+<H2>今までに発見されたバグ</H2>
+<DL>
+
+<DT><A NAME="compliance">HTML compliance problems</A>
+<DD> 次の問題があることがわかっています
+<UL>
+
+<LI> &lt;!DOCTYPE&gt; は正しくパースされません。でも知る限り、 
+    有名ブラウザで <TT>DOCTYPE</TT> を実際にパースしているものは
+    ないようです。
+
+<LI> &lt;! ホゲホゲ &gt; はテキストとして表示されます。(とはいっても
+    これは文法的に正しいコメントではありません。)
+
+<LI> スペースの取り扱いが時々変になります。
+
+<LI> &lt;IMG&gt; の ALIGN がうまくいきません。(特に、 HTML3.2 では
+    テキストはイメージを回り込んで表示されねばいけないのですが、
+     Tk ではこれができないのです。)
+
+<LI> <TT>BODY</TT> タグの <TT>background</TT> アトリビュートは無視され
+    ます。
+
+<LI>   <TT>PRE</TT> タグの <TT>width</TT> アトリビュートは実装されてい
+    ません。
+
+<LI> <TT>FORM</TT> タグの <TT>enctype</TT> アトリビュートは常に
+    <TT>applications/x-www-form-urlencoded</TT> だということにしていま
+    す。
+
+<LI> <TT>INPUT</TT> の <TT>type=file</TT> は実装されていません。
+
+</UL>
+
+<DT>HTTP Protocol
+<DD>Only the most used subset of HTTP/1.0 is implemented. Only the
+<TT>GET</TT>, <TT>HEAD</TT> and <TT>POST</TT> methods are supported.
+
+</DL>
+
+</BODY>
+</HTML>

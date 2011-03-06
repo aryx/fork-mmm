@@ -1,0 +1,27 @@
+## Where you installed ObjectiveCaml
+LIBDIR=\ocaml\lib
+
+## Where you want to install CamlTk41 libraries and binaries
+INSTALLDIR=$(LIBDIR)\camltk
+
+### Location of the Tcl/Tk installation
+TCLTK=c:\tcl
+
+### What to use to compile and link with Tk
+TCLTKINCLUDES=-ccopt -I$(TCLTK)\include
+TKLIBS="$(TCLTK)\lib\tcl80.lib $(TCLTK)\lib\tk80.lib"
+
+## Tools from the Objective Caml distribution
+CAMLC=ocamlc
+CAMLCOMP=$(CAMLC) -c
+CAMLYACC=ocamlyacc -v
+CAMLLEX=ocamllex
+CAMLLIBR=$(CAMLC) -a
+CAMLDEP=ocamldep
+COMPFLAGS=
+LINKFLAGS=
+
+CAMLOPT=ocamlopt
+CAMLOPTLIBR=$(CAMLOPT) -a
+
+## End of configuration section

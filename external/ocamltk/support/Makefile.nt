@@ -1,0 +1,51 @@
+!include ..\..\..\csl\config\Makefile.nt
+!include ..\Makefile.config.nt
+
+all: support.cmo widget.cmo protocol.cmo \
+     textvariable.cmo timer.cmo fileevent.cmo \
+     libcamltk41.lib
+
+opt: support.cmx widget.cmx protocol.cmx \
+     textvariable.cmx timer.cmx fileevent.cmx \
+     libcamltk41.lib
+
+COBJS=cltkCaml.obj cltkEval.obj cltkFile.obj cltkMain.obj cltkEvent.obj \
+      cltkMisc.obj cltkTimer.obj cltkVar.obj cltkWait.obj cltkImg.obj
+
+CCFLAGS=-ccopt /Zi $(TCLTKINCLUDES)
+
+libcamltk41.lib : $(COBJS)
+	$(MKLIB)libcamltk41.lib $(COBJS)
+
+PUB=fileevent.cmi fileevent.mli \
+    protocol.cmi protocol.mli \
+    textvariable.cmi textvariable.mli \
+    timer.cmi timer.mli \
+    widget.cmi widget.mli 
+
+install: libcamltk41.lib $(PUB)
+	cp $(PUB) $(INSTALLDIR)
+	cp libcamltk41.lib $(INSTALLDIR)
+
+clean : 
+	rm -f *.cm* *.obj *.lib
+
+.SUFFIXES :
+.SUFFIXES : .mli .ml .cmi .cmo .cmx .mlp .c .obj
+
+.mli.cmi:
+	$(CAMLCOMP) $(COMPFLAGS) $<
+
+.ml.cmo:
+	$(CAMLCOMP) $(COMPFLAGS) $<
+
+.ml.cmx:
+	$(CAMLOPT) -c $(COMPFLAGS) $<
+
+.c.obj:
+	$(CAMLCOMP) $(CCFLAGS) $<
+
+depend:
+	$(CAMLDEP) *.mli *.ml > .depend
+
+!include .depend

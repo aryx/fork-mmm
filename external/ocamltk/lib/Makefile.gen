@@ -1,0 +1,20 @@
+include ../Makefile.config
+
+all: tk.ml .depend
+
+tkgen.ml: ../Widgets.src ../compiler/tkcompiler
+	../compiler/tkcompiler -o . -I .. ../Widgets.src
+
+tk.ml .depend: tkgen.ml ../support/report.ml ../builtin/builtin_*.ml
+	(echo 'open Widget'; \
+         echo 'open Protocol'; \
+         echo 'open Support'; \
+	 echo 'open Textvariable'; \
+	 cat ../support/report.ml; \
+	 cat ../builtin/builtin_*.ml; \
+	 cat tkgen.ml; \
+         cat ../builtin/builtina_*.ml) > tk.ml
+	$(CAMLC) -c -i -I ../support tk.ml > tk.mli0
+	mv tk.mli0 tk.mli
+	rm tk.cm*
+	$(CAMLDEP) *.mli *.ml > .depend

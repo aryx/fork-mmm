@@ -1,0 +1,161 @@
+<HTML>
+<HEAD>
+<TITLE>MMM Faq</TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/faq.html">
+<LINK REL="TOC"
+      HREF="docindex.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Faq MMM</H1>
+
+<UL>
+<LI> <A HREF="#pronounce">How do I pronounce MMM ?</A>
+<LI> <A HREF="#backspace">My "backspace" key doesn't work</A>
+<LI> <A HREF="#accents">How to I type international characters (יטא...)</A>
+<LI> <A HREF="#metamail">I don't see DVIs and PostScript</A>
+<LI> <A HREF="#gunzip">I don't see compressed (.gz, .Z) files</A>
+<LI> <A HREF="#hotlist">Where is my hotlist ?</A>
+<LI> <A HREF="#readnews">Why can't I read news with MMM ?</A>
+<LI> <A HREF="#fromnews">How do I connect MMM with my newsreader ?</A>
+<LI> <A HREF="#pig">Isn't MMM a memory pig ?</A>
+<LI> <A HREF="#pig2">Why is table display so lousy ?</A>
+<LI> <A HREF="#tachymeter">Why is there only one tachymeter ?</A>
+</UL>
+
+
+<H2 align=left>How do I pronounce MMM ?</H2>
+<A NAME="pronounce"></A>
+<B>MMM</B> should not be pronounced "three m", neither "m three", because
+both are already related to existing products. "m m m", although sweet,
+could induce some confusion.
+
+The official pronounciation is thus
+<A HREF="meuh.wav">this (WAV)</A> (or, in other audio formats
+<A HREF="meuh.aiff">AIFF</A>,
+<A HREF="meuh.au">ULAW</A>). However, in daily use, you might prefer
+just "meuh" in french, that is "m" followed by a long "E", as in "burn".
+
+<H2 align=left>My "backspace" key doesn't work</H2>
+<A NAME="backspace"></A>
+If this is the case, then your "backspace" key is in fact a
+<TT>&lt;Delete&gt;</TT> key, or has been configured to behave as such
+(check that with <TT>xev</TT>).
+The obvious fix is to make your backspace key act as a real
+<TT>&lt;BackSpace&gt;</TT> key. If you don't want to change your key, then
+you'll have to use <TT>Control-h</TT>. Or you can edit a
+<TT>$HOME/.camltkrc</TT> file, in which you'll put:
+<PRE>
+bind Entry &lt;Delete&gt; [bind Entry &lt;BackSpace&gt;]
+bind Text &lt;Delete&gt; [bind Text &lt;BackSpace&gt;]
+</PRE>
+Then quit and run <B>MMM</B> again.
+
+<H2 align=left>How to I type international characters (יטא...)</H2>
+<A NAME="accents"></A>
+International characters are supported by modern X11 servers through
+the <EM>Compose</EM> function. On XFree86 (Linux and BSD), the default
+binding uses the <TT>ScrollLock</TT> key. You can for example type
+<PRE>
+&lt;ScrollLock&gt; &lt;'&gt; &lt;e&gt; or &lt;ScrollLock&gt; &lt;e&gt; &lt;'&gt;
+</PRE>
+(that's three consecutive keypresses, unlike other modifiers such as
+<TT>Alt</TT> or <TT>Control</TT>) and it produces "י". It is possible to
+bind the compose function on  another key, using <TT>xmodmap</TT>. For
+example, suppose that some unused key on your keyboard has keycode 116, then
+you would add
+<PRE>
+keycode 116 = Multi_key
+</PRE>
+in your xmodmap configuration file, or simply execute
+<PRE>
+$ xmodmap -e 'keycode 116 = Multi_key'
+</PRE>
+Use <TT>xev</TT> to determine free keys and their keycode.
+
+<P>
+Other X servers probably have similar features.
+
+<H2 align=left>I don't see DVIs and PostScript</H2>
+<A NAME="metamail"></A>
+Check your <TT>~/.mailcap</TT> file. The default <TT>mailcap</TT> of the
+<TT>metamail</TT> distribution is not convenient for Web browsing.
+A convenient <TT>.mailcap</TT> should contain something like:
+<PRE>
+application/postscript; ghostview %s
+application/x-dvi; xdvi %s
+# And if you are in fun mode, assuming these tools are installed
+image/*; xv %s
+video/mpeg; mpeg_play %s
+video/*; xanim %s
+# Etc...
+</PRE>
+
+<H2 align=left>I don't see compressed (.gz, .Z files)</H2>
+<A NAME="gunzip"></A>
+MMM <B>requires</B> the existence of <TT>gunzip</TT> in your <TT>PATH</TT>.
+
+<H2 align=left>Where is my hotlist ?</H2>
+<A NAME="hotlist"></A>
+<B>MMM</B> has no predefined notion of <EM>hotlist</EM>, but supports
+external hotlist managers. When you click on the <TT>To Hotlist</TT> button,
+<B>MMM</B> invokes the hotlist manager as set in the <B>Preferences</B>.
+See <A HREF="progs.html#hotlist">the examples</A>.
+
+<H2 align=left>Why can't I read news with mmm ?</H2>
+<A NAME="readnews"></A>
+Use a real newsreader.
+
+<H2 align=left>How do I connect MMM with my newsreader ?</H2>
+<A NAME="fromnews"></A>
+For GNUS 5, add the following in your <TT>.emacs</TT>
+<PRE>
+; Connecting GNUS and MMM (copied on the Grail version)
+(defun mmm:send-url-to-mmm (url)
+  (message "Sending URL to MMM...")
+  (save-excursion
+    (set-buffer (get-buffer-create "*Shell Command Output*"))
+    (erase-buffer)
+    ;; don't worry about this failing...
+    (call-process "mmm_remote" nil 0 nil url)
+    (message "Sending URL to MMM... done")))
+
+(setq gnus-button-url 'mmm:send-url-to-mmm)
+</PRE>
+Be sure to run <B>mmm</B> with the <TT>-external</TT> option.
+Clicking on an highlighted URL with mouse button 2 will open a new 
+navigator window displaying the document at this URL.
+
+<H2 align=left>Isn't MMM a memory pig ?</H2>
+<A NAME="pig"></A>
+Hard to say. Caml has a garbage collector and many efforts have been made to
+remove space leaks due to global tables (such as callbacks or in-memory
+cache). Nevertheless, long sessions with image loading turned on tend to
+make the MMM process grow beyond reason (&gt;15M). There is at least one
+possible explanation: since our HTML display machine is not that fast, MMM
+is keeping all history windows alive at the same time, so that back/forward
+is simply a matter of popping a window. With this behaviour, it means that
+Tk must have a lot of windows open at the same time, possibly with in-lined
+images; and this represents lots of memory. When the windows get killed, the
+memory is freed. But then, on old Unix systems, the size of the process never
+decreases. 
+<P>
+Since version 0.40, you can set a limit to the number of windows kept in
+the <EM>widget cache</EM>, in order to limit the process size.
+
+<H2 align=left><A NAME="pig2">Why is table display so lousy ?</A></H2>
+<B>MMM</B> does not perform any layout computation based on font sizes,
+margins, image sizes, etc... The HTML display machines only uses the
+highest-level features of Tk's Text widget. In some cases, this pushes
+Tk far beyond its limits. Moreover, many HTML documents are not well-formed,
+and the error recovery strategy can not be expected to read the page
+authors' mind.
+
+<H2 align=left>Why is there only one tachymeter ?</H2>
+<A NAME="tachymeter"></A>
+It's simpler to manage for me.
+
+</BODY>
+</HTML>

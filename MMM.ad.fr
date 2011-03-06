@@ -1,0 +1,82 @@
+!!!  System wide resources : these may include
+!!!    general Tk resources (applied only to MMM of course)
+!!!    MMM specific resources
+!!!    default preferences
+
+!! General Tk resources
+! there's really no reason why scrollbar should ever take the focus
+*Scrollbar.TakeFocus: 0
+*Scrollbar.Width : 11
+
+! Font to use whenever it's not specified : it should be an iso8859-1 font
+! if there are accented characters in the localized texts
+! *Font : variable
+*Font : -adobe-helvetica-bold-r-normal--12-*-*-*-*-*-iso8859-1
+! Idem for the Japanese version
+*kanjiFont : -jis-fixed-medium-r-normal-*-14-*-*-*-*-*-jisx0208.1983-0
+! Some fonts for specific GUI components
+*msg.Font : -adobe-helvetica-medium-r-normal--14-*-*-*-*-*-iso8859-1
+*logging.Font : -adobe-helvetica-medium-r-normal--12-*-*-*-*-*-iso8859-1
+*Entry.Font : -adobe-courier-medium-r-*-*-12-*-*-*-*-*-*-*
+*Listbox.Font : -adobe-courier-medium-r-*-*-14-*-*-*-*-*-*-*
+*surfboard*Font : variable
+! Other Generic Tk resources
+*Canvas.HighlightThickness : 0
+*Entry.background : gray70
+*Entry.highlightThickness : 1
+*Label.background : #d8d8d8
+*Listbox.background : gray70
+*Listbox.highlightThickness : 1
+*Text.HighlightThickness : 0
+*Scrollbar.HighlightThickness : 0
+! Resources for some specific named widgets
+*menubar.BorderWidth : 2
+*menubar.Relief : raised
+*buttons.BorderWidth : 5
+*default.padX : 10
+*secret.Width : 17
+*secret.Height : 17
+
+!! Balloon help messages
+*MMM*headers.balloon		: En-têtes du document
+
+*MMM*back.balloon		: Affiche le document précédent
+*MMM*home.balloon		: Affiche la page Home
+*MMM*forward.balloon		: Affiche le document suivant
+*MMM*reload.balloon		: Recharge ce document
+*MMM*abort.balloon		: Arrête le transfert en cours
+
+*Fileselect*ok.balloon	: Choisir ce fichier
+*Fileselect*filter.balloon	: Répertoire et filtre
+*Fileselect*cancel.balloon	: Ne rien sélectionner
+
+*MMM*mmm.balloon		: Menu principal
+*MMM*navigate.balloon	: Menu de navigation
+*MMM*document.balloon	: Opérations sur le document affiché
+*MMM*others.balloon	: Autres opérations
+*MMM*user.balloon	: Opérations ajoutées par des applets
+*MMM*help.balloon	: Liens vers la documentation
+
+*MMMSource*dismiss.balloon : Fermer cette fenêtre
+*MMMSource*commit.balloon  : Valider les changements, sauver dans le cache, ré-afficher le document. 
+*MMMSource*errors.balloon  : Afficher les erreurs d'analyse syntaxique du HTML
+*MMMSource*save.balloon    : Sauver le document modifié (seulement pour les URLs file:)
+
+*MMM*tachymeter.balloon	: Indique la vitesse de transfert, le nombre de connexions actives, le nombre d'octets transférés. Bouton-1 ouvre une fenêtre, Bouton-2 ouvre une fenêtre avec l'URL sélectionnée. Button 3 affiche de la propagande.
+
+*MMM*logging.balloon : Information sur l'état du traitement du document
+
+*MMM*links.balloon		: Autres liens de ce document
+*MMM*fillbox.balloon		: État du transfert du document. Devient rouge si une erreur est détectée dans le HTML.
+*MMM*pointsto.balloon	: Destination des ancres et des objets actifs
+
+*MMMPrefs.menubar.file.balloon	: Chargement et sauvegarde des préférences
+*MMMPrefs.menubar.section.balloon : Choix du panneau de réglage
+
+*MMMPrefs*reset.balloon	: Reprend les derniers réglages sauvés
+*MMMPrefs*dismiss.balloon	: Fermer cette fenêtre
+
+*MMMAuthorizations*clear.balloon	: Oublie toutes les mots de passes
+*MMMAuthorizations*dismiss.balloon	: Fermer cette fenêtre
+
+*MMM*smoothScroll.balloon:	Passe en mode "smooth scroll" pour ce document

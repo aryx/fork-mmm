@@ -1,0 +1,553 @@
+misc/condition.cmo: misc/condition.cmi 
+misc/condition.cmx: misc/condition.cmi 
+misc/date.cmo: misc/date.cmi 
+misc/date.cmx: misc/date.cmi 
+misc/ebuffer.cmo: misc/ebuffer.cmi 
+misc/ebuffer.cmx: misc/ebuffer.cmi 
+misc/error.cmo: misc/i18n.cmi misc/mstring.cmi misc/error.cmi 
+misc/error.cmx: misc/i18n.cmx misc/mstring.cmx misc/error.cmi 
+misc/feed.cmo: misc/condition.cmi misc/log.cmi misc/low.cmi misc/feed.cmi 
+misc/feed.cmx: misc/condition.cmx misc/log.cmx misc/low.cmx misc/feed.cmi 
+misc/glevents.cmo: misc/tkresource.cmi misc/glevents.cmi 
+misc/glevents.cmx: misc/tkresource.cmx misc/glevents.cmi 
+misc/hotlist.cmo: misc/error.cmi misc/i18n.cmi misc/munix.cmo 
+misc/hotlist.cmx: misc/error.cmx misc/i18n.cmx misc/munix.cmx 
+misc/i18n.cmo: misc/i18nprintf.cmi lang.cmi misc/i18n.cmi 
+misc/i18n.cmx: misc/i18nprintf.cmx lang.cmx misc/i18n.cmi 
+misc/i18nprintf.cmo: misc/i18nprintf.cmi 
+misc/i18nprintf.cmx: misc/i18nprintf.cmi 
+misc/ibtree.cmo: misc/ibtree.cmi 
+misc/ibtree.cmx: misc/ibtree.cmi 
+misc/lexpath.cmo: misc/lexpath.cmi 
+misc/lexpath.cmx: misc/lexpath.cmi 
+misc/log.cmo: misc/log.cmi 
+misc/log.cmx: misc/log.cmi 
+misc/low.cmo: misc/low.cmi 
+misc/low.cmx: misc/low.cmi 
+misc/mlist.cmo: misc/mlist.cmi 
+misc/mlist.cmx: misc/mlist.cmi 
+misc/mstring.cmo: misc/mstring.cmi 
+misc/mstring.cmx: misc/mstring.cmi 
+misc/msys.cmo: misc/msys.cmi 
+misc/msys.cmx: misc/msys.cmi 
+misc/munix.cmo: misc/ebuffer.cmi misc/low.cmi 
+misc/munix.cmx: misc/ebuffer.cmx misc/low.cmx 
+misc/tkresource.cmo: misc/ebuffer.cmi misc/log.cmi misc/tkresource.cmi 
+misc/tkresource.cmx: misc/ebuffer.cmx misc/log.cmx misc/tkresource.cmi 
+www/document.cmi: misc/ebuffer.cmi misc/feed.cmi www/url.cmi www/www.cmi 
+www/hyper.cmi: www/uri.cmi www/url.cmi 
+www/lexurl.cmi: www/url.cmi 
+www/maps.cmi: www/hyper.cmi 
+www/www.cmi: misc/error.cmi www/hyper.cmi www/url.cmi 
+www/document.cmo: misc/ebuffer.cmi misc/feed.cmi www/hyper.cmi misc/i18n.cmi \
+    misc/log.cmi www/url.cmi www/www.cmi www/document.cmi 
+www/document.cmx: misc/ebuffer.cmx misc/feed.cmx www/hyper.cmx misc/i18n.cmx \
+    misc/log.cmx www/url.cmx www/www.cmx www/document.cmi 
+www/hyper.cmo: misc/i18n.cmi www/lexurl.cmi misc/mstring.cmi www/uri.cmi \
+    www/url.cmi www/urlenc.cmi www/hyper.cmi 
+www/hyper.cmx: misc/i18n.cmx www/lexurl.cmx misc/mstring.cmx www/uri.cmx \
+    www/url.cmx www/urlenc.cmx www/hyper.cmi 
+www/lexurl.cmo: misc/ebuffer.cmi misc/mlist.cmi misc/mstring.cmi www/url.cmi \
+    www/urlenc.cmi www/lexurl.cmi 
+www/lexurl.cmx: misc/ebuffer.cmx misc/mlist.cmx misc/mstring.cmx www/url.cmx \
+    www/urlenc.cmx www/lexurl.cmi 
+www/maps.cmo: www/hyper.cmi misc/log.cmi misc/mstring.cmi www/maps.cmi 
+www/maps.cmx: www/hyper.cmx misc/log.cmx misc/mstring.cmx www/maps.cmi 
+www/uri.cmo: misc/mstring.cmi www/uri.cmi 
+www/uri.cmx: misc/mstring.cmx www/uri.cmi 
+www/url.cmo: misc/ebuffer.cmi www/url.cmi 
+www/url.cmx: misc/ebuffer.cmx www/url.cmi 
+www/urlenc.cmo: misc/ebuffer.cmi misc/mstring.cmi www/urlenc.cmi 
+www/urlenc.cmx: misc/ebuffer.cmx misc/mstring.cmx www/urlenc.cmi 
+www/www.cmo: misc/error.cmi www/hyper.cmi www/lexurl.cmi www/uri.cmi \
+    www/url.cmi www/www.cmi 
+www/www.cmx: misc/error.cmx www/hyper.cmx www/lexurl.cmx www/uri.cmx \
+    www/url.cmx www/www.cmi 
+http/auth.cmi: http/http_headers.cmi www/www.cmi 
+http/http_headers.cmi: http/http_date.cmi http/messages.cmi 
+http/lexheaders.cmi: http/http_headers.cmi 
+http/retype.cmi: www/document.cmi 
+http/auth.cmo: http/base64.cmi misc/error.cmi http/http_headers.cmi \
+    misc/i18n.cmi misc/log.cmi misc/msys.cmi www/url.cmi www/www.cmi \
+    http/auth.cmi 
+http/auth.cmx: http/base64.cmx misc/error.cmx http/http_headers.cmx \
+    misc/i18n.cmx misc/log.cmx misc/msys.cmx www/url.cmx www/www.cmx \
+    http/auth.cmi 
+http/base64.cmo: http/base64.cmi 
+http/base64.cmx: http/base64.cmi 
+http/http.cmo: http/auth.cmi www/document.cmi misc/ebuffer.cmi misc/feed.cmi \
+    http/http_headers.cmi www/hyper.cmi misc/i18n.cmi misc/log.cmi \
+    misc/low.cmi http/messages.cmi misc/munix.cmo www/url.cmi version.cmi \
+    www/www.cmi 
+http/http.cmx: http/auth.cmx www/document.cmx misc/ebuffer.cmx misc/feed.cmx \
+    http/http_headers.cmx www/hyper.cmx misc/i18n.cmx misc/log.cmx \
+    misc/low.cmx http/messages.cmi misc/munix.cmx www/url.cmx version.cmx \
+    www/www.cmx 
+http/http_date.cmo: misc/date.cmi misc/mstring.cmi http/http_date.cmi 
+http/http_date.cmx: misc/date.cmx misc/mstring.cmx http/http_date.cmi 
+http/http_headers.cmo: http/lexdate.cmo misc/log.cmi http/messages.cmi \
+    misc/mstring.cmi http/http_headers.cmi 
+http/http_headers.cmx: http/lexdate.cmx misc/log.cmx http/messages.cmi \
+    misc/mstring.cmx http/http_headers.cmi 
+http/lexdate.cmo: http/http_date.cmi misc/mstring.cmi 
+http/lexdate.cmx: http/http_date.cmx misc/mstring.cmx 
+http/lexheaders.cmo: http/http_headers.cmi www/www.cmi http/lexheaders.cmi 
+http/lexheaders.cmx: http/http_headers.cmx www/www.cmx http/lexheaders.cmi 
+http/retype.cmo: www/document.cmi http/http_headers.cmi http/lexheaders.cmi \
+    www/url.cmi http/retype.cmi 
+http/retype.cmx: www/document.cmx http/http_headers.cmx http/lexheaders.cmx \
+    www/url.cmx http/retype.cmi 
+html/html_eval.cmi: html/dtd.cmi html/html.cmi 
+html/lexhtml.cmi: html/html.cmi 
+html/dtd.cmo: html/dtd.cmi 
+html/dtd.cmx: html/dtd.cmi 
+html/html.cmo: html/html.cmi 
+html/html.cmx: html/html.cmi 
+html/html_eval.cmo: html/dtd.cmi html/html.cmi html/lexhtml.cmi \
+    html/html_eval.cmi 
+html/html_eval.cmx: html/dtd.cmx html/html.cmx html/lexhtml.cmx \
+    html/html_eval.cmi 
+html/htparse.cmo: html/dtd.cmi html/html.cmi html/html_eval.cmi \
+    japan/japan.cmi lang.cmi html/lexhtml.cmi 
+html/htparse.cmx: html/dtd.cmx html/html.cmx html/html_eval.cmx \
+    japan/japan.cmx lang.cmx html/lexhtml.cmx 
+html/lexhtml.cmo: misc/ebuffer.cmi html/html.cmi lang.cmi japan/lexkanji.cmi \
+    misc/log.cmi html/lexhtml.cmi 
+html/lexhtml.cmx: misc/ebuffer.cmx html/html.cmx lang.cmx japan/lexkanji.cmx \
+    misc/log.cmx html/lexhtml.cmi 
+protos/cache.cmi: www/document.cmi www/www.cmi 
+protos/file.cmi: www/document.cmi www/www.cmi 
+protos/cache.cmo: misc/condition.cmi www/document.cmi misc/ebuffer.cmi \
+    misc/feed.cmi http/http_headers.cmi www/hyper.cmi lang.cmi www/lexurl.cmi \
+    misc/log.cmi misc/mlist.cmi misc/msys.cmi www/url.cmi version.cmi \
+    www/www.cmi protos/cache.cmi 
+protos/cache.cmx: misc/condition.cmx www/document.cmx misc/ebuffer.cmx \
+    misc/feed.cmx http/http_headers.cmx www/hyper.cmx lang.cmx www/lexurl.cmx \
+    misc/log.cmx misc/mlist.cmx misc/msys.cmx www/url.cmx version.cmx \
+    www/www.cmx protos/cache.cmi 
+protos/file.cmo: misc/date.cmi www/document.cmi misc/feed.cmi http/http.cmo \
+    http/http_date.cmi http/http_headers.cmi www/hyper.cmi misc/i18n.cmi \
+    http/lexdate.cmo www/lexurl.cmi misc/low.cmi http/messages.cmi \
+    misc/mstring.cmi misc/msys.cmi misc/munix.cmo http/retype.cmi www/url.cmi \
+    www/www.cmi protos/file.cmi 
+protos/file.cmx: misc/date.cmx www/document.cmx misc/feed.cmx http/http.cmx \
+    http/http_date.cmx http/http_headers.cmx www/hyper.cmx misc/i18n.cmx \
+    http/lexdate.cmx www/lexurl.cmx misc/low.cmx http/messages.cmi \
+    misc/mstring.cmx misc/msys.cmx misc/munix.cmx http/retype.cmx www/url.cmx \
+    www/www.cmx protos/file.cmi 
+protos/mailto.cmo: misc/error.cmi www/hyper.cmi misc/i18n.cmi misc/low.cmi \
+    misc/munix.cmo www/url.cmi www/urlenc.cmi www/www.cmi 
+protos/mailto.cmx: misc/error.cmx www/hyper.cmx misc/i18n.cmx misc/low.cmx \
+    misc/munix.cmx www/url.cmx www/urlenc.cmx www/www.cmx 
+protos/protos.cmo: protos/cache.cmi protos/file.cmi http/http.cmo www/url.cmi 
+protos/protos.cmx: protos/cache.cmx protos/file.cmx http/http.cmx www/url.cmx 
+retrieve/img.cmi: www/document.cmi www/hyper.cmi retrieve/scheduler.cmi \
+    www/url.cmi www/www.cmi 
+retrieve/progress.cmi: retrieve/scheduler.cmi 
+retrieve/retrieve.cmi: www/document.cmi www/hyper.cmi www/www.cmi 
+retrieve/scheduler.cmi: www/document.cmi www/url.cmi www/www.cmi 
+retrieve/img.cmo: protos/cache.cmi www/document.cmi http/http_headers.cmi \
+    www/hyper.cmi http/lexheaders.cmi misc/log.cmi misc/low.cmi \
+    misc/mstring.cmi misc/msys.cmi retrieve/progress.cmi http/retype.cmi \
+    retrieve/scheduler.cmi www/url.cmi www/www.cmi retrieve/img.cmi 
+retrieve/img.cmx: protos/cache.cmx www/document.cmx http/http_headers.cmx \
+    www/hyper.cmx http/lexheaders.cmx misc/log.cmx misc/low.cmx \
+    misc/mstring.cmx misc/msys.cmx retrieve/progress.cmx http/retype.cmx \
+    retrieve/scheduler.cmx www/url.cmx www/www.cmx retrieve/img.cmi 
+retrieve/progress.cmo: retrieve/scheduler.cmi retrieve/progress.cmi 
+retrieve/progress.cmx: retrieve/scheduler.cmx retrieve/progress.cmi 
+retrieve/retrieve.cmo: http/auth.cmi protos/cache.cmi www/document.cmi \
+    protos/file.cmi http/http.cmo http/http_headers.cmi www/hyper.cmi \
+    misc/i18n.cmi http/lexheaders.cmi misc/log.cmi protos/protos.cmo \
+    http/retype.cmi www/url.cmi www/www.cmi retrieve/retrieve.cmi 
+retrieve/retrieve.cmx: http/auth.cmx protos/cache.cmx www/document.cmx \
+    protos/file.cmx http/http.cmx http/http_headers.cmx www/hyper.cmx \
+    misc/i18n.cmx http/lexheaders.cmx misc/log.cmx protos/protos.cmx \
+    http/retype.cmx www/url.cmx www/www.cmx retrieve/retrieve.cmi 
+retrieve/scheduler.cmo: www/document.cmi misc/feed.cmi http/http_headers.cmi \
+    misc/log.cmi misc/mlist.cmi misc/msys.cmi retrieve/retrieve.cmi \
+    www/url.cmi www/www.cmi retrieve/scheduler.cmi 
+retrieve/scheduler.cmx: www/document.cmx misc/feed.cmx http/http_headers.cmx \
+    misc/log.cmx misc/mlist.cmx misc/msys.cmx retrieve/retrieve.cmx \
+    www/url.cmx www/www.cmx retrieve/scheduler.cmi 
+viewers/decoders.cmi: www/document.cmi 
+viewers/embed.cmi: www/document.cmi http/http_headers.cmi www/hyper.cmi \
+    www/maps.cmi retrieve/scheduler.cmi viewers/viewers.cmi 
+viewers/save.cmi: www/document.cmi www/www.cmi 
+viewers/viewers.cmi: www/document.cmi http/http_headers.cmi www/hyper.cmi \
+    www/url.cmi www/www.cmi 
+viewers/decoders.cmo: www/document.cmi misc/feed.cmi http/http_headers.cmi \
+    misc/low.cmi misc/munix.cmo viewers/decoders.cmi 
+viewers/decoders.cmx: www/document.cmx misc/feed.cmx http/http_headers.cmx \
+    misc/low.cmx misc/munix.cmx viewers/decoders.cmi 
+viewers/embed.cmo: protos/cache.cmi www/document.cmi misc/error.cmi \
+    http/http_headers.cmi www/hyper.cmi misc/i18n.cmi http/lexheaders.cmi \
+    www/maps.cmi misc/msys.cmi retrieve/progress.cmi http/retype.cmi \
+    retrieve/scheduler.cmi www/url.cmi viewers/viewers.cmi www/www.cmi \
+    viewers/embed.cmi 
+viewers/embed.cmx: protos/cache.cmx www/document.cmx misc/error.cmx \
+    http/http_headers.cmx www/hyper.cmx misc/i18n.cmx http/lexheaders.cmx \
+    www/maps.cmx misc/msys.cmx retrieve/progress.cmx http/retype.cmx \
+    retrieve/scheduler.cmx www/url.cmx viewers/viewers.cmx www/www.cmx \
+    viewers/embed.cmi 
+viewers/plain.cmo: protos/cache.cmi viewers/decoders.cmi www/document.cmi \
+    misc/error.cmi misc/feed.cmi htdisp/fonts.cmi htdisp/htmlw.cmi \
+    http/http_headers.cmi misc/i18n.cmi misc/mstring.cmi \
+    retrieve/progress.cmi htdisp/styles.cmi www/url.cmi viewers/viewers.cmi 
+viewers/plain.cmx: protos/cache.cmx viewers/decoders.cmx www/document.cmx \
+    misc/error.cmx misc/feed.cmx htdisp/fonts.cmx htdisp/htmlw.cmx \
+    http/http_headers.cmx misc/i18n.cmx misc/mstring.cmx \
+    retrieve/progress.cmx htdisp/styles.cmx www/url.cmx viewers/viewers.cmx 
+viewers/save.cmo: protos/cache.cmi www/document.cmi misc/ebuffer.cmi \
+    misc/error.cmi misc/feed.cmi http/http_headers.cmi misc/i18n.cmi \
+    misc/low.cmi misc/msys.cmi misc/munix.cmo www/url.cmi www/www.cmi \
+    viewers/save.cmi 
+viewers/save.cmx: protos/cache.cmx www/document.cmx misc/ebuffer.cmx \
+    misc/error.cmx misc/feed.cmx http/http_headers.cmx misc/i18n.cmx \
+    misc/low.cmx misc/msys.cmx misc/munix.cmx www/url.cmx www/www.cmx \
+    viewers/save.cmi 
+viewers/viewers.cmo: viewers/decoders.cmi www/document.cmi misc/error.cmi \
+    misc/feed.cmi http/http_headers.cmi www/hyper.cmi misc/i18n.cmi \
+    http/lexheaders.cmi misc/log.cmi misc/low.cmi misc/mstring.cmi \
+    misc/msys.cmi misc/munix.cmo viewers/save.cmi misc/tkresource.cmi \
+    www/url.cmi www/www.cmi viewers/viewers.cmi 
+viewers/viewers.cmx: viewers/decoders.cmx www/document.cmx misc/error.cmx \
+    misc/feed.cmx http/http_headers.cmx www/hyper.cmx misc/i18n.cmx \
+    http/lexheaders.cmx misc/log.cmx misc/low.cmx misc/mstring.cmx \
+    misc/msys.cmx misc/munix.cmx viewers/save.cmx misc/tkresource.cmx \
+    www/url.cmx www/www.cmx viewers/viewers.cmi 
+htdisp/form.cmi: viewers/embed.cmi html/html.cmi htdisp/htmlfmt.cmi \
+    viewers/viewers.cmi 
+htdisp/hr.cmi: html/html.cmi 
+htdisp/html_disp.cmi: viewers/embed.cmi html/html.cmi htdisp/htmlfmt.cmi \
+    viewers/viewers.cmi 
+htdisp/htmlfmt.cmi: viewers/embed.cmi htdisp/fonts.cmi html/html.cmi \
+    www/hyper.cmi viewers/viewers.cmi www/www.cmi 
+htdisp/htmlw.cmi: www/document.cmi http/http_headers.cmi www/hyper.cmi \
+    retrieve/scheduler.cmi viewers/viewers.cmi 
+htdisp/imgload.cmi: viewers/embed.cmi 
+htdisp/styles.cmi: htdisp/fonts.cmi htdisp/htmlfmt.cmi 
+htdisp/table.cmi: html/html.cmi htdisp/htmlfmt.cmi 
+htdisp/textw_fo.cmi: htdisp/htmlfmt.cmi viewers/viewers.cmi 
+htdisp/attrs.cmo: htdisp/fonts.cmi htdisp/htbind.cmo htdisp/htmlfmt.cmi \
+    misc/ibtree.cmi 
+htdisp/attrs.cmx: htdisp/fonts.cmx htdisp/htbind.cmx htdisp/htmlfmt.cmi \
+    misc/ibtree.cmx 
+htdisp/cmap.cmo: viewers/embed.cmi misc/glevents.cmi htdisp/htbind.cmo \
+    www/hyper.cmi misc/log.cmi www/maps.cmi viewers/viewers.cmi 
+htdisp/cmap.cmx: viewers/embed.cmx misc/glevents.cmx htdisp/htbind.cmx \
+    www/hyper.cmx misc/log.cmx www/maps.cmx viewers/viewers.cmx 
+htdisp/ctext.cmo: htdisp/fit.cmi htdisp/ctext.cmi 
+htdisp/ctext.cmx: htdisp/fit.cmx htdisp/ctext.cmi 
+htdisp/fit.cmo: misc/log.cmi htdisp/fit.cmi 
+htdisp/fit.cmx: misc/log.cmx htdisp/fit.cmi 
+htdisp/fonts.cmo: misc/i18n.cmi lang.cmi misc/log.cmi misc/mstring.cmi \
+    misc/tkresource.cmi htdisp/fonts.cmi 
+htdisp/fonts.cmx: misc/i18n.cmx lang.cmx misc/log.cmx misc/mstring.cmx \
+    misc/tkresource.cmx htdisp/fonts.cmi 
+htdisp/form.cmo: viewers/embed.cmi html/html.cmi htdisp/htmlfmt.cmi \
+    www/hyper.cmi misc/i18n.cmi misc/log.cmi www/maps.cmi viewers/viewers.cmi \
+    www/www.cmi htdisp/form.cmi 
+htdisp/form.cmx: viewers/embed.cmx html/html.cmx htdisp/htmlfmt.cmi \
+    www/hyper.cmx misc/i18n.cmx misc/log.cmx www/maps.cmx viewers/viewers.cmx \
+    www/www.cmx htdisp/form.cmi 
+htdisp/hr.cmo: html/html.cmi htdisp/hr.cmi 
+htdisp/hr.cmx: html/html.cmx htdisp/hr.cmi 
+htdisp/htbind.cmo: misc/glevents.cmi www/hyper.cmi viewers/viewers.cmi 
+htdisp/htbind.cmx: misc/glevents.cmx www/hyper.cmx viewers/viewers.cmx 
+htdisp/htframe.cmo: html/html.cmi htdisp/htmlfmt.cmi misc/mstring.cmi 
+htdisp/htframe.cmx: html/html.cmx htdisp/htmlfmt.cmi misc/mstring.cmx 
+htdisp/html_disp.cmo: www/document.cmi viewers/embed.cmi htdisp/fonts.cmi \
+    html/html.cmi htdisp/html_form.cmo htdisp/html_table.cmo \
+    htdisp/htmlfmt.cmi www/hyper.cmi misc/log.cmi www/maps.cmi \
+    misc/mstring.cmi htdisp/styles.cmi www/url.cmi viewers/viewers.cmi \
+    www/www.cmi htdisp/html_disp.cmi 
+htdisp/html_disp.cmx: www/document.cmx viewers/embed.cmx htdisp/fonts.cmx \
+    html/html.cmx htdisp/html_form.cmx htdisp/html_table.cmx \
+    htdisp/htmlfmt.cmi www/hyper.cmx misc/log.cmx www/maps.cmx \
+    misc/mstring.cmx htdisp/styles.cmx www/url.cmx viewers/viewers.cmx \
+    www/www.cmx htdisp/html_disp.cmi 
+htdisp/html_form.cmo: misc/ebuffer.cmi html/html.cmi htdisp/htmlfmt.cmi \
+    www/hyper.cmi www/urlenc.cmi www/www.cmi 
+htdisp/html_form.cmx: misc/ebuffer.cmx html/html.cmx htdisp/htmlfmt.cmi \
+    www/hyper.cmx www/urlenc.cmx www/www.cmx 
+htdisp/html_table.cmo: html/html.cmi htdisp/htmlfmt.cmi 
+htdisp/html_table.cmx: html/html.cmx htdisp/htmlfmt.cmi 
+htdisp/htmlw.cmo: protos/cache.cmi viewers/decoders.cmi www/document.cmi \
+    html/dtd.cmi viewers/embed.cmi misc/error.cmi misc/feed.cmi \
+    htdisp/form.cmi htdisp/htframe.cmo html/html.cmi htdisp/html_disp.cmi \
+    html/html_eval.cmi htdisp/htmlfmt.cmi http/http_headers.cmi www/hyper.cmi \
+    misc/i18n.cmi retrieve/img.cmi htdisp/imgload.cmi japan/japan.cmi \
+    lang.cmi http/lexheaders.cmi misc/log.cmi www/maps.cmi misc/mstring.cmi \
+    retrieve/progress.cmi htdisp/source.cmo htdisp/table.cmi \
+    htdisp/textw_fo.cmi misc/tkresource.cmi www/url.cmi www/urlenc.cmi \
+    viewers/viewers.cmi htdisp/htmlw.cmi 
+htdisp/htmlw.cmx: protos/cache.cmx viewers/decoders.cmx www/document.cmx \
+    html/dtd.cmx viewers/embed.cmx misc/error.cmx misc/feed.cmx \
+    htdisp/form.cmx htdisp/htframe.cmx html/html.cmx htdisp/html_disp.cmx \
+    html/html_eval.cmx htdisp/htmlfmt.cmi http/http_headers.cmx www/hyper.cmx \
+    misc/i18n.cmx retrieve/img.cmx htdisp/imgload.cmx japan/japan.cmx \
+    lang.cmx http/lexheaders.cmx misc/log.cmx www/maps.cmx misc/mstring.cmx \
+    retrieve/progress.cmx htdisp/source.cmx htdisp/table.cmx \
+    htdisp/textw_fo.cmx misc/tkresource.cmx www/url.cmx www/urlenc.cmx \
+    viewers/viewers.cmx htdisp/htmlw.cmi 
+htdisp/imgload.cmo: htdisp/cmap.cmo viewers/embed.cmi misc/glevents.cmi \
+    htdisp/htbind.cmo www/hyper.cmi retrieve/img.cmi www/lexurl.cmi \
+    misc/log.cmi www/maps.cmi retrieve/progress.cmi misc/tkresource.cmi \
+    www/uri.cmi www/url.cmi viewers/viewers.cmi www/www.cmi \
+    htdisp/imgload.cmi 
+htdisp/imgload.cmx: htdisp/cmap.cmx viewers/embed.cmx misc/glevents.cmx \
+    htdisp/htbind.cmx www/hyper.cmx retrieve/img.cmx www/lexurl.cmx \
+    misc/log.cmx www/maps.cmx retrieve/progress.cmx misc/tkresource.cmx \
+    www/uri.cmx www/url.cmx viewers/viewers.cmx www/www.cmx \
+    htdisp/imgload.cmi 
+htdisp/source.cmo: protos/cache.cmi www/document.cmi html/dtd.cmi \
+    misc/ebuffer.cmi misc/error.cmi html/html.cmi misc/i18n.cmi \
+    japan/japan.cmi lang.cmi misc/msys.cmi misc/tkresource.cmi 
+htdisp/source.cmx: protos/cache.cmx www/document.cmx html/dtd.cmx \
+    misc/ebuffer.cmx misc/error.cmx html/html.cmx misc/i18n.cmx \
+    japan/japan.cmx lang.cmx misc/msys.cmx misc/tkresource.cmx 
+htdisp/styles.cmo: htdisp/fonts.cmi htdisp/htmlfmt.cmi htdisp/styles.cmi 
+htdisp/styles.cmx: htdisp/fonts.cmx htdisp/htmlfmt.cmi htdisp/styles.cmi 
+htdisp/table.cmo: htdisp/fit.cmi html/html.cmi htdisp/htmlfmt.cmi \
+    misc/log.cmi htdisp/table.cmi 
+htdisp/table.cmx: htdisp/fit.cmx html/html.cmx htdisp/htmlfmt.cmi \
+    misc/log.cmx htdisp/table.cmi 
+htdisp/textw_fo.cmo: htdisp/attrs.cmo htdisp/ctext.cmi misc/ebuffer.cmi \
+    htdisp/fit.cmi htdisp/fonts.cmi htdisp/hr.cmi html/html.cmi \
+    htdisp/htmlfmt.cmi www/hyper.cmi japan/lexkanji.cmi misc/low.cmi \
+    misc/mstring.cmi www/urlenc.cmi viewers/viewers.cmi htdisp/textw_fo.cmi 
+htdisp/textw_fo.cmx: htdisp/attrs.cmx htdisp/ctext.cmx misc/ebuffer.cmx \
+    htdisp/fit.cmx htdisp/fonts.cmx htdisp/hr.cmx html/html.cmx \
+    htdisp/htmlfmt.cmi www/hyper.cmx japan/lexkanji.cmx misc/low.cmx \
+    misc/mstring.cmx www/urlenc.cmx viewers/viewers.cmx htdisp/textw_fo.cmi 
+appsys/applets.cmi: www/document.cmi viewers/viewers.cmi 
+appsys/capabilities.cmi: www/url.cmi 
+appsys/dload.cmi: www/document.cmi www/url.cmi viewers/viewers.cmi 
+appsys/applets.cmo: appsys/dload.cmi misc/i18n.cmi viewers/viewers.cmi \
+    appsys/applets.cmi 
+appsys/applets.cmx: appsys/dload.cmx misc/i18n.cmx viewers/viewers.cmx \
+    appsys/applets.cmi 
+appsys/appsys.cmo: appsys/appview.cmo safe/crcs.cmo safe/crcsmmm.cmo \
+    appsys/dload.cmi viewers/embed.cmi misc/error.cmi misc/i18n.cmi \
+    browser/mmmprefs.cmi browser/prefs.cmi version.cmi viewers/viewers.cmi 
+appsys/appsys.cmx: appsys/appview.cmx safe/crcs.cmx safe/crcsmmm.cmx \
+    appsys/dload.cmx viewers/embed.cmx misc/error.cmx misc/i18n.cmx \
+    browser/mmmprefs.cmx browser/prefs.cmx version.cmx viewers/viewers.cmx 
+appsys/appview.cmo: appsys/applets.cmi protos/cache.cmi appsys/dload.cmi \
+    www/document.cmi viewers/embed.cmi misc/error.cmi misc/feed.cmi \
+    http/http_headers.cmi misc/i18n.cmi misc/msys.cmi www/url.cmi \
+    viewers/viewers.cmi 
+appsys/appview.cmx: appsys/applets.cmx protos/cache.cmx appsys/dload.cmx \
+    www/document.cmx viewers/embed.cmx misc/error.cmx misc/feed.cmx \
+    http/http_headers.cmx misc/i18n.cmx misc/msys.cmx www/url.cmx \
+    viewers/viewers.cmx 
+appsys/capabilities.cmo: misc/error.cmi misc/i18n.cmi misc/lexpath.cmi \
+    www/url.cmi appsys/capabilities.cmi 
+appsys/capabilities.cmx: misc/error.cmx misc/i18n.cmx misc/lexpath.cmx \
+    www/url.cmx appsys/capabilities.cmi 
+appsys/dload.cmo: appsys/capabilities.cmi www/document.cmi misc/ebuffer.cmi \
+    misc/error.cmi http/http_headers.cmi misc/i18n.cmi http/lexheaders.cmi \
+    www/lexurl.cmi misc/mstring.cmi misc/msys.cmi appsys/pgp.cmo www/url.cmi \
+    viewers/viewers.cmi appsys/dload.cmi 
+appsys/dload.cmx: appsys/capabilities.cmx www/document.cmx misc/ebuffer.cmx \
+    misc/error.cmx http/http_headers.cmx misc/i18n.cmx http/lexheaders.cmx \
+    www/lexurl.cmx misc/mstring.cmx misc/msys.cmx appsys/pgp.cmx www/url.cmx \
+    viewers/viewers.cmx appsys/dload.cmi 
+appsys/pgp.cmo: misc/error.cmi misc/i18n.cmi misc/low.cmi misc/mstring.cmi \
+    misc/msys.cmi 
+appsys/pgp.cmx: misc/error.cmx misc/i18n.cmx misc/low.cmx misc/mstring.cmx \
+    misc/msys.cmx 
+browser/about.cmi: misc/low.cmi 
+browser/gcache.cmi: www/document.cmi viewers/viewers.cmi 
+browser/mmm.cmi: misc/low.cmi browser/nav.cmi www/url.cmi viewers/viewers.cmi 
+browser/mmmprefs.cmi: browser/prefs.cmi 
+browser/nav.cmi: www/document.cmi misc/error.cmi www/hyper.cmi www/url.cmi \
+    viewers/viewers.cmi www/www.cmi 
+browser/plink.cmi: www/hyper.cmi www/www.cmi 
+browser/about.cmo: misc/glevents.cmi lang.cmi misc/low.cmi misc/mstring.cmi \
+    misc/msys.cmi version.cmi browser/about.cmi 
+browser/about.cmx: misc/glevents.cmx lang.cmx misc/low.cmx misc/mstring.cmx \
+    misc/msys.cmx version.cmx browser/about.cmi 
+browser/cci.cmo: misc/error.cmi www/hyper.cmi misc/i18n.cmi www/lexurl.cmi \
+    browser/mmm.cmi misc/mstring.cmi misc/msys.cmi misc/munix.cmo \
+    browser/nav.cmi 
+browser/cci.cmx: misc/error.cmx www/hyper.cmx misc/i18n.cmx www/lexurl.cmx \
+    browser/mmm.cmx misc/mstring.cmx misc/msys.cmx misc/munix.cmx \
+    browser/nav.cmx 
+browser/debug.cmo: protos/cache.cmi browser/gcache.cmi retrieve/img.cmi 
+browser/debug.cmx: protos/cache.cmx browser/gcache.cmx retrieve/img.cmx 
+browser/fontprefs.cmo: htdisp/fonts.cmi misc/mstring.cmi misc/tkresource.cmi 
+browser/fontprefs.cmx: htdisp/fonts.cmx misc/mstring.cmx misc/tkresource.cmx 
+browser/gcache.cmo: protos/cache.cmi www/document.cmi misc/log.cmi \
+    misc/mlist.cmi www/url.cmi viewers/viewers.cmi browser/gcache.cmi 
+browser/gcache.cmx: protos/cache.cmx www/document.cmx misc/log.cmx \
+    misc/mlist.cmx www/url.cmx viewers/viewers.cmx browser/gcache.cmi 
+browser/history.cmo: www/document.cmi browser/gcache.cmi 
+browser/history.cmx: www/document.cmx browser/gcache.cmx 
+browser/main.cmo: htdisp/attrs.cmo http/auth.cmi protos/cache.cmi \
+    browser/cci.cmo htdisp/ctext.cmi browser/debug.cmo browser/gcache.cmi \
+    html/html.cmi http/http.cmo http/http_headers.cmi misc/i18n.cmi lang.cmi \
+    www/lexurl.cmi misc/log.cmi misc/low.cmi browser/mmm.cmi \
+    htdisp/textw_fo.cmi misc/tkresource.cmi version.cmi 
+browser/main.cmx: htdisp/attrs.cmx http/auth.cmx protos/cache.cmx \
+    browser/cci.cmx htdisp/ctext.cmx browser/debug.cmx browser/gcache.cmx \
+    html/html.cmx http/http.cmx http/http_headers.cmx misc/i18n.cmx lang.cmx \
+    www/lexurl.cmx misc/log.cmx misc/low.cmx browser/mmm.cmx \
+    htdisp/textw_fo.cmx misc/tkresource.cmx version.cmx 
+browser/mmm.cmo: browser/about.cmi http/auth.cmi protos/cache.cmi \
+    www/document.cmi misc/error.cmi browser/gcache.cmi misc/glevents.cmi \
+    browser/history.cmo misc/hotlist.cmo www/hyper.cmi misc/i18n.cmi lang.cmi \
+    www/lexurl.cmi misc/low.cmi browser/mmmprefs.cmi misc/mstring.cmi \
+    misc/msys.cmi browser/nav.cmi browser/plink.cmi viewers/save.cmi \
+    misc/tkresource.cmi www/url.cmi version.cmi viewers/viewers.cmi \
+    www/www.cmi browser/mmm.cmi 
+browser/mmm.cmx: browser/about.cmx http/auth.cmx protos/cache.cmx \
+    www/document.cmx misc/error.cmx browser/gcache.cmx misc/glevents.cmx \
+    browser/history.cmx misc/hotlist.cmx www/hyper.cmx misc/i18n.cmx lang.cmx \
+    www/lexurl.cmx misc/low.cmx browser/mmmprefs.cmx misc/mstring.cmx \
+    misc/msys.cmx browser/nav.cmx browser/plink.cmx viewers/save.cmx \
+    misc/tkresource.cmx www/url.cmx version.cmx viewers/viewers.cmx \
+    www/www.cmx browser/mmm.cmi 
+browser/mmmprefs.cmo: http/auth.cmi protos/cache.cmi html/dtd.cmi \
+    protos/file.cmi htdisp/fit.cmi browser/fontprefs.cmo htdisp/fonts.cmi \
+    htdisp/form.cmi browser/gcache.cmi misc/glevents.cmi misc/hotlist.cmo \
+    htdisp/html_disp.cmi htdisp/htmlw.cmi http/http.cmo misc/i18n.cmi \
+    retrieve/img.cmi htdisp/imgload.cmi japan/japan.cmi lang.cmi \
+    html/lexhtml.cmi misc/log.cmi protos/mailto.cmo browser/prefs.cmi \
+    viewers/save.cmi retrieve/scheduler.cmi htdisp/styles.cmi \
+    htdisp/table.cmi htdisp/textw_fo.cmi misc/tkresource.cmi www/urlenc.cmi \
+    version.cmi viewers/viewers.cmi browser/mmmprefs.cmi 
+browser/mmmprefs.cmx: http/auth.cmx protos/cache.cmx html/dtd.cmx \
+    protos/file.cmx htdisp/fit.cmx browser/fontprefs.cmx htdisp/fonts.cmx \
+    htdisp/form.cmx browser/gcache.cmx misc/glevents.cmx misc/hotlist.cmx \
+    htdisp/html_disp.cmx htdisp/htmlw.cmx http/http.cmx misc/i18n.cmx \
+    retrieve/img.cmx htdisp/imgload.cmx japan/japan.cmx lang.cmx \
+    html/lexhtml.cmx misc/log.cmx protos/mailto.cmx browser/prefs.cmx \
+    viewers/save.cmx retrieve/scheduler.cmx htdisp/styles.cmx \
+    htdisp/table.cmx htdisp/textw_fo.cmx misc/tkresource.cmx www/urlenc.cmx \
+    version.cmx viewers/viewers.cmx browser/mmmprefs.cmi 
+browser/nav.cmo: protos/cache.cmi www/document.cmi viewers/embed.cmi \
+    misc/error.cmi browser/gcache.cmi http/http_headers.cmi www/hyper.cmi \
+    misc/i18n.cmi misc/log.cmi protos/mailto.cmo www/maps.cmi \
+    browser/plink.cmi retrieve/retrieve.cmi viewers/save.cmi www/uri.cmi \
+    www/url.cmi viewers/viewers.cmi www/www.cmi browser/nav.cmi 
+browser/nav.cmx: protos/cache.cmx www/document.cmx viewers/embed.cmx \
+    misc/error.cmx browser/gcache.cmx http/http_headers.cmx www/hyper.cmx \
+    misc/i18n.cmx misc/log.cmx protos/mailto.cmx www/maps.cmx \
+    browser/plink.cmx retrieve/retrieve.cmx viewers/save.cmx www/uri.cmx \
+    www/url.cmx viewers/viewers.cmx www/www.cmx browser/nav.cmi 
+browser/plink.cmo: www/hyper.cmi misc/i18n.cmi www/www.cmi browser/plink.cmi 
+browser/plink.cmx: www/hyper.cmx misc/i18n.cmx www/www.cmx browser/plink.cmi 
+browser/prefs.cmo: browser/fontprefs.cmo misc/i18n.cmi misc/mstring.cmi \
+    misc/munix.cmo misc/tkresource.cmi browser/prefs.cmi 
+browser/prefs.cmx: browser/fontprefs.cmx misc/i18n.cmx misc/mstring.cmx \
+    misc/munix.cmx misc/tkresource.cmx browser/prefs.cmi 
+japan/encode.cmi: japan/wchar.cmi 
+japan/japan.cmi: japan/charset.cmo 
+japan/jisx0201.cmi: japan/wchar.cmi 
+japan/lexkanji.cmi: misc/ebuffer.cmi japan/wstream.cmi 
+japan/wchar.cmi: japan/charset.cmo 
+japan/wstream.cmi: japan/wchar.cmi 
+japan/bug.cmo: misc/log.cmi 
+japan/bug.cmx: misc/log.cmx 
+japan/encode.cmo: japan/charset.cmo misc/ebuffer.cmi japan/lexkanji.cmi \
+    japan/wchar.cmi japan/encode.cmi 
+japan/encode.cmx: japan/charset.cmx misc/ebuffer.cmx japan/lexkanji.cmx \
+    japan/wchar.cmx japan/encode.cmi 
+japan/japan.cmo: japan/bug.cmo japan/charset.cmo misc/ebuffer.cmi \
+    japan/encode.cmi japan/jisx0201.cmi japan/lexkanji.cmi misc/log.cmi \
+    japan/wchar.cmi japan/wstream.cmi japan/japan.cmi 
+japan/japan.cmx: japan/bug.cmx japan/charset.cmx misc/ebuffer.cmx \
+    japan/encode.cmx japan/jisx0201.cmx japan/lexkanji.cmx misc/log.cmx \
+    japan/wchar.cmx japan/wstream.cmx japan/japan.cmi 
+japan/jisx0201.cmo: japan/charset.cmo japan/tool.cmo japan/wchar.cmi \
+    japan/wstream.cmi japan/jisx0201.cmi 
+japan/jisx0201.cmx: japan/charset.cmx japan/tool.cmx japan/wchar.cmx \
+    japan/wstream.cmx japan/jisx0201.cmi 
+japan/lexkanji.cmo: japan/charset.cmo misc/ebuffer.cmi japan/wstream.cmi \
+    japan/lexkanji.cmi 
+japan/lexkanji.cmx: japan/charset.cmx misc/ebuffer.cmx japan/wstream.cmx \
+    japan/lexkanji.cmi 
+japan/tool.cmo: japan/charset.cmo japan/wchar.cmi 
+japan/tool.cmx: japan/charset.cmx japan/wchar.cmx 
+japan/wchar.cmo: japan/charset.cmo japan/wchar.cmi 
+japan/wchar.cmx: japan/charset.cmx japan/wchar.cmi 
+japan/wstream.cmo: japan/charset.cmo japan/wchar.cmi japan/wstream.cmi 
+japan/wstream.cmx: japan/charset.cmx japan/wchar.cmx japan/wstream.cmi 
+safe/safeio.cmi: appsys/capabilities.cmi 
+safe/safemmm.cmi: appsys/capabilities.cmi www/document.cmi www/hyper.cmi \
+    www/url.cmi viewers/viewers.cmi www/www.cmi 
+safe/safeunix.cmi: appsys/capabilities.cmi 
+safe/safe417.cmo: appsys/applets.cmi protos/cache.cmi appsys/capabilities.cmi \
+    www/document.cmi misc/error.cmi misc/feed.cmi www/hyper.cmi misc/i18n.cmi \
+    retrieve/img.cmi www/lexurl.cmi misc/mlist.cmi misc/mstring.cmi \
+    browser/nav.cmi retrieve/progress.cmi retrieve/retrieve.cmi www/url.cmi \
+    viewers/viewers.cmi www/www.cmi safe/safe417.cmi 
+safe/safe417.cmx: appsys/applets.cmx protos/cache.cmx appsys/capabilities.cmx \
+    www/document.cmx misc/error.cmx misc/feed.cmx www/hyper.cmx misc/i18n.cmx \
+    retrieve/img.cmx www/lexurl.cmx misc/mlist.cmx misc/mstring.cmx \
+    browser/nav.cmx retrieve/progress.cmx retrieve/retrieve.cmx www/url.cmx \
+    viewers/viewers.cmx www/www.cmx safe/safe417.cmi 
+safe/safe417mmm.cmo: appsys/applets.cmi protos/cache.cmi \
+    appsys/capabilities.cmi viewers/decoders.cmi www/document.cmi \
+    html/dtd.cmi viewers/embed.cmi misc/error.cmi misc/feed.cmi \
+    htdisp/fonts.cmi html/html.cmi htdisp/html_disp.cmi html/html_eval.cmi \
+    htdisp/htmlfmt.cmi www/hyper.cmi misc/i18n.cmi retrieve/img.cmi \
+    www/lexurl.cmi www/maps.cmi misc/mlist.cmi browser/mmm.cmi \
+    misc/mstring.cmi browser/nav.cmi retrieve/progress.cmi \
+    retrieve/retrieve.cmi www/url.cmi viewers/viewers.cmi www/www.cmi \
+    safe/safe417mmm.cmi 
+safe/safe417mmm.cmx: appsys/applets.cmx protos/cache.cmx \
+    appsys/capabilities.cmx viewers/decoders.cmx www/document.cmx \
+    html/dtd.cmx viewers/embed.cmx misc/error.cmx misc/feed.cmx \
+    htdisp/fonts.cmx html/html.cmx htdisp/html_disp.cmx html/html_eval.cmx \
+    htdisp/htmlfmt.cmi www/hyper.cmx misc/i18n.cmx retrieve/img.cmx \
+    www/lexurl.cmx www/maps.cmx misc/mlist.cmx browser/mmm.cmx \
+    misc/mstring.cmx browser/nav.cmx retrieve/progress.cmx \
+    retrieve/retrieve.cmx www/url.cmx viewers/viewers.cmx www/www.cmx \
+    safe/safe417mmm.cmi 
+safe/safeapplets.cmo: appsys/applets.cmi protos/cache.cmi \
+    appsys/capabilities.cmi www/document.cmi misc/error.cmi misc/feed.cmi \
+    www/hyper.cmi retrieve/img.cmi www/lexurl.cmi misc/mlist.cmi \
+    misc/mstring.cmi browser/nav.cmi retrieve/progress.cmi \
+    retrieve/retrieve.cmi www/url.cmi viewers/viewers.cmi www/www.cmi \
+    safe/safeapplets.cmi 
+safe/safeapplets.cmx: appsys/applets.cmx protos/cache.cmx \
+    appsys/capabilities.cmx www/document.cmx misc/error.cmx misc/feed.cmx \
+    www/hyper.cmx retrieve/img.cmx www/lexurl.cmx misc/mlist.cmx \
+    misc/mstring.cmx browser/nav.cmx retrieve/progress.cmx \
+    retrieve/retrieve.cmx www/url.cmx viewers/viewers.cmx www/www.cmx \
+    safe/safeapplets.cmi 
+safe/safefrx.cmo: safe/safefrx.cmi 
+safe/safefrx.cmx: safe/safefrx.cmi 
+safe/safeio.cmo: appsys/capabilities.cmi misc/i18n.cmi safe/safeio.cmi 
+safe/safeio.cmx: appsys/capabilities.cmx misc/i18n.cmx safe/safeio.cmi 
+safe/safejtk.cmo: safe/safejtk.cmi 
+safe/safejtk.cmx: safe/safejtk.cmi 
+safe/safemmm.cmo: protos/cache.cmi appsys/capabilities.cmi \
+    viewers/decoders.cmi www/document.cmi html/dtd.cmi viewers/embed.cmi \
+    htdisp/fonts.cmi html/html.cmi htdisp/html_disp.cmi html/html_eval.cmi \
+    htdisp/htmlfmt.cmi www/hyper.cmi misc/i18n.cmi www/maps.cmi \
+    browser/mmm.cmi browser/nav.cmi retrieve/retrieve.cmi www/url.cmi \
+    viewers/viewers.cmi safe/safemmm.cmi 
+safe/safemmm.cmx: protos/cache.cmx appsys/capabilities.cmx \
+    viewers/decoders.cmx www/document.cmx html/dtd.cmx viewers/embed.cmx \
+    htdisp/fonts.cmx html/html.cmx htdisp/html_disp.cmx html/html_eval.cmx \
+    htdisp/htmlfmt.cmi www/hyper.cmx misc/i18n.cmx www/maps.cmx \
+    browser/mmm.cmx browser/nav.cmx retrieve/retrieve.cmx www/url.cmx \
+    viewers/viewers.cmx safe/safemmm.cmi 
+safe/safestd.cmo: safe/safestd.cmi 
+safe/safestd.cmx: safe/safestd.cmi 
+safe/safestr.cmo: safe/safestr.cmi 
+safe/safestr.cmx: safe/safestr.cmi 
+safe/safetk.cmo: safe/safetk.cmi 
+safe/safetk.cmx: safe/safetk.cmi 
+safe/safetkanim.cmo: safe/safetkanim.cmi 
+safe/safetkanim.cmx: safe/safetkanim.cmi 
+safe/safeunix.cmo: appsys/capabilities.cmi safe/safeunix.cmi 
+safe/safeunix.cmx: appsys/capabilities.cmx safe/safeunix.cmi 
+lang.cmo: lang.cmi 
+lang.cmx: lang.cmi 
+version.cmo: version.cmi 
+version.cmx: version.cmi 

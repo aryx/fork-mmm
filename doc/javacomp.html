@@ -1,0 +1,207 @@
+<HTML>
+<HEAD>
+<TITLE>Elements of comparison Java/Hotjava vs. Caml/MMM</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>Elements of comparison Java/Hotjava vs. Caml/MMM</H1>
+
+<H2 align=left>Preliminary word: this comparison may not be fully objective.
+I appreciate your <A HREF="mailto:Francois.Rouaix@inria.fr">comments</A>
+</H2>
+<H6 align=right>Java and HotJava are trademarks of Sun Microsystems, Inc.</H6>
+
+<H2>Introduction</H2>
+HotJava is to Java what MMM is to Caml, that is:
+<UL>
+<LI> Java and Caml are the languages proposed for programming applets.
+<LI> 
+HotJava and MMM are browsers supporting their respective applets. Moreover,
+both browsers are <B>written</B> in the same language as the applets they
+support, presumably as a proof of adequacy of the language to GUIs, Web,...
+</UL>
+<P>
+Java applets are also supported by several other Web browsers. Caml applets
+are supported by the Netscape Navigator 3.0 through the <B>Calves</B>
+plugin. 
+<P>
+This documents briefly discusses the following topic:
+<OL>
+<LI> <A HREF="#lang">The languages Java and Caml</A>
+<LI> <A HREF="#types">Typing in the languages</A>
+<LI> <A HREF="#security">Security in the applet systems</A>
+<LI> <A HREF="#portability">Portability</A>
+<LI> <A HREF="#libraries">Libraries accessible through applet APIs</A>
+<LI> <A HREF="#avail">Availability</A>
+</OL>
+
+<H2>The languages: Java and Caml</H2>
+<A NAME="lang"></A>
+<DL>
+<DT> Java
+<DD> <UL>
+<LI> Object-oriented (class-based, C++ family). Extremely simplified language (only basic data types, objects and arrays). No functions (only methods), no record-like data types (only objects), no variants. No parameterized classes.
+<LI> Compiled to bytecode (hardware independent, OS independent). Just-in-time compilers also available.
+<LI> Garbage collection
+<LI> Threads
+</UL>
+
+<DT> Caml (Objective Caml)
+<DD> 
+<UL>
+<LI> Functional (not pure, there are imperative constructs such as mutable
+objects, IO, loops), with object-oriented support (class-based). General
+purpose language. All classical data types (records, variants). Polymorphism.
+
+<LI> Compiled to bytecode (hardware independent, OS independent). Native
+compiler available, but not used for applets.
+<LI> Garbage collection
+<LI> Threads (at the bytecode level or native level when available). Threads
+are not used in MMM.
+</UL>
+</DL>
+
+
+<H2>Typing</H2>
+<A NAME="types"></A>
+Both languages are <EM>typed</EM>, meaning that no type error goes undetected.
+<DL>
+<DT> Java
+<DD>
+<UL>
+<LI> Not fully statically typed. Some type errors (exceptions) are detected
+at run-time (famous inheritance vs. subtyping problem). For example, each
+store to an array of objects requires run-time type checking. 
+<LI> Explicitly typed.
+<LI> No polymorphism (in the ML sense), but notion of interface types.
+<LI> Informal description of the type system.
+<LI> Module system (module names mapped to filesystem paths)
+</UL>
+
+<DT> Caml
+<DD> 
+<UL>
+<LI> Statically typed. No type-errors at run-time (even for objects).
+<LI> Type inference.
+<LI> Polymorphism.
+<LI> Formal type system, proof of soundness.
+<LI> Module system similar to that of SML. Higher-order parameterisation of modules.
+</UL>
+</DL>
+
+
+<H2 align=left>Security</H2>
+<A NAME="security"></A>
+Both languages make heavy use of typing to enforce security.
+The main difference in that Java uses typing at the bytecode level whereas
+Caml uses compile-time type-checking, complemented by cryptographic authentication.
+
+<DL>
+<DT> Java applets
+<DD>
+<UL>
+<LI>  Java has a bytecode verification algorithm.  This algorithm perform
+various checks (e.g. validity of object field adressing, data conversion,
+...) with the help of type information remaining in the bytecode
+(e.g. different instructions for integer and pointer loading, field access
+by name), and type information relative to class interfaces, attached to the
+bytecode.<BR>
+The bytecode verifier relies on two simple requirements on the abstract
+machine instruction set, to be able to construct a "proof" of security by
+induction on the code.<BR>
+<LI> A separate class name space is used for foreign code to avoid built-in class spoofing.
+<LI> No access to native methods by applets (?).
+<LI> Informal description of the verification algorithm. Source available
+only by license.
+<LI> Code signing introduced in recent versions.
+</UL>
+
+
+
+<DT> Caml applets
+<DD> The instructions of the abstract machine do not contain type information.
+But, on the other hand:
+<UL>
+<LI> the Caml compiler adds, in the bytecode for each compilation unit,
+information about the modules it requires. This information is an MD5 digest
+of the compiled version of the actual required signatures.
+<LI> link-time verifications consists in checking that digests of modules
+required by the to-be-linked module, are equal to digests of modules
+exported by the browser.
+<LI> No access to C primitives by applets.
+<LI>  PGP-type cryptographic authentication is used to prove to the client
+that the security-checks have been made by the applet provider.
+Security checks rely entirely on typing.
+<LI> Publications available about the type and module systems. Source
+freely available.
+</UL>
+</dl>
+
+<H2>Portability</H2>
+<A NAME="portability"></A>
+Applets themselves are portable. The topic discussed here is the
+portability of the runtime environment. 
+
+<DL>
+<DT> Java runtime
+<DD>
+<B>Preliminary comment:</B> a Java runtime is composed of a interpreter for the Java Virtual Machine and an implementation of native libraries (system calls,
+AWT, ...). There exists several implementations of the JVM; the status of
+native libraries is not clear.
+<P>
+From JavaSoft, the JDK is currently available for: Solaris, Windows 95/NT, MacOS (depending on JDK versions). The JDK is also available for Linux from <A HREF="http://www.blackdown.org/java-linux.html">Blackdown</A>. OSF has announced <A HREF="http://www.osf.org/comm/press/951212-JavaPorts.html">projects</A> for porting Java to major Unix platforms. Ports for major Unix platform are <A HREF="http://java.sun.com/products/jdk/jdk-ports.html">proposed</A> by third-parties.
+<P>
+It should also be noted that Netscape Comm. has apparently ported the Java runtime to several Unix platforms, since Java is supported (or will be supported) by Mozilla on most platforms.
+
+<DT> Caml runtime
+<DD> The Objective Caml (bytecode runtime) is available for (or portable to) any Unix platform (that is: POSIX-compliant operating systeme and ANSI compliant C compiler). Examples: Digital Unix, SunOS, Solaris, FreeBSD, Linux, MkLinux, NextStep, IRIX, Ultrix, HPUX, AIX (see <A HREF="http://pauillac.inria.fr/ocaml/portability.html">full list</A>).
+<P>
+Ports to Windows and Mac OS are also available. Porting the
+<TT>MMM</TT> browser would require some additionnal work, but is theoretically possible (because Tcl/Tk is now available on these platforms).
+</DL>
+
+<H2 align=left>Libraries</H2>
+<A NAME="libraries"></A>
+This section discusses the libraries available to the applet author.
+<DL>
+<DT> Java applets
+<DD> 
+<UL>
+<LI> GUIs are programmed in the AWT toolkit.
+<LI> Basic interaction with the browser for WWW navigation (also new Content-type handlers ?).
+<LI> Network connections (restricted to the host site of the applet). No IO (depends on versions).
+<LI> No general purpose library. 
+</UL>
+
+<DT> Caml applets
+<DD> 
+<UL>
+<LI> GUIs are programmed using CamlTk, the  Tcl/Tk interface for Caml.
+<LI> Access to navigation functions of the browser.
+<LI> Extensions of the browser (Content-Type handlers, link activation semantics, HTML display machine,...). 
+<LI> User-checked IOs.  Network access only through browser navigation and HTTP protocol.
+<LI> Simple capability system to write safe libraries with access right control
+<LI> camlyacc, camllex, standard implementations for common data structures
+(lists, arrays, hash-tables, queues, sets, sorting, stack, random).
+</UL>
+</DL>
+
+<H2 align=left>Availability</H2>
+<A NAME="avail"></A>
+<DL>
+<DT> Java, Hotjava, Netscape
+<DD> Hotjava is freely available, but supports only the obsolete Java alpha API. Netscape distribution policy varies according to the user status. The Java
+specification is proprietary but freely available. The sources of the system are available under
+license. A Java compiler is freely available.
+
+<DT> Objective Caml, MMM.
+<DD> All sources available freely. Both systems are freely usable, but derivative
+work is subject to permission. 
+</DL>
+
+
+
+<!--#include virtual="/~rouaix/footer.html" -->
+</BODY>
+
+</HTML>

@@ -1,0 +1,29 @@
+#!/bin/sh -x
+
+SUBJECT=
+TO=
+
+# Parse command line
+
+while test $# -gt 0; do
+  case $1 in 
+    -s) shift; SUBJECT=$1;;
+     *) TO=$1; shift;;
+  esac
+done
+
+# Prepare the template
+draft=`mhpath +drafts new`
+
+/lib/cpp -P -DTO="$TO" -DSUBJECT="$SUBJECT" \
+    $HOME/Mail/components.template > $draft
+
+# Set cur for -use
+folder +drafts `basename $draft`
+
+# Asks exmh to do some stuff
+exec /usr/local/bin/wish4.0 << wish_eof
+    wm withdraw .
+    send exmh Msg_Compose -use
+    exit 0
+wish_eof

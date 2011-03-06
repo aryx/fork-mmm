@@ -1,0 +1,24 @@
+# Generated automatically from Makefile.camltk.in by configure.
+## Where you installed ObjectiveCaml
+LIBDIR=c:\ocaml\lib
+
+## Where installed CamlTk41 libraries and binaries
+CAMLTKDIR=$(LIBDIR)\camltk
+
+TKCOMPFLAGS=-I $(CAMLTKDIR)
+WITH_TK=$(CAMLTKDIR)\libcamltk41.lib \
+	c:\tcl\lib\tk42.lib c:\tcl\lib\tcl76.lib \
+	$(TKCOMPFLAGS) tk41.cma
+WITH_FRX=libfrx.cma
+WITH_JPF=libjpf.cma
+# WITH_JTK=$(CAMLTKDIR)/jtk.cmo
+# WITH_TKANIM=tkanim.cmo tkaniminit.cmo $(CAMLTKDIR)/tkaniminit.o -cclib -ltkanim
+
+### Usage:
+### in your Makefiles, add the following
+##  !include ...\Makefile.camltk
+### Then add $(TKCOMPFLAGS) to COMPFLAGS
+## COMPFLAGS=$(TKCOMPFLAGS)
+### and the rule to produce a standlone CamlTk application is
+## appl.exe : $(OBJS)
+##	ocamlc -custom -o $@ $(WITH_TK) $(OBJS)

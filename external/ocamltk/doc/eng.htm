@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+ "http://www.w3.org/TR/REC-html40/loose.dtd">
+
+<HTML>
+
+<HEAD>
+<TITLE>CamlTk</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>CamlTk library</H1>
+
+<CENTER><IMG SRC="camltk.jpg"></CENTER>
+<P>
+CamlTk is a library for interfacing Objective Caml with the scripting
+language Tcl/Tk. The current CamlTk416 version is compatible with the
+<A HREF="../mmm/eng.htm">MMM</A> browser current version.
+<P>CamlTk is freely available <A HREF="ftp://ftp.inria.fr/lang/caml-light/bazar-ocaml/ocamltk">here</A>.
+
+<P>
+In addition to the basic interface with Tcl/Tk, this package contains
+<UL>
+ <LI> the "frx" library, written by <A
+ HREF="Francois.Rouaix@inria.fr">Francois Rouaix</A>; it contains some 
+ facilities for usual idioms
+ <LI> the "jpf" library, written by <A HREF="Jun.Furuse@inria.fr">Jun
+ P. Furuse</A>; it contains a "file selector" and "balloon help"
+ support
+ <LI> the "jtk" library, written also by Jun P. Furuse; it contains
+ extensions for Japanese Tcl/Tk
+  <LI> the "tkanim" extension, written again also by Jun P. Furuse; 
+   it adds support for 
+    animated GIF files.
+</UL> 
+
+<H2>Current release -- CamlTk416</H2>
+The latest version of the CamlTk library is 0.416.
+It is a bug fix and up-to-date version for Objective Caml version 3.0
+or later.
+
+<H3>REQUIREMENTS:</H3>
+You must have already installed
+<DL>
+ <DT><A HREF="ftp://ftp.inria.fr/lang/caml-light">Objective Caml 3.0</A>
+ <DT><A HREF="ftp://ftp.scriptics.com/pub/tcl">Tcl8.0/Tk8.0</A> or more
+<!-- <DD> Some fixes might be necessary for some versions and platforms !
+    (at least one fix needed for File events on 64 bits machines)
+-->
+</DL>
+
+<H3>PLATFORMS:</H3>
+
+<P>Essentially any Unix/X Window System platform. We have tested the release
+on Linux (ELF x86) and Digital Unix 4.0 (alpha).
+<P>
+This package also compiles under Windows NT and Windows 95 with the
+Microsoft Visual C++ compiler.  Some features of Camltk are not fully
+supported under Windows, such as file events.
+<P>
+See the <A HREF="INSTALL">INSTALL</A> file for installation instructions.
+
+</BODY>
+</HTML>

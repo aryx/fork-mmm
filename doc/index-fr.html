@@ -1,0 +1,98 @@
+<HTML>
+<HEAD>
+<TITLE>Le brouteur MMM</TITLE>
+<LINK REV="made" HREF="mailto:Francois.Rouaix@inria.fr">
+<LINK REL="Original" 
+      HREF="http://pauillac.inria.fr/~rouaix/mmm/index-fr.html">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>
+<IMG SRC="www.gif" ALIGN=BOTTOM>
+Le brouteur MMM
+<IMG SRC="mmm.gif" ALIGN=TOP>
+</H1>
+
+<P>
+<B>MMM</B> est un brouteur <B>Web</B> développé en 
+<A HREF="/ocaml/"><B>Objective Caml</B></A>
+avec la bibliothèque <A HREF="../camltk/index.html"><B>CamlTk4</B></A> par 
+<A HREF="http://pauillac.inria.fr/~rouaix/"><B>François Rouaix</B></A>.
+<B>MMM</B> est gratuit (Copyright &copy; INRIA), et disponible sous forme de
+binaire (pour certaines plateformes seulement), ou de code source.
+</P>
+
+Les principales caractéristiques de <B>MMM</B> sont:
+<DL>
+<DT> tourne sur les plateformes Unix/X11
+<DD> Nous avons testé <B>MMM</B> sur <TT>DEC/OSF</TT> (alpha), <TT>SunOS
+4.1.x</TT> (sparc), <TT>Solaris 2.5</TT> (sparc), <TT>Linux a.out and
+ELF</TT> (486, Pentium, Pentium Pro). Des utilisateurs l'ont fait tourner sur
+<TT>HPUX</TT>, <TT>SGI/IRIX</TT>, <TT>FreeBSD</TT> et <TT>IBM AIX</TT>. 
+
+<DT> respecte les standards HTTP 1.0, HTML 2.0, presque tout HTML 3.2 et les frames
+<DD> et en particulier les formulaires (<EM>forms</EM>) et les images
+<EM>in-line</EM> et les tables.
+Certains qualifieront l'affichage des tables avec MMM de ridicule. Dans
+un sens ils ont raison. Voir la FAQ pour plus d'informations.
+
+<DT> supporte des <A HREF="v418/demo-fr.html"><EM>applets</EM></A> en <EM>Objective Caml</EM>
+<DD> De nombreuses applets sont possibles, dont des programmes graphiques
+(animations ou programmes interactifs), et des extensions du navigateur. Les
+applets sont sûres, grâce au typage fort de Caml et aux signatures
+digitales.
+
+<DT> supporte les CGI locaux (sans serveur Web)
+<DD> <B>MMM</B> support les <EM>non-parsed-headers</EM> CGIs (c'est-à-dire
+les CGI qui renvoient une réponse HTTP complète); c'est utile lorsqu'on
+a besoin de programmes produisant du HTML mais qu'on ne veut pas avoir
+le souci d'installer et de maintenir un serveur Web complet.
+
+<DT> internationalisation
+<DD> <B>MMM</B> est distribué avec des messages en anglais, français ou
+japonais. Une option sur la ligne de commande suffit pour choisir la
+langue. Il est très facile d'ajouter un traduction pour une langue
+occidentale utilisant l'alphabet ISOLatin1.
+
+<DT> supporte les documents en japonais 
+<DD> Si <B>MMM</B> est lié avec les versions japonaises de Tcl/Tk,
+il comprend les différents codages du japonais. Pour plus d'informations
+à ce sujet, consulter <A HREF="http://pauillac.inria.fr/mmm/jmmm/">la page de JMMM</A>.
+
+<DT> permet d'afficher et de corriger le source HTML
+<DD> Avec <B>MMM</B>, il est très facile de voir puis d'éditer le source des
+documents HTML reçus. On peut corriger le source, et ré-afficher la version
+modifiée. Dans le cas des URL <TT>file:</TT>, on peut également sauver
+la version modifiée.
+
+<DT> gratuit
+<DD> <B>MMM</B> n'est pas exactement un logiciel libre au sens GNU, mais
+il est néanmoins
+<UL>
+<LI> disponible gratuitement sous forme source
+<LI> disponible gratuitement sous forme binaire pour Linux/i386 (RPM)
+<LI> utilisable gratuitement par quiconque
+<LI> distribuable gratuitement si non modifié (voir la <A HREF="LICENSE.txt">LICENSE</A>).
+</UL>
+</DL>
+
+<H2 align=left>Une <A HREF="v418/javacomp-fr.html">comparaison</A> des applets en Caml et en Java </H2>
+<H2 align=left><A HREF="v418/docindex-fr.html">Documentation</A></H2>
+
+<H2>Autres informations</H2>
+
+<UL>
+<LI> <A HREF="papers/"><B>Publications</B></A> en anglais et en français.
+<LI> <A HREF="related-fr.html"><B>Travaux voisins</B></A>
+<LI> <A HREF="v418/faq-fr.html"><B>Foire aux Questions</B></A>
+<LI> <A HREF="dump.gif"><B>Cliché</B></A> d'une fenêtre <B>MMM</B>.
+<LI> <A HREF="misc-fr.html"><B>Divers</B></A>
+<LI> <A HREF="releases.html"><B>Notes</B></A> sur les versions précédentes (en anglais seulement).
+</UL>
+
+<P>
+Si vous utilisez <B>MMM</B> régulièrement, merci de m'<A HREF="mailto:Francois.Rouaix@inria.fr">envoyer</A> un petit mot.
+
+<H6 align=right>Java est une marque déposée de Sun Microsystems, Inc.</H6>
+</BODY>
+</HTML>

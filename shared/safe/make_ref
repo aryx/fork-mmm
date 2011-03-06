@@ -1,0 +1,50 @@
+#!/bin/sh
+# Build a "reference" safestd.ml from the standard stdlib.
+# This will be the base from which we can remove unsafe functions
+LIBDIR=`ocamlc -v | awk -F: '/Standard/ {print $2}'`
+MODULES="array char digest hashtbl lexing list map printexc \
+ 	 buffer printf queue random set sort stack stream string genlex "
+
+function putcopy () {
+cat << EOF
+(***********************************************************************)
+(*                                                                     *)
+(*                    Objective Caml Applets API                       *)
+(*                                                                     *)
+(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
+(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
+(*                                                                     *)
+(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
+(*  Automatique.  Distributed only by permission.                      *)
+(*                                                                     *)
+(***********************************************************************)
+
+EOF
+}
+
+function stripcopy () {
+  tail +14
+ } 
+
+function strippriv () {
+  sed -e '/^(\*--\*)/,$d'
+}
+
+function capitalize () {
+echo $1 | sed -e 'h
+s/\(.\).*/\1/
+y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/
+G
+s/\n.//'
+}
+
+putcopy;
+cat $LIBDIR/pervasives.mli | stripcopy | strippriv
+for i in $MODULES
+do
+mod=`capitalize $i`
+echo
+echo module $mod : sig
+cat $LIBDIR/$i.mli | stripcopy | strippriv
+echo end
+done

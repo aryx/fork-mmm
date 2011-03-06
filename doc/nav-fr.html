@@ -1,0 +1,134 @@
+<HTML>
+<HEAD>
+<TITLE>MMM V0.418 Documentation (navigation) </TITLE>
+<LINK REL="Original"
+      HREF="http://pauillac.inria.fr/mmm/v418/nav-fr.html">
+<LINK REL="TOC"
+      HREF="docindex-fr.html">
+<LINK REV="Author" HREF="mailto:Francois.Rouaix@inria.fr">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<H1>MMM : navigation</H1>
+
+<H2 align=left>Liens hypertextes et objets actifs</H2>
+<A NAME="nav"></A>
+Dans un document HTML affiché, les liens hypertextes (ou <EM>ancres</EM>)
+sont habituellement affichés en bleu souligné. L'auteur du document peut
+avoir indiqué d'autres couleurs, mais dans tous les cas:
+<UL>
+<LI> le pointeur de la souris devient une "main"
+<LI> une adresse de destination s'affiche en bas de la fenêtre
+</UL>
+
+Il existe également des objects actifs, comme certaines images; certaines
+sont des simples boutons, et on voit la même choses que pour les ancres
+dans le texte. D'autres contiennent plusieurs zones actives : le pointeur
+de souris est alors une flêche qui pointe vers le haut et la gauche.
+Soit l'image est n'est pas encore chargée, et alors en cliquant avec le
+bouton 1 on fait apparaître un menu des liens possibles, soit l'image
+est déjà chargée, et il suffit de cliquer à l'endroit voulu.
+
+<P>
+Il existe différentes manières d'activer un ancre, résumées ci-dessous:
+
+<DL compact>
+<DT> Bouton-1
+<DD> affiche le document pointé par ce lien dans la même
+fenêtre, sauf indication spécifique de l'auteur du document (frames)
+
+<DT> Shift + Bouton 1
+<DD> sauve le document pointé par le lien (après
+demande d'un nom de fichier par une boîte de dialogue)
+
+<DT> Bouton 3
+<DD> affiche le document pointé par ce lien dans une
+nouvelle fenêtre
+
+<DT> Control + Bouton 1
+<DD> affiche un menu d'activation du lien, pouvant contenir d'autres fonctions de navigation 
+
+</DL>
+
+
+Le choix particulier des boutons souris et touches supplémentaires est
+réglable par l'utilisateur en éditant le fichier de préférence, et en
+modifiant les <A HREF="res-fr.html">ressources</A> adéquates.
+
+<H2 align=left>Barre de commande</H2>
+La barre de commande propose les boutons de navigation suivants:
+<DL compact>
+
+<DT> Home
+<DD> qui va au document <B>Home</B>, tel que défini <A HREF="cli-fr.html#home">ici</A>
+
+<DT> Précédent
+<DD> qui revient au document précédemment affiché (ne marche pas avec les
+<EM>frames</EM>)
+
+<DT> Suivant
+<DD> qui revient au document suivant (ne marche pas avec les
+<EM>frames</EM>)
+</DL>
+
+Ces actions sont également disponibles à partir du menu <B>Navigation</B>,
+ainsi que le déplacement dans l'historique de navigation.
+Les raccourcis du menu sont réglables par des <A HREF="res-fr.html">ressources</A> dans le fichier de préférences.
+
+<H2 align=left>Autres éléments d'interface</H2>
+<H3>Recharger, Mettre à jour</H3>
+<B>Recharger</B> provoque le rechargement complet du document à partir de
+son serveur d'origine, en indiquant au proxy qu'il ne doit pas consulter son
+cache pour répondre.
+<P>
+<B>Mettre à jour</B> demande au serveur si le document a été modifié depuis
+qu'il a été affiché dans <B>MMM</B> (en particulier, si <B>MMM</B> a
+initialement obtenu le document dans le cache du proxy, ce menu permet
+de vérifier auprès du serveur que le document est à jour). Certains serveurs
+ne savent pas répondre à ce type de requête (pourtant standard en HTTP/1.0),
+et renverront systématiquement une nouvelle copie du document, même identique.
+
+
+<H3>Documents HTML</H3>
+<H4>En-têtes</H4>
+Le titre du document est également un menu qui affiche les en-têtes HTTP de
+ce document. Certaines en-têtes sont activables (p.ex. <TT>Refresh</TT>).
+<H4>Smooth scroll</H4>
+L'icone avec deux petites flêches change le mode de défilement du document.
+En présence de grosses tables ou images (ie. dont la taille dépasse la
+taille de la fenêtre <B>MMM</B>), le défilement ne fonctionne pas
+correctement, et il faut alors passer en mode <EM>smooth scroll</EM> pour
+voir l'intégralité du document. Ce mode peut être activé par défaut
+dans les <A HREF="prefs-fr.html#html">préférences</A>, mais il est couteux.
+<H4>Links</H4>
+A droite de l'icône, le bouton <B>Links</B>, si il est actif, donne accès au
+menu qui contient les liens particuliers éventuellement définis par l'auteur
+du document. Dans le cas où l'affichage des <EM>frames</EM> n'a pas été
+activé, ce menu contient en particulier une entrée pour chaque
+<EM>frame</EM> du document.
+<H4>Recherche</H4>
+En tapant <TT>Control-S</TT> dans la fenêtre d'affichage, on accède à une
+boîte de dialogue permettant de chercher du texte dans le document affiché
+(ne cherche pas dans les cellulles des <EM>tables</EM>, ou dans les
+<EM>frames</EM>).
+
+<H4>Barre de progrès</H4>
+En bas d'une fenêtre <B>MMM</B>, une barre de progrès permet de suivre
+l'évolution du chargement du document demandé. De plus, si la barre devient
+rouge, cela signifie qu'une erreur de syntaxe a été détectée dans le
+document HTML (et donc, éventuellement, que l'affichage pourra présenter
+des défauts).
+
+<H4>Affichage du source</H4>
+Le menu <B>Voir le source</B> ouvre une fenêtre sur le source HTML du
+document affiché. Ce source peut être décoré en couleurs (voir <A
+HREF="res-fr.html#source">comment</A>).
+On peut également voir les positions des erreurs éventuelles de syntaxe
+dans le HTML; les erreurs apparaissent <U>soulignées</U>, et le message
+correspondant est affiché lorsque la souris passe sur le lieu de l'erreur.
+Il est possible d'éditer directement le source du document, et de réafficher
+la version modifiée; dans le cas où le document a été accédé par une URL
+<TT>file:</TT>, on peut également sauver la version modifiée.
+
+</BODY>
+</HTML>

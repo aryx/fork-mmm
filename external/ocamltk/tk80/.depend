@@ -1,0 +1,8 @@
+builtin.cmo: builtin.cmi 
+builtin.cmx: builtin.cmi 
+font.cmo: font.cmi 
+font.cmx: font.cmi 
+tk80.cmo: tk80.cmi 
+tk80.cmx: tk80.cmi 
+tkgen.cmo: tkgen.cmi 
+tkgen.cmx: tkgen.cmi 
