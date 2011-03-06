@@ -1,0 +1,121 @@
+Only in ../../mmm-sync/camltk416/: Makefile.camltk
+Only in ../../mmm-sync/camltk416/: Makefile.config
+Only in ../../mmm-sync/camltk416/: config.log
+Only in ../../mmm-sync/camltk416/: config.status
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/configure ../../mmm-sync/camltk416/configure
+--- ocamltk/configure	1998-12-09 02:07:45.000000000 -0800
++++ ../../mmm-sync/camltk416/configure	2011-03-05 12:57:11.000000000 -0800
+@@ -1819,8 +1819,8 @@ tcl75="tcl75$LIBEXT"
+ tcl75d="tcl7.5$LIBEXT"
+ tcl76="tcl76$LIBEXT"
+ tcl76d="tcl7.6$LIBEXT"
+-tcl80="tcl80$LIBEXT"
+-tcl80d="tcl8.0$LIBEXT"
++tcl80="tcl84$LIBEXT"
++tcl80d="tcl8.4$LIBEXT"
+ 
+ echo $ac_n "checking for Tcl_GetObjResult in -l$tcl80""... $ac_c" 1>&6
+ echo "configure:1827: checking for Tcl_GetObjResult in -l$tcl80" >&5
+Only in ../../mmm-sync/camltk416/jpf: balloon.o
+Only in ../../mmm-sync/camltk416/jpf: fileselect.o
+Only in ../../mmm-sync/camltk416/jpf: jpf_font.o
+Only in ../../mmm-sync/camltk416/jpf: libjpf.a
+Only in ../../mmm-sync/camltk416/jpf: shell.o
+Only in ../../mmm-sync/camltk416/jtk: jtk.o
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/lib/Makefile ../../mmm-sync/camltk416/lib/Makefile
+--- ocamltk/lib/Makefile	2000-05-17 08:18:48.000000000 -0700
++++ ../../mmm-sync/camltk416/lib/Makefile	2011-03-05 13:04:06.000000000 -0800
+@@ -33,7 +33,8 @@ tk41.cmxa : $(SUPPORTX) $(WIDGETOBJSX) t
+ 
+ ocamltktop : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk41.a
+ 	$(CAMLC) -custom -linkall -o ocamltktop -I ../support $(TKLINKOPT) \
+-	       toplevellib.cma tk41.cma topmain.cmo
++	       toplevellib.cma tk41.cma 
++#topmain.cmo
+ 
+ # All .{ml,mli} files are generated in this directory
+ clean : 
+@@ -67,4 +68,4 @@ installopt: tk41.cmxa
+ 	$(CAMLOPT) -c $(COMPFLAGS) $<
+   
+ 
+-include .depend
++-include .depend
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/lib/modules ../../mmm-sync/camltk416/lib/modules
+--- ocamltk/lib/modules	1997-10-13 02:03:04.000000000 -0700
++++ ../../mmm-sync/camltk416/lib/modules	2011-03-05 13:00:21.000000000 -0800
+@@ -1 +1 @@
+-WIDGETOBJS=scale.cmo radiobutton.cmo dialog.cmo selection.cmo toplevel.cmo frame.cmo canvas.cmo pack.cmo listbox.cmo grab.cmo button.cmo grid.cmo imagephoto.cmo bell.cmo winfo.cmo imagebitmap.cmo tkwait.cmo scrollbar.cmo checkbutton.cmo palette.cmo focus.cmo optionmenu.cmo wm.cmo entry.cmo text.cmo pixmap.cmo resource.cmo message.cmo clipboard.cmo menubutton.cmo label.cmo place.cmo menu.cmo 
++WIDGETOBJS=place.cmo resource.cmo wm.cmo imagephoto.cmo canvas.cmo button.cmo text.cmo label.cmo scrollbar.cmo pixmap.cmo palette.cmo message.cmo menu.cmo entry.cmo listbox.cmo focus.cmo menubutton.cmo pack.cmo toplevel.cmo frame.cmo dialog.cmo imagebitmap.cmo clipboard.cmo radiobutton.cmo tkwait.cmo grab.cmo selection.cmo scale.cmo optionmenu.cmo winfo.cmo grid.cmo checkbutton.cmo bell.cmo 
+Only in ocamltk/: modif-orig.txt
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/site.config ../../mmm-sync/camltk416/site.config
+--- ocamltk/site.config	2000-05-17 08:18:40.000000000 -0700
++++ ../../mmm-sync/camltk416/site.config	2011-03-05 12:54:26.000000000 -0800
+@@ -1,5 +1,5 @@
+ ## Location of Objective Caml Libraries
+-OCAMLLIBDIR=/usr/local/lib/ocaml
++OCAMLLIBDIR=/home/pad/packages/Linux/stow/ocaml-3.12/lib/ocaml
+ #OCAMLLIBDIR=/usr/local/lib/objective-caml
+ 
+ ## Compilation and link flags for Tcl/Tk applications
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/support/cltkEval.c ../../mmm-sync/camltk416/support/cltkEval.c
+--- ocamltk/support/cltkEval.c	1998-07-30 05:27:23.000000000 -0700
++++ ../../mmm-sync/camltk416/support/cltkEval.c	2011-03-05 13:04:59.000000000 -0800
+@@ -172,7 +172,7 @@ value v; 
+   argv = (char **)stat_alloc((size + 2) * sizeof(char *));
+ 
+   wherewasi = startfree; /* should be zero except when nested calls */
+-  Assert(startfree < MAX_LIST);
++  //Assert(startfree < MAX_LIST);
+ 
+   /* Copy */
+   {
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/support/cltkImg.c ../../mmm-sync/camltk416/support/cltkImg.c
+--- ocamltk/support/cltkImg.c	1998-07-17 05:38:11.000000000 -0700
++++ ../../mmm-sync/camltk416/support/cltkImg.c	2011-03-05 13:00:15.000000000 -0800
+@@ -82,7 +82,9 @@ camltk_setimgdata_native (value imgname,
+   pib.offset[0] = 0;
+   pib.offset[1] = 1;
+   pib.offset[2] = 2;
+-  Tk_PhotoPutBlock(ph,&pib,Int_val(x),Int_val(y),Int_val(w),Int_val(h)); 
++  Tk_PhotoPutBlock(ph,&pib,Int_val(x),Int_val(y),Int_val(w),Int_val(h)
++                   ,TK_PHOTO_COMPOSITE_SET
++                   ); 
+ }
+ 
+ value camltk_setimgdata_bytecode(argv,argn)
+Only in ../../mmm-sync/camltk416/tk80: tk80.o
+Only in ../../mmm-sync/camltk416/tkanim/ext: Makefile
+diff -u -p -b -B -r -x .semantic.cache -x .depend -x CVS -x .hg -x .svn -x .git -x _darcs ocamltk/tkanim/ext/tkAnimGIF.c ../../mmm-sync/camltk416/tkanim/ext/tkAnimGIF.c
+--- ocamltk/tkanim/ext/tkAnimGIF.c	1998-07-17 05:38:12.000000000 -0700
++++ ../../mmm-sync/camltk416/tkanim/ext/tkAnimGIF.c	2011-03-05 13:07:05.000000000 -0800
+@@ -255,12 +255,12 @@ FileReadGIF(interp, f, fileName, formatS
+ 	    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
+ #endif
+ 
+-	if( Tk_ImageCmd((ClientData) winPtr, interp, 
+-			/* "image create photo -width <imageWidth> 
+-			   -height <imageHeight>" */
+-			7, argv) == TCL_ERROR ){
+-	    return TCL_ERROR;
+-	}
++	//PADif( Tk_ImageCmd((ClientData) winPtr, interp, 
++	//PAD		/* "image create photo -width <imageWidth> 
++	//PAD		   -height <imageHeight>" */
++	//PAD		7, argv) == TCL_ERROR ){
++	//PAD    return TCL_ERROR;
++	//PAD}
+ #ifdef TKANIM_DEBUG
+     fprintf(stderr, " done ");
+ #endif
+@@ -289,7 +289,9 @@ FileReadGIF(interp, f, fileName, formatS
+ 	    }
+ 	}
+ 	Tk_PhotoPutBlock(photoHandle, &block, 0, 0, 
+-			 imageWidth, imageHeight);
++			 imageWidth, imageHeight
++                         ,TK_PHOTO_COMPOSITE_SET
++                         );
+ #ifdef TKANIM_DEBUG
+     fprintf(stderr, " Retrieving result\n");
+ #endif
