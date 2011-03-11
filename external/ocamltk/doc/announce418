@@ -1,0 +1,42 @@
+[Version française ci-dessous]
+
+New 0.418 Release of Caml/Tk
+
+We are pleased to announce the new 0.418 version of Caml/Tk. It is a
+bug fix and up-to-date version of Caml/Tk that runs with Tcl/Tk 8.0/8.3
+and the 3.04 version of the Objective Caml compiler.
+
+CamlTk home page is http://pauillac.inria.fr/camltk/
+CamlTk source files can be found at ftp://ftp.inria.fr/cristal/
+
+Minor changes:
+
+-- the widget compiler has been revised not to generate warnings.
+-- the japanese support has been fixed for Tk8.0.
+
+Enjoy.
+
+Jun P. Furuse && Pierre Weis.
+
+[Version française]
+
+Nouvelle version 0.418 de Caml/Tk
+
+Nous avons le plaisir d'annoncer la nouvelle version 0.418 de la
+bibliothèque Caml/Tk. C'est une version qui corrige les erreurs
+connues et remet à jour le code, avec quelques extensions mineures.
+
+La page Web de Caml/Tk est http://pauillac.inria.fr/camltk/
+
+Les fichiers sources de CamlTk sont en
+ftp://ftp.inria.fr/lang/caml-light/bazar-ocaml/ocamltk
+
+Changements mineurs:
+
+-- le compilateur de widget compiler a été modifié pour ne pas
+   engendrer d'alertes.
+-- le support du japonais a été revu pour Tk8.0.
+
+Amusez-vous bien.
+
+Jun P. Furuse && Pierre Weis.
