@@ -38,7 +38,9 @@ ocamltktop$(EXE) : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk.a
 
 # All .{ml,mli} files are generated in this directory
 clean : 
-	rm -f *.cm* *.ml *.mli *.o *.a camltk.cmo ocamltktop$(EXE) .depend
+	rm -f *.cm* *.ml *.mli *.o *.a camltk.cmo ocamltktop$(EXE) 
+#pad:
+#.depend
 
 # ocamltktop$(EXE)
 install: camltk.cma

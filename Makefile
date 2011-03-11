@@ -17,9 +17,10 @@ SYSLIBS=
 MAKESUBDIRS= commons i18n/japan globals \
   www http html \
   protocols retrieve viewers \
-  display
+  display \
+  appsys
 
-INCLUDEDIRS=$(MAKESUBDIRS) appsys browser safe
+INCLUDEDIRS=$(MAKESUBDIRS) browser safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
@@ -88,15 +89,18 @@ clean::
 clean::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
 
+depend::
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
+
 # Exported safe libraries
 SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
-mmm.bin: $(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
+mmm.bin: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
 		$(WITH_DYNLINK) $(WITH_UNIX) $(WITH_STR) $(WITH_TK) \
 	        $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) \
 		$(WITH_TK80) \
-		$(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
+		$(OBJS) $(CRCS) $(SAFE) $(MAIN)
 
 # The native version does not support applets !
 mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
@@ -139,7 +143,6 @@ clean::
 	cd modules; $(MAKE) clean
 
 clean::
-	rm -rf appsys/*.cm* appsys/*.o
 	rm -rf safe/*.cm* safe/*.o
 	rm -rf browser/*.cm* browser/*.o
 	rm -rf remote/*.cm* remote/*.o
@@ -193,33 +196,6 @@ BROWSER=browser/about.cmo browser/gcache.cmo \
         browser/history.cmo browser/plink.cmo browser/nav.cmo \
 	browser/mmm.cmo browser/cci.cmo \
         browser/debug.cmo 
-
-# The applet system
-APPSYS=appsys/pgp.cmo appsys/capabilities.cmo appsys/dload.cmo \
-       appsys/applets.cmo appsys/appview.cmo
-
-# Most files are shared with the Calves plugin
-appsys/applets.ml:
-	-ln -s ../shared/$@ $@
-appsys/applets.mli:
-	-ln -s ../shared/$@ $@
-appsys/capabilities.ml:
-	-ln -s ../shared/$@ $@
-appsys/capabilities.mli:
-	-ln -s ../shared/$@ $@
-appsys/dload.ml:
-	-ln -s ../shared/$@ $@
-appsys/dload.mli:
-	-ln -s ../shared/$@ $@
-appsys/pgp.ml:
-	-ln -s ../shared/$@ $@
-
-beforedepend:: appsys/applets.ml appsys/applets.mli \
-	       appsys/capabilities.ml appsys/capabilities.mli \
-	       appsys/dload.ml appsys/dload.mli \
-	       appsys/pgp.ml
-
-appsys: $(APPSYS)
 
 ## The common safe library
 include Makefile.safe

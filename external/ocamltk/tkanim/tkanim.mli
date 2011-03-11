@@ -1,6 +1,6 @@
 open Widget
 open Tk
-open Support
+(*open Support*)
 
 (*** Data types ***)
 
