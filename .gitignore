@@ -28,3 +28,6 @@
 /safe/safe418mmm.mli
 /.DS_Store
 /i18n/japan/lexkanji.ml
+/external/ocamltk/Makefile.camltk
+/external/ocamltk/Makefile.config
+/external/ocamltk/tkanim/ext/Makefile
