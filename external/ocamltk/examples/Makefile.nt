@@ -6,9 +6,9 @@ COMPFLAGS= -I ../lib -I ../support
 LINKFLAGS= -I ../lib
 
 # Use pieces of Makefile.config
-TKLINKOPT=..\support\libcamltk41.lib \
+TKLINKOPT=..\support\libcamltk.lib \
 	  $(TKLIBS) $(X11_LIBS) \
-          tk41.cma
+          camltk.cma
 
 all: addition.exe helloworld.exe winskel.exe socketinput.exe
 

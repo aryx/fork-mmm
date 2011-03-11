@@ -9,8 +9,7 @@ opt : tk80.cmx
 include ./modules
 
 tk80.ml tk80.mli: Tk80.src
-	if [ ! -s lib ]; then ln -s . lib; fi	# We need for tkcompiler
-	../compiler/tkcompiler Tk80.src
+	../compiler/tkcompiler -outdir . Tk80.src
 	(\
 	echo "open Protocol"; \
 	echo "open Tk"; \
@@ -46,7 +45,7 @@ tk80.ml tk80.mli: Tk80.src
 	) > tk80.mli
 
 clean:
-	rm -f *.cm? tk80.ml tk80.mli tkgen.ml tkgen.mli tk80.cm* tktypes.ml lib
+	rm -f *.cm? tk80.ml tk80.mli tkgen.ml tkgen.mli tk80.cm* tktypes.ml lib *.o 
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .mlp .cmx
@@ -61,7 +60,7 @@ clean:
 	$(CAMLOPT) -c $(COMPFLAGS) $<
 
 install: tk80.cmo
-	cp tk80.cm* $(INSTALLDIR)
+	cp tk80.mli tk80.cm* $(INSTALLDIR)
 
 installopt: tk80.cmx tk80.o
 	cp tk80.cmx tk80.o $(INSTALLDIR)

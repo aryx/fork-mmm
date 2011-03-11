@@ -43,12 +43,12 @@ let put w millisec mesg =
 	t := None;
 	if !debug then
 	  prerr_endline ("Balloon: " ^ Widget.name w);
-	update_idletasks();
+	update_idletasks ();
 	Message.configure !popupw [Text mesg]; 
 	raise_window !topw;
 	Wm.geometry_set !topw (* 9 & 8 are some kind of magic... *)
-	  ("+"^(string_of_int (ev.ev_RootX + 9))^
-	   "+"^(string_of_int (ev.ev_RootY + 8)));
+	  ("+" ^ string_of_int (ev.ev_RootX + 9) ^
+	   "+" ^ string_of_int (ev.ev_RootY + 8));
 	Wm.deiconify !topw;
 	cursor := cget w CCursor;
 	configure_cursor w "hand2"))

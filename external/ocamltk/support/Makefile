@@ -2,14 +2,14 @@ include ../Makefile.config
 
 all: support.cmo widget.cmo protocol.cmo \
      textvariable.cmo timer.cmo fileevent.cmo \
-     libcamltk41.a
+     libcamltk.a
 
 opt: support.cmx widget.cmx protocol.cmx \
      textvariable.cmx timer.cmx fileevent.cmx \
-     libcamltk41.a
+     libcamltk.a
 
 # Experimental support for dynamically loading Caml into Wish
-shared: libcamltk41s.a 
+shared: libcamltks.a 
 
 
 COBJS=cltkCaml.o cltkEval.o cltkFile.o cltkMain.o cltkEvent.o \
@@ -22,11 +22,11 @@ CCFLAGS=-ccopt -g $(X_CFLAGS) $(TCLTKINCLUDES)
 # -fPIC is platform dependent
 CCSFLAGS=-ccopt -fPIC -ccopt -g $(X_CFLAGS) $(TCLTKINCLUDES)
 
-libcamltk41.a : $(COBJS)
-	rm -f libcamltk41.a
-	ar rc libcamltk41.a $(COBJS)
+libcamltk.a : $(COBJS)
+	rm -f libcamltk.a
+	ar rc libcamltk.a $(COBJS)
 
-libcamltk41s.a: $(SOBJS)
+libcamltks.a: $(SOBJS)
 	ar rc $@ $(SOBJS)
 
 
@@ -36,12 +36,12 @@ PUB=fileevent.cmi fileevent.mli \
     timer.cmi timer.mli \
     widget.cmi widget.mli 
 
-install: libcamltk41.a $(PUB)
+install: libcamltk.a $(PUB)
 	if test -d $(INSTALLDIR); then : ; else mkdir $(INSTALLDIR); fi
 	cp $(PUB) $(INSTALLDIR)
-	cp libcamltk41.a $(INSTALLDIR)
-	cd $(INSTALLDIR); chmod 644 $(PUB) libcamltk41.a
-	$(RANLIB) $(INSTALLDIR)/libcamltk41.a
+	cp libcamltk.a $(INSTALLDIR)
+	cd $(INSTALLDIR); chmod 644 $(PUB) libcamltk.a
+	$(RANLIB) $(INSTALLDIR)/libcamltk.a
 
 clean : 
 	rm -f *.cm* *.o *.a

@@ -6,16 +6,16 @@ OBJS= shell.cmo fileselect.cmo balloon.cmo jpf_font.cmo
 OBJSX = $(OBJS:.cmo=.cmx)
 
 TKLINKOPT=$(STATIC) \
-	  -ccopt -L../support -cclib -lcamltk41 \
+	  -ccopt -L../support -cclib -lcamltk \
 	  $(TKLIBS) $(X11_LIBS)
 
 all: libjpf.cma
 
 opt: libjpf.cmxa
 
-test: balloontest
+test: balloontest$(EXE)
 
-testopt: balloontest.opt
+testopt: balloontest_opt$(EXE)
 
 libjpf.cma: $(OBJS)
 	$(CAMLLIBR) -o libjpf.cma $(OBJS)
@@ -30,22 +30,22 @@ installopt: libjpf.cmxa
 	cp libjpf.cmxa libjpf.a $(INSTALLDIR)
 
 clean:
-	rm -f *.cm* *~ *test
+	rm -f *.cm* *~ *.o *.a
+	rm -f balloontest$(EXE) balloontest_opt$(EXE)
 
 ### Tests
 
-balloontest: balloontest.cmo 
-	$(CAMLC) -o balloontest -I ../support -I ../lib \
-	        -custom tk41.cma libjpf.cma balloontest.cmo $(TKLINKOPT)
+balloontest$(EXE): balloontest.cmo 
+	$(CAMLC) -o balloontest$(EXE) -I ../support -I ../lib \
+	        -custom camltk.cma libjpf.cma balloontest.cmo $(TKLINKOPT)
 
 balloontest.cmo : balloon.cmo libjpf.cma
 
-balloontest.opt: balloontest.cmx
-	$(CAMLOPT) -o balloontest.opt -I ../support -I ../lib \
-	        tk41.cmxa libjpf.cmxa balloontest.cmx $(TKLINKOPT)
+balloontest_opt$(EXE): balloontest.cmx
+	$(CAMLOPT) -o balloontest_opt$(EXE) -I ../support -I ../lib \
+	        camltk.cmxa libjpf.cmxa balloontest.cmx $(TKLINKOPT)
 
 balloontest.cmx : balloon.cmx libjpf.cmxa
-
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .cmx

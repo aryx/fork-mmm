@@ -1,4 +1,4 @@
-############## Standard Tk4.0 Widgets and functions ##############
+############## Standard Tk4.1 Widgets and functions ##############
 type Widget external
 
 # cget will probably never be implemented with verifications
@@ -46,58 +46,58 @@ type Relief {
    Groove ["groove"]
 }
 
-type TextVariable external	# textvariable.ml
-type Units external		# builtin_GetPixel.ml
+type TextVariable external      # textvariable.ml
+type Units external             # builtin_GetPixel.ml
 
 ##### The standard options, as defined in man page options(n)
 ##### The subtype is never used
 subtype option(standard) {
-   ActiveBackground		["-activebackground"; Color]
-   ActiveBorderWidth		["-activeborderwidth"; Units]
-   ActiveForeground		["-activeforeground"; Color]
-   Anchor			["-anchor"; Anchor]
-   Background			["-background"; Color]
-   Bitmap			["-bitmap"; Bitmap]
-   BorderWidth			["-borderwidth"; Units]
-   Cursor			["-cursor";  Cursor]
-   DisabledForeground		["-disabledforeground"; Color]
-   ExportSelection		["-exportselection"; bool]
-   Font				["-font"; string]
-   Foreground			["-foreground"; Color]
-   Geometry			["-geometry"; string]  # Too variable to encode
+   ActiveBackground             ["-activebackground"; Color]
+   ActiveBorderWidth            ["-activeborderwidth"; Units]
+   ActiveForeground             ["-activeforeground"; Color]
+   Anchor                       ["-anchor"; Anchor]
+   Background                   ["-background"; Color]
+   Bitmap                       ["-bitmap"; Bitmap]
+   BorderWidth                  ["-borderwidth"; Units]
+   Cursor                       ["-cursor";  Cursor]
+   DisabledForeground           ["-disabledforeground"; Color]
+   ExportSelection              ["-exportselection"; bool]
+   Font                         ["-font"; string]
+   Foreground                   ["-foreground"; Color]
+   Geometry                     ["-geometry"; string]  # Too variable to encode
    HighlightBackground          ["-highlightbackground"; Color]
    HighlightColor               ["-highlightcolor"; Color]
    HighlightThickness           ["-highlightthickness"; Units]
    # images are split, to do additionnal static typing
    ImageBitmap                  ["-image"; ImageBitmap]
-   ImagePhoto			["-image"; ImagePhoto]
-   InsertBackground		["-insertbackground"; Color]
-   InsertBorderWidth		["-insertborderwidth"; Units]
-   InsertOffTime		["-insertofftime"; int]   # Positive only
-   InsertOnTime			["-insertontime"; int]    # Idem
-   InsertWidth			["-insertwidth"; Units]
-   Jump				["-jump"; bool]
-   Justify			["-justify"; Justification]
-   Orient			["-orient"; Orientation]
-   PadX				["-padx"; Units]
-   PadY				["-pady"; Units]
-   Relief			["-relief"; Relief]
-   RepeatDelay			["-repeatdelay"; int]
-   RepeatInterval		["-repeatinterval"; int]
-   SelectBackground		["-selectbackground"; Color]
-   SelectBorderWidth		["-selectborderwidth"; Units]
-   SelectForeground		["-selectforeground"; Color]
-   SetGrid			["-setgrid"; bool]
+   ImagePhoto                   ["-image"; ImagePhoto]
+   InsertBackground             ["-insertbackground"; Color]
+   InsertBorderWidth            ["-insertborderwidth"; Units]
+   InsertOffTime                ["-insertofftime"; int]   # Positive only
+   InsertOnTime                 ["-insertontime"; int]    # Idem
+   InsertWidth                  ["-insertwidth"; Units]
+   Jump                         ["-jump"; bool]
+   Justify                      ["-justify"; Justification]
+   Orient                       ["-orient"; Orientation]
+   PadX                         ["-padx"; Units]
+   PadY                         ["-pady"; Units]
+   Relief                       ["-relief"; Relief]
+   RepeatDelay                  ["-repeatdelay"; int]
+   RepeatInterval               ["-repeatinterval"; int]
+   SelectBackground             ["-selectbackground"; Color]
+   SelectBorderWidth            ["-selectborderwidth"; Units]
+   SelectForeground             ["-selectforeground"; Color]
+   SetGrid                      ["-setgrid"; bool]
    # incomplete description of TakeFocus
    TakeFocus                    ["-takefocus"; bool]
-   Text				["-text"; string]
-   TextVariable			["-textvariable"; TextVariable]
-   TroughColor			["-troughcolor"; Color]
-   UnderlinedChar		["-underline"; int]
+   Text                         ["-text"; string]
+   TextVariable                 ["-textvariable"; TextVariable]
+   TroughColor                  ["-troughcolor"; Color]
+   UnderlinedChar               ["-underline"; int]
    WrapLength                   ["-wraplength"; Units]
    # Major incompatibility with Tk3.6 where it was function(int,int,int,int)
-   XScrollCommand		["-xscrollcommand"; function(float, float)]
-   YScrollCommand		["-yscrollcommand"; function(float, float)]
+   XScrollCommand               ["-xscrollcommand"; function(float, float)]
+   YScrollCommand               ["-yscrollcommand"; function(float, float)]
 }
 
 #### Some other common types
@@ -192,7 +192,7 @@ widget button {
    option State ["-state"; State]
    option Width ["-width"; Units]
 
-   function ()	configure [widget(button); "configure"; option(button) list]
+   function ()  configure [widget(button); "configure"; option(button) list]
    function (string) configure_get [widget(button); "configure"]
    function () flash [widget(button); "flash"]
    function () invoke [widget(button); "invoke"]
@@ -213,13 +213,13 @@ type TagOrId {
 
 type SearchSpec {
   Above ["above"; TagOrId]
-  All	["all"]
+  All   ["all"]
   Below ["below"; TagOrId]
   Closest ["closest"; Units; Units]
   ClosestHalo ["closest"; Units; Units; Units]
   ClosestHaloStart ["closest"; Units; Units; Units; TagOrId]
-  Enclosed ["enclosed"; Units;Units;Units;Units]
-  Overlapping ["overlapping"; int;int;int;int]
+  Enclosed ["enclosed"; Units; Units; Units; Units]
+  Overlapping ["overlapping"; int; int; int; int]
   Withtag ["withtag"; TagOrId]
 }
 
@@ -257,6 +257,7 @@ type ArcStyle {
 
 subtype option(arc) {
    Extent ["-extent"; float]
+   Dash ["-dash"; string]
    # Fill is used by packer
    FillColor ["-fill"; Color]
    Outline ["-outline"; Color]
@@ -309,6 +310,7 @@ subtype option(line) {
    ArrowStyle ["-arrow"; ArrowStyle]
    ArrowShape ["-arrowshape"; [Units; Units; Units]]
    CapStyle ["-capstyle"; CapStyle]
+   Dash
    FillColor
    JoinStyle ["-joinstyle"; JoinStyle]
    Smooth ["-smooth"; bool]
@@ -320,18 +322,18 @@ subtype option(line) {
 
 # Oval item configuration
 subtype option(oval) {
-   FillColor Outline Stipple Tags Width
+   Dash FillColor Outline Stipple Tags Width
    }
 
 # Polygon item configuration
 subtype option(polygon) {
-   FillColor Outline Smooth SplineSteps
+   Dash FillColor Outline Smooth SplineSteps
    Stipple Tags Width
    }
 
 # Rectangle item configuration
 subtype option(rectangle) {
-   FillColor Outline Stipple Tags Width
+   Dash FillColor Outline Stipple Tags Width
    }
 
 # Text item configuration
@@ -344,6 +346,7 @@ subtype option(canvastext) {
 subtype option(window) {
    Anchor Height Tags Width
    Window ["-window"; widget]
+   Dash
    }
 
 # Types of items
@@ -384,7 +387,7 @@ widget canvas {
    option CloseEnough ["-closeenough"; float]
    option Confine ["-confine"; bool]
    option Height ["-height"; Units]
-   option ScrollRegion ["-scrollregion"; [Units;Units;Units;Units]]
+   option ScrollRegion ["-scrollregion"; [Units; Units; Units; Units]]
    option Width ["-width"; Units]
    option XScrollIncrement ["-xscrollincrement"; Units]
    option YScrollIncrement ["-yscrollincrement"; Units]
@@ -468,7 +471,7 @@ widget canvas {
 
 
 ##### checkbutton(n)
-widget checkbutton {	
+widget checkbutton {    
    # Standard options
    option ActiveBackground
    option ActiveForeground
@@ -545,7 +548,6 @@ module dialog {
 # subtype Index(entry) {
 #    Number End Insert SelFirst SelLast At AnchorPoint
 # }
-
 
 widget entry {
    # Standard options
@@ -688,7 +690,6 @@ type gridopt {
    Minsize ["-minsize"; Units]
    Weight ["-weight"; float]
    }
-   
 
 # Same as pack
 function () grid ["grid"; widget list; option(grid) list]
@@ -696,7 +697,10 @@ function () grid ["grid"; widget list; option(grid) list]
 module grid {
    function (int,int,int,int) bbox ["grid"; "bbox"; widget; int; int]
    function () column_configure 
-       ["grid"; "columnconfigure"; widget; int; gridopt list]
+       ["grid"; "columnconfigure"; widget; int;
+        gridopt list]
+   function (string) column_configure_get ["grid"; "columnconfigure"; widget;
+                              int]
    function () configure ["grid"; "configure"; widget list; option(grid) list]
    ## configure_get missing
    function () forget ["grid"; "forget"; widget list]
@@ -708,6 +712,8 @@ module grid {
    function () propagate_set ["grid"; "propagate"; widget; bool]
    function () row_configure 
        ["grid"; "rowconfigure"; widget; int; gridopt list]
+   function (string) row_configure_get 
+       ["grid"; "rowconfigure"; widget; int]
    function (int,int) size ["grid"; "size"; widget]
 
    function (widget list) all_slaves ["grid"; "slaves"; widget]
@@ -1116,10 +1122,10 @@ subtype option(photoimage) {
   }
 
 subtype photo(copy) {
-  ImgFrom ["-from"; int; int; int; int]
-  ImgTo   ["-to"; int; int; int; int]
-  Shrink  ["-shrink"]
-  Zoom    ["-zoom"; int; int]
+  ImgFrom   ["-from"; int; int; int; int]
+  ImgTo     ["-to"; int; int; int; int]
+  Shrink    ["-shrink"]
+  Zoom      ["-zoom"; int; int]
   Subsample ["-subsample"; int; int]
   }
 
@@ -1181,7 +1187,7 @@ subtype option(place) {
 function () place ["place"; widget; option(place) list]
 
 module place {
-    function ()	configure ["place"; "configure"; widget; option(place) list]
+    function () configure ["place"; "configure"; widget; option(place) list]
     function () forget ["place"; "forget"; widget]
     function (string) info ["place"; "info"; widget]
     function (widget list) slaves ["place"; "slaves"; widget]
@@ -1406,7 +1412,6 @@ type Comparison {
   NEQ ["!="]
 }
 
-
 type MarkDirection {
   Mark_Left ["left"]
   Mark_Right ["right"]
@@ -1419,6 +1424,14 @@ type AlignType {
   Align_Baseline ["baseline"]
   }
 
+subtype option(embeddedi) {
+  Align ["-align"; AlignType]
+  ImageBitmap
+  ImagePhoto
+  Name ["-name"; string]
+  PadX
+  PadY
+  }
 
 subtype option(embeddedw) {
   Align ["-align"; AlignType]
@@ -1481,11 +1494,19 @@ widget text {
    function () debug [widget(text); "debug"; bool]
    function () delete [widget(text); "delete"; TextIndex; TextIndex]
    function () delete_char [widget(text); "delete"; TextIndex]
-   function (int, int, int, int, int) dlineinfo [ widget(text); "dlineinfo"; TextIndex]
+   function (int, int, int, int, int) dlineinfo [widget(text); "dlineinfo"; TextIndex]
    function (string) get [widget(text); "get"; TextIndex; TextIndex]
    function (string) get_char [widget(text); "get"; TextIndex]
    function (Index) index [widget(text); "index"; TextIndex]
    function () insert [widget(text); "insert"; TextIndex; string; [TextTag list]]
+   # Embedded images
+   function () image_configure
+     [widget(text); "image"; "configure"; string; option(embeddedi) list]
+   function (string) image_configure_get
+     [widget(text); "image"; "cgets"; string]
+   function (string) image_create
+     [widget(text); "image"; "create"; option(embeddedi) list]
+   function (string list) image_names [widget(text); "image"; "names"]
    # Mark 
    function () mark_gravity_set [widget(text); "mark"; "gravity"; TextMark; MarkDirection]
    function (MarkDirection) mark_gravity_get [widget(text); "mark"; "gravity"; TextMark]
@@ -1673,7 +1694,7 @@ type WmFrom {
 
 module wm {
 ### Aspect
-   function () aspect_set ["wm"; "aspect"; widget;int;int;int;int]
+   function () aspect_set ["wm"; "aspect"; widget; int; int; int; int]
    # aspect: problem with empty return
    function (int,int,int,int) aspect_get ["wm"; "aspect"; widget]
 ### WM_CLIENT_MACHINE
@@ -1683,7 +1704,7 @@ module wm {
    function () colormapwindows_set 
         ["wm"; "colormapwindows"; widget; [widget list]]
    unsafe function (widget list) colormapwindows_get
-	["wm"; "colormapwindows"; widget]
+        ["wm"; "colormapwindows"; widget]
 ### WM_COMMAND
    function () command_clear ["wm"; "command"; widget; ""]
    function () command_set ["wm"; "command"; widget; [string list]]
@@ -1778,3 +1799,18 @@ module wm {
 module pixmap {
    external create "builtin/rawimg"
    }
+
+# tk_getOpenFile(n) (since version 8.0)
+type FilePattern external
+
+subtype option(getFile) {
+  DefaultExtension ["-defaultextension"; string]
+  FileTypes ["-filetypes"; [FilePattern list]] 
+  InitialDir ["-initialdir"; string]
+  InitialFile ["-initialfile"; string]
+  Parent ["-parent"; widget]
+  Title ["-title"; string]
+}
+
+function (string) openfile ["tk_getOpenFile"; option(getFile) list]
+function (string) savefile ["tk_getSaveFile"; option(getFile) list]

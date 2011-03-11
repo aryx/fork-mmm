@@ -13,8 +13,7 @@ Fileevent.add_fileinput fd_in (fun _ ->
 let send _ =
  let txt = Entry.get entry0_w ^ "\n" in
  Entry.delete_range entry0_w (At 0) End ;
- Unix.write fd_out txt 0 (String.length txt) ;
- () ;;
+ ignore (Unix.write fd_out txt 0 (String.length txt));;
 
 bind entry0_w [([], KeyPressDetail "Return")] (BindSet ([], send)) ;
 pack [text0_w; entry0_w; button0_w][Side Side_Top; Fill Fill_X; Expand true] ;;

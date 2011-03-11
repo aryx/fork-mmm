@@ -3,8 +3,8 @@ include ../Makefile.config
 OBJS=tsort.cmo tables.cmo lexer.cmo parser.cmo  compile.cmo intf.cmo \
      maincompile.cmo
 
-tkcompiler : $(OBJS)
-	$(CAMLC) $(LINKFLAGS) -o tkcompiler $(OBJS)
+tkcompiler$(EXE) : $(OBJS)
+	$(CAMLC) $(LINKFLAGS) -o tkcompiler$(EXE) $(OBJS)
 
 lexer.ml: lexer.mll
 	$(CAMLLEX) lexer.mll
@@ -13,13 +13,14 @@ parser.ml parser.mli: parser.mly
 	$(CAMLYACC) -v parser.mly
 
 clean : 
-	rm -f *.cm*  parser.ml parser.mli lexer.ml tkcompiler parser.output
+	rm -f *.cm* parser.ml parser.mli lexer.ml
+	rm -f tkcompiler$(EXE) parser.output
 
 scratch :
-	rm -f *.cm*  parser.ml parser.mli lexer.ml tkcompiler
+	rm -f *.cm*  parser.ml parser.mli lexer.ml tkcompiler$(EXE)
 
 install: 
-	cp tkcompiler $(INSTALLDIR)
+	cp tkcompiler$(EXE) $(INSTALLDIR)
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .mlp

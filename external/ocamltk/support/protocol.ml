@@ -11,7 +11,7 @@ type tkArgs =
 
 type cbid = int
 
-external opentk : string -> string -> unit
+external opentk_low : string list -> unit
         =  "camltk_opentk"
 external tcl_eval : string -> string
       	=  "camltk_tcl_eval"
@@ -26,6 +26,11 @@ external tkreturn : string -> unit
       	= "camltk_return"
 external callback_init : unit -> unit
         = "camltk_init"
+external finalizeTk : unit -> unit
+        = "camltk_finalize"
+    (* Finalize tcl/tk before exiting. This function will be automatically 
+       called when you call [Pervasives.exit ()] (This is installed at
+       [install_cleanup ()] *)
 
 exception TkError of string
       (* Raised by the communication functions *)
@@ -128,8 +133,9 @@ let install_cleanup () =
   let fid = new_function_id () in
   Hashtbl.add callback_naming_table fid call_destroy_hooks;
   (* setup general destroy callback *)
-  tcl_command ("bind all <Destroy> {camlcb " ^ (string_of_cbid fid) ^" %W}")
-
+  tcl_command ("bind all <Destroy> {camlcb " ^ (string_of_cbid fid) ^" %W}");
+  at_exit finalizeTk
+;;
 
 let prerr_cbid id =
   prerr_string "camlcb "; prerr_int id
@@ -146,11 +152,17 @@ let dispatch_callback id args =
 
 let protected_dispatch id args =
   try
-    Printexc.print (dispatch_callback id) args
+    dispatch_callback id args
   with
-     Out_of_memory -> raise Out_of_memory
-   | Sys.Break -> raise Sys.Break
-   | e -> flush Pervasives.stderr
+  | e ->
+      try
+        Printf.eprintf "Uncaught exception inside callback no.%d: %s\n" 
+          id (Printexc.to_string e);
+        flush stderr;
+        (* raise e *) (* should we raise it and go out from the main loop ? *)
+      with
+      | Out_of_memory -> raise Out_of_memory
+      | Sys.Break -> raise Sys.Break
 
 let _ = Callback.register "camlcb" protected_dispatch
 
@@ -158,25 +170,64 @@ let _ = Callback.register "camlcb" protected_dispatch
 let _ = callback_init ()
 
 (* Different version of initialisation functions *)
-(* Native opentk is [opentk display class]       *)
 let default_display_name = ref ""
 let default_display () = !default_display_name
 
-let openTk () =
-  opentk "" "CamlTk";
+let camltk_argv = ref []
+
+(* options for Arg.parse *)
+let keywords = [
+  "-display", Arg.String (fun s -> 
+    camltk_argv := "-display" :: s :: !camltk_argv),
+    "<disp> : X server to contact (CamlTk)";
+  "-colormap", Arg.String (fun s -> 
+    camltk_argv := "-colormap" :: s :: !camltk_argv),
+    "<colormap> : colormap to use (CamlTk)";
+  "-geometry", Arg.String (fun s -> 
+    camltk_argv := "-geometry" :: s :: !camltk_argv),
+    "<geom> : size and position (CamlTk)";
+  "-name", Arg.String (fun s -> 
+    camltk_argv := "-name" :: s :: !camltk_argv),
+    "<name> : application class (CamlTk)";
+  "-sync", Arg.Unit (fun () ->
+    camltk_argv := "-sync" :: !camltk_argv),
+    ": sync mode (CamlTk)";
+  "-use", Arg.String (fun s ->
+    camltk_argv := "-use" :: s :: !camltk_argv),
+    "<id> : parent window id (CamlTk)";
+  "-window", Arg.String (fun s ->
+    camltk_argv := "-use" :: s :: !camltk_argv),
+    "<id> : parent window id (CamlTk)";
+  "-visual", Arg.String (fun s ->
+    camltk_argv := "-visual" :: s :: !camltk_argv),
+    "<visual> : visual to use (CamlTk)" ]
+    
+let opentk argv (* = [argv1;..;argvn] *) = 
+  (* argv must be command line for wish *)
+  let argv0 = Sys.argv.(0) in
+  let rec find_display = function
+    | "-display" :: s :: xs -> s
+    | "-colormap" :: s :: xs -> find_display xs
+    | "-geometry" :: s :: xs -> find_display xs
+    | "-name" :: s :: xs -> find_display xs
+    | "-sync" :: xs -> find_display xs
+    | "-use" :: s :: xs -> find_display xs
+    | "-window" :: s :: xs -> find_display xs
+    | "-visual" :: s :: xs -> find_display xs
+    | "--" :: _ -> ""
+    | _ :: xs -> find_display xs
+    | [] -> ""
+  in
+  default_display_name := find_display argv;
+  opentk_low (argv0 :: argv); 
   install_cleanup();
   Widget.default_toplevel
 
-let openTkClass s =
-  opentk "" s;
-  install_cleanup();
-  Widget.default_toplevel
+let opentk_with_parsed_args () = opentk !camltk_argv 
 
-let openTkDisplayClass disp cl =
-  opentk disp cl;
-  default_display_name := disp;
-  install_cleanup();
-  Widget.default_toplevel
+let openTk () = opentk ["-name"; "CamlTk"]
+let openTkClass s = opentk ["-name"; s]
+let openTkDisplayClass disp cl = opentk ["-display"; disp; "-name"; cl]
 
 (* Destroy all widgets, thus cleaning up table and exiting the loop *)
 let closeTk () = tcl_command "destroy ."

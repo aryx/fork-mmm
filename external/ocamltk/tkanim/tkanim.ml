@@ -22,7 +22,7 @@ type animatedGif = {
 }
 
 type imageType =
-    Still of Tk.options
+  | Still of Tk.options
   | Animated of animatedGif
 
 let debug = ref false
@@ -36,7 +36,7 @@ let cTKtoCAMLgifFrame s =
        left = int_of_string left;
        top = int_of_string top;
        delay = int_of_string delay}
-  |  _ -> raise (Invalid_argument ("cTKtoCAMLgifFrame: " ^ s))
+  | _ -> raise (Invalid_argument ("cTKtoCAMLgifFrame: " ^ s))
 
 let cTKtoCAMLanimatedGif s =
   match splitlist s with
@@ -51,19 +51,19 @@ let cTKtoCAMLanimatedGif s =
 let available () =
   let packages = 
     splitlist (Protocol.tkEval [| TkToken "package";
-				  TkToken "names" |])
+                                  TkToken "names" |])
   in
-    List.mem "Tkanim" packages
+  List.mem "Tkanim" packages
 
 let create file =
   let s =
     Protocol.tkEval [| TkToken "animation";
-		       TkToken "create";
-		       TkToken file |]
+                       TkToken "create";
+                       TkToken file |]
   in
   let anmgif = cTKtoCAMLanimatedGif s in
   match anmgif.frames with
-    [] -> raise (TkError "Null frame in a gif ?")
+  | [] -> raise (TkError "Null frame in a gif ?")
   | [x] -> Still (ImagePhoto x.imagephoto)
   | _ -> Animated anmgif
 
@@ -81,7 +81,7 @@ let image_existence_check img =
   (* So, before using Imagephoto.copy, I should check the source image  *)
   (* really exists. *)
   try ignore (Imagephoto.height img) with 
-    TkError s -> prerr_endline ("tkanim: "^s); raise (TkError s)
+    TkError s -> prerr_endline ("tkanim: " ^ s); raise (TkError s)
 
 let imagephoto_copy dst src opts =
   image_existence_check src;
@@ -95,7 +95,7 @@ let animate_gen w i anim =
   let f = frames.(!current) in
     imagephoto_copy i f.imagephoto 
       [ImgTo (f.left, f.top, f.left + f.frameWidth, 
-	                     f.top + f.frameHeight)]; 
+                             f.top + f.frameHeight)]; 
   let visible = ref true in
   let animated = ref false in
   let timer = ref None in
@@ -103,52 +103,52 @@ let animate_gen w i anim =
   let display_current () =
     let f = frames.(!current) in
       imagephoto_copy i f.imagephoto
-        [ImgTo (f.left, f.top, 
-		f.left + f.frameWidth, f.top + f.frameHeight)]
+        [ImgTo (f.left, f.top,
+                f.left + f.frameWidth, f.top + f.frameHeight)]
   in
   let rec tick () =
-    if not (Winfo.exists w & Winfo.viewable w) then begin
+    if not (Winfo.exists w && Winfo.viewable w) then begin
       (* the widget is invisible. stop animation for efficiency *)
       if !debug then prerr_endline "Stopped (Visibility)";
       visible := false;
-    end else 
+    end else
       begin
-	display_current ();
-	let t = Timer.add (if f.delay = 0 then 100 else f.delay * 10) (fun () ->
-	  incr current;
-	  if !current = length then begin
-	    current := 0;
-	    (* loop check *)
-	    if !loop > 1 then begin
-	      decr loop;
-	      if !loop = 0 then begin
-		if !debug then prerr_endline "Loop end";
-		(* stop *)
-		loop := anim.loop;
-		timer := None
-	      end
-	    end
-	  end;
-	  tick ())
-	in
-	  timer := Some t
+        display_current ();
+        let t =
+          Timer.add (if f.delay = 0 then 100 else f.delay * 10)
+            (fun () ->
+               incr current;
+               if !current = length then begin
+                 current := 0;
+                 (* loop check *)
+                 if !loop > 1 then begin
+                   decr loop;
+                   if !loop = 0 then begin
+                     if !debug then prerr_endline "Loop end";
+                     (* stop *)
+                     loop := anim.loop;
+                     timer := None
+                   end
+                 end
+               end;
+               tick ())
+        in
+          timer := Some t
       end
   in
-  let start () = 
+  let start () =
     animated := true;
     tick ()
   in
-  let stop () = 
-    begin
-      match !timer with
-	Some t -> 
-	  Timer.remove t; 
-	  timer := None;
-	  animated := false
-      | None -> ()
-    end
+  let stop () =
+    match !timer with
+    | Some t ->
+        Timer.remove t;
+        timer := None;
+        animated := false
+    | None -> ()
   in
-  let next () = 
+  let next () =
     if !timer = None then begin
       incr current;
       if !current = length then current := 0;
@@ -161,24 +161,20 @@ let animate_gen w i anim =
       (BindSet ([], (fun _ -> Imagephoto.delete i)));
 *)
     bind w [[], Visibility]
-      (BindSet ([], (fun _ -> 
-	if not !visible then begin
-	  visible := true;
-	  if !animated then start ()
-	end)));
-    (function 
-	false -> 
-	  if !animated then
-	    stop ()
-	  else
-	    start ()
-      |	true ->
-	  next ())
+      (BindSet ([], (fun _ ->
+        if not !visible then begin
+          visible := true;
+          if !animated then start ()
+        end)));
+    (function
+     | false ->
+         if !animated then stop () else start ()
+     | true -> next ())
 
 let animate label anim =
-(*  prerr_endline "animate"; *)
-  let i = Imagephoto.create [Width (Pixels anim.animWidth); 
-			     Height (Pixels anim.animHeight)] 
+  (*  prerr_endline "animate"; *)
+  let i = Imagephoto.create [Width (Pixels anim.animWidth);
+                             Height (Pixels anim.animHeight)]
   in
     bind label [[], Destroy] (BindExtend ([], (fun _ ->
       Imagephoto.delete i)));
@@ -187,8 +183,8 @@ let animate label anim =
 
 let animate_canvas_item canvas tag anim =
 (*  prerr_endline "animate"; *)
-  let i = Imagephoto.create [Width (Pixels anim.animWidth); 
-			     Height (Pixels anim.animHeight)] 
+  let i = Imagephoto.create [Width (Pixels anim.animWidth);
+                             Height (Pixels anim.animHeight)]
   in
     bind canvas [[], Destroy] (BindExtend ([], (fun _ ->
       Imagephoto.delete i)));
@@ -200,19 +196,19 @@ let gifdata s =
   let mktemp =
     let cnter = ref 0 
     and pid = Unix.getpid() in
-      (function prefx -> 
-	       incr cnter; 
-	       (Filename.concat !tmp_dir
-	       (prefx^string_of_int pid^"."^string_of_int !cnter)))
+      (function prefx ->
+               incr cnter;
+               (Filename.concat !tmp_dir
+               (prefx ^ string_of_int pid ^ "." ^ string_of_int !cnter)))
   in
     let fname = mktemp "gifdata" in
     let oc = open_out_bin fname in
       try
-	output_string oc s;
-	close_out oc;
-	let anim = create fname in
-	  Unix.unlink fname;
-	  anim
+        output_string oc s;
+        close_out oc;
+        let anim = create fname in
+          Unix.unlink fname;
+          anim
       with
-	e -> begin Unix.unlink fname; raise e end
+        e -> begin Unix.unlink fname; raise e end
       

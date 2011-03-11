@@ -1,7 +1,7 @@
 ## Where you installed ObjectiveCaml
 LIBDIR=\ocaml\lib
 
-## Where you want to install CamlTk41 libraries and binaries
+## Where you want to install CamlTk libraries and binaries
 INSTALLDIR=$(LIBDIR)\camltk
 
 ### Location of the Tcl/Tk installation

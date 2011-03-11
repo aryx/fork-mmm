@@ -81,8 +81,6 @@ FileReadGIF(interp, f, fileName, formatString)
     Tk_PhotoHandle photoHandle;
 
     char widthbuf[32], heightbuf[32];
-    char *argv[7] = {"image", "create", "photo", "-width", widthbuf,
-			"-height", heightbuf};
     Tcl_DString resultbuf;
 
     char newresbuf[640];
@@ -242,6 +240,7 @@ FileReadGIF(interp, f, fileName, formatString)
 	block.offset[0] = 0;
 	block.offset[1] = 1;
 	block.offset[2] = 2;
+	block.offset[3] = 3;
 	nBytes = imageHeight * block.pitch;
 	block.pixelPtr = (unsigned char *) ckalloc((unsigned) nBytes);
 
@@ -250,25 +249,55 @@ FileReadGIF(interp, f, fileName, formatString)
 
 	/* save result */
 
+	{
+#if (TK_MAJOR_VERSION >= 8 && TK_MINOR_VERSION >= 1)
+	  Tcl_Obj *argv[7];
+	  int i;
+
+	  argv[0] = Tcl_NewStringObj("image", -1);
+	  argv[1] = Tcl_NewStringObj("create", -1);
+	  argv[2] = Tcl_NewStringObj("photo", -1);
+	  argv[3] = Tcl_NewStringObj("-width", -1);
+	  argv[4] = Tcl_NewStringObj(widthbuf, -1);
+	  argv[5] = Tcl_NewStringObj("-height", -1);
+	  argv[6] = Tcl_NewStringObj(heightbuf, -1);
+      
+	  for(i=0; i<7; i++){ Tcl_IncrRefCount(argv[i]); }
+
+	  if( Tk_ImageObjCmd((ClientData) winPtr, interp, 
+			/* "image create photo -width <imageWidth> 
+			   -height <imageHeight>" */
+			     7, argv) == TCL_ERROR ){
+	    return TCL_ERROR;
+	  }
+	
+	for(i=0; i<7; i++){ Tcl_DecrRefCount(argv[i]); }
+
+#else
+	char *argv[7] = {"image", "create", "photo", "-width", widthbuf,
+			 "-height", heightbuf};
 #ifdef TKANIM_DEBUG
     fprintf(stderr, "\n\t\timage creation (%s %s %s %s %s %s %s)", 
 	    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
 #endif
-
 	if( Tk_ImageCmd((ClientData) winPtr, interp, 
 			/* "image create photo -width <imageWidth> 
 			   -height <imageHeight>" */
 			7, argv) == TCL_ERROR ){
 	    return TCL_ERROR;
 	}
+#endif
+
 #ifdef TKANIM_DEBUG
     fprintf(stderr, " done ");
 #endif
+	}
+
 	imageName = interp->result;
 #if (TK_MAJOR_VERSION < 8)
-	photoHandle= Tk_FindPhoto(interp->result);
+	photoHandle = Tk_FindPhoto(interp->result);
 #else
-	photoHandle= Tk_FindPhoto(interp, interp->result);
+	photoHandle = Tk_FindPhoto(interp, interp->result);
 #endif
 	if (!useGlobalColormap) {
 	    if (!ReadColorMap(f, bitPixel, localColorMap)) {
@@ -845,7 +874,7 @@ TkDeleteTkAnim(clientData)
 #endif
 }
 
-Tkanim_Init(interp)
+int Tkanim_Init(interp)
     Tcl_Interp *interp;
 {
 #ifdef TKANIM_DEBUG

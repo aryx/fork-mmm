@@ -1,7 +1,7 @@
 *               Second release
  - Updated to O'Caml 1.06 (C interface changes)
  - Added support for ocamlopt
- - Added support for Windows NT (except some accessory parts of ocamltk41)
+ - Added support for Windows NT (except some accessory parts of camltk)
  - Added support for BLT Drag&Drop
  - Added -o and -I options to tkcompiler
  - Added support for Japanese mode autodetection (jtk)

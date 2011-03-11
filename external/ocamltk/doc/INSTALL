@@ -1,21 +1,22 @@
-Installation document for ocamltk416
+Installation document for ocamltk418
 
 PREREQUISITES
 
 You must have already installed
- * Objective Caml 2.04 or higher (3.0, for example)
+ * Objective Caml 3.04
     ftp://ftp.inria.fr/lang/caml-light
 
- * Tcl8.0/Tk8.0
+ * Tcl8.3/Tk8.3
     ftp://ftp.scriptics.com/pub/tcl or various mirrors
-   (Earlier Tcl/Tk versions may still work, such as 7.5/4.1 and 7.6/4.2,
-    but we recommend using 8.0).
+   (Earlier Tcl/Tk versions may still work, such as Tcl8.2/Tk8.2,
+    Tcl8.1/Tk8.1, Tcl8.0/Tk8.0, 7.5/4.1 and 7.6/4.2, but we recommend
+    using 8.3).
 
 INSTALLATION INSTRUCTIONS
 
-1- Extract the archive ocamltk416.tar.gz somewhere (for example in 
+1- Extract the archive ocamltk418.tar.gz somewhere (for example in 
 the .../otherslibs directory of your Objective Caml source tree).
-This will create the "camltk416" directory.
+This will create the "camltk418" directory.
 
 2- Configure the system. To complete this step, you need to know the
 locations of
@@ -53,7 +54,7 @@ Other settable variables in site.config are:
 INSTALLDIR: the final location of libraries
 LIBEXT: for japanese version of Tcl/Tk
 
-3- Build the system. From the "camltk416" directory, do:
+3- Build the system. From the "camltk418" directory, do:
    make all
    (make opt to produce the native version)
 
@@ -61,7 +62,7 @@ LIBEXT: for japanese version of Tcl/Tk
    cd examples; make; ./helloworld
 
 If the examples program fail with error message
-./helloworld: can't load library 'libtk8.0.so'
+./helloworld: can't load library 'libtk8.3.so'
 or something similar, this means that you must set the LD_LIBRARY_PATH
 in your shell environment, e.g.
 $ export LD_LIBRARY_PATH=/usr/local/lib
@@ -72,7 +73,7 @@ $ export LD_LIBRARY_PATH=/usr/local/lib
    make install
    (make installopt to produce the native version)
 
-This will create /usr/local/lib/ocaml/camltk41/ (or the equivalent
+This will create /usr/local/lib/ocaml/camltk/ (or the equivalent
 for your installation of Objective Caml) and copy there the various library
 files, as well as Makefile.camltk and ocamltktop, an Objective Caml toplevel
 with Tk linked-in.

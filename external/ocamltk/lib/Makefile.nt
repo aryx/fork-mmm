@@ -3,7 +3,7 @@
 
 COMPFLAGS= -I ../support
 
-TKLINKOPT=../support/libcamltk41.lib $(TKLIBS)
+TKLINKOPT=../support/libcamltk.lib $(TKLIBS)
 
 SUPPORT=../support/support.cmo ../support/widget.cmo ../support/protocol.cmo \
         ../support/textvariable.cmo ../support/timer.cmo \
@@ -11,38 +11,38 @@ SUPPORT=../support/support.cmo ../support/widget.cmo ../support/protocol.cmo \
 
 SUPPORTX = $(SUPPORT:.cmo=.cmx)
 
-all : tk41.cma ocamltktop.exe
+all : camltk.cma ocamltktop.exe
 
-opt : tk41.cmxa
+opt : camltk.cmxa
 
 !include .\modules
 
 WIDGETOBJSX = $(WIDGETOBJS:.cmo=.cmx)
 
-tk41.cma : $(SUPPORT) $(WIDGETOBJS) tk.cmo 
-	$(CAMLLIBR) -o tk41.cma $(SUPPORT) tk.cmo $(WIDGETOBJS)
+camltk.cma : $(SUPPORT) $(WIDGETOBJS) tk.cmo 
+	$(CAMLLIBR) -o camltk.cma $(SUPPORT) tk.cmo $(WIDGETOBJS)
 
-tk41.cmxa : $(SUPPORTX) $(WIDGETOBJSX) tk.cmx
-	$(CAMLOPTLIBR) -o tk41.cmxa $(SUPPORTX) tk.cmx $(WIDGETOBJSX)
+camltk.cmxa : $(SUPPORTX) $(WIDGETOBJSX) tk.cmx
+	$(CAMLOPTLIBR) -o camltk.cmxa $(SUPPORTX) tk.cmx $(WIDGETOBJSX)
 
 
 ## Until ocamltktop is fixed (next release), we in-line it
 ## (otherwise our trick with -ccopt is broken)
 
-ocamltktop.exe : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk41.lib
+ocamltktop.exe : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk.lib
 	$(CAMLC) -custom -linkall -o ocamltktop.exe \
 	       -I ../support $(TKLINKOPT) \
-	       toplevellib.cma tk41.cma topmain.cmo wsock32.lib
+	       toplevellib.cma camltk.cma topmain.cmo wsock32.lib
 
 # All .{ml,mli} files are generated in this directory
 clean : 
-	rm -f *.cm* *.ml *.mli *.o *.lib tk41.cmo  ocamltktop.exe
+	rm -f *.cm* *.ml *.mli *.o *.lib camltk.cmo  ocamltktop.exe
 
-install: tk41.cma ocamltktop.exe
-	cp *.cmi *.mli tk41.cma ocamltktop.exe $(INSTALLDIR)
+install: camltk.cma ocamltktop.exe
+	cp *.cmi *.mli camltk.cma ocamltktop.exe $(INSTALLDIR)
 
-installopt: tk41.cmxa
-	cp tk41.cmxa tk41.lib $(INSTALLDIR)
+installopt: camltk.cmxa
+	cp camltk.cmxa camltk.lib $(INSTALLDIR)
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .cmx .mlp

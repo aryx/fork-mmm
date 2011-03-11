@@ -1,2 +1,8 @@
 How to invoke
-	gifanimtest animatedGIFfile  
+        gifanimtest "animated GIF file"
+For instance
+        gifanimtest mmm.anim.gif
+How to use
+        button 1 stops/restarts the animation,
+        button 2 displays the next frame when animation is stopped,
+        button 3 quits the program.

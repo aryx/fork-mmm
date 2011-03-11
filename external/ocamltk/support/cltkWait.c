@@ -2,6 +2,7 @@
 #include <tk.h>
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
+#include <caml/callback.h>
 #include "camltk.h"
 
 /* The following are replacements for 
@@ -14,10 +15,10 @@
    from inside the callback
 */
 
-static void		WaitVisibilityProc _ANSI_ARGS_((ClientData clientData,
-			    XEvent *eventPtr));
-static void		WaitWindowProc _ANSI_ARGS_((ClientData clientData,
-			    XEvent *eventPtr));
+static void             WaitVisibilityProc _ANSI_ARGS_((ClientData clientData,
+                            XEvent *eventPtr));
+static void             WaitWindowProc _ANSI_ARGS_((ClientData clientData,
+                            XEvent *eventPtr));
 
 /* For the other handlers, we need a bit more data */
 struct WinCBData {
@@ -33,16 +34,14 @@ static void WaitVisibilityProc(clientData, eventPtr)
   value cbid = Val_int(vis->cbid);
 
   Tk_DeleteEventHandler(vis->win, VisibilityChangeMask,
-	    WaitVisibilityProc, clientData);
+            WaitVisibilityProc, clientData);
 
   stat_free((char *)vis);
   callback2(*handler_code,cbid,Val_int(0));
 }
 
 /* Sets up a callback upon Visibility of a window */
-value camltk_wait_vis(win,cbid) /* ML */
-     value win;
-     value cbid;
+value camltk_wait_vis(value win, value cbid) /* ML */
 {
   struct WinCBData *vis =
     (struct WinCBData *)stat_alloc(sizeof(struct WinCBData));
@@ -53,13 +52,11 @@ value camltk_wait_vis(win,cbid) /* ML */
   };
   vis->cbid = Int_val(cbid);
   Tk_CreateEventHandler(vis->win, VisibilityChangeMask,
-			WaitVisibilityProc, (ClientData) vis);
+                        WaitVisibilityProc, (ClientData) vis);
   return Val_unit;
 }
 
-static void WaitWindowProc(clientData, eventPtr)
-    ClientData clientData;	
-    XEvent *eventPtr;		
+static void WaitWindowProc(ClientData clientData, XEvent *eventPtr)
 {
   if (eventPtr->type == DestroyNotify) {
     struct WinCBData *vis = clientData;
@@ -71,9 +68,7 @@ static void WaitWindowProc(clientData, eventPtr)
 }
 
 /* Sets up a callback upon window destruction */
-value camltk_wait_des(win,cbid) /* ML */
-     value win;
-     value cbid;
+value camltk_wait_des(value win, value cbid) /* ML */
 {
   struct WinCBData *vis =
     (struct WinCBData *)stat_alloc(sizeof(struct WinCBData));
@@ -84,6 +79,6 @@ value camltk_wait_des(win,cbid) /* ML */
   };
   vis->cbid = Int_val(cbid);
   Tk_CreateEventHandler(vis->win, StructureNotifyMask,
-			WaitWindowProc, (ClientData) vis);
+                        WaitWindowProc, (ClientData) vis);
   return Val_unit;
 }

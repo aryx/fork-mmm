@@ -11,7 +11,7 @@ type animatedGif
        keep it abstract. --- JPF *)
 
 type imageType =
-    Still of Tk.options
+  | Still of Tk.options
   | Animated of animatedGif
 
       (* This data type is required to distinguish normal still images
@@ -30,46 +30,46 @@ val available : unit -> bool
 	 extension linked statically/dynamically in Tcl/Tk
 	 interpreter. Otherwise, return false. *)
 
-(*** User intaface ***)
+(*** User interface ***)
 
 (* create is unsafe *)
-val create  : string -> imageType
+val create : string -> imageType
 
       (* [create file] loads a gif87 or gif89 image file and parse it,
 	 and returns [Animated animated_gif] if the image file has
 	 more than one images. Otherwise, it returns 
 	 [Still (ImagePhoto image_photo)] *) 
-  
-val delete  : animatedGif -> unit
+
+val delete : animatedGif -> unit
 
       (* [delete anim] deletes all the images in anim. Usually
          animatedGifs contain many images, so you must not forget to
 	 use this function to free the memory. *)
 
-val width   : animatedGif -> int
-val height  : animatedGif -> int
+val width : animatedGif -> int
+val height : animatedGif -> int
       (* [width anim] and [height anim] return the width and height of
 	 given animated gif. *)
 
-val images  : animatedGif -> imagePhoto list
+val images : animatedGif -> imagePhoto list
       (* [images anim] returns the list of still images used in the 
 	 animation *)
 
 val animate : widget -> animatedGif -> bool -> unit
 val animate_canvas_item : widget -> tagOrId -> animatedGif -> bool -> unit
+      (* The display functions for animated gifs. Since [animatedGif] is
+         an abstract type, you must use those functions to display
+         [animatedGif] images.
+         [animate label anim] and [animate_canvas_item canvas tag anim]
+         display animation [anim] on a label widget [label] or an
+         image tag [tag] on a canvas widget [canvas] respectively.
 
-      (*   They are the display function for animated gifs. Because
-         animatedGif is abstracted, they are the only way to do it. 
-	 [animate label anim] and [animate_canvas_item canvas tag anim]
-	 display animations [anim] on a label widget [label] and an
-	 image tag [tag] on a canvas widget [canvas] respectively.
-	 Note that animation is stopped as default.
-           These functions return interface functions, say, 
-	 [inter : bool -> unit]. Currently, [inter false] toggles 
-	 start/stop of the animation, and [inter true] displays the
-	 next frame of the animation if it is stopped. *)
-	 
+         Note that animation is stopped by default.
+         These functions return interface functions, say, [inter :
+         bool -> unit]. Currently, [inter false] toggles start/stop of
+         the animation, and [inter true] displays the next frame of
+         the animation if the animation is stopped. *)
+
 val gifdata : string -> imageType
-
       (* [gifdata data] reads [data] as a row data of a gif file and
-	 decode it. *)
+	 decodes it. *)

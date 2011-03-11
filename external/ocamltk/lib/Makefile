@@ -3,10 +3,10 @@ include ../Makefile.config
 COMPFLAGS= -I ../support
 
 TKLINKOPT=$(STATIC) \
-          -ccopt -L../support -cclib -lcamltk41 \
+          -ccopt -L../support -cclib -lcamltk \
 	  $(TKLIBS) $(X11_LIBS)
 
-LIBROPT= -cclib -lcamltk41 $(TKLIBS) $(X11_LIBS)
+LIBROPT= -cclib -lcamltk $(TKLIBS) $(X11_LIBS)
 
 SUPPORT=../support/support.cmo ../support/widget.cmo ../support/protocol.cmo \
         ../support/textvariable.cmo ../support/timer.cmo \
@@ -14,44 +14,45 @@ SUPPORT=../support/support.cmo ../support/widget.cmo ../support/protocol.cmo \
 
 SUPPORTX = $(SUPPORT:.cmo=.cmx)
 
-all : tk41.cma ocamltktop
-      
-opt : tk41.cmxa
+all : camltk.cma ocamltktop$(EXE)
+
+opt : camltk.cmxa
 
 include ./modules
 
 WIDGETOBJSX = $(WIDGETOBJS:.cmo=.cmx)
 
-tk41.cma : $(SUPPORT) $(WIDGETOBJS) tk.cmo 
-	$(CAMLLIBR) -o tk41.cma $(SUPPORT) tk.cmo $(WIDGETOBJS) $(LIBROPT)
+camltk.cma : $(SUPPORT) $(WIDGETOBJS) tk.cmo 
+	$(CAMLLIBR) -o camltk.cma $(SUPPORT) tk.cmo $(WIDGETOBJS) $(LIBROPT)
 
-tk41.cmxa : $(SUPPORTX) $(WIDGETOBJSX) tk.cmx
-	$(CAMLOPTLIBR) -o tk41.cmxa $(SUPPORTX) tk.cmx $(WIDGETOBJSX) $(LIBROPT)
+camltk.cmxa : $(SUPPORTX) $(WIDGETOBJSX) tk.cmx
+	$(CAMLOPTLIBR) -o camltk.cmxa $(SUPPORTX) tk.cmx $(WIDGETOBJSX) $(LIBROPT)
 
 ## Until ocamltktop is fixed (next release), we in-line it
 ## (otherwise our trick with -ccopt is broken)
 
-ocamltktop : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk41.a
-	$(CAMLC) -custom -linkall -o ocamltktop -I ../support $(TKLINKOPT) \
-	       toplevellib.cma tk41.cma topmain.cmo
+ocamltktop$(EXE) : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk.a
+	$(CAMLC) -custom -linkall -o ocamltktop$(EXE) -I ../support \
+	   $(TKLINKOPT) toplevellib.cma camltk.cma topmain.cmo
 
 # All .{ml,mli} files are generated in this directory
 clean : 
-	rm -f *.cm* *.ml *.mli *.o *.a tk41.cmo  ocamltktop
+	rm -f *.cm* *.ml *.mli *.o *.a camltk.cmo ocamltktop$(EXE) .depend
 
-install: tk41.cma ocamltktop
+install: camltk.cma ocamltktop$(EXE)
 	if test -d $(INSTALLDIR); then : ; else mkdir $(INSTALLDIR); fi
-	cp *.cmi *.mli tk41.cma ocamltktop $(INSTALLDIR)
+	cp *.cmi *.mli camltk.cma ocamltktop$(EXE) $(INSTALLDIR)
+	rm -f $(INSTALLDIR)/tkgen.ml $(INSTALLDIR)/tkgen.mli # they are temporary files.
 	chmod 644 $(INSTALLDIR)/*.cmi
 	chmod 644 $(INSTALLDIR)/*.mli
-	chmod 644 $(INSTALLDIR)/tk41.cma
-	chmod 755 $(INSTALLDIR)/ocamltktop
+	chmod 644 $(INSTALLDIR)/camltk.cma
+	chmod 755 $(INSTALLDIR)/ocamltktop$(EXE)
 
-installopt: tk41.cmxa
+installopt: camltk.cmxa
 	if test -d $(INSTALLDIR); then : ; else mkdir $(INSTALLDIR); fi
-	cp tk41.cmxa tk41.a $(INSTALLDIR)
-	chmod 644 $(INSTALLDIR)/tk41.cmxa
-	chmod 644 $(INSTALLDIR)/tk41.a
+	cp camltk.cmxa camltk.a $(INSTALLDIR)
+	chmod 644 $(INSTALLDIR)/camltk.cmxa
+	chmod 644 $(INSTALLDIR)/camltk.a
 
 
 .SUFFIXES :

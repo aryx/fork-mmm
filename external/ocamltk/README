@@ -1,4 +1,4 @@
-CamlTk416 is a library for interfacing Objective Caml with the scripting
+CamlTk418 is a library for interfacing Objective Caml with the scripting
 language Tcl/Tk.
 
 In addition to the basic interface with Tcl/Tk, this package contains
@@ -17,7 +17,7 @@ You must have already installed
  * Objective Caml 3.0
     ftp://ftp.inria.fr/lang/caml-light
 
- * Tcl8.0/Tk8.0
+ * Tcl8.3/Tk8.3
     ftp://ftp.scriptics.com/pub/tcl or various mirrors
     Some fixes might be necessary for some versions and platforms !
     (at least one fix needed for File events on 64 bits machines)

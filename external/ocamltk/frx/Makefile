@@ -28,7 +28,7 @@ installopt: libfrx.cmxa
  
 
 clean:
-	rm -f *.cm*
+	rm -f *.cm* *.o *.a
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .cmx

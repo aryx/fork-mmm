@@ -131,8 +131,8 @@ int CamlRunCmd(dummy, interp, argc, argv)
   case TRUNCATED_FILE:
   case BAD_MAGIC_NUM:
     fatal_error_arg(
-		    "Fatal error: the file %s is not a bytecode executable file\n",
-		    argv[1]);
+                    "Fatal error: the file %s is not a bytecode executable file\n",
+                    argv[1]);
     break;
   }
 
@@ -163,7 +163,7 @@ int CamlRunCmd(dummy, interp, argc, argv)
     return TCL_OK;
   } else {
     Tcl_AppendResult(interp, "Caml program", argv[1], " raised exception \"",
-		     String_val(Field(Field(exn_bucket, 0), 0)));
+                     String_val(Field(Field(exn_bucket, 0), 0)));
     return TCL_ERROR;
   }
 }
@@ -185,8 +185,8 @@ int Caml_Init(interp)
   cltclinterp = interp;
   /* Create the camlcallback command */
   Tcl_CreateCommand(cltclinterp,
-		    CAMLCB, CamlCBCmd, 
-		    (ClientData)NULL,(Tcl_CmdDeleteProc *)NULL);
+                    CAMLCB, CamlCBCmd, 
+                    (ClientData)NULL,(Tcl_CmdDeleteProc *)NULL);
 
   /* This is required by "unknown" and thus autoload */
   Tcl_SetVar(cltclinterp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
@@ -203,10 +203,10 @@ int Caml_Init(interp)
       strcat(f, "/");
       strcat(f, RCNAME);
       if (0 == access(f,R_OK)) 
-	if (TCL_OK != Tcl_EvalFile(cltclinterp,f)) {
-	  stat_free(f);
-	  tk_error(cltclinterp->result);
-	};
+        if (TCL_OK != Tcl_EvalFile(cltclinterp,f)) {
+          stat_free(f);
+          tk_error(cltclinterp->result);
+        };
       stat_free(f);
     }
   }
@@ -222,7 +222,7 @@ int Caml_Init(interp)
        so that it behaves as much as possible as specified in IEEE */
     init_ieee_floats();
     init_gc (minor_heap_init, heap_chunk_init, percent_free_init,
-	     verbose_init);
+             verbose_init);
     init_stack();
     init_atoms();
   }

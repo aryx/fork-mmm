@@ -4,10 +4,11 @@
 #include <tk.h>
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
+#include <caml/alloc.h>
+#include <caml/callback.h>
 #include "camltk.h"
 
-value camltk_getvar(var) /* ML */
-     value var;
+value camltk_getvar(value var) /* ML */
 {
   char *s;
   char *stable_var = NULL;
@@ -15,7 +16,7 @@ value camltk_getvar(var) /* ML */
 
   stable_var = string_to_c(var);
   s = Tcl_GetVar(cltclinterp,stable_var,
-		   TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
+                   TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
   stat_free(stable_var);
 
   if (s == NULL)
@@ -24,9 +25,7 @@ value camltk_getvar(var) /* ML */
     return(copy_string(s));
 }
 
-value camltk_setvar(var,contents) /* ML */
-     value var;
-     value contents;
+value camltk_setvar(value var, value contents) /* ML */
 {
   char *s;
   char *stable_var = NULL;
@@ -37,7 +36,7 @@ value camltk_setvar(var,contents) /* ML */
      var doesn't move... */
   stable_var = string_to_c(var);
   s = Tcl_SetVar(cltclinterp,stable_var, String_val(contents),
-		   TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
+                   TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);
   stat_free(stable_var);
 
   if (s == NULL)
@@ -49,7 +48,7 @@ value camltk_setvar(var,contents) /* ML */
 
 /* The appropriate type is
 typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, char *part1, char *part2, int flags));
+        Tcl_Interp *interp, char *part1, char *part2, int flags));
  */
 static char * tracevar(clientdata, interp, name1, name2, flags)
      ClientData clientdata;
@@ -59,16 +58,14 @@ static char * tracevar(clientdata, interp, name1, name2, flags)
      int flags;			/* Information about what happened. */
 {
   Tcl_UntraceVar2(interp, name1, name2,
-		TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-		tracevar, clientdata);
+                TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+                tracevar, clientdata);
   callback2(*handler_code,Val_int(clientdata),Val_unit);
   return (char *)NULL;
 }
 
 /* Sets up a callback upon modification of a variable */
-value camltk_trace_var(var,cbid) /* ML */
-     value var;
-     value cbid;
+value camltk_trace_var(value var, value cbid) /* ML */
 {
   char *cvar = NULL;
 
@@ -78,10 +75,10 @@ value camltk_trace_var(var,cbid) /* ML */
    */
   cvar = string_to_c(var);
   if (Tcl_TraceVar(cltclinterp, cvar,
-		   TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-		   tracevar,
-		   (ClientData) (Int_val(cbid)))
-		   != TCL_OK) {
+                   TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+                   tracevar,
+                   (ClientData) (Long_val(cbid)))
+                   != TCL_OK) {
     stat_free(cvar);
     tk_error(cltclinterp->result);
   };
@@ -89,9 +86,7 @@ value camltk_trace_var(var,cbid) /* ML */
   return Val_unit;
 }
 
-value camltk_untrace_var(var,cbid) /* ML */
-     value var;
-     value cbid;
+value camltk_untrace_var(value var, value cbid) /* ML */
 {
   char *cvar = NULL;
 
@@ -101,9 +96,9 @@ value camltk_untrace_var(var,cbid) /* ML */
    */
   cvar = string_to_c(var);
   Tcl_UntraceVar(cltclinterp, cvar,
-		 TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-		 tracevar,
-		 (ClientData) (Int_val(cbid)));
+                 TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+                 tracevar,
+                 (ClientData) (Long_val(cbid)));
   stat_free(cvar);
   return Val_unit;
 }

@@ -2,14 +2,14 @@
 ## Where you installed ObjectiveCaml
 LIBDIR=/usr/local/lib/objective-caml
 
-## Where installed CamlTk41 libraries and binaries
-CAMLTKDIR=$(LIBDIR)/camltk41
+## Where installed CamlTk libraries and binaries
+CAMLTKDIR=$(LIBDIR)/camltk
 
 TKCOMPFLAGS=-I $(CAMLTKDIR)
-WITH_TK=-ccopt -L$(CAMLTKDIR) -cclib -lcamltk41 \
+WITH_TK=-ccopt -L$(CAMLTKDIR) -cclib -lcamltk \
 	-ccopt "-L/usr/local/lib" -cclib "-ltk4.2 -ltcl7.6 -ldl -lm" \
 	-ccopt " -L/usr/X11R6/lib" -cclib " -lSM -lICE -lX11 " \
-	$(TKCOMPFLAGS) tk41.cma
+	$(TKCOMPFLAGS) camltk.cma
 WITH_FRX=libfrx.cma
 WITH_JPF=libjpf.cma
 WITH_JTK=$(CAMLTKDIR)/jtk.cmo

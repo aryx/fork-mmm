@@ -27,8 +27,7 @@
 
 int signal_events = 0; /* do we have a pending timer */
 
-void invoke_pending_caml_signals (clientdata) 
-     ClientData clientdata;
+void invoke_pending_caml_signals (ClientData clientdata)
 {
   signal_events = 0;
   enter_blocking_section(); /* triggers signal handling */
@@ -47,27 +46,62 @@ Tk_Window cltk_mainWindow;
 int cltk_slave_mode = 0;
 
 /* Initialisation, based on tkMain.c */
-value camltk_opentk(display, name) /* ML */
-     value display,name;
+value camltk_opentk(value argv) /* ML */
 {
+  /* argv must contain argv[0], the application command name */
+  value tmp = Val_unit;
+  char *argv0;
+
+  Begin_root(tmp);
+
+  if ( argv == Val_int(0) ){
+    failwith("camltk_opentk: argv is empty");
+  }
+  argv0 = String_val( Field( argv, 0 ) );
 
   if (!cltk_slave_mode) {
     /* Create an interpreter, dies if error */
+#if TCL_MAJOR_VERSION >= 8
+    Tcl_FindExecutable(String_val(argv0));
+#endif
     cltclinterp = Tcl_CreateInterp();
 
     if (Tcl_Init(cltclinterp) != TCL_OK)
       tk_error(cltclinterp->result);
-    Tcl_SetVar(cltclinterp, "argv0", String_val (name), TCL_GLOBAL_ONLY);
-    { /* Sets display if needed */
-      char *args;
-      char *tkargv[2];
-      if (string_length(display) > 0) {
-	Tcl_SetVar(cltclinterp, "argc", "2", TCL_GLOBAL_ONLY);
-	tkargv[0] = "-display";
-	tkargv[1] = String_val(display);
-	args = Tcl_Merge(2, tkargv);
-	Tcl_SetVar(cltclinterp, "argv", args, TCL_GLOBAL_ONLY);
-	free(args);
+    Tcl_SetVar(cltclinterp, "argv0", String_val (argv0), TCL_GLOBAL_ONLY);
+
+    { /* Sets argv if needed */
+      int argc = 0;
+
+      tmp = Field(argv, 1); /* starts from argv[1] */
+      while ( tmp != Val_int(0) ) {
+	argc++;
+	tmp = Field(tmp, 1);
+      }
+
+      if( argc != 0 ){
+	int i;
+	char *args;
+	char **tkargv;
+	char argcstr[256];
+
+	tkargv = malloc( sizeof( char* ) * argc );
+
+	tmp = Field(argv, 1); /* starts from argv[1] */
+	i = 0;
+	while ( tmp != Val_int(0) ) {
+	  tkargv[i] = String_val(Field(tmp, 0));
+	  tmp = Field(tmp, 1);
+	  i++;
+	}
+	
+	sprintf( argcstr, "%d", argc );
+
+        Tcl_SetVar(cltclinterp, "argc", argcstr, TCL_GLOBAL_ONLY);
+        args = Tcl_Merge(argc, tkargv); /* args must be freed by Tcl_Free */
+        Tcl_SetVar(cltclinterp, "argv", args, TCL_GLOBAL_ONLY);
+        Tcl_Free(args);
+	free( tkargv );
       }
     }
     if (Tk_Init(cltclinterp) != TCL_OK)
@@ -84,8 +118,8 @@ value camltk_opentk(display, name) /* ML */
 
   /* Create the camlcallback command */
   Tcl_CreateCommand(cltclinterp,
-		    CAMLCB, CamlCBCmd, 
-		    (ClientData)NULL,(Tcl_CmdDeleteProc *)NULL);
+                    CAMLCB, CamlCBCmd, 
+                    (ClientData)NULL,(Tcl_CmdDeleteProc *)NULL);
 
   /* This is required by "unknown" and thus autoload */
   Tcl_SetVar(cltclinterp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
@@ -102,14 +136,20 @@ value camltk_opentk(display, name) /* ML */
       strcat(f, "/");
       strcat(f, RCNAME);
       if (0 == access(f,R_OK)) 
-	if (TCL_OK != Tcl_EvalFile(cltclinterp,f)) {
-	  stat_free(f);
-	  tk_error(cltclinterp->result);
-	};
+        if (TCL_OK != Tcl_EvalFile(cltclinterp,f)) {
+          stat_free(f);
+          tk_error(cltclinterp->result);
+        };
       stat_free(f);
     }
   }
 
+  End_roots();
   return Val_unit;
 }
 
+value camltk_finalize(value unit) /* ML */
+{
+  Tcl_Finalize();
+  return Val_unit;
+}

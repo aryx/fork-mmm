@@ -3,20 +3,22 @@ include ../../Makefile.config
 COMPFLAGS=-I ../../support -I ../../lib -I ..
 LINKFLAGS= -I ../../lib
 
-all : gifanimtest
+EXECS=gifanimtest$(EXE)
+
+all : $(EXECS)
 
 OBJS = gifanimtest.cmo
 
-TKLINKOPT= -ccopt -L../../support -cclib -lcamltk41 \
+TKLINKOPT= -ccopt -L../../support -cclib -lcamltk \
 	   -ccopt -L../ext \
+	   ../cltkaniminit.o -cclib -ltkanim \
 	   $(TKLIBS) $(X11_LIBS) \
-	   tk41.cma unix.cma -cclib -lunix 
+	   camltk.cma unix.cma -cclib -lunix 
 
-gifanimtest: $(OBJS)
-	$(CAMLC) -custom $(LINKFLAGS) $(TKLINKOPT) -o gifanimtest \
-		../tkanim.cmo ../tkaniminit.o ../tkaniminit.cmo $(OBJS) \
-		-cclib -ltkanim
-			
+gifanimtest$(EXE): $(OBJS)
+	$(CAMLC) -custom $(LINKFLAGS) $(TKLINKOPT) -o gifanimtest$(EXE) \
+		../tkanim.cmo $(OBJS)
+
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .mlp
@@ -31,6 +33,6 @@ depend:
 	$(CAMLDEP) *.mli *.ml > .depend
 
 clean:
-	rm -f gifanimtest *.cm?
+	rm -f $(EXECS) *.cm?
 
 include .depend

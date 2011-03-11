@@ -2,8 +2,8 @@
 ## Where you installed ObjectiveCaml
 LIBDIR=/usr/local/lib/objective-caml
 
-## Where you want to install CamlTk41 libraries and binaries
-INSTALLDIR=$(LIBDIR)/camltk41
+## Where you want to install CamlTk libraries and binaries
+INSTALLDIR=$(LIBDIR)/camltk
 
 ### What to use to compile and link with X
 X11_LIBS=-ccopt " -L/usr/X11R6/lib" -cclib " -lSM -lICE -lX11 "

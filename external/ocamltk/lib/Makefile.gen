@@ -1,9 +1,25 @@
 include ../Makefile.config
 
+# We need fixed orderd lists of built-in modules
+# ( The '*' expansion of shell can differ !!! )
+
+BUILTINS=	../builtin/builtin_bind.ml \
+		../builtin/builtin_bindtags.ml \
+		../builtin/builtin_GetBitmap.ml \
+		../builtin/builtin_GetCursor.ml \
+		../builtin/builtin_GetPixel.ml \
+		../builtin/builtin_index.ml \
+		../builtin/builtin_palette.ml \
+		../builtin/builtin_ScrollValue.ml \
+		../builtin/builtin_text.ml \
+                ../builtin/builtin_FilePattern.ml
+
+BUILTINAS=	../builtin/builtina_empty.ml
+
 all: tk.ml .depend
 
 tkgen.ml: ../Widgets.src ../compiler/tkcompiler
-	../compiler/tkcompiler -o . -I .. ../Widgets.src
+	../compiler/tkcompiler -outdir . -I .. ../Widgets.src
 
 tk.ml .depend: tkgen.ml ../support/report.ml ../builtin/builtin_*.ml
 	(echo 'open Widget'; \
@@ -11,9 +27,9 @@ tk.ml .depend: tkgen.ml ../support/report.ml ../builtin/builtin_*.ml
          echo 'open Support'; \
 	 echo 'open Textvariable'; \
 	 cat ../support/report.ml; \
-	 cat ../builtin/builtin_*.ml; \
+	 cat $(BUILTINS); \
 	 cat tkgen.ml; \
-         cat ../builtin/builtina_*.ml) > tk.ml
+         cat $(BUILTINAS)) > tk.ml
 	$(CAMLC) -c -i -I ../support tk.ml > tk.mli0
 	mv tk.mli0 tk.mli
 	rm tk.cm*

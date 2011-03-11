@@ -6,7 +6,7 @@ COMPFLAGS=-I ../lib -I ../support
 OBJS= balloon.cmo # fileselect.cmo
 OBJSX = $(OBJS:.cmo=.cmx)
 
-TKLINKOPT=../support/libcamltk41.lib $(TKLIBS)
+TKLINKOPT=../support/libcamltk.lib $(TKLIBS)
 
 all: libjpf.cma
 
@@ -35,13 +35,13 @@ clean:
 
 balloontest.exe: balloontest.cmo 
 	$(CAMLC) -o balloontest.exe -I ../support -I ../lib \
-	        -custom tk41.cma libjpf.cma balloontest.cmo $(TKLINKOPT)
+	        -custom camltk.cma libjpf.cma balloontest.cmo $(TKLINKOPT)
 
 balloontest.cmo : balloon.cmo libjpf.cma
 
 balloontestopt.exe: balloontest.cmx
 	$(CAMLOPT) -o balloontestopt.exe -I ../support -I ../lib \
-	        tk41.cmxa libjpf.cmxa balloontest.cmx $(TKLINKOPT)
+	        camltk.cmxa libjpf.cmxa balloontest.cmx $(TKLINKOPT)
 
 balloontest.cmx : balloon.cmx libjpf.cmxa
 

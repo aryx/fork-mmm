@@ -21,22 +21,46 @@ val add_destroy_hook : (widget -> unit) -> unit
 
 
 (* Opening, closing, and mainloop *)
-val   default_display : unit -> string
+val default_display : unit -> string
 
-val   openTk : unit -> widget
-val   openTkClass: string -> widget
-val   openTkDisplayClass: string -> string -> widget
-val   closeTk : unit -> unit
-val   mainLoop : unit -> unit
+val opentk : string list -> widget
+    (* The basic initialization function. [opentk argv] takes command line
+       options [argv] for Tk applications, like ["-display"; "localhost:0"]. 
+       Application name can be specified by ["-name"; name] *)
+
+val keywords : (string * Arg.spec * string) list
+    (* Command line parsing specification for Arg.parse, which contains
+       the standard Tcl/Tk command line options such as "-display" and "-name".
+       These Tk command line options are stored for opentk_with_parsed_args *)
+val opentk_with_parsed_args : unit -> widget
+    (* [opentk_with_parsed_args ()] invokes [opentk] with the command line 
+       options given to the executable program. Before calling 
+       [opentk_with_parsed_args], the command line arguments must be parsed
+       by [Arg.parse] using [keywords]. *)
+
+val openTk : unit -> widget
+    (* [openTk ()] is equivalent to [opentk ["-name"; "Camltk"]] *)
+val openTkClass: string -> widget
+    (* [openTkClass class] is equivalent to [opentk ["-name"; class]] *)
+val openTkDisplayClass: string -> string -> widget
+    (* [openTkDisplayClass disp class] is equivalent to 
+       [opentk ["-display"; disp; "-name"; class]] *)
+
+val closeTk : unit -> unit
+val finalizeTk : unit -> unit 
+    (* Finalize tcl/tk before exiting. This function will be automatically 
+       called when you call [Pervasives.exit ()] *)
+
+val mainLoop : unit -> unit
 
 
 (* Direct evaluation of tcl code *)
-val   tkEval : tkArgs array -> string
+val tkEval : tkArgs array -> string
 
-val   tkCommand : tkArgs array -> unit
+val tkCommand : tkArgs array -> unit
 
 (* Returning a value from a Tcl callback *)
-val   tkreturn: string -> unit
+val tkreturn: string -> unit
 
 
 (* Callbacks: this is private *)

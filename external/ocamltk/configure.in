@@ -14,6 +14,7 @@ AC_INIT(Widgets.src)
 
 dnl Rather use gcc
 AC_PROG_CC
+AC_PROG_CPP
 AC_HAVE_HEADERS(unistd.h limits.h)
 
 dnl Defaults for variables, overriden in site.config
@@ -27,7 +28,11 @@ AC_ARG_WITH(config,
      SITECFG=$withval
      . $withval
    else
-    AC_MSG_ERROR($withval does not exist)
+     if test "$withval" = "yes"; then
+       AC_MSG_ERROR(No argument for --with-config: write --with-config=<file>.)
+     else		
+       AC_MSG_ERROR($withval does not exist)
+     fi
    fi,
    AC_MSG_ERROR(
 You must provide a file giving the location of various software using the option --with-config=file. Check the INSTALL instructions))
@@ -36,9 +41,19 @@ if test -z "$OCAMLLIBDIR"; then
   AC_MSG_ERROR("OCAMLLIBDIR is still undefined. Edit $SITECFG")
 fi
 
+dnl builtin rule for Cygwin
+AC_CYGWIN
+if test "$CYGWIN"; then
+ echo "CYGWIN=$CYGWIN"
+fi
+
 dnl builtin rule for X
 AC_PATH_XTRA
-WITH_X="$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+if test "$CYGWIN"; then
+ WITH_X=""
+else
+ WITH_X="$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+fi
 
 dnl builtin rule for ranlib
 AC_PROG_RANLIB
@@ -46,75 +61,90 @@ AC_PROG_RANLIB
 dnl As soon as we use this, we must have install-sh available. Damn.
 dnl AC_CANONICAL_HOST
 
-LIBS="-lm"
+LIBS=""
 
 ### We probably need more
 AC_CHECK_LIB(dl, dlopen, LIBS="-ldl $LIBS")
 
-### Check for Tcl7.5(7.6) and Tk4.1(4.2)
-AC_MSG_CHECKING(Tcl and Tk includes and libraries)
+# we need to check X11 include path is visible
+AC_CHECK_HEADERS(X11/Xlib.h,,
+  AC_MSG_ERROR(Can't find Xlib.h. Check the CPPFLAGS variable in $SITECFG))
 
-AC_CHECK_HEADERS(tcl.h,,
+# ### Check wish
+# Grghhh, wish often has another name like wish8.3
+# 
+# AC_PATH_PROG(PATH_WISH, wish, "nope")
+# if test "$PATH_WISH" = "nope"; then
+#   AC_MSG_ERROR(Can't find wish in your executable path)
+# fi
+# 
+# TCL_VERSION=`echo 'puts $tcl_version; exit' | $PATH_WISH`
+# TK_VERSION=`echo 'puts $tk_version; exit' | $PATH_WISH`
+# echo "TCL_VERSION=$TCL_VERSION, TK_VERSION=$TK_VERSION"
+
+### Check for Tcl/Tk include files
+AC_CHECKING(Tcl and Tk includes)
+
+AC_CHECK_HEADER(tcl.h,,
   AC_MSG_ERROR(Can't find tcl.h. Check the CPPFLAGS variable in $SITECFG))
 
-AC_CHECK_HEADERS(tk.h,,
+# note: sed [ ] are replaced by [[ ]] for the m4 processor
+cat > mytest.c <<EOF
+#include <tcl.h>
+TCL_VERSION
+EOF
+TCL_VERSION=`$CPP $CPPFLAGS mytest.c | tail -1 | sed -e 's/[[" ]]//g'`
+echo TCL_VERSION=$TCL_VERSION
+rm -f mytest.c
+
+AC_CHECK_HEADER(tk.h,,
   AC_MSG_ERROR(Can't find tk.h. Check the CPPFLAGS variable in $SITECFG))
 
-tcl75="tcl75$LIBEXT"
-tcl75d="tcl7.5$LIBEXT"
-tcl76="tcl76$LIBEXT"
-tcl76d="tcl7.6$LIBEXT"
-tcl80="tcl80$LIBEXT"
-tcl80d="tcl8.0$LIBEXT"
+cat > mytest.c <<EOF
+#include <tk.h>
+TK_VERSION
+EOF
+TK_VERSION=`$CPP $CPPFLAGS mytest.c | tail -1 | sed -e 's/[[" ]]//g'`
+echo TK_VERSION=$TK_VERSION
+rm -f mytest.c
 
-dnl We use Tcl_GetFile to be sure to get version >= 7.5
-dnl But for 8.0, it doesn't work anymore. Use Tcl_GetObjResult.
-dnl This still fails if tcl.so and tk.so are for 8.0.
+### TK_PATCH_LEVEL to select version specific features
+cat > mytest.c <<EOF
+#include <tk.h>
+TK_PATCH_LEVEL
+EOF
+TKPATCHLEVEL=`$CPP $CPPFLAGS mytest.c | tail -1 | sed -e 's/[[". ]]//g'`
+echo TKPATCHLEVEL=$TKPATCHLEVEL
+rm -f mytest.c
+
+### Check for Tcl/Tk libraries
+AC_CHECKING(Tcl and Tk libraries)
+
+TCL_VERSION_WD=`echo $TCL_VERSION | sed -e 's/\.//'`
+TK_VERSION_WD=`echo $TK_VERSION | sed -e 's/\.//'`
+
+tcl="tcl$TCL_VERSION_WD$LIBEXT"
+tcld="tcl$TCL_VERSION$LIBEXT"
+tk="tk$TK_VERSION_WD$LIBEXT"
+tkd="tk$TK_VERSION$LIBEXT"
+
 dnl use X_EXTRA_LIBS to get -lnsl and -lsocket on Solaris
-AC_CHECK_LIB($tcl80, Tcl_GetObjResult, LIBS="-l$tcl80 $LIBS",
- AC_CHECK_LIB($tcl80d, Tcl_GetObjResult, LIBS="-l$tcl80d $LIBS",
-  AC_CHECK_LIB($tcl76, Tcl_GetFile, LIBS="-l$tcl76 $LIBS",
-   AC_CHECK_LIB($tcl76d, Tcl_GetFile, LIBS="-l$tcl76d $LIBS",
-    AC_CHECK_LIB($tcl75, Tcl_GetFile, LIBS="-l$tcl75 $LIBS",
-     AC_CHECK_LIB($tcl75d, Tcl_GetFile, LIBS="-l$tcl75d $LIBS",
-      AC_CHECK_LIB(tcl$LIBEXT, Tcl_GetFile, LIBS="-ltcl$LIBEXT $LIBS",
-       AC_MSG_ERROR(Can't find a tcl library.
-Check config.log to see what happened, and try setting LDFLAGS in $SITECFG),
-       $X_EXTRA_LIBS -lm),
-      $X_EXTRA_LIBS -lm),
-     $X_EXTRA_LIBS -lm),
-    $X_EXTRA_LIBS -lm),
-   $X_EXTRA_LIBS -lm),
+
+AC_CHECK_LIB($tcld, Tcl_Init, LIBS="-l$tcld $LIBS",
+  AC_CHECK_LIB($tcl, Tcl_Init, LIBS="-l$tcl $LIBS",
+    AC_MSG_ERROR(Can't find a tcl library.
+   Check config.log to see what happened, and try setting LDFLAGS in $SITECFG),
   $X_EXTRA_LIBS -lm),
- $X_EXTRA_LIBS -lm)
+$X_EXTRA_LIBS -lm)
 
-
-tk80="tk80$LIBEXT"
-tk80d="tk8.0$LIBEXT"
-tk42="tk42$LIBEXT"
-tk42d="tk4.2$LIBEXT"
-tk41="tk41$LIBEXT"
-tk41d="tk4.1$LIBEXT"
-
-
-dnl We use Tk_SetGrid to be sure to get version >= 4.1
 dnl X_CFLAGS is need if includes are not in /usr/include/X11
-AC_CHECK_LIB($tk80, Tk_SetGrid, LIBS="-l$tk80 $LIBS",
- AC_CHECK_LIB($tk80d, Tk_SetGrid, LIBS="-l$tk80d $LIBS",
-  AC_CHECK_LIB($tk42, Tk_SetGrid, LIBS="-l$tk42 $LIBS",
-   AC_CHECK_LIB($tk42d, Tk_SetGrid, LIBS="-l$tk42d $LIBS",
-    AC_CHECK_LIB($tk41, Tk_SetGrid, LIBS="-l$tk41 $LIBS",
-     AC_CHECK_LIB($tk41d, Tk_SetGrid, LIBS="-l$tk41d $LIBS",
-      AC_CHECK_LIB(tk$LIBEXT, Tk_SetGrid, LIBS="-ltk$LIBEXT $LIBS",
-       AC_MSG_ERROR(Can't find a tk library.
-Check config.log to see what happened, and try setting LDFLAGS in $SITECFG),
-       $X_CFLAGS $WITH_X -lm),
-      $X_CFLAGS $WITH_X -lm),
-     $X_CFLAGS $WITH_X -lm),
-    $X_CFLAGS $WITH_X -lm),
-   $X_CFLAGS $WITH_X -lm),
-  $X_CFLAGS $WITH_X -lm),
- $X_CFLAGS $WITH_X -lm)
+
+AC_CHECK_LIB($tkd, Tk_Init, LIBS="-l$tkd $LIBS",
+  AC_CHECK_LIB($tk, Tk_Init, LIBS="-l$tk $LIBS",
+    AC_MSG_ERROR(Can't find a tk library.
+   Check config.log to see what happened, and try setting LDFLAGS in $SITECFG),
+  $X_CFLAGS -lm),
+$X_CFLAGS -lm)
 
 dnl This is the file that we produce
 dnl These are the variables that are substituted in Makefile.config.in to
@@ -128,19 +158,36 @@ AC_SUBST(INSTALLDIR)
 
 dnl Info collected about X
 dnl The includes and options
+AC_SUBST(WITH_X)
 AC_SUBST(X_CFLAGS)
 
 dnl The libraries
 dnl special trick to substitute -L and -l ...
-dnl All options (for cc compilation)
-AC_SUBST(WITH_X)
 dnl X link options
 AC_SUBST(X_LIBS)
-THE_X_LIBS="$X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+
+if test -z "$CYGWIN"; then
+ THE_X_LIBS="$X_PRE_LIBS -lX11 $X_EXTRA_LIBS -lm"
+else
+ THE_X_LIBS="-lwsock32 $X_EXTRA_LIBS"
+fi
+
 AC_SUBST(THE_X_LIBS)
+
+dnl .exe extension
+if test "$CYGWIN"; then
+ EXE=".exe"
+else
+ EXE=""
+fi
+
+AC_SUBST(EXE)
 
 dnl Tcl/Tk
 dnl CPPFLAGS, LIBS and LDFLAGS are substituted by default
+
+dnl TKPATCHLEVEL is used to select version specific features
+AC_SUBST(TKPATCHLEVEL)
 
 dnl Info collected about ranlib
 AC_SUBST(RANLIB)

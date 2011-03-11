@@ -3,19 +3,19 @@
 
 all: support.cmo widget.cmo protocol.cmo \
      textvariable.cmo timer.cmo fileevent.cmo \
-     libcamltk41.lib
+     libcamltk.lib
 
 opt: support.cmx widget.cmx protocol.cmx \
      textvariable.cmx timer.cmx fileevent.cmx \
-     libcamltk41.lib
+     libcamltk.lib
 
 COBJS=cltkCaml.obj cltkEval.obj cltkFile.obj cltkMain.obj cltkEvent.obj \
       cltkMisc.obj cltkTimer.obj cltkVar.obj cltkWait.obj cltkImg.obj
 
 CCFLAGS=-ccopt /Zi $(TCLTKINCLUDES)
 
-libcamltk41.lib : $(COBJS)
-	$(MKLIB)libcamltk41.lib $(COBJS)
+libcamltk.lib : $(COBJS)
+	$(MKLIB)libcamltk.lib $(COBJS)
 
 PUB=fileevent.cmi fileevent.mli \
     protocol.cmi protocol.mli \
@@ -23,9 +23,9 @@ PUB=fileevent.cmi fileevent.mli \
     timer.cmi timer.mli \
     widget.cmi widget.mli 
 
-install: libcamltk41.lib $(PUB)
+install: libcamltk.lib $(PUB)
 	cp $(PUB) $(INSTALLDIR)
-	cp libcamltk41.lib $(INSTALLDIR)
+	cp libcamltk.lib $(INSTALLDIR)
 
 clean : 
 	rm -f *.cm* *.obj *.lib

@@ -1,9 +1,10 @@
 #include <tcl.h>
 #include <tk.h>
 #include <caml/mlvalues.h>
+#include <caml/alloc.h>
 #include "camltk.h"
 
-value camltk_tk_mainloop() /* ML */
+value camltk_tk_mainloop(void) /* ML */
 {
   CheckInit();
 
@@ -25,8 +26,7 @@ static int event_flag_table[] = {
   TK_ALL_EVENTS
 };
 
-value camltk_dooneevent(flags) /* ML */
-     value flags;
+value camltk_dooneevent(value flags) /* ML */
 {
   int ret;
 

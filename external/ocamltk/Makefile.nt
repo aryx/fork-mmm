@@ -3,7 +3,7 @@
 
 SUBDIRS=compiler support lib frx jpf # jtk tkanim
 
-all:
+all:	Makefile.config.nt
 	cd support & $(MAKEREC)
 	cd compiler & $(MAKEREC)
 	cd lib & $(MAKE) -nologo -f Makefile.gen.nt
@@ -12,8 +12,16 @@ all:
 #	cd jtk & $(MAKEREC)
 	cd jpf & $(MAKEREC)
 #	cd tkanim & $(MAKEREC)
+#	cd tk80 & $(MAKEREC)
+#	cd safe & $(MAKEREC)
 
-opt:
+Makefile.config.nt:
+	@echo "You must configure first. Read INSTALL."
+	exit 1
+
+allopt: opt
+
+opt:	Makefile.config.nt
 	cd support & $(MAKEREC) opt
 	cd lib & $(MAKE) -f Makefile.gen.nt
 	cd lib & $(MAKEREC) opt
@@ -21,10 +29,16 @@ opt:
 #	cd jtk & $(MAKEREC) opt
 	cd jpf & $(MAKEREC) opt
 #	cd tkanim & $(MAKEREC) opt
+	cd tk80 & $(MAKEREC) opt
 
 lib: Widgets.src
 	compiler\tkcompiler
 	cd lib & $(MAKEREC)
+
+top: lib\camltk.cma
+	ocamlmktop -verbose -cclib -Lsupport -I lib -custom camltk.cma \
+                -o camltktop
+        # to launch: camltktop -I lib -I support
 
 install:  FORCE
 	if not exist $(INSTALLDIR) mkdir $(INSTALLDIR)
@@ -36,6 +50,8 @@ install:  FORCE
 	cd jpf & $(MAKEREC) install
 #	cd jtk & $(MAKEREC) install
 #	cd tkanim & $(MAKEREC) install
+#	cd tk80 & $(MAKEREC) install
+#	cd safe & $(MAKEREC) install
 
 installopt: FORCE
 	if not exist $(INSTALLDIR) mkdir $(INSTALLDIR)
@@ -44,10 +60,12 @@ installopt: FORCE
 	cd jpf & $(MAKEREC) installopt
 #	cd jtk & $(MAKEREC) installopt
 #	cd tkanim & $(MAKEREC) installopt
+#	cd tk80 & $(MAKEREC) installopt
 
 FORCE:
 
 clean : 
+	-rm -f config.cache
 	-for %i in ($(SUBDIRS)) do (cd %i & $(MAKEREC) clean & cd ..)
 
 distclean:  clean

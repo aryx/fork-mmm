@@ -9,8 +9,7 @@ opt : jtk.cmx
 include ./modules
 
 jtk.ml jtk.mli: Jtk.src builtin.ml builtin.mli
-	if [ ! -s lib ]; then ln -s . lib; fi	# We need for tkcompiler
-	../compiler/tkcompiler Jtk.src
+	../compiler/tkcompiler -outdir . Jtk.src
 	(\
 	echo "open Protocol"; \
 	echo "open Tk"; \
@@ -46,7 +45,7 @@ jtk.ml jtk.mli: Jtk.src builtin.ml builtin.mli
 	) > jtk.mli
 
 clean:
-	rm -f *.cm? jtk.ml jtk.mli tkgen.ml tkgen.mli kanji.m* kanji.cm* tktypes.ml lib
+	rm -f *.cm? jtk.ml jtk.mli tkgen.ml tkgen.mli kanji.m* kanji.cm* tktypes.ml lib *.o
 
 .SUFFIXES :
 .SUFFIXES : .mli .ml .cmi .cmo .mlp .cmx
@@ -61,7 +60,7 @@ clean:
 	$(CAMLOPT) -c $(COMPFLAGS) $<
 
 install: jtk.cmo
-	cp jtk.cm* $(INSTALLDIR)
+	cp jtk.cm* jtk.mli $(INSTALLDIR)
 
 installopt: jtk.cmx jtk.o
 	cp jtk.cmx jtk.o $(INSTALLDIR)

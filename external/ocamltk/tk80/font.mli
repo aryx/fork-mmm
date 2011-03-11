@@ -33,10 +33,13 @@ val measure_displayof : font -> widget -> string -> int
 (* tk invocation: font measure <font> -displayof <widget> <string> *)
 
 val metrics : font -> string -> int 
-(* tk invocation: font measure <font> <string> *)
+(* tk invocation: font metrics <font> <string> *)
 
 val metrics_displayof : font -> widget -> string -> int 
-(* tk invocation: font measure <font> -displayof <widget> <string> *)
+(* tk invocation: font metrics <font> -displayof <widget> <string> *)
+
+val metrics_linespace : font -> int 
+(* tk invocation: font metrics <font> -linespace *)
 
 val names : unit ->string list 
 (* tk invocation: font names *)

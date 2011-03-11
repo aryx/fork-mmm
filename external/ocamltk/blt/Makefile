@@ -32,7 +32,7 @@ installopt: blt.cmxa libcamlblt.a
 	cp blt.cmi blt.mli blt.cmxa blt.a libcamlblt.a $(INSTALLDIR)
 
 blt.ml blt.mli: blt.src builtin.ml builtin.mli
-	../compiler/tkcompiler -o . blt.src
+	../compiler/tkcompiler$(EXE) -outdir . blt.src
 	(\
 	echo "open Tk"; \
 	echo "open Widget"; \

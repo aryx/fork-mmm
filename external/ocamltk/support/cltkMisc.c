@@ -1,3 +1,4 @@
+#include <string.h>
 #include <tcl.h>
 #include <tk.h>
 #include <caml/mlvalues.h>
@@ -5,8 +6,7 @@
 #include "camltk.h"
 
 /* Parsing results */
-value camltk_splitlist (v) /* ML */
-     value v;
+value camltk_splitlist (value v) /* ML */
 {
   int argc;
   char **argv;
@@ -14,12 +14,12 @@ value camltk_splitlist (v) /* ML */
 
   CheckInit();
 
-  /* argv is allocated by Tcl, to be freed by us */
+  /* argv is allocated by Tcl, to be freed by us using Tcl_Free */
   result = Tcl_SplitList(cltclinterp,String_val(v),&argc,&argv);
   switch(result) {
   case TCL_OK:
    { value res = copy_string_list(argc,argv);
-     free((char *)argv);	/* only one large block was allocated */
+     Tcl_Free((char *)argv);	/* only one large block was allocated */
      return res;
    }
   case TCL_ERROR:
@@ -29,12 +29,11 @@ value camltk_splitlist (v) /* ML */
 }
 
 /* Copy a Caml string to the C heap. Should deallocate with stat_free */
-char *string_to_c(s)
-     value s;
+char *string_to_c(value s)
 {
   int l = string_length(s);
   char *res = stat_alloc(l + 1);
-  bcopy(String_val(s),res,l);
+  memmove (res, String_val (s), l);
   res[l] = '\0';
   return res;
 }

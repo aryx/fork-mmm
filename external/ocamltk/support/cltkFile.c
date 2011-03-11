@@ -1,4 +1,9 @@
-#ifdef _WIN32
+/* Here, CYGWIN is equivalent to WIN32 */
+#ifdef __CYGWIN__
+#define _WIN32
+#endif
+
+#if defined(__CYGWIN__) || defined( _WIN32)
 #include <wtypes.h>
 #include <winbase.h>
 #include <winsock.h>
@@ -6,6 +11,7 @@
 #include <tcl.h>
 #include <tk.h>
 #include <caml/mlvalues.h>
+#include <caml/callback.h>
 #include "camltk.h"
 
 /*
@@ -17,6 +23,8 @@ void FileProc(ClientData clientdata, int mask)
   callback2(*handler_code,Val_int(clientdata),Val_int(0));
 }
 
+/* Map Unix.file_descr values to Tcl file handles */
+
 #ifndef _WIN32
 
 /* Under Unix, we use file handlers */
@@ -27,7 +35,7 @@ void FileProc(ClientData clientdata, int mask)
 #if (TCL_MAJOR_VERSION < 8)
 static Tcl_File tcl_filehandle(value fd)
 {
-  return Tcl_GetFile(Int_val(fd), TCL_UNIX_FD);
+  return Tcl_GetFile((ClientData)Long_val(fd), TCL_UNIX_FD);
 }
 #else
 #define tcl_filehandle(fd) Int_val(fd)
@@ -38,7 +46,7 @@ value camltk_add_file_input(value fd, value cbid)    /* ML */
 {
   CheckInit();
   Tcl_CreateFileHandler(tcl_filehandle(fd), TCL_READABLE, 
-		       FileProc, (ClientData)(Int_val(cbid)));
+                       FileProc, (ClientData)(Long_val(cbid)));
   return Val_unit;
 }
 
@@ -63,7 +71,7 @@ value camltk_add_file_output(value fd, value cbid)    /* ML */
 {
   CheckInit();
   Tcl_CreateFileHandler(tcl_filehandle(fd), TCL_WRITABLE, 
-		       FileProc, (ClientData) (Int_val(cbid)));
+                       FileProc, (ClientData) (Long_val(cbid)));
   return Val_unit;
 }
 
@@ -79,7 +87,7 @@ value camltk_rem_file_output(value fd, value cbid) /* ML */
 
 #else
 
-/* Under Win32, we go through the generic channel abstraction */
+/* Under Win32 or Cygwin, we go through the generic channel abstraction */
 
 /* Map Unix.file_descr values to Tcl channels */
 
