@@ -46,6 +46,7 @@ val regexp_case_fold: string -> regexp
 
 (*** String matching and searching *)
 
+(*
 external string_match: regexp -> string -> int -> bool = "str_string_match"
         (* [string_match r s start] tests whether the characters in [s]
            starting at position [start] match the regular expression [r].
@@ -59,6 +60,7 @@ external search_forward: regexp -> string -> int -> int = "str_search_forward"
 external search_backward: regexp -> string -> int -> int = "str_search_backward"
         (* Same as [search_forward], but the search proceeds towards the
            beginning of the string. *)
+*)
 
 val matched_string: string -> string
         (* [matched_string s] returns the substring of [s] that was matched

@@ -208,6 +208,8 @@ module Map = Map
 (* Obj: inherently unsafe *)
 (* Oo: *)
 (* Parsing : inherently unsafe *)
+type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'c, 'c, 'd) format6
+type ('a, 'b, 'c) format = ('a, 'b, 'c, 'c) format4
 module Printexc = Printexc
 module Printf = Printf
 module Queue = Queue

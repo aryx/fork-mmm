@@ -80,6 +80,7 @@ type error = Unix.error =
   | EHOSTDOWN           (* Host is down *)
   | EHOSTUNREACH        (* No route to host *)
   | ELOOP               (* Too many levels of symbolic links *)
+  | EOVERFLOW
   (* All other errors are mapped to EUNKNOWNERR *)
   | EUNKNOWNERR of int  (* Unknown error *)
 
@@ -108,6 +109,10 @@ type open_flag =
   | O_CREAT                             (* Create if nonexistent *)
   | O_TRUNC                             (* Truncate to 0 length if existing *)
   | O_EXCL                              (* Fail if existing *)
+  | O_NOCTTY                    (** Don't make this dev a controlling tty *)
+  | O_DSYNC                     (** Writes complete as `Synchronised I/O data integrity completion' *)
+  | O_SYNC                      (** Writes complete as `Synchronised I/O file integrity completion' *)
+  | O_RSYNC                     (** Reads complete as writes (depending on O_SYNC/O_DSYNC) *)
 
         (* The flags to [open]. *)
 
