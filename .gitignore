@@ -31,3 +31,13 @@
 /external/ocamltk/Makefile.camltk
 /external/ocamltk/Makefile.config
 /external/ocamltk/tkanim/ext/Makefile
+/safe/safe418.ml
+/safe/safe418.mli
+/safe/safefrx.ml
+/safe/safefrx.mli
+/safe/safejtk.ml
+/safe/safejtk.mli
+/safe/safetk.ml
+/safe/safetk.mli
+/safe/safetkanim.ml
+/safe/safetkanim.mli
