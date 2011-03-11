@@ -97,7 +97,7 @@ let _ =
  * The arguments are [X, v]
  * For arguments not substituted, add them at the end,
  *)
-let vars = Str.regexp "\$[A-Z]+"
+let vars = Str.regexp "\\$[A-Z]+"
 
 let system_eval cmd args back =
   let replaced = ref []

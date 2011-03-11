@@ -38,9 +38,19 @@ let create_node l e r =
   let hl = height l in
   let hr = height r in
   Node
-   {balance = if hl = hr then Eq else if hl < hr then Ri else Le;
-    height = 1 + if hr > hl then hr else hl;
-    left = l; element = e; right = r}
+   {
+     balance = 
+       (if hl = hr 
+       then Eq 
+       else 
+         if hl < hr then Ri else Le
+        )
+     ;
+     height = 1 + (if hr > hl then hr else hl);
+     left = l; 
+     element = e; 
+     right = r;
+   }
 
 let turn_right = function
  | Empty -> Empty
