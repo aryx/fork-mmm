@@ -18,9 +18,10 @@ MAKESUBDIRS= commons i18n/japan globals \
   www http html \
   protocols retrieve viewers \
   display \
-  appsys
+  appsys \
+  browser
 
-INCLUDEDIRS=$(MAKESUBDIRS) browser safe
+INCLUDEDIRS=$(MAKESUBDIRS) safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
@@ -66,7 +67,7 @@ opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
 
-allbyte: mmm.bin mmm_remote htparse surfboard applets modules
+allbyte: mmm mmm_remote htparse surfboard applets modules
 
 all.opt: opt
 top: $(TARGET).top
@@ -79,7 +80,7 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= $(LIBS) $(TXTDISP) $(BROWSER)
+OBJS= $(LIBS) $(TXTDISP)
 
 # Entry point
 MAIN=main.cmo
@@ -95,7 +96,7 @@ depend::
 # Exported safe libraries
 SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
-mmm.bin: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
+mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
 		$(WITH_DYNLINK) $(WITH_UNIX) $(WITH_STR) $(WITH_TK) \
 	        $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) \
@@ -144,9 +145,8 @@ clean::
 
 clean::
 	rm -rf safe/*.cm* safe/*.o
-	rm -rf browser/*.cm* browser/*.o
 	rm -rf remote/*.cm* remote/*.o
-	rm -f mmm.bin mmmx.bin mmm_remote htparse
+	rm -f mmm mmmx.bin mmm_remote htparse
 
 # Default rules
 
@@ -189,13 +189,6 @@ distclean:: clean
 
 # Plain text viewer
 TXTDISP=viewers/plain.cmo
-
-# Browser GUI, prefs, navigation logic
-BROWSER=browser/about.cmo browser/gcache.cmo \
-	browser/fontprefs.cmo browser/prefs.cmo browser/mmmprefs.cmo \
-        browser/history.cmo browser/plink.cmo browser/nav.cmo \
-	browser/mmm.cmo browser/cci.cmo \
-        browser/debug.cmo 
 
 ## The common safe library
 include Makefile.safe
@@ -250,7 +243,7 @@ safe: safe-common safe-mmm safe/crcs.ml safe/crcsmmm.ml
 
 ## Installation : copy the various files and binaries
 ## Preprocess shell-script
-install: mmm.bin htparse mmm_remote mmm.sh install-mdk
+install: mmm htparse mmm_remote mmm.sh install-mdk
 	if [ ! -d $(INSTALLBINDIR) ]; then \
           mkdir -p $(INSTALLBINDIR); \
         fi
@@ -259,7 +252,7 @@ install: mmm.bin htparse mmm_remote mmm.sh install-mdk
         fi 
 	cp htparse mmm_remote $(INSTALLBINDIR)
 	/bin/rm -rf $(INSTALLLIBDIR)/*
-	cp mmm.bin $(INSTALLLIBDIR)
+	cp mmm $(INSTALLLIBDIR)
 	cp msgs*.txt $(INSTALLLIBDIR)
 	cp MMM.ad MMM.ad.* $(INSTALLLIBDIR)
 	cp -pr doc $(INSTALLLIBDIR)	
