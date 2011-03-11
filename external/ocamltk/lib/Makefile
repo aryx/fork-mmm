@@ -14,7 +14,8 @@ SUPPORT=../support/support.cmo ../support/widget.cmo ../support/protocol.cmo \
 
 SUPPORTX = $(SUPPORT:.cmo=.cmx)
 
-all : camltk.cma ocamltktop$(EXE)
+all : camltk.cma
+# ocamltktop$(EXE)
 
 opt : camltk.cmxa
 
@@ -39,14 +40,16 @@ ocamltktop$(EXE) : $(WIDGETOBJS) $(SUPPORT) ../support/libcamltk.a
 clean : 
 	rm -f *.cm* *.ml *.mli *.o *.a camltk.cmo ocamltktop$(EXE) .depend
 
-install: camltk.cma ocamltktop$(EXE)
+# ocamltktop$(EXE)
+install: camltk.cma
 	if test -d $(INSTALLDIR); then : ; else mkdir $(INSTALLDIR); fi
-	cp *.cmi *.mli camltk.cma ocamltktop$(EXE) $(INSTALLDIR)
+	cp *.cmi *.mli camltk.cma  $(INSTALLDIR)
 	rm -f $(INSTALLDIR)/tkgen.ml $(INSTALLDIR)/tkgen.mli # they are temporary files.
 	chmod 644 $(INSTALLDIR)/*.cmi
 	chmod 644 $(INSTALLDIR)/*.mli
 	chmod 644 $(INSTALLDIR)/camltk.cma
-	chmod 755 $(INSTALLDIR)/ocamltktop$(EXE)
+#	chmod 755 $(INSTALLDIR)/ocamltktop$(EXE)
+# cp ocamltktop$(EXE) $(INSTALLDIR)
 
 installopt: camltk.cmxa
 	if test -d $(INSTALLDIR); then : ; else mkdir $(INSTALLDIR); fi

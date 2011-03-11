@@ -264,12 +264,12 @@ FileReadGIF(interp, f, fileName, formatString)
       
 	  for(i=0; i<7; i++){ Tcl_IncrRefCount(argv[i]); }
 
-	  if( Tk_ImageObjCmd((ClientData) winPtr, interp, 
-			/* "image create photo -width <imageWidth> 
-			   -height <imageHeight>" */
-			     7, argv) == TCL_ERROR ){
-	    return TCL_ERROR;
-	  }
+//PAD:	  if( Tk_ImageObjCmd((ClientData) winPtr, interp, 
+//PAD:			/* "image create photo -width <imageWidth> 
+//PAD:			   -height <imageHeight>" */
+//PAD:			     7, argv) == TCL_ERROR ){
+//PAD:	    return TCL_ERROR;
+//PAD:	  }
 	
 	for(i=0; i<7; i++){ Tcl_DecrRefCount(argv[i]); }
 
@@ -280,12 +280,12 @@ FileReadGIF(interp, f, fileName, formatString)
     fprintf(stderr, "\n\t\timage creation (%s %s %s %s %s %s %s)", 
 	    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
 #endif
-	if( Tk_ImageCmd((ClientData) winPtr, interp, 
-			/* "image create photo -width <imageWidth> 
-			   -height <imageHeight>" */
-			7, argv) == TCL_ERROR ){
-	    return TCL_ERROR;
-	}
+//PAD:	if( Tk_ImageObjCmd((ClientData) winPtr, interp, 
+//PAD:			/* "image create photo -width <imageWidth> 
+//PAD:			   -height <imageHeight>" */
+//PAD:			7, argv) == TCL_ERROR ){
+//PAD:	    return TCL_ERROR;
+//PAD:	}
 #endif
 
 #ifdef TKANIM_DEBUG
@@ -317,8 +317,16 @@ FileReadGIF(interp, f, fileName, formatString)
 		goto error;
 	    }
 	}
-	Tk_PhotoPutBlock(photoHandle, &block, 0, 0, 
-			 imageWidth, imageHeight);
+	Tk_PhotoPutBlock(
+#if (TK_MAJOR_VERSION == 8 && TK_MINOR_VERSION >= 5 || TK_MAJOR_VERSION > 8)
+        NULL,
+#endif
+                         photoHandle, &block, 0, 0, 
+			 imageWidth, imageHeight
+#if (TK_MAJOR_VERSION == 8 && TK_MINOR_VERSION >= 4 || TK_MAJOR_VERSION > 8)
+                   , TK_PHOTO_COMPOSITE_SET
+#endif
+);
 #ifdef TKANIM_DEBUG
     fprintf(stderr, " Retrieving result\n");
 #endif

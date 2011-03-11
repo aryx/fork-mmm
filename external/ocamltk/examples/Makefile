@@ -1,8 +1,8 @@
 include ../Makefile.config
 
 # We are using the non-installed library !
-COMPFLAGS= -I ../lib -I ../support
-LINKFLAGS= -I ../lib
+COMPFLAGS= -I ../lib -I ../support 
+LINKFLAGS= -I ../lib -ccopt "-L/opt/local/lib"
 
 # Use pieces of Makefile.config
 #TKLINKOPT=-ccopt -L../support -cclib -lcamltk \
