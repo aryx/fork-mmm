@@ -1,3 +1,4 @@
+# -*- makefile -*-
 # This file should be included in applications wishing to support
 # the "common" applets (e.g. MMM, plug-ins).
 #
