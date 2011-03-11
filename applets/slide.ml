@@ -1,0 +1,1 @@
+../shared/applets/slide.ml
