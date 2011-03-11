@@ -1,16 +1,26 @@
-/safe/crcs.ml.bak
-/safe/crcsmmm.ml.bak
-/safe/crcs.ml
-/safe/crcsmmm.ml
-/external/ocamltk/config.status
+# -*- sh -*-
+
+# lexers
 /html/lexhtml.ml
 /http/lexdate.ml
 /http/lexheaders.ml
 /japan/lexkanji.ml
 /misc/lexpath.ml
 /www/lexurl.ml
+
+#binaries
 /htparse
 /mmm.bin
 /mmm_remote
 /sboard/surfboard
 /sboard/surfboard_remote
+
+#Makefile and co
+/external/ocamltk/config.status
+
+#misc
+/safe/crcs.ml.bak
+/safe/crcsmmm.ml.bak
+/safe/crcs.ml
+/safe/crcsmmm.ml
+
