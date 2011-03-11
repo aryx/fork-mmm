@@ -1,0 +1,58 @@
+TOP=..
+##############################################################################
+# Variables
+##############################################################################
+TARGET=lib
+
+-include $(TOP)/Makefile.config
+
+SRC= html_form.ml html_table.ml\
+       hr.ml form.ml fit.ml table.ml \
+       fonts.ml styles.ml htbind.ml \
+       cmap.ml imgload.ml html_disp.ml \
+       source.ml attrs.ml \
+       ctext.ml textw_fo.ml \
+       htframe.ml htmlw.ml
+
+## Extra dependencies (functor application) that ocamldep doesn't find
+#htmlw.cmo: textw_fo.cmi imgload.cmi \
+#	 	form.cmi table.cmi
+#htmlw.cmx: textw_fo.cmx imgload.cmx \
+#	 	form.cmx table.cmx
+
+SYSLIBS= str.cma unix.cma 
+LIBS=
+
+INCLUDEDIRS=$(TOP)/commons $(TOP)/globals $(TOP)/i18n/japan \
+ $(TOP)/www $(TOP)/http $(TOP)/html \
+ $(TOP)/viewers $(TOP)/retrieve $(TOP)/protocols \
+
+SYSINCLUDES=$(TKCOMPFLAGS)
+
+##############################################################################
+# Generic variables
+##############################################################################
+
+-include $(TOP)/Makefile.common
+
+##############################################################################
+# Top rules
+##############################################################################
+all:: $(TARGET).cma
+all.opt:: $(TARGET).cmxa
+
+$(TARGET).cma: $(OBJS)
+	$(OCAMLC) -a -o $(TARGET).cma $(OBJS)
+
+$(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
+	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
+
+$(TARGET).top: $(OBJS) $(LIBS)
+	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
+
+clean::
+	rm -f $(TARGET).top
+
+##############################################################################
+# Literate Programming rules
+##############################################################################

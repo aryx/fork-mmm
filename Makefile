@@ -15,9 +15,11 @@ TARGET=lib
 SYSLIBS=
 
 MAKESUBDIRS= commons i18n/japan globals \
-  www http html protocols retrieve viewers \
+  www http html \
+  protocols retrieve viewers \
+  htdisp
 
-INCLUDEDIRS=$(MAKESUBDIRS) htdisp appsys browser safe
+INCLUDEDIRS=$(MAKESUBDIRS) appsys browser safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
@@ -76,7 +78,7 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= $(LIBS) $(HTDISP) $(TXTDISP) $(BROWSER)
+OBJS= $(LIBS) $(TXTDISP) $(BROWSER)
 
 # Entry point
 MAIN=main.cmo
@@ -137,7 +139,6 @@ clean::
 	cd modules; $(MAKE) clean
 
 clean::
-	rm -rf htdisp/*.cm* htdisp/*.o
 	rm -rf appsys/*.cm* appsys/*.o
 	rm -rf safe/*.cm* safe/*.o
 	rm -rf browser/*.cm* browser/*.o
@@ -182,24 +183,6 @@ distclean:: clean
 ##############################################################################
 # Misc rules
 ##############################################################################
-
-# Browser (communication protocols, multimedia viewer dispatch, ...)
-
-# HTML viewer per se
-HTDISP=htdisp/html_form.cmo htdisp/html_table.cmo\
-       htdisp/hr.cmo htdisp/form.cmo htdisp/fit.cmo htdisp/table.cmo \
-       htdisp/fonts.cmo htdisp/styles.cmo htdisp/htbind.cmo \
-       htdisp/cmap.cmo htdisp/imgload.cmo htdisp/html_disp.cmo \
-       htdisp/source.cmo htdisp/attrs.cmo \
-       htdisp/ctext.cmo htdisp/textw_fo.cmo \
-       htdisp/htframe.cmo htdisp/htmlw.cmo
-
-
-# Extra dependencies (functor application) that ocamldep doesn't find
-htdisp/htmlw.cmo: htdisp/textw_fo.cmi htdisp/imgload.cmi \
-	 	htdisp/form.cmi htdisp/table.cmi
-htdisp/htmlw.cmx: htdisp/textw_fo.cmx htdisp/imgload.cmx \
-	 	htdisp/form.cmx htdisp/table.cmx
 
 # Plain text viewer
 TXTDISP=viewers/plain.cmo
