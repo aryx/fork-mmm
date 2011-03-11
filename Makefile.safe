@@ -22,13 +22,13 @@ SAFEIMPL=$(SAFEINTF:.mli=.ml)
 # Note the version number
 safe-common: safe/safe$(VERSION).cmi safe/safe$(VERSION).cmo
 
-#pad: safe/safe$(VERSION).mli: $(SAFEINTF)
-#pad: 	(echo '(* Automatically generated. Do NOT edit *)'; \
-#pad: 	cat $(SAFEINTF)) > $@
-#pad: 
-#pad: safe/safe$(VERSION).ml: $(SAFEIMPL)
-#pad: 	(echo '(* Automatically generated. Do NOT edit *)'; \
-#pad: 	cat $(SAFEIMPL)) > $@
+safe/safe$(VERSION).mli: $(SAFEINTF)
+	(echo '(* Automatically generated. Do NOT edit *)'; \
+	cat $(SAFEINTF)) > $@
+
+safe/safe$(VERSION).ml: $(SAFEIMPL)
+	(echo '(* Automatically generated. Do NOT edit *)'; \
+	cat $(SAFEIMPL)) > $@
 
 safe/safe$(VERSION).cmi: safe/safe$(VERSION).mli $(APPSYS) $(OBJS)
 	$(CAMLC) -c -nopervasives safe/safe$(VERSION).mli
@@ -89,7 +89,7 @@ clean:: clean-safe
 
 clean-safe:
 	rm -f safe/safe$(VERSION).cm*
-#	rm -f safe/safe$(VERSION).ml safe/safe$(VERSION).mli
+	rm -f safe/safe$(VERSION).ml safe/safe$(VERSION).mli
 	rm -f safe/safetk.ml safe/safetk.mli \
 	      safe/safefrx.ml safe/safefrx.mli \
 	      safe/safetkanim.ml safe/safetkanim.mli \
