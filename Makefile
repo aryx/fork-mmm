@@ -14,9 +14,9 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=commons i18n/japan www globals http
+MAKESUBDIRS=commons i18n/japan www globals http html
 INCLUDEDIRS=$(MAKESUBDIRS) \
-	 html protos retrieve viewers \
+	 protos retrieve viewers \
          htdisp appsys browser safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
@@ -77,7 +77,7 @@ rec.opt:
 
 # OBJS are common for all versions
 OBJS= $(LIBS) \
-      $(HTML) $(PROTOS) $(RETRIEVE) \
+      $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
 # Entry point
@@ -139,7 +139,6 @@ clean::
 	cd modules; $(MAKE) clean
 
 clean::
-	rm -rf html/*.cm* html/*.o
 	rm -rf protos/*.cm* protos/*.o
 	rm -rf retrieve/*.cm* retrieve/*.o
 	rm -rf viewers/*.cm* viewers/*.o
@@ -188,18 +187,6 @@ distclean:: clean
 ##############################################################################
 # Misc rules
 ##############################################################################
-
-# HTML library
-#HTML=html/dtd.cmo html/html.cmo html/lexhtml.cmo html/html_eval.cmo
-
-beforedepend:: html/lexhtml.ml
-
-html/lexhtml.ml : html/lexhtml.mll
-	$(CAMLLEX) html/lexhtml.mll
-
-clean::
-	rm -rf html/lexhtml.ml
-
 
 # Browser (communication protocols, multimedia viewer dispatch, ...)
 PROTOS=protos/file.cmo protos/mailto.cmo protos/cache.cmo protos/protos.cmo
