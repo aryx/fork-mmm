@@ -59,7 +59,7 @@ SYNCFLAGS=-md5sum_in_auxfile -less_marks
 
 SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
 NOWEB=~/c__syncweb/scripts/noweblatex
-OCAMLDOC=ocamldoc $(INCLUDES)
+OCAMLDOC=ocamldoc $(PP) $(INCLUDES)
 
 PDFLATEX=pdflatex --shell-escape 
 

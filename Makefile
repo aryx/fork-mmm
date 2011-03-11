@@ -8,19 +8,18 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
-SRC=version.ml lang.ml main.ml
+SRC=version.ml main.ml
 
 TARGET=lib
 
 SYSLIBS=
 
 MAKESUBDIRS=commons
-INCLUDES=-I i18n/japan \
-	 -I commons -I www -I http -I html -I protos -I retrieve -I viewers \
-         -I htdisp -I appsys -I browser -I safe
+INCLUDEDIRS=$(MAKESUBDIRS) i18n/japan \
+	 www http html protos retrieve viewers \
+         htdisp appsys browser safe
 
-INCLUDEDIRS=
-LIBS=
+LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
 # This number defines the revision of the applet system
 VERSION=418
@@ -77,7 +76,7 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= commons/lib.cma version.cmo  \
+OBJS= $(LIBS) version.cmo  \
       $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
@@ -437,14 +436,15 @@ distribute:
 # Developer rules
 ##############################################################################
 
-#DIRS= $(filter-out commons commons2 error, $(MAKESUBDIRS))
-DIRS=
+DIRS=$(filter-out commons2, $(MAKESUBDIRS))
+
+PP1=-pp camlp4o
 # you want "-dot-reduce"
 # don't put "-dot-colors white"; using colors ocamldoc generates one
 #  color per directory ! quite useful
 # todo? generate a graph using the  -dot-types flag ? (type dependencies)
 dotall:
-	ocamldoc $(INCLUDES) $(DIRS:=/*.ml) $(SRC)  -dot -dot-reduce 
+	ocamldoc $(PP1) $(TKCOMPFLAGS) $(INCLUDES) $(DIRS:=/*.ml) -dot -dot-reduce 
 	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps

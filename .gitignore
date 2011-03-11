@@ -1,5 +1,8 @@
 # -*- sh -*-
 
+#
+*Fig_graph_ml.pdf
+
 # lexers
 /html/lexhtml.ml
 /http/lexdate.ml
@@ -43,3 +46,4 @@
 /safe/safetkanim.mli
 /ocamldoc.out
 /commons/lexpath.ml
+/commons/ocamldoc.out

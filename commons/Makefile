@@ -6,17 +6,20 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-OCAMLCFLAGS+=$(TKCOMPFLAGS)
+INCLUDES+=$(TKCOMPFLAGS)
 
 # Miscellaneous additional libraries
-SRC=low.cmo mstring.cmo mlist.cmo msys.cmo \
-     ebuffer.cmo munix.cmo date.cmo \
-     log.cmo \
-     condition.cmo feed.cmo \
-     lexpath.cmo ibtree.cmo \
-     tkresource.cmo glevents.cmo \
-     i18nprintf.cmo lang.cmo i18n.cmo \
-     error.cmo hotlist.cmo
+SRC= low.ml mstring.ml mlist.ml msys.ml \
+     ebuffer.ml munix.ml date.ml \
+     log.ml \
+     condition.ml feed.ml \
+     lexpath.ml \
+     ibtree.ml \
+     glevents.ml \
+     i18nprintf.ml lang.ml i18n.ml \
+     error.ml hotlist.ml \
+
+#tkresource.ml 
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
