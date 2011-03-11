@@ -62,16 +62,42 @@ class  virtual context ((did : Document.document_id),
 
   method add_nav (fname, hf) =
     funs <- (fname, hf) :: funs
+
+  method with_target x = {< targets = x >}
+  method with_viewer_params x = {< viewer_params = x >}
+
   (* apply this on a copy ! *)
-  method for_embed vparams (newtargets : frame_targets) =
-    {< viewer_params = vparams; 
-       targets = 
-        let oldtargets = targets in (* for debug *)
-          match newtargets with 
-	    [] -> targets (* keep exactly the same environment *)
-	  | l -> (* assume I'm given new _self and _parent *)
-	      l @ frame_fugue targets 
-	       >}
+  method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
+    (* for debug *)
+    let oldtargets = targets in
+    let res = 
+      match newtargets with 
+      | [] -> 
+          (* keep exactly the same environment *)
+          targets
+      | l -> 
+          (* assume I'm given new _self and _parent *)
+	  l @ frame_fugue targets 
+    in
+    (* old:
+       {< 
+       targets = res;
+       viewer_params = vparams;       
+       >}
+    *)
+    (* pad: the code below works perfectly but when I want to do 
+     * make dotall I get an error because ocamldoc -pp camlp4o (which
+     * I need for certain files) has a type error on this file
+     * at this line. Indeed when run
+     * 
+     *   ocamldoc -pp camlp4o -I ../commons -I ../globals -I ../www -I ../http -I ../protocols -I ../retrieve -I /home/pad/packages/Linux/stow/ocaml-3.12/lib/ocaml/camltk viewers.ml
+     * 
+     * manually camlp4 geneate a weird thing for the code below.
+     * so I just introduced those ugly with_target and with_viewer
+     * to avoid the pb. UGLY
+     * 
+     *)
+     (self#with_target res)#with_viewer_params vparams
 
   method in_embed did =
     {< base = did >}

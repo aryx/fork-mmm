@@ -85,6 +85,8 @@ MAIN=main.cmo
 
 clean::
 	rm -f main.cm*
+clean::
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
 
 # Exported safe libraries
 SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
@@ -106,11 +108,9 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 
 # The standalone HTML syntax checker
-HTMISC=commons/ebuffer.cmo commons/log.cmo
+HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo
 
-HTML=html/dtd.cmo html/html.cmo html/lexhtml.cmo html/html_eval.cmo
-
-htparse: commons/lang.cmo $(HTMISC) i18n/japan/lib.cma $(HTML) html/htparse.cmo
+htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
