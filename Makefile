@@ -14,9 +14,9 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=misc
+MAKESUBDIRS=commons
 INCLUDES=-I i18n/japan \
-	 -I misc -I www -I http -I html -I protos -I retrieve -I viewers \
+	 -I commons -I www -I http -I html -I protos -I retrieve -I viewers \
          -I htdisp -I appsys -I browser -I safe
 
 INCLUDEDIRS=
@@ -77,7 +77,7 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= misc/lib.cma version.cmo  \
+OBJS= commons/lib.cma version.cmo  \
       $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
@@ -107,10 +107,10 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 
 # The standalone HTML syntax checker
-HTMISC=misc/ebuffer.cmo misc/log.cmo
+HTMISC=commons/ebuffer.cmo commons/log.cmo
 
-htparse: misc/lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
-	$(CAMLC) $(LINKFLAGS) -o $@ misc/lang.cmo $(HTMISC) $(JAPAN) \
+htparse: commons/lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
+	$(CAMLC) $(LINKFLAGS) -o $@ commons/lang.cmo $(HTMISC) $(JAPAN) \
 	  $(HTML) html/htparse.cmo
 
 # Remote command
@@ -140,8 +140,6 @@ clean::
 
 clean::
 	rm -f version.cm* version.o
-	rm -f lang.cm* lang.o
-	rm -rf misc/*.cm* misc/*.o
 	rm -rf www/*.cm* www/*.o
 	rm -rf http/*.cm* http/*.o
 	rm -rf html/*.cm* html/*.o
@@ -159,7 +157,7 @@ clean::
 # Default rules
 
 depend:: beforedepend
-	(for d in misc; \
+	(for d in commons; \
 	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; \
         for d in www http html protos retrieve viewers htdisp appsys browser i18n/japan safe; \

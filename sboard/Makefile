@@ -1,6 +1,6 @@
 include ../Makefile.config
 
-INCLUDES=-I .. -I ../misc -I ../www -I ../html 
+INCLUDES=-I .. -I ../commons -I ../www -I ../html 
 
 DEPFLAGS=$(INCLUDES)
 
@@ -17,7 +17,7 @@ JAPAN= 	$(JDIR)/bug.cmo \
 	$(JDIR)/encode.cmo \
 	$(JDIR)/japan.cmo
 
-MISC=../misc/lib.cma
+LIBS=../commons/lib.cma
 
 HTML=../html/dtd.cmo ../html/html.cmo ../html/lexhtml.cmo ../html/html_eval.cmo
 
@@ -32,7 +32,7 @@ OBJS= misc.cmo \
 surfboard: $(OBJS)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o surfboard \
 		$(WITH_UNIX) $(WITH_STR) $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
-		$(MISC) $(JAPAN) \
+		$(LIBS) $(JAPAN) \
 		../www/uri.cmo $(HTML) $(OBJS)
 
 #		 $(WITH_UNIX) $(WITH_STR) \

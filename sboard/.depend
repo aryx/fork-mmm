@@ -1,20 +1,22 @@
-addpage.cmo: treeview.cmo tree.cmo ../misc/munix.cmo ../misc/msys.cmi \
-    ../misc/mstring.cmi misc.cmo ../misc/error.cmi
-addpage.cmx: treeview.cmx tree.cmx ../misc/munix.cmx ../misc/msys.cmx \
-    ../misc/mstring.cmx misc.cmx ../misc/error.cmx
+addpage.cmo: treeview.cmo tree.cmo ../commons/munix.cmo ../commons/msys.cmi \
+    ../commons/mstring.cmi misc.cmo ../commons/error.cmi
+addpage.cmx: treeview.cmx tree.cmx ../commons/munix.cmx ../commons/msys.cmx \
+    ../commons/mstring.cmx misc.cmx ../commons/error.cmx
 connection.cmo: tree.cmo misc.cmo
 connection.cmx: tree.cmx misc.cmx
-main.cmo: treeview.cmo tree.cmo misc.cmo ../misc/lang.cmi addpage.cmo
-main.cmx: treeview.cmx tree.cmx misc.cmx ../misc/lang.cmx addpage.cmx
+main.cmo: treeview.cmo tree.cmo misc.cmo ../commons/lang.cmi addpage.cmo
+main.cmx: treeview.cmx tree.cmx misc.cmx ../commons/lang.cmx addpage.cmx
 misc.cmo:
 misc.cmx:
 surfboard_remote.cmo:
 surfboard_remote.cmx:
-tree.cmo: ../www/uri.cmi misc.cmo ../misc/log.cmi ../html/html_eval.cmi \
-    ../html/html.cmi ../misc/ebuffer.cmi ../html/dtd.cmi
-tree.cmx: ../www/uri.cmx misc.cmx ../misc/log.cmx ../html/html_eval.cmx \
-    ../html/html.cmx ../misc/ebuffer.cmx ../html/dtd.cmx
-treeview.cmo: ../version.cmi tree.cmo misc.cmo ../misc/log.cmi connection.cmo
-treeview.cmx: ../version.cmx tree.cmx misc.cmx ../misc/log.cmx connection.cmx
-version.cmo: ../misc/mstring.cmi
-version.cmx: ../misc/mstring.cmx
+tree.cmo: ../www/uri.cmi misc.cmo ../commons/log.cmi ../html/html_eval.cmi \
+    ../html/html.cmi ../commons/ebuffer.cmi ../html/dtd.cmi
+tree.cmx: ../www/uri.cmx misc.cmx ../commons/log.cmx ../html/html_eval.cmx \
+    ../html/html.cmx ../commons/ebuffer.cmx ../html/dtd.cmx
+treeview.cmo: ../version.cmi tree.cmo misc.cmo ../commons/log.cmi \
+    connection.cmo
+treeview.cmx: ../version.cmx tree.cmx misc.cmx ../commons/log.cmx \
+    connection.cmx
+version.cmo: ../commons/mstring.cmi
+version.cmx: ../commons/mstring.cmx
