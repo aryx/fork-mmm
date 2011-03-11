@@ -69,6 +69,9 @@ installopt: camltk.cmxa
 
 .ml.cmx:
 	$(CAMLOPT) -c $(COMPFLAGS) $<
-  
 
-include .depend
+depend:
+	ocamldep -slash -I ../support/ *.mli *.ml > .depend
+
+-include .depend
+

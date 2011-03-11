@@ -151,7 +151,7 @@ BROWSER=browser/about.cmo browser/gcache.cmo \
 MAIN=main.cmo
 
 clean::
-	rm main.cm*
+	rm -f main.cm*
 
 # The applet system
 APPSYS=appsys/pgp.cmo appsys/capabilities.cmo appsys/dload.cmo \
