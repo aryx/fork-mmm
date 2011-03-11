@@ -1,1 +1,2 @@
-was camltk416
+was camktk416. Ported to camltk418 and modified to make it compile
+on a recent tcl/tk version.
