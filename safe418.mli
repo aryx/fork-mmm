@@ -1259,9 +1259,12 @@ val add_buffer : t -> t -> unit
 
 end
 
+type ('a, 'b, 'c, 'd) format4 = ('a, 'b, 'c, 'c, 'c, 'd) format6
+
+type ('a, 'b, 'c) format = ('a, 'b, 'c, 'c) format4
+
 module Printf : sig
 (* Module [Printf]: formatting printing functions *)
-(*
 val sprintf : ('a, unit, string) format -> 'a
         (* Same as [printf], but return the result of formatting in a
            string. *)
@@ -1270,7 +1273,7 @@ val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
         (* Same as [fprintf], but instead of printing on an output channel,
            append the formatted arguments to the given extensible buffer
            (see module [Buffer]). *)
-*)
+
 end
 
 module Queue : sig
@@ -1886,6 +1889,11 @@ type textModifier =
 type textIndex =
    TextIndex of index * textModifier list
  | TextIndexNone
+type filePattern = {
+  typename : string;
+  extensions : string list;
+  mactypes : string list;
+}
 type anchor =
 	Center		(* tk option: center *)
 	| E		(* tk option: e *)
@@ -1983,310 +1991,330 @@ type tabType =
 	| TabLeft of units		(* tk option: <units> left *)
 	| TabNumeric of units		(* tk option: <units> numeric *)
 	| TabRight of units		(* tk option: <units> right *)
+
 type options =
-	Accelerator of string		(* tk option: -accelerator <string> *)
-	| ActiveBackground of color		(* tk option: -activebackground <color> *)
-	| ActiveBorderWidth of units		(* tk option: -activeborderwidth <units> *)
-	| ActiveForeground of color		(* tk option: -activeforeground <color> *)
-	| ActiveRelief of relief		(* tk option: -activerelief <relief> *)
-	| After of widget		(* tk option: -after <widget> *)
-	| Align of alignType		(* tk option: -align <alignType> *)
-	| Anchor of anchor		(* tk option: -anchor <anchor> *)
-	| ArcStyle of arcStyle		(* tk option: -style <arcStyle> *)
-	| ArrowShape of units * units * units		(* tk option: -arrowshape {<units> <units> <units>} *)
-	| ArrowStyle of arrowStyle		(* tk option: -arrow <arrowStyle> *)
-	| Aspect of int		(* tk option: -aspect <int> *)
-	| Background of color		(* tk option: -background <color> *)
-	| Before of widget		(* tk option: -before <widget> *)
-	| BgStipple of bitmap		(* tk option: -bgstipple <bitmap> *)
-	| BigIncrement of float		(* tk option: -bigincrement <float> *)
-	| Bitmap of bitmap		(* tk option: -bitmap <bitmap> *)
-	| BorderMode of borderMode		(* tk option: -bordermode <borderMode> *)
-	| BorderWidth of units		(* tk option: -borderwidth <units> *)
-	| CapStyle of capStyle		(* tk option: -capstyle <capStyle> *)
-	| Class of string		(* tk option: -class <string> *)
-	| CloseEnough of float		(* tk option: -closeenough <float> *)
-	| Colormap of colormap		(* tk option: -colormap <colormap> *)
-	| Colormode of colorMode		(* tk option: -colormode <colorMode> *)
-	| Column of int		(* tk option: -column <int> *)
-	| ColumnSpan of int		(* tk option: -columnspan <int> *)
-	| Command of (unit -> unit)		(* tk option: -command <(unit -> unit)> *)
-	| Confine of bool		(* tk option: -confine <bool> *)
-	| Cursor of cursor		(* tk option: -cursor <cursor> *)
-	| Data of string		(* tk option: -data <string> *)
-	| Digits of int		(* tk option: -digits <int> *)
-	| DisabledForeground of color		(* tk option: -disabledforeground <color> *)
-	| ElementBorderWidth of units		(* tk option: -elementborderwidth <units> *)
-	| Expand of bool		(* tk option: -expand <bool> *)
-	| ExportSelection of bool		(* tk option: -exportselection <bool> *)
-	| Extent of float		(* tk option: -extent <float> *)
-	| FgStipple of bitmap		(* tk option: -fgstipple <bitmap> *)
-	| File of string		(* tk option: -file <string> *)
-	| Fill of fillMode		(* tk option: -fill <fillMode> *)
-	| FillColor of color		(* tk option: -fill <color> *)
-	| Font of string		(* tk option: -font <string> *)
-	| Foreground of color		(* tk option: -foreground <color> *)
-	| Format of string		(* tk option: -format <string> *)
-	| From of float		(* tk option: -from <float> *)
-	| Gamma of float		(* tk option: -gamma <float> *)
-	| Geometry of string		(* tk option: -geometry <string> *)
-	| Height of units		(* tk option: -height <units> *)
-	| HighlightBackground of color		(* tk option: -highlightbackground <color> *)
-	| HighlightColor of color		(* tk option: -highlightcolor <color> *)
-	| HighlightThickness of units		(* tk option: -highlightthickness <units> *)
-	| IPadX of units		(* tk option: -ipadx <units> *)
-	| IPadY of units		(* tk option: -ipady <units> *)
-	| ImageBitmap of imageBitmap		(* tk option: -image <imageBitmap> *)
-	| ImagePhoto of imagePhoto		(* tk option: -image <imagePhoto> *)
-	| In of widget		(* tk option: -in <widget> *)
-	| IndicatorOn of bool		(* tk option: -indicatoron <bool> *)
-	| InsertBackground of color		(* tk option: -insertbackground <color> *)
-	| InsertBorderWidth of units		(* tk option: -insertborderwidth <units> *)
-	| InsertOffTime of int		(* tk option: -insertofftime <int> *)
-	| InsertOnTime of int		(* tk option: -insertontime <int> *)
-	| InsertWidth of units		(* tk option: -insertwidth <units> *)
-	| JoinStyle of joinStyle		(* tk option: -joinstyle <joinStyle> *)
-	| Jump of bool		(* tk option: -jump <bool> *)
-	| Justify of justification		(* tk option: -justify <justification> *)
-	| LMargin1 of units		(* tk option: -lmargin1 <units> *)
-	| LMargin2 of units		(* tk option: -lmargin2 <units> *)
-	| Label of string		(* tk option: -label <string> *)
-	| Length of units		(* tk option: -length <units> *)
-	| Maskdata of string		(* tk option: -maskdata <string> *)
-	| Maskfile of string		(* tk option: -maskfile <string> *)
-	| Menu of widget		(* tk option: -menu <widget> *)
-	| OffValue of string		(* tk option: -offvalue <string> *)
-	| Offset of units		(* tk option: -offset <units> *)
-	| OnValue of string		(* tk option: -onvalue <string> *)
-	| Orient of orientation		(* tk option: -orient <orientation> *)
-	| Outline of color		(* tk option: -outline <color> *)
-	| OutlineStipple of bitmap		(* tk option: -outlinestipple <bitmap> *)
-	| OverStrike of bool		(* tk option: -overstrike <bool> *)
-	| PadX of units		(* tk option: -padx <units> *)
-	| PadY of units		(* tk option: -pady <units> *)
-	| PageAnchor of anchor		(* tk option: -pageanchor <anchor> *)
-	| PageHeight of units		(* tk option: -pageheight <units> *)
-	| PageWidth of units		(* tk option: -pagewidth <units> *)
-	| PageX of units		(* tk option: -pagex <units> *)
-	| PageY of units		(* tk option: -pagey <units> *)
-	| Palette of paletteType		(* tk option: -palette <paletteType> *)
-	| PostCommand of (unit -> unit)		(* tk option: -postcommand <(unit -> unit)> *)
-	| RMargin of units		(* tk option: -rmargin <units> *)
-	| RelHeight of float		(* tk option: -relheight <float> *)
-	| RelWidth of float		(* tk option: -relwidth <float> *)
-	| RelX of float		(* tk option: -relx <float> *)
-	| RelY of float		(* tk option: -rely <float> *)
-	| Relief of relief		(* tk option: -relief <relief> *)
-	| RepeatDelay of int		(* tk option: -repeatdelay <int> *)
-	| RepeatInterval of int		(* tk option: -repeatinterval <int> *)
-	| Resolution of float		(* tk option: -resolution <float> *)
-	| Rotate of bool		(* tk option: -rotate <bool> *)
-	| Row of int		(* tk option: -row <int> *)
-	| RowSpan of int		(* tk option: -rowspan <int> *)
-	| ScaleCommand of (float -> unit)		(* tk option: -command <(float -> unit)> *)
-	| Screen of string		(* tk option: -screen <string> *)
-	| ScrollCommand of (scrollValue -> unit)		(* tk option: -command <(scrollValue -> unit)> *)
-	| ScrollRegion of units * units * units * units		(* tk option: -scrollregion {<units> <units> <units> <units>} *)
-	| SelectBackground of color		(* tk option: -selectbackground <color> *)
-	| SelectBorderWidth of units		(* tk option: -selectborderwidth <units> *)
-	| SelectColor of color		(* tk option: -selectcolor <color> *)
-	| SelectForeground of color		(* tk option: -selectforeground <color> *)
-	| SelectImageBitmap of imageBitmap		(* tk option: -selectimage <imageBitmap> *)
-	| SelectImagePhoto of imagePhoto		(* tk option: -selectimage <imagePhoto> *)
-	| SelectMode of selectModeType		(* tk option: -selectmode <selectModeType> *)
-	| SetGrid of bool		(* tk option: -setgrid <bool> *)
-	| Show of char		(* tk option: -show <char> *)
-	| ShowValue of bool		(* tk option: -showvalue <bool> *)
-	| Side of side		(* tk option: -side <side> *)
-	| SliderLength of units		(* tk option: -sliderlength <units> *)
-	| Smooth of bool		(* tk option: -smooth <bool> *)
-	| Spacing1 of units		(* tk option: -spacing1 <units> *)
-	| Spacing2 of units		(* tk option: -spacing2 <units> *)
-	| Spacing3 of units		(* tk option: -spacing3 <units> *)
-	| SplineSteps of int		(* tk option: -splinesteps <int> *)
-	| Start of float		(* tk option: -start <float> *)
-	| State of state		(* tk option: -state <state> *)
-	| Sticky of string		(* tk option: -sticky <string> *)
-	| Stipple of bitmap		(* tk option: -stipple <bitmap> *)
-	| Stretch of bool		(* tk option: -stretch <bool> *)
-	| Tabs of tabType list		(* tk option: -tabs {<tabType list>} *)
-	| Tags of tagOrId list		(* tk option: -tags {<tagOrId list>} *)
-	| TakeFocus of bool		(* tk option: -takefocus <bool> *)
-	| TearOff of bool		(* tk option: -tearoff <bool> *)
-	| Text of string		(* tk option: -text <string> *)
-	| TextHeight of int		(* tk option: -height <int> *)
-	| TextVariable of textVariable		(* tk option: -textvariable <textVariable> *)
-	| TextWidth of int		(* tk option: -width <int> *)
-	| TickInterval of float		(* tk option: -tickinterval <float> *)
-	| To of float		(* tk option: -to <float> *)
-	| TroughColor of color		(* tk option: -troughcolor <color> *)
-	| Underline of bool		(* tk option: -underline <bool> *)
-	| UnderlinedChar of int		(* tk option: -underline <int> *)
-	| Value of string		(* tk option: -value <string> *)
-	| Variable of textVariable		(* tk option: -variable <textVariable> *)
-	| Visual of visual		(* tk option: -visual <visual> *)
-	| Width of units		(* tk option: -width <units> *)
-	| Window of widget		(* tk option: -window <widget> *)
-	| Wrap of wrapMode		(* tk option: -wrap <wrapMode> *)
-	| WrapLength of units		(* tk option: -wraplength <units> *)
-	| X of units		(* tk option: -x <units> *)
-	| XScrollCommand of (float -> float -> unit)		(* tk option: -xscrollcommand <(float -> float -> unit)> *)
-	| XScrollIncrement of units		(* tk option: -xscrollincrement <units> *)
-	| Y of units		(* tk option: -y <units> *)
-	| YScrollCommand of (float -> float -> unit)		(* tk option: -yscrollcommand <(float -> float -> unit)> *)
-	| YScrollIncrement of units		(* tk option: -yscrollincrement <units> *)
+    Accelerator of string
+  | ActiveBackground of color
+  | ActiveBorderWidth of units
+  | ActiveForeground of color
+  | ActiveRelief of relief
+  | After of Widget.widget
+  | Align of alignType
+  | Anchor of anchor
+  | ArcStyle of arcStyle
+  | ArrowShape of units * units * units
+  | ArrowStyle of arrowStyle
+  | Aspect of int
+  | Background of color
+  | Before of Widget.widget
+  | BgStipple of bitmap
+  | BigIncrement of float
+  | Bitmap of bitmap
+  | BorderMode of borderMode
+  | BorderWidth of units
+  | CapStyle of capStyle
+  | Class of string
+  | CloseEnough of float
+  | Colormap of colormap
+  | Colormode of colorMode
+  | Column of int
+  | ColumnSpan of int
+  | Command of (unit -> unit)
+  | Confine of bool
+  | Cursor of cursor
+  | Dash of string
+  | Data of string
+  | DefaultExtension of string
+  | Digits of int
+  | DisabledForeground of color
+  | ElementBorderWidth of units
+  | Expand of bool
+  | ExportSelection of bool
+  | Extent of float
+  | FgStipple of bitmap
+  | File of string
+  | FileTypes of filePattern list
+  | Fill of fillMode
+  | FillColor of color
+  | Font of string
+  | Foreground of color
+  | Format of string
+  | From of float
+  | Gamma of float
+  | Geometry of string
+  | Height of units
+  | HighlightBackground of color
+  | HighlightColor of color
+  | HighlightThickness of units
+  | IPadX of units
+  | IPadY of units
+  | ImageBitmap of imageBitmap
+  | ImagePhoto of imagePhoto
+  | In of Widget.widget
+  | IndicatorOn of bool
+  | InitialDir of string
+  | InitialFile of string
+  | InsertBackground of color
+  | InsertBorderWidth of units
+  | InsertOffTime of int
+  | InsertOnTime of int
+  | InsertWidth of units
+  | JoinStyle of joinStyle
+  | Jump of bool
+  | Justify of justification
+  | LMargin1 of units
+  | LMargin2 of units
+  | Label of string
+  | Length of units
+  | Maskdata of string
+  | Maskfile of string
+  | Menu of Widget.widget
+  | Name of string
+  | OffValue of string
+  | Offset of units
+  | OnValue of string
+  | Orient of orientation
+  | Outline of color
+  | OutlineStipple of bitmap
+  | OverStrike of bool
+  | PadX of units
+  | PadY of units
+  | PageAnchor of anchor
+  | PageHeight of units
+  | PageWidth of units
+  | PageX of units
+  | PageY of units
+  | Palette of paletteType
+  | Parent of Widget.widget
+  | PostCommand of (unit -> unit)
+  | RMargin of units
+  | RelHeight of float
+  | RelWidth of float
+  | RelX of float
+  | RelY of float
+  | Relief of relief
+  | RepeatDelay of int
+  | RepeatInterval of int
+  | Resolution of float
+  | Rotate of bool
+  | Row of int
+  | RowSpan of int
+  | ScaleCommand of (float -> unit)
+  | Screen of string
+  | ScrollCommand of (scrollValue -> unit)
+  | ScrollRegion of units * units * units * units
+  | SelectBackground of color
+  | SelectBorderWidth of units
+  | SelectColor of color
+  | SelectForeground of color
+  | SelectImageBitmap of imageBitmap
+  | SelectImagePhoto of imagePhoto
+  | SelectMode of selectModeType
+  | SetGrid of bool
+  | Show of char
+  | ShowValue of bool
+  | Side of side
+  | SliderLength of units
+  | Smooth of bool
+  | Spacing1 of units
+  | Spacing2 of units
+  | Spacing3 of units
+  | SplineSteps of int
+  | Start of float
+  | State of state
+  | Sticky of string
+  | Stipple of bitmap
+  | Stretch of bool
+  | Tabs of tabType list
+  | Tags of tagOrId list
+  | TakeFocus of bool
+  | TearOff of bool
+  | Text of string
+  | TextHeight of int
+  | TextVariable of Textvariable.textVariable
+  | TextWidth of int
+  | TickInterval of float
+  | Title of string
+  | To of float
+  | TroughColor of color
+  | Underline of bool
+  | UnderlinedChar of int
+  | Value of string
+  | Variable of Textvariable.textVariable
+  | Visual of visual
+  | Width of units
+  | Window of Widget.widget
+  | Wrap of wrapMode
+  | WrapLength of units
+  | X of units
+  | XScrollCommand of (float -> float -> unit)
+  | XScrollIncrement of units
+  | Y of units
+  | YScrollCommand of (float -> float -> unit)
+  | YScrollIncrement of units
+
+
 type options_constrs =
-	CAccelerator
-	| CActiveBackground
-	| CActiveBorderWidth
-	| CActiveForeground
-	| CActiveRelief
-	| CAfter
-	| CAlign
-	| CAnchor
-	| CArcStyle
-	| CArrowShape
-	| CArrowStyle
-	| CAspect
-	| CBackground
-	| CBefore
-	| CBgStipple
-	| CBigIncrement
-	| CBitmap
-	| CBorderMode
-	| CBorderWidth
-	| CCapStyle
-	| CClass
-	| CCloseEnough
-	| CColormap
-	| CColormode
-	| CColumn
-	| CColumnSpan
-	| CCommand
-	| CConfine
-	| CCursor
-	| CData
-	| CDigits
-	| CDisabledForeground
-	| CElementBorderWidth
-	| CExpand
-	| CExportSelection
-	| CExtent
-	| CFgStipple
-	| CFile
-	| CFill
-	| CFillColor
-	| CFont
-	| CForeground
-	| CFormat
-	| CFrom
-	| CGamma
-	| CGeometry
-	| CHeight
-	| CHighlightBackground
-	| CHighlightColor
-	| CHighlightThickness
-	| CIPadX
-	| CIPadY
-	| CImageBitmap
-	| CImagePhoto
-	| CIn
-	| CIndicatorOn
-	| CInsertBackground
-	| CInsertBorderWidth
-	| CInsertOffTime
-	| CInsertOnTime
-	| CInsertWidth
-	| CJoinStyle
-	| CJump
-	| CJustify
-	| CLMargin1
-	| CLMargin2
-	| CLabel
-	| CLength
-	| CMaskdata
-	| CMaskfile
-	| CMenu
-	| COffValue
-	| COffset
-	| COnValue
-	| COrient
-	| COutline
-	| COutlineStipple
-	| COverStrike
-	| CPadX
-	| CPadY
-	| CPageAnchor
-	| CPageHeight
-	| CPageWidth
-	| CPageX
-	| CPageY
-	| CPalette
-	| CPostCommand
-	| CRMargin
-	| CRelHeight
-	| CRelWidth
-	| CRelX
-	| CRelY
-	| CRelief
-	| CRepeatDelay
-	| CRepeatInterval
-	| CResolution
-	| CRotate
-	| CRow
-	| CRowSpan
-	| CScaleCommand
-	| CScreen
-	| CScrollCommand
-	| CScrollRegion
-	| CSelectBackground
-	| CSelectBorderWidth
-	| CSelectColor
-	| CSelectForeground
-	| CSelectImageBitmap
-	| CSelectImagePhoto
-	| CSelectMode
-	| CSetGrid
-	| CShow
-	| CShowValue
-	| CSide
-	| CSliderLength
-	| CSmooth
-	| CSpacing1
-	| CSpacing2
-	| CSpacing3
-	| CSplineSteps
-	| CStart
-	| CState
-	| CSticky
-	| CStipple
-	| CStretch
-	| CTabs
-	| CTags
-	| CTakeFocus
-	| CTearOff
-	| CText
-	| CTextHeight
-	| CTextVariable
-	| CTextWidth
-	| CTickInterval
-	| CTo
-	| CTroughColor
-	| CUnderline
-	| CUnderlinedChar
-	| CValue
-	| CVariable
-	| CVisual
-	| CWidth
-	| CWindow
-	| CWrap
-	| CWrapLength
-	| CX
-	| CXScrollCommand
-	| CXScrollIncrement
-	| CY
-	| CYScrollCommand
-	| CYScrollIncrement
+    CAccelerator
+  | CActiveBackground
+  | CActiveBorderWidth
+  | CActiveForeground
+  | CActiveRelief
+  | CAfter
+  | CAlign
+  | CAnchor
+  | CArcStyle
+  | CArrowShape
+  | CArrowStyle
+  | CAspect
+  | CBackground
+  | CBefore
+  | CBgStipple
+  | CBigIncrement
+  | CBitmap
+  | CBorderMode
+  | CBorderWidth
+  | CCapStyle
+  | CClass
+  | CCloseEnough
+  | CColormap
+  | CColormode
+  | CColumn
+  | CColumnSpan
+  | CCommand
+  | CConfine
+  | CCursor
+  | CDash
+  | CData
+  | CDefaultExtension
+  | CDigits
+  | CDisabledForeground
+  | CElementBorderWidth
+  | CExpand
+  | CExportSelection
+  | CExtent
+  | CFgStipple
+  | CFile
+  | CFileTypes
+  | CFill
+  | CFillColor
+  | CFont
+  | CForeground
+  | CFormat
+  | CFrom
+  | CGamma
+  | CGeometry
+  | CHeight
+  | CHighlightBackground
+  | CHighlightColor
+  | CHighlightThickness
+  | CIPadX
+  | CIPadY
+  | CImageBitmap
+  | CImagePhoto
+  | CIn
+  | CIndicatorOn
+  | CInitialDir
+  | CInitialFile
+  | CInsertBackground
+  | CInsertBorderWidth
+  | CInsertOffTime
+  | CInsertOnTime
+  | CInsertWidth
+  | CJoinStyle
+  | CJump
+  | CJustify
+  | CLMargin1
+  | CLMargin2
+  | CLabel
+  | CLength
+  | CMaskdata
+  | CMaskfile
+  | CMenu
+  | CName
+  | COffValue
+  | COffset
+  | COnValue
+  | COrient
+  | COutline
+  | COutlineStipple
+  | COverStrike
+  | CPadX
+  | CPadY
+  | CPageAnchor
+  | CPageHeight
+  | CPageWidth
+  | CPageX
+  | CPageY
+  | CPalette
+  | CParent
+  | CPostCommand
+  | CRMargin
+  | CRelHeight
+  | CRelWidth
+  | CRelX
+  | CRelY
+  | CRelief
+  | CRepeatDelay
+  | CRepeatInterval
+  | CResolution
+  | CRotate
+  | CRow
+  | CRowSpan
+  | CScaleCommand
+  | CScreen
+  | CScrollCommand
+  | CScrollRegion
+  | CSelectBackground
+  | CSelectBorderWidth
+  | CSelectColor
+  | CSelectForeground
+  | CSelectImageBitmap
+  | CSelectImagePhoto
+  | CSelectMode
+  | CSetGrid
+  | CShow
+  | CShowValue
+  | CSide
+  | CSliderLength
+  | CSmooth
+  | CSpacing1
+  | CSpacing2
+  | CSpacing3
+  | CSplineSteps
+  | CStart
+  | CState
+  | CSticky
+  | CStipple
+  | CStretch
+  | CTabs
+  | CTags
+  | CTakeFocus
+  | CTearOff
+  | CText
+  | CTextHeight
+  | CTextVariable
+  | CTextWidth
+  | CTickInterval
+  | CTitle
+  | CTo
+  | CTroughColor
+  | CUnderline
+  | CUnderlinedChar
+  | CValue
+  | CVariable
+  | CVisual
+  | CWidth
+  | CWindow
+  | CWrap
+  | CWrapLength
+  | CX
+  | CXScrollCommand
+  | CXScrollIncrement
+  | CY
+  | CYScrollCommand
+  | CYScrollIncrement
+
 type searchSpec =
 	Above of tagOrId		(* tk option: above <tagOrId> *)
 	| All		(* tk option: all *)

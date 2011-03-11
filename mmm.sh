@@ -20,7 +20,7 @@ port=80
 
 # CHECK: MMMDIR should be the same as INSTALLLIBDIR in Makefile.config
 # "make install" normally does this substitution.
-MMMDIR=_INSTALLLIBDIR_
+MMMDIR=/home/pad/mmm
 
 ### END OF CONFIGURATION
 # Below this line, there should be nothing to change

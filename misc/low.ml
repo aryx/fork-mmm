@@ -53,7 +53,7 @@ let remove_fileinput fd =
    I know about SICHLD of course, but I hate interrupted syscalls
  *)
 
-external sys_exit : int -> 'a = "sys_exit"
+external sys_exit : int -> 'a = "caml_sys_exit"
 
 let fork () =
  begin try

@@ -132,7 +132,10 @@ let postmortem () =
   try 
     main ()
   with
-    e -> 
+  | Dynlink.Error err ->
+      Printf.printf "dynlink error = %s" (Dynlink.error_message err);
+      failwith "TODO"
+  | e -> 
       if !Log.debug_mode then begin
 	Cache.postmortem();
 	Gcache.postmortem();

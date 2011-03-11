@@ -230,7 +230,7 @@ OBJS= version.cmo lang.cmo \
 SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
 mmm.bin: $(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
-	$(CAMLC) -custom -o $@ $(LINKFLAGS) \
+	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
 		$(WITH_DYNLINK) $(WITH_UNIX) $(WITH_STR) $(WITH_TK) \
 	        $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) \
 		$(WITH_TK80) \

@@ -133,8 +133,8 @@ external snd : 'a * 'b -> 'b = "%field1"
 
 (* String conversion functions *)
 
-external format_int: string -> int -> string = "format_int"
-external format_float: string -> float -> string = "format_float"
+external format_int: string -> int -> string = "caml_format_int"
+external format_float: string -> float -> string = "caml_format_float"
 
 let string_of_bool = Pervasives.string_of_bool
 let bool_of_string = Pervasives.bool_of_string

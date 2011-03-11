@@ -11,8 +11,8 @@
 
 (* $Id: i18nprintf.ml,v 1.1 1997/12/03 14:35:10 furuse Exp $ *)
 
-external format_int: string -> int -> string = "format_int"
-external format_float: string -> float -> string = "format_float"
+external format_int: string -> int -> string = "caml_format_int"
+external format_float: string -> float -> string = "caml_format_float"
 
 let fprintf outchan format =
   let format = (Obj.magic format : string) in
