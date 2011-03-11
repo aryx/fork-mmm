@@ -8,13 +8,14 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
+PROGS=mmm
+#PROGS+=htparse, surboard
+OPTPROGS= $(PROGS:=.opt)
+
 SRC=main.ml
 
-TARGET=lib
-
-SYSLIBS=
-
-MAKESUBDIRS= commons i18n/japan globals \
+MAKESUBDIRS= \
+  commons i18n/japan globals \
   www http html \
   protocols retrieve viewers \
   display \
@@ -22,21 +23,13 @@ MAKESUBDIRS= commons i18n/japan globals \
   gui
 
 INCLUDEDIRS=$(MAKESUBDIRS) safe
-
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
+
+# use dynlink for the applet system
+SYSLIBS=unix.cma str.cma  dynlink.cma
 
 # This number defines the revision of the applet system
 VERSION=418
-
-#------------------------------------------------------------------------------
-# Program related variables
-#------------------------------------------------------------------------------
-
-PROGS=mmm
-
-#PROGS+=htparse, surboard
-
-OPTPROGS= $(PROGS:=.opt)
 
 #------------------------------------------------------------------------------
 #package dependencies
@@ -98,23 +91,21 @@ SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
-		$(WITH_DYNLINK) $(WITH_UNIX) $(WITH_STR) $(WITH_TK) \
-	        $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) \
-		$(WITH_TK80) \
+         $(SYSLIBS) \
+          $(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) $(WITH_TK80) \
 		$(OBJS) $(CRCS) $(SAFE) $(MAIN)
 
 # The native version does not support applets !
 mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
 	$(CAMLOPT) -o $@ $(PROFILING) \
-	  $(WITH_UNIX_OPT) $(WITH_STR_OPT) $(WITH_TK_OPT) \
+        $(SYSLIBS:%.cma=%.cmxa)
+	  $(WITH_TK_OPT) \
 	  $(WITH_FRX_OPT) $(WITH_JPF_OPT) $(WITH_TKANIM_OPT) $(WITH_JTK_OPT) \
 	  $(WITH_TK80_OPT) \
 	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
-
 # The standalone HTML syntax checker
 HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo
-
 htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
@@ -161,7 +152,6 @@ depend:: beforedepend
 
 include .depend
 
-
 # add -custom so dont need add e.g. ocamlbdb/ in LD_LIBRARY_PATH
 CUSTOM=-custom
 
@@ -174,10 +164,9 @@ purebytecode:
 	rm -f $(EXEC).opt $(EXEC)
 	$(MAKE) BYTECODE_STATIC="" $(EXEC)
 
-
 distclean:: clean
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i $@; done
-	rm -f Makefile.config
+#	rm -f Makefile.config
 
 ##############################################################################
 # Build documentation
@@ -234,8 +223,6 @@ safe-precheck:
 	md5 $(CAMLTKDIR)/*.cmi | sort -n | md5
 
 safe: safe-common safe-mmm safe/crcs.ml safe/crcsmmm.ml
-
-
 
 ##############################################################################
 # Install
@@ -322,8 +309,11 @@ PP1=-pp camlp4o
 # don't put "-dot-colors white"; using colors ocamldoc generates one
 #  color per directory ! quite useful
 # todo? generate a graph using the  -dot-types flag ? (type dependencies)
+
+DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,black,slategray3
+
 dotall:
-	ocamldoc $(PP1) $(TKCOMPFLAGS) $(INCLUDES) $(DIRS:=/*.ml) -dot -dot-reduce 
+	ocamldoc $(PP1) $(TKCOMPFLAGS) $(INCLUDES) $(DIRS:=/*.ml) -dot -dot-reduce -dot-colors $(DOTCOLORS)
 	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps
