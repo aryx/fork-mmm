@@ -14,7 +14,7 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=commons i18n/japan www globals http html protos
+MAKESUBDIRS=commons i18n/japan www globals http html protocols
 INCLUDEDIRS=$(MAKESUBDIRS) \
 	 retrieve viewers \
          htdisp appsys browser safe
@@ -153,7 +153,7 @@ depend:: beforedepend
 	(for d in commons; \
 	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; \
-        for d in www http html protos retrieve viewers htdisp appsys browser i18n/japan safe; \
+        for d in www http html protocols retrieve viewers htdisp appsys browser i18n/japan safe; \
 	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; $(CAMLDEP) main.ml* ) > .depend
 	cd sboard; $(MAKE) depend
