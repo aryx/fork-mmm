@@ -4,8 +4,8 @@ addpage.cmx: treeview.cmx tree.cmx ../misc/munix.cmx ../misc/msys.cmx \
     ../misc/mstring.cmx misc.cmx ../misc/error.cmx
 connection.cmo: tree.cmo misc.cmo
 connection.cmx: tree.cmx misc.cmx
-main.cmo: treeview.cmo tree.cmo misc.cmo ../lang.cmi addpage.cmo
-main.cmx: treeview.cmx tree.cmx misc.cmx ../lang.cmx addpage.cmx
+main.cmo: treeview.cmo tree.cmo misc.cmo ../misc/lang.cmi addpage.cmo
+main.cmx: treeview.cmx tree.cmx misc.cmx ../misc/lang.cmx addpage.cmx
 misc.cmo:
 misc.cmx:
 surfboard_remote.cmo:

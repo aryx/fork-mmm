@@ -17,11 +17,7 @@ JAPAN= 	$(JDIR)/bug.cmo \
 	$(JDIR)/encode.cmo \
 	$(JDIR)/japan.cmo
 
-MISC=../misc/log.cmo ../misc/low.cmo ../misc/mstring.cmo ../misc/mlist.cmo ../misc/msys.cmo \
-     ../misc/ebuffer.cmo ../misc/munix.cmo \
-     ../misc/date.cmo \
-     ../misc/i18nprintf.cmo ../misc/i18n.cmo \
-     ../misc/error.cmo
+MISC=../misc/lib.cma
 
 HTML=../html/dtd.cmo ../html/html.cmo ../html/lexhtml.cmo ../html/html_eval.cmo
 
@@ -35,7 +31,7 @@ OBJS= misc.cmo \
 
 surfboard: $(OBJS)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o surfboard \
-		../lang.cmo $(WITH_UNIX) $(WITH_STR) $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
+		$(WITH_UNIX) $(WITH_STR) $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
 		$(MISC) $(JAPAN) \
 		../www/uri.cmo $(HTML) $(OBJS)
 

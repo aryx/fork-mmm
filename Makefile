@@ -14,7 +14,7 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=
+MAKESUBDIRS=misc
 INCLUDES=-I i18n/japan \
 	 -I misc -I www -I http -I html -I protos -I retrieve -I viewers \
          -I htdisp -I appsys -I browser -I safe
@@ -77,8 +77,8 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= version.cmo lang.cmo \
-      $(MISC) $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
+OBJS= misc/lib.cma version.cmo  \
+      $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
 # Entry point
@@ -109,8 +109,8 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 # The standalone HTML syntax checker
 HTMISC=misc/ebuffer.cmo misc/log.cmo
 
-htparse: lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
-	$(CAMLC) $(LINKFLAGS) -o $@ lang.cmo $(HTMISC) $(JAPAN) \
+htparse: misc/lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
+	$(CAMLC) $(LINKFLAGS) -o $@ misc/lang.cmo $(HTMISC) $(JAPAN) \
 	  $(HTML) html/htparse.cmo
 
 # Remote command
@@ -211,30 +211,6 @@ i18n/japan/lexkanji.ml : i18n/japan/lexkanji.mll
 
 clean::
 	rm -f i18n/japan/lexkanji.ml
-
-# Miscellaneous additional libraries
-MISC=misc/low.cmo misc/mstring.cmo misc/mlist.cmo misc/msys.cmo \
-     misc/ebuffer.cmo misc/munix.cmo misc/date.cmo \
-     misc/log.cmo \
-     misc/condition.cmo misc/feed.cmo \
-     misc/lexpath.cmo misc/ibtree.cmo \
-     misc/tkresource.cmo misc/glevents.cmo \
-     misc/i18nprintf.cmo misc/i18n.cmo \
-     misc/error.cmo misc/hotlist.cmo
-
-beforedepend:: misc/lexpath.ml
-
-misc/lexpath.ml : misc/lexpath.mll
-	$(CAMLLEX) misc/lexpath.mll
-
-misc/tkresource.cmo: misc/tkresource.cmi
-	$(CAMLCPP) $(COMPFLAGS) $(DEBUG) -c misc/tkresource.ml
-
-misc/tkresource.cmx: misc/tkresource.cmi
-	$(CAMLOPTPP) $(COMPFLAGS) -c misc/tkresource.ml
-
-clean::
-	rm -f misc/lexpath.ml
 
 # General WWW definitions
 WWW=www/url.cmo www/uri.cmo www/urlenc.cmo www/lexurl.cmo www/hyper.cmo \
