@@ -19,7 +19,7 @@ MAKESUBDIRS= commons i18n/japan globals \
   protocols retrieve viewers \
   display \
   appsys \
-  browser
+  gui
 
 INCLUDEDIRS=$(MAKESUBDIRS) safe
 
@@ -154,7 +154,7 @@ depend:: beforedepend
 	(for d in commons; \
 	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; \
-        for d in www http html protocols retrieve viewers display appsys browser i18n/japan safe; \
+        for d in www http html protocols retrieve viewers display appsys gui i18n/japan safe; \
 	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; $(CAMLDEP) main.ml* ) > .depend
 	cd sboard; $(MAKE) depend
