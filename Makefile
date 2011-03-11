@@ -14,9 +14,9 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=commons i18n/japan
+MAKESUBDIRS=commons i18n/japan www
 INCLUDEDIRS=$(MAKESUBDIRS) \
-	 www http html protos retrieve viewers \
+	 http html protos retrieve viewers \
          htdisp appsys browser safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
@@ -77,7 +77,7 @@ rec.opt:
 
 # OBJS are common for all versions
 OBJS= $(LIBS) version.cmo  \
-      $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
+      $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
 # Entry point
@@ -140,7 +140,6 @@ clean::
 
 clean::
 	rm -f version.cm* version.o
-	rm -rf www/*.cm* www/*.o
 	rm -rf http/*.cm* http/*.o
 	rm -rf html/*.cm* html/*.o
 	rm -rf protos/*.cm* protos/*.o
@@ -191,18 +190,6 @@ distclean:: clean
 ##############################################################################
 # Misc rules
 ##############################################################################
-
-# General WWW definitions
-WWW=www/url.cmo www/uri.cmo www/urlenc.cmo www/lexurl.cmo www/hyper.cmo \
-    www/www.cmo www/document.cmo www/maps.cmo
-
-beforedepend:: www/lexurl.ml
-
-www/lexurl.ml : www/lexurl.mll
-	$(CAMLLEX) www/lexurl.mll
-clean::
-	rm -f www/lexurl.ml
-
 
 # HTTP library
 HTTP=http/base64.cmo http/lexdate.cmo http/http_headers.cmo \
