@@ -150,6 +150,9 @@ BROWSER=browser/about.cmo browser/gcache.cmo \
 # Entry point
 MAIN=main.cmo
 
+clean::
+	rm main.cm*
+
 # The applet system
 APPSYS=appsys/pgp.cmo appsys/capabilities.cmo appsys/dload.cmo \
        appsys/applets.cmo appsys/appview.cmo
