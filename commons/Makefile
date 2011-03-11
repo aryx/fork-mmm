@@ -15,11 +15,10 @@ SRC= low.ml mstring.ml mlist.ml msys.ml \
      condition.ml feed.ml \
      lexpath.ml \
      ibtree.ml \
+     tkresource.ml \
      glevents.ml \
      i18nprintf.ml lang.ml i18n.ml \
      error.ml hotlist.ml \
-
-#tkresource.ml 
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
