@@ -6,21 +6,14 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-# Miscellaneous additional libraries
-SRC= low.ml mstring.ml mlist.ml msys.ml \
-     ebuffer.ml munix.ml date.ml \
-     log.ml \
-     condition.ml feed.ml \
-     lexpath.ml \
-     ibtree.ml \
-     tkresource.ml \
-     glevents.ml \
-     i18nprintf.ml lang.ml i18n.ml \
-     error.ml hotlist.ml \
+SRC= file.ml mailto.ml cache.ml protos.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
-INCLUDEDIRS=
+
+INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
+ $(TOP)/www $(TOP)/http
+
 SYSINCLUDES=$(TKCOMPFLAGS)
 
 ##############################################################################
@@ -46,23 +39,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-# for tk ressource and its use of the parser extension
-PP=-pp camlp4o
-
-tkresource.cmo: tkresource.cmi
-	$(OCAMLC) $(PP) -c tkresource.ml
-
-tkresource.cmx: tkresource.cmi
-	$(OCAMLOPT) $(PP) -c tkresource.ml
-
-
-lexpath.ml : lexpath.mll
-	$(CAMLLEX) lexpath.mll
-clean::
-	rm -f lexpath.ml
-beforedepend:: lexpath.ml
 
 ##############################################################################
 # Literate Programming rules
