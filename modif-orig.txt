@@ -1,2 +1,3 @@
-was mmm418, ported to use camltk418 and ocaml 3.12 and Mac.
+was mmm418, ported to use camltk418 and ocaml 3.12 and Mac. It works!
+
 
