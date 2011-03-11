@@ -76,7 +76,10 @@ let init initialp =
   Dynlink.init();
   Dynlink.add_available_units Crcs.crc_unit_list;
   Dynlink.add_available_units Crcsmmm.crc_unit_list;
-  Dynlink.add_interfaces ["Pervasives"; "Unix"] ["/opt/local/lib/ocaml"];
+(* pad: TODO, infer using `ocamlc -where`
+  Dynlink.add_interfaces ["Pervasives"; "Unix"] 
+    ["/opt/local/lib/ocaml"];
+*)
   (* Load local applets *)
   if initialp then load_initial_modules();
   Mmmprefs.plug_applets applets_pref
