@@ -1,36 +1,199 @@
-# All configurable variables should reside in Makefile.config
+#############################################################################
+# Configuration section
+#############################################################################
 include Makefile.config
 
-# This number defines the revision of the applet system
-VERSION=418
+##############################################################################
+# Variables
+##############################################################################
+TOP=$(shell pwd)
 
-# The list of source subdirectories
+SRC=version.ml lang.ml main.ml
+
+TARGET=lib
+
+SYSLIBS=
+
+MAKESUBDIRS=
 INCLUDES=-I i18n/japan \
 	 -I misc -I www -I http -I html -I protos -I retrieve -I viewers \
          -I htdisp -I appsys -I browser -I safe
 
-# Switch the following two lines to compile MMM with profiling
-#PROFILING=-ccopt -p
-PROFILING=
-DEBUG=-g
-# Sum up all compilation flags (except DEBUG, since ocamlopt doesn't grok -g)
-COMPFLAGS=$(TKCOMPFLAGS) $(INCLUDES) $(PROFILING)
-LINKFLAGS=$(DEBUG)
+INCLUDEDIRS=
+LIBS=
+
+# This number defines the revision of the applet system
+VERSION=418
+
+#------------------------------------------------------------------------------
+# Program related variables
+#------------------------------------------------------------------------------
+
+PROGS=mmm
+
+#PROGS+=htparse, surboard
+
+OPTPROGS= $(PROGS:=.opt)
+
+#------------------------------------------------------------------------------
+#package dependencies
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Main variables
+#------------------------------------------------------------------------------
+COMPFLAGS=$(TKCOMPFLAGS) $(INCLUDES)
+OCAMLCFLAGS+=$(COMPFLAGS)
+
+##############################################################################
+# Generic
+##############################################################################
+-include $(TOP)/Makefile.common
+
+##############################################################################
+# Top rules
+##############################################################################
+
+.PHONY: all all.opt opt top clean distclean   applets modules
 
 # Bytecode targets
-all : allbyte 
+all:: 
+	$(MAKE) rec 
+	$(MAKE) allbyte 
 
-.PHONY: applets modules
+opt:
+	$(MAKE) rec.opt 
+	$(MAKE) $(TARGET).opt
 
-allbyte : mmm.bin mmm_remote htparse surfboard applets modules
+allbyte: mmm.bin mmm_remote htparse surfboard applets modules
 
-# Native targets
-allopt : opt
-opt : mmmx.bin
+all.opt: opt
+top: $(TARGET).top
 
-#
-# The sub-systems
-#
+rec:
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+
+rec.opt:
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
+
+
+# OBJS are common for all versions
+OBJS= version.cmo lang.cmo \
+      $(MISC) $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
+      $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
+
+# Entry point
+MAIN=main.cmo
+
+clean::
+	rm -f main.cm*
+
+# Exported safe libraries
+SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
+CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
+mmm.bin: $(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
+	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
+		$(WITH_DYNLINK) $(WITH_UNIX) $(WITH_STR) $(WITH_TK) \
+	        $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) \
+		$(WITH_TK80) \
+		$(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
+
+# The native version does not support applets !
+mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
+	$(CAMLOPT) -o $@ $(PROFILING) \
+	  $(WITH_UNIX_OPT) $(WITH_STR_OPT) $(WITH_TK_OPT) \
+	  $(WITH_FRX_OPT) $(WITH_JPF_OPT) $(WITH_TKANIM_OPT) $(WITH_JTK_OPT) \
+	  $(WITH_TK80_OPT) \
+	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
+
+
+# The standalone HTML syntax checker
+HTMISC=misc/ebuffer.cmo misc/log.cmo
+
+htparse: lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
+	$(CAMLC) $(LINKFLAGS) -o $@ lang.cmo $(HTMISC) $(JAPAN) \
+	  $(HTML) html/htparse.cmo
+
+# Remote command
+mmm_remote: remote/mmm_remote.cmo
+	$(CAMLC) -custom -o mmm_remote $(WITH_UNIX) remote/mmm_remote.cmo
+
+# JPF's bookmark tool
+surfboard: 
+	cd sboard; $(MAKE)
+
+clean::
+	cd sboard; $(MAKE) clean
+
+# Applets examples
+applets:
+	cd applets; $(MAKE) all
+
+clean::
+	cd applets; $(MAKE) clean
+
+# User's additional modules examples
+modules:
+	cd modules; $(MAKE) all
+
+clean::
+	cd modules; $(MAKE) clean
+
+clean::
+	rm -f version.cm* version.o
+	rm -f lang.cm* lang.o
+	rm -rf misc/*.cm* misc/*.o
+	rm -rf www/*.cm* www/*.o
+	rm -rf http/*.cm* http/*.o
+	rm -rf html/*.cm* html/*.o
+	rm -rf protos/*.cm* protos/*.o
+	rm -rf retrieve/*.cm* retrieve/*.o
+	rm -rf viewers/*.cm* viewers/*.o
+	rm -rf htdisp/*.cm* htdisp/*.o
+	rm -rf appsys/*.cm* appsys/*.o
+	rm -rf safe/*.cm* safe/*.o
+	rm -rf browser/*.cm* browser/*.o
+	rm -rf i18n/japan/*.cm* i18n/japan/*.o
+	rm -rf remote/*.cm* remote/*.o
+	rm -f mmm.bin mmmx.bin mmm_remote htparse
+
+# Default rules
+
+depend:: beforedepend
+	(for d in misc; \
+	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
+	done; \
+        for d in www http html protos retrieve viewers htdisp appsys browser i18n/japan safe; \
+	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
+	done; $(CAMLDEP) lang.ml lang.mli version.ml version.mli) > .depend
+	cd sboard; $(MAKE) depend
+
+include .depend
+
+
+# add -custom so dont need add e.g. ocamlbdb/ in LD_LIBRARY_PATH
+CUSTOM=-custom
+
+static:
+	rm -f $(EXEC).opt $(EXEC)
+	$(MAKE) STATIC="-ccopt -static" $(EXEC).opt
+	cp $(EXEC).opt $(EXEC)
+
+purebytecode:
+	rm -f $(EXEC).opt $(EXEC)
+	$(MAKE) BYTECODE_STATIC="" $(EXEC)
+
+
+distclean:: clean
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i $@; done
+	rm -f Makefile.config
+
+##############################################################################
+# Build documentation
+##############################################################################
+
+##############################################################################
+# Misc rules
+##############################################################################
 
 # Japanese support
 JAPAN= 	i18n/japan/bug.cmo \
@@ -129,7 +292,7 @@ HTDISP=htdisp/html_form.cmo htdisp/html_table.cmo\
        htdisp/source.cmo htdisp/attrs.cmo \
        htdisp/ctext.cmo htdisp/textw_fo.cmo \
        htdisp/htframe.cmo htdisp/htmlw.cmo
-       
+
 
 # Extra dependencies (functor application) that ocamldep doesn't find
 htdisp/htmlw.cmo: htdisp/textw_fo.cmi htdisp/imgload.cmi \
@@ -146,12 +309,6 @@ BROWSER=browser/about.cmo browser/gcache.cmo \
         browser/history.cmo browser/plink.cmo browser/nav.cmo \
 	browser/mmm.cmo browser/cci.cmo \
         browser/debug.cmo 
-
-# Entry point
-MAIN=main.cmo
-
-clean::
-	rm -f main.cm*
 
 # The applet system
 APPSYS=appsys/pgp.cmo appsys/capabilities.cmo appsys/dload.cmo \
@@ -225,61 +382,11 @@ safe-precheck:
 
 safe: safe-common safe-mmm safe/crcs.ml safe/crcsmmm.ml
 
-# OBJS are common for all versions
-OBJS= version.cmo lang.cmo \
-      $(MISC) $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
-      $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
-
-# Exported safe libraries
-SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
-CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
-mmm.bin: $(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
-	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
-		$(WITH_DYNLINK) $(WITH_UNIX) $(WITH_STR) $(WITH_TK) \
-	        $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) \
-		$(WITH_TK80) \
-		$(OBJS) $(CRCS) $(APPSYS) $(SAFE) $(MAIN)
-
-# The native version does not support applets !
-mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
-	$(CAMLOPT) -o $@ $(PROFILING) \
-	  $(WITH_UNIX_OPT) $(WITH_STR_OPT) $(WITH_TK_OPT) \
-	  $(WITH_FRX_OPT) $(WITH_JPF_OPT) $(WITH_TKANIM_OPT) $(WITH_JTK_OPT) \
-	  $(WITH_TK80_OPT) \
-	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 
-# The standalone HTML syntax checker
-HTMISC=misc/ebuffer.cmo misc/log.cmo
-
-htparse: lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
-	$(CAMLC) $(LINKFLAGS) -o $@ lang.cmo $(HTMISC) $(JAPAN) \
-	  $(HTML) html/htparse.cmo
-
-# Remote command
-mmm_remote: remote/mmm_remote.cmo
-	$(CAMLC) -custom -o mmm_remote $(WITH_UNIX) remote/mmm_remote.cmo
-
-# JPF's bookmark tool
-surfboard: 
-	cd sboard; $(MAKE)
-
-clean::
-	cd sboard; $(MAKE) clean
-
-# Applets examples
-applets:
-	cd applets; $(MAKE) all
-
-clean::
-	cd applets; $(MAKE) clean
-
-# User's additional modules examples
-modules:
-	cd modules; $(MAKE) all
-
-clean::
-	cd modules; $(MAKE) clean
+##############################################################################
+# Install
+##############################################################################
 
 ## Installation : copy the various files and binaries
 ## Preprocess shell-script
@@ -330,48 +437,9 @@ install-mdk:
 	     scripts/mmmc > $(INSTALLBINDIR)/mmmc
 	chmod 755 $(INSTALLBINDIR)/mmmc
 
-
-clean::
-	rm -f version.cm* version.o
-	rm -f lang.cm* lang.o
-	rm -rf misc/*.cm* misc/*.o
-	rm -rf www/*.cm* www/*.o
-	rm -rf http/*.cm* http/*.o
-	rm -rf html/*.cm* html/*.o
-	rm -rf protos/*.cm* protos/*.o
-	rm -rf retrieve/*.cm* retrieve/*.o
-	rm -rf viewers/*.cm* viewers/*.o
-	rm -rf htdisp/*.cm* htdisp/*.o
-	rm -rf appsys/*.cm* appsys/*.o
-	rm -rf safe/*.cm* safe/*.o
-	rm -rf browser/*.cm* browser/*.o
-	rm -rf i18n/japan/*.cm* i18n/japan/*.o
-	rm -rf remote/*.cm* remote/*.o
-	rm -f mmm.bin mmmx.bin mmm_remote htparse
-
-# Default rules
-
-.SUFFIXES: .ml .mli .cmo .cmi .cmx
-
-.ml.cmo:
-	$(CAMLC) $(COMPFLAGS) $(DEBUG) -c $<
-
-.mli.cmi:
-	$(CAMLC) $(COMPFLAGS) $(DEBUG) -c $<
-
-.ml.cmx:
-	$(CAMLOPT) $(COMPFLAGS) -c $<
-
-depend: beforedepend
-	(for d in misc; \
-	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; \
-        for d in www http html protos retrieve viewers htdisp appsys browser i18n/japan safe; \
-	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; $(CAMLDEP) lang.ml lang.mli version.ml version.mli) > .depend
-	cd sboard; $(MAKE) depend
-
-include .depend
+##############################################################################
+# Package rules
+##############################################################################
 
 # Just for MMM maintainers, distribution of the software
 FTPDIR=/net/pauillac/infosystems/ftp/cristal/mmm
@@ -390,3 +458,28 @@ distribute:
 	rm -rf release
 	cd doc; $(MAKE) install
 
+
+##############################################################################
+# Developer rules
+##############################################################################
+
+#DIRS= $(filter-out commons commons2 error, $(MAKESUBDIRS))
+DIRS=
+# you want "-dot-reduce"
+# don't put "-dot-colors white"; using colors ocamldoc generates one
+#  color per directory ! quite useful
+# todo? generate a graph using the  -dot-types flag ? (type dependencies)
+dotall:
+	ocamldoc $(INCLUDES) $(DIRS:=/*.ml) $(SRC)  -dot -dot-reduce 
+	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_ml.ps
+	ps2pdf Fig_graph_ml.ps
+	rm -f Fig_graph_ml.ps
+
+tags:
+	~/pfff/stags -verbose -lang ml .
+
+##############################################################################
+# Pad specific rules
+##############################################################################
