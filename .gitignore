@@ -9,3 +9,8 @@
 /japan/lexkanji.ml
 /misc/lexpath.ml
 /www/lexurl.ml
+/htparse
+/mmm.bin
+/mmm_remote
+/sboard/surfboard
+/sboard/surfboard_remote
