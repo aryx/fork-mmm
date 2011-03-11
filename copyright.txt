@@ -1,0 +1,17 @@
+Software: The MMM browser, version 0.418 of December 2001,
+hereinafter referred to as "the software".
+
+The software has been designed and produced by Francois Rouaix
+and Jun Furuse, research workers for the Institut National de Recherche en
+Informatique et en Automatique (INRIA) - Domaine de Voluceau - Rocquencourt
+- 78153 Le Chesnay Cedex - France.
+
+INRIA holds all ownership rights to MMM.
+
+MMM uses various other freely available software:
+Objective Caml:
+	This software includes the Objective Caml run-time system,
+	which is copyright 1996, 1997, 1998, 1999, 2000, 2001 INRIA.
+Tcl/Tk
+	Copyright The Regents of the University of California,
+	Sun Microsystems, Inc., and other parties
