@@ -93,10 +93,10 @@ let main () =
     (* Initialisations in jpf's GIF ANIMATION library *)
     Tkaniminit.f ();
     (* Local initialisations *)
-    Low.init();				(* start regular tasks *)
-    Cache.init();			(* builtin document *)
+    Low.init();                         (* start regular tasks *)
+    Cache.init();                       (* builtin document *)
     Auth.init();                        (* start expiration timer *)
-    Debug.init();			(* debugging RPC *)
+    Debug.init();                       (* debugging RPC *)
     (* Suffix mapping to Content-Type and Content-Encoding *)
     if Sys.file_exists !sufxfile then Http_headers.read_suffix_file !sufxfile;
     (* Various stuff for the HTML viewer, needing Tk *)
@@ -137,8 +137,8 @@ let postmortem () =
       failwith "TODO"
   | e -> 
       if !Log.debug_mode then begin
-	Cache.postmortem();
-	Gcache.postmortem();
+        Cache.postmortem();
+        Gcache.postmortem();
       end;
       raise e
 
