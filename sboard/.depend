@@ -14,9 +14,7 @@ tree.cmo: ../www/uri.cmi misc.cmo ../commons/log.cmi ../html/html_eval.cmi \
     ../html/html.cmi ../commons/ebuffer.cmi ../html/dtd.cmi
 tree.cmx: ../www/uri.cmx misc.cmx ../commons/log.cmx ../html/html_eval.cmx \
     ../html/html.cmx ../commons/ebuffer.cmx ../html/dtd.cmx
-treeview.cmo: ../version.cmi tree.cmo misc.cmo ../commons/log.cmi \
-    connection.cmo
-treeview.cmx: ../version.cmx tree.cmx misc.cmx ../commons/log.cmx \
-    connection.cmx
+treeview.cmo: version.cmo tree.cmo misc.cmo ../commons/log.cmi connection.cmo
+treeview.cmx: version.cmx tree.cmx misc.cmx ../commons/log.cmx connection.cmx
 version.cmo: ../commons/mstring.cmi
 version.cmx: ../commons/mstring.cmx

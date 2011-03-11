@@ -8,15 +8,15 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
-SRC=version.ml main.ml
+SRC=main.ml
 
 TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=commons i18n/japan www
+MAKESUBDIRS=commons i18n/japan www globals http
 INCLUDEDIRS=$(MAKESUBDIRS) \
-	 http html protos retrieve viewers \
+	 html protos retrieve viewers \
          htdisp appsys browser safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
@@ -76,8 +76,8 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= $(LIBS) version.cmo  \
-      $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
+OBJS= $(LIBS) \
+      $(HTML) $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
 # Entry point
@@ -139,8 +139,6 @@ clean::
 	cd modules; $(MAKE) clean
 
 clean::
-	rm -f version.cm* version.o
-	rm -rf http/*.cm* http/*.o
 	rm -rf html/*.cm* html/*.o
 	rm -rf protos/*.cm* protos/*.o
 	rm -rf retrieve/*.cm* retrieve/*.o
@@ -160,7 +158,7 @@ depend:: beforedepend
 	done; \
         for d in www http html protos retrieve viewers htdisp appsys browser i18n/japan safe; \
 	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; $(CAMLDEP) lang.ml lang.mli version.ml version.mli) > .depend
+	done; $(CAMLDEP) main.ml* ) > .depend
 	cd sboard; $(MAKE) depend
 
 include .depend
@@ -190,23 +188,6 @@ distclean:: clean
 ##############################################################################
 # Misc rules
 ##############################################################################
-
-# HTTP library
-HTTP=http/base64.cmo http/lexdate.cmo http/http_headers.cmo \
-     http/lexheaders.cmo http/auth.cmo \
-     http/http.cmo http/retype.cmo \
-     http/http_date.cmo
-
-beforedepend:: http/lexheaders.ml http/lexdate.ml
-
-http/lexheaders.ml : http/lexheaders.mll
-	$(CAMLLEX) http/lexheaders.mll
-
-http/lexdate.ml : http/lexdate.mll
-	$(CAMLLEX) http/lexdate.mll
-
-clean::
-	rm -f http/lexheaders.ml http/lexdate.ml
 
 # HTML library
 #HTML=html/dtd.cmo html/html.cmo html/lexhtml.cmo html/html_eval.cmo
