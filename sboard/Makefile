@@ -8,12 +8,14 @@ COMPFLAGS= $(TKCOMPFLAGS) $(INCLUDES)
 
 all : surfboard surfboard_remote
 
-JAPAN= 	../japan/bug.cmo \
-	../japan/charset.cmo ../japan/wchar.cmo ../japan/wstream.cmo ../japan/tool.cmo \
-	../japan/jisx0201.cmo \
-	../japan/lexkanji.cmo \
-	../japan/encode.cmo \
-	../japan/japan.cmo
+JDIR=../i18n/japan
+JAPAN= 	$(JDIR)/bug.cmo \
+	$(JDIR)/charset.cmo $(JDIR)/wchar.cmo $(JDIR)/wstream.cmo \
+        $(JDIR)/tool.cmo \
+	$(JDIR)/jisx0201.cmo \
+	$(JDIR)/lexkanji.cmo \
+	$(JDIR)/encode.cmo \
+	$(JDIR)/japan.cmo
 
 MISC=../misc/log.cmo ../misc/low.cmo ../misc/mstring.cmo ../misc/mlist.cmo ../misc/msys.cmo \
      ../misc/ebuffer.cmo ../misc/munix.cmo \

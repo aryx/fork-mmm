@@ -5,7 +5,7 @@ include Makefile.config
 VERSION=418
 
 # The list of source subdirectories
-INCLUDES=-I japan \
+INCLUDES=-I i18n/japan \
 	 -I misc -I www -I http -I html -I protos -I retrieve -I viewers \
          -I htdisp -I appsys -I browser -I safe
 
@@ -33,20 +33,21 @@ opt : mmmx.bin
 #
 
 # Japanese support
-JAPAN= 	japan/bug.cmo \
-	japan/charset.cmo japan/wchar.cmo japan/wstream.cmo japan/tool.cmo \
-	japan/jisx0201.cmo \
-	japan/lexkanji.cmo \
-	japan/encode.cmo \
-	japan/japan.cmo
+JAPAN= 	i18n/japan/bug.cmo \
+	i18n/japan/charset.cmo i18n/japan/wchar.cmo i18n/japan/wstream.cmo \
+	i18n/japan/tool.cmo \
+	i18n/japan/jisx0201.cmo \
+	i18n/japan/lexkanji.cmo \
+	i18n/japan/encode.cmo \
+	i18n/japan/japan.cmo
 
-beforedepend:: japan/lexkanji.ml
+beforedepend:: i18n/japan/lexkanji.ml
 
-japan/lexkanji.ml : japan/lexkanji.mll
-	$(CAMLLEX) japan/lexkanji.mll
+i18n/japan/lexkanji.ml : i18n/japan/lexkanji.mll
+	$(CAMLLEX) i18n/japan/lexkanji.mll
 
 clean::
-	rm -f japan/lexkanji.ml
+	rm -f i18n/japan/lexkanji.ml
 
 # Miscellaneous additional libraries
 MISC=misc/low.cmo misc/mstring.cmo misc/mlist.cmo misc/msys.cmo \
@@ -147,7 +148,7 @@ BROWSER=browser/about.cmo browser/gcache.cmo \
         browser/debug.cmo 
 
 # Entry point
-MAIN=browser/main.cmo
+MAIN=main.cmo
 
 # The applet system
 APPSYS=appsys/pgp.cmo appsys/capabilities.cmo appsys/dload.cmo \
@@ -341,7 +342,7 @@ clean::
 	rm -rf appsys/*.cm* appsys/*.o
 	rm -rf safe/*.cm* safe/*.o
 	rm -rf browser/*.cm* browser/*.o
-	rm -rf japan/*.cm* japan/*.o
+	rm -rf i18n/japan/*.cm* i18n/japan/*.o
 	rm -rf remote/*.cm* remote/*.o
 	rm -f mmm.bin mmmx.bin mmm_remote htparse
 
@@ -362,7 +363,7 @@ depend: beforedepend
 	(for d in misc; \
 	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; \
-        for d in www http html protos retrieve viewers htdisp appsys browser japan safe; \
+        for d in www http html protos retrieve viewers htdisp appsys browser i18n/japan safe; \
 	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; $(CAMLDEP) lang.ml lang.mli version.ml version.mli) > .depend
 	cd sboard; $(MAKE) depend
