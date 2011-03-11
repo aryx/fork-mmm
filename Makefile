@@ -14,8 +14,8 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=commons
-INCLUDEDIRS=$(MAKESUBDIRS) i18n/japan \
+MAKESUBDIRS=commons i18n/japan
+INCLUDEDIRS=$(MAKESUBDIRS) \
 	 www http html protos retrieve viewers \
          htdisp appsys browser safe
 
@@ -77,7 +77,7 @@ rec.opt:
 
 # OBJS are common for all versions
 OBJS= $(LIBS) version.cmo  \
-      $(JAPAN) $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
+      $(WWW) $(HTTP) $(HTML) $(PROTOS) $(RETRIEVE) \
       $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
 # Entry point
@@ -108,9 +108,10 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 # The standalone HTML syntax checker
 HTMISC=commons/ebuffer.cmo commons/log.cmo
 
-htparse: commons/lang.cmo $(HTMISC) $(JAPAN) $(HTML) html/htparse.cmo
-	$(CAMLC) $(LINKFLAGS) -o $@ commons/lang.cmo $(HTMISC) $(JAPAN) \
-	  $(HTML) html/htparse.cmo
+HTML=html/dtd.cmo html/html.cmo html/lexhtml.cmo html/html_eval.cmo
+
+htparse: commons/lang.cmo $(HTMISC) i18n/japan/lib.cma $(HTML) html/htparse.cmo
+	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
 mmm_remote: remote/mmm_remote.cmo
@@ -149,7 +150,6 @@ clean::
 	rm -rf appsys/*.cm* appsys/*.o
 	rm -rf safe/*.cm* safe/*.o
 	rm -rf browser/*.cm* browser/*.o
-	rm -rf i18n/japan/*.cm* i18n/japan/*.o
 	rm -rf remote/*.cm* remote/*.o
 	rm -f mmm.bin mmmx.bin mmm_remote htparse
 
@@ -192,23 +192,6 @@ distclean:: clean
 # Misc rules
 ##############################################################################
 
-# Japanese support
-JAPAN= 	i18n/japan/bug.cmo \
-	i18n/japan/charset.cmo i18n/japan/wchar.cmo i18n/japan/wstream.cmo \
-	i18n/japan/tool.cmo \
-	i18n/japan/jisx0201.cmo \
-	i18n/japan/lexkanji.cmo \
-	i18n/japan/encode.cmo \
-	i18n/japan/japan.cmo
-
-beforedepend:: i18n/japan/lexkanji.ml
-
-i18n/japan/lexkanji.ml : i18n/japan/lexkanji.mll
-	$(CAMLLEX) i18n/japan/lexkanji.mll
-
-clean::
-	rm -f i18n/japan/lexkanji.ml
-
 # General WWW definitions
 WWW=www/url.cmo www/uri.cmo www/urlenc.cmo www/lexurl.cmo www/hyper.cmo \
     www/www.cmo www/document.cmo www/maps.cmo
@@ -239,7 +222,7 @@ clean::
 	rm -f http/lexheaders.ml http/lexdate.ml
 
 # HTML library
-HTML=html/dtd.cmo html/html.cmo html/lexhtml.cmo html/html_eval.cmo
+#HTML=html/dtd.cmo html/html.cmo html/lexhtml.cmo html/html_eval.cmo
 
 beforedepend:: html/lexhtml.ml
 
@@ -430,7 +413,6 @@ distribute:
 	chgrp caml $(FTPDIR)/mmm$(VERSION)-src.tar.gz 	
 	rm -rf release
 	cd doc; $(MAKE) install
-
 
 ##############################################################################
 # Developer rules
