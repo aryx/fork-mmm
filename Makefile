@@ -14,10 +14,10 @@ TARGET=lib
 
 SYSLIBS=
 
-MAKESUBDIRS=commons i18n/japan www globals http html protocols
-INCLUDEDIRS=$(MAKESUBDIRS) \
-	 retrieve viewers \
-         htdisp appsys browser safe
+MAKESUBDIRS= commons i18n/japan globals \
+  www http html protocols retrieve \
+
+INCLUDEDIRS=$(MAKESUBDIRS) viewers htdisp appsys browser safe
 
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
@@ -76,8 +76,7 @@ rec.opt:
 
 
 # OBJS are common for all versions
-OBJS= $(LIBS) \
-      $(RETRIEVE) $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
+OBJS= $(LIBS) $(VIEWERS) $(HTDISP) $(TXTDISP) $(BROWSER)
 
 # Entry point
 MAIN=main.cmo
@@ -138,7 +137,6 @@ clean::
 	cd modules; $(MAKE) clean
 
 clean::
-	rm -rf retrieve/*.cm* retrieve/*.o
 	rm -rf viewers/*.cm* viewers/*.o
 	rm -rf htdisp/*.cm* htdisp/*.o
 	rm -rf appsys/*.cm* appsys/*.o
@@ -187,8 +185,6 @@ distclean:: clean
 ##############################################################################
 
 # Browser (communication protocols, multimedia viewer dispatch, ...)
-RETRIEVE=retrieve/retrieve.cmo retrieve/scheduler.cmo \
-	 retrieve/progress.cmo  retrieve/img.cmo 
 VIEWERS=viewers/decoders.cmo viewers/save.cmo \
 	viewers/viewers.cmo viewers/embed.cmo 
 
