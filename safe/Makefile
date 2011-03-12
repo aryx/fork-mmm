@@ -18,23 +18,17 @@ INCLUDEDIRS= \
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 
-## For applets specific to MMM
-SAFEMMMINTF= gen/safe418.mli safemmm.mli
-SAFEMMMIMPL= gen/safe418.ml safemmm.ml
-
-SAFEMMM= $(SAFEMMMINTF) $(SAFEMMMIMPL)
-
+#pad: the rm gen/*.ml is really just for codemap ...
 all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo
+	rm gen/*.ml*
 
-safe-mmm: $(SAFEMMM) safe418mmm.cmi safe418mmm.cmo
-
-gen/safe418mmm.mli: $(SAFEMMMINTF)
+gen/safe418mmm.mli: gen/safe418.mli safemmm.mli
 	(echo '(* Automatically generated. Do NOT edit *)'; \
-	 cat $(SAFEMMMINTF)) > $@
+	 cat $^ ) > $@
 
-gen/safe418mmm.ml: $(SAFEMMMIMPL)
+gen/safe418mmm.ml: gen/safe418.ml safemmm.ml
 	(echo '(* Automatically generated. Do NOT edit *)'; \
-	 cat $(SAFEMMMIMPL)) > $@
+	 cat $^ ) > $@
 
 safe418mmm.cmi: gen/safe418mmm.mli $(APPSYS) $(OBJS)
 	$(CAMLC) $(SYSINCLUDES) -c -nopervasives gen/safe418mmm.mli
