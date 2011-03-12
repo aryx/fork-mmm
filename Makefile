@@ -115,14 +115,14 @@ clean::
 	rm -f mmm mmmx.bin mmm_remote htparse
 
 # Default rules
-depend:: beforedepend
-	(for d in commons; \
-	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; \
-        for d in www http html protocols retrieve viewers display applets gui i18n/japan safe; \
-	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; $(CAMLDEP) main.ml* ) > .depend
-	cd sboard; $(MAKE) depend
+#depend:: beforedepend
+#	(for d in commons; \
+#	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
+#	done; \
+#        for d in www http html protocols retrieve viewers display applets gui i18n/japan safe; \
+#	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
+#	done; $(CAMLDEP) main.ml* ) > .depend
+#	cd sboard; $(MAKE) depend
 
 include .depend
 
