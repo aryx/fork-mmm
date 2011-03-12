@@ -377,11 +377,11 @@ appsys/applets.cmo: viewers/viewers.cmi commons/i18n.cmi appsys/dload.cmi \
     appsys/applets.cmi
 appsys/applets.cmx: viewers/viewers.cmx commons/i18n.cmx appsys/dload.cmx \
     appsys/applets.cmi
-appsys/appsys.cmo: viewers/viewers.cmi globals/version.cmi browser/prefs.cmi \
-    browser/mmmprefs.cmi commons/i18n.cmi commons/error.cmi viewers/embed.cmi \
+appsys/appsys.cmo: viewers/viewers.cmi globals/version.cmi gui/prefs.cmi \
+    gui/mmmprefs.cmi commons/i18n.cmi commons/error.cmi viewers/embed.cmi \
     appsys/dload.cmi safe/crcsmmm.cmo safe/crcs.cmo appsys/appview.cmo
-appsys/appsys.cmx: viewers/viewers.cmx globals/version.cmx browser/prefs.cmx \
-    browser/mmmprefs.cmx commons/i18n.cmx commons/error.cmx viewers/embed.cmx \
+appsys/appsys.cmx: viewers/viewers.cmx globals/version.cmx gui/prefs.cmx \
+    gui/mmmprefs.cmx commons/i18n.cmx commons/error.cmx viewers/embed.cmx \
     appsys/dload.cmx safe/crcsmmm.cmx safe/crcs.cmx appsys/appview.cmx
 appsys/appview.cmo: viewers/viewers.cmi www/url.cmi commons/msys.cmi \
     commons/i18n.cmi http/http_headers.cmi commons/feed.cmi commons/error.cmi \
@@ -409,93 +409,84 @@ appsys/pgp.cmo: commons/msys.cmi commons/mstring.cmi commons/low.cmi \
     commons/i18n.cmi commons/error.cmi
 appsys/pgp.cmx: commons/msys.cmx commons/mstring.cmx commons/low.cmx \
     commons/i18n.cmx commons/error.cmx
-browser/about.cmi: commons/low.cmi
-browser/gcache.cmi: viewers/viewers.cmi www/document.cmi
-browser/mmm.cmi: viewers/viewers.cmi www/url.cmi browser/nav.cmi \
-    commons/low.cmi
-browser/mmmprefs.cmi: browser/prefs.cmi
-browser/nav.cmi: www/www.cmi viewers/viewers.cmi www/url.cmi www/hyper.cmi \
+gui/about.cmi: commons/low.cmi
+gui/gcache.cmi: viewers/viewers.cmi www/document.cmi
+gui/mmm.cmi: viewers/viewers.cmi www/url.cmi gui/nav.cmi commons/low.cmi
+gui/mmmprefs.cmi: gui/prefs.cmi
+gui/nav.cmi: www/www.cmi viewers/viewers.cmi www/url.cmi www/hyper.cmi \
     commons/error.cmi www/document.cmi
-browser/plink.cmi: www/www.cmi www/hyper.cmi
-browser/prefs.cmi:
-browser/about.cmo: globals/version.cmi commons/msys.cmi commons/mstring.cmi \
-    commons/low.cmi commons/lang.cmi commons/glevents.cmi browser/about.cmi
-browser/about.cmx: globals/version.cmx commons/msys.cmx commons/mstring.cmx \
-    commons/low.cmx commons/lang.cmx commons/glevents.cmx browser/about.cmi
-browser/cci.cmo: browser/nav.cmi commons/munix.cmo commons/msys.cmi \
-    commons/mstring.cmi browser/mmm.cmi www/lexurl.cmi commons/i18n.cmi \
+gui/plink.cmi: www/www.cmi www/hyper.cmi
+gui/prefs.cmi:
+gui/about.cmo: globals/version.cmi commons/msys.cmi commons/mstring.cmi \
+    commons/low.cmi commons/lang.cmi commons/glevents.cmi gui/about.cmi
+gui/about.cmx: globals/version.cmx commons/msys.cmx commons/mstring.cmx \
+    commons/low.cmx commons/lang.cmx commons/glevents.cmx gui/about.cmi
+gui/cci.cmo: gui/nav.cmi commons/munix.cmo commons/msys.cmi \
+    commons/mstring.cmi gui/mmm.cmi www/lexurl.cmi commons/i18n.cmi \
     www/hyper.cmi commons/error.cmi
-browser/cci.cmx: browser/nav.cmx commons/munix.cmx commons/msys.cmx \
-    commons/mstring.cmx browser/mmm.cmx www/lexurl.cmx commons/i18n.cmx \
+gui/cci.cmx: gui/nav.cmx commons/munix.cmx commons/msys.cmx \
+    commons/mstring.cmx gui/mmm.cmx www/lexurl.cmx commons/i18n.cmx \
     www/hyper.cmx commons/error.cmx
-browser/debug.cmo: retrieve/img.cmi browser/gcache.cmi protocols/cache.cmi
-browser/debug.cmx: retrieve/img.cmx browser/gcache.cmx protocols/cache.cmx
-browser/fontprefs.cmo: commons/tkresource.cmi commons/mstring.cmi \
+gui/debug.cmo: retrieve/img.cmi gui/gcache.cmi protocols/cache.cmi
+gui/debug.cmx: retrieve/img.cmx gui/gcache.cmx protocols/cache.cmx
+gui/fontprefs.cmo: commons/tkresource.cmi commons/mstring.cmi \
     display/fonts.cmi
-browser/fontprefs.cmx: commons/tkresource.cmx commons/mstring.cmx \
+gui/fontprefs.cmx: commons/tkresource.cmx commons/mstring.cmx \
     display/fonts.cmx
-browser/gcache.cmo: viewers/viewers.cmi www/url.cmi commons/mlist.cmi \
-    commons/log.cmi www/document.cmi protocols/cache.cmi browser/gcache.cmi
-browser/gcache.cmx: viewers/viewers.cmx www/url.cmx commons/mlist.cmx \
-    commons/log.cmx www/document.cmx protocols/cache.cmx browser/gcache.cmi
-browser/history.cmo: browser/gcache.cmi www/document.cmi
-browser/history.cmx: browser/gcache.cmx www/document.cmx
-browser/mmm.cmo: www/www.cmi viewers/viewers.cmi globals/version.cmi \
-    www/url.cmi commons/tkresource.cmi viewers/save.cmi browser/plink.cmi \
-    browser/nav.cmi commons/msys.cmi commons/mstring.cmi browser/mmmprefs.cmi \
-    commons/low.cmi www/lexurl.cmi commons/lang.cmi commons/i18n.cmi \
-    www/hyper.cmi commons/hotlist.cmo browser/history.cmo \
-    commons/glevents.cmi browser/gcache.cmi commons/error.cmi \
-    www/document.cmi protocols/cache.cmi http/auth.cmi browser/about.cmi \
-    browser/mmm.cmi
-browser/mmm.cmx: www/www.cmx viewers/viewers.cmx globals/version.cmx \
-    www/url.cmx commons/tkresource.cmx viewers/save.cmx browser/plink.cmx \
-    browser/nav.cmx commons/msys.cmx commons/mstring.cmx browser/mmmprefs.cmx \
-    commons/low.cmx www/lexurl.cmx commons/lang.cmx commons/i18n.cmx \
-    www/hyper.cmx commons/hotlist.cmx browser/history.cmx \
-    commons/glevents.cmx browser/gcache.cmx commons/error.cmx \
-    www/document.cmx protocols/cache.cmx http/auth.cmx browser/about.cmx \
-    browser/mmm.cmi
-browser/mmmprefs.cmo: viewers/viewers.cmi globals/version.cmi www/urlenc.cmi \
+gui/gcache.cmo: viewers/viewers.cmi www/url.cmi commons/mlist.cmi \
+    commons/log.cmi www/document.cmi protocols/cache.cmi gui/gcache.cmi
+gui/gcache.cmx: viewers/viewers.cmx www/url.cmx commons/mlist.cmx \
+    commons/log.cmx www/document.cmx protocols/cache.cmx gui/gcache.cmi
+gui/history.cmo: gui/gcache.cmi www/document.cmi
+gui/history.cmx: gui/gcache.cmx www/document.cmx
+gui/mmm.cmo: www/www.cmi viewers/viewers.cmi globals/version.cmi www/url.cmi \
+    commons/tkresource.cmi viewers/save.cmi gui/plink.cmi gui/nav.cmi \
+    commons/msys.cmi commons/mstring.cmi gui/mmmprefs.cmi commons/low.cmi \
+    www/lexurl.cmi commons/lang.cmi commons/i18n.cmi www/hyper.cmi \
+    commons/hotlist.cmo gui/history.cmo commons/glevents.cmi gui/gcache.cmi \
+    commons/error.cmi www/document.cmi protocols/cache.cmi http/auth.cmi \
+    gui/about.cmi gui/mmm.cmi
+gui/mmm.cmx: www/www.cmx viewers/viewers.cmx globals/version.cmx www/url.cmx \
+    commons/tkresource.cmx viewers/save.cmx gui/plink.cmx gui/nav.cmx \
+    commons/msys.cmx commons/mstring.cmx gui/mmmprefs.cmx commons/low.cmx \
+    www/lexurl.cmx commons/lang.cmx commons/i18n.cmx www/hyper.cmx \
+    commons/hotlist.cmx gui/history.cmx commons/glevents.cmx gui/gcache.cmx \
+    commons/error.cmx www/document.cmx protocols/cache.cmx http/auth.cmx \
+    gui/about.cmx gui/mmm.cmi
+gui/mmmprefs.cmo: viewers/viewers.cmi globals/version.cmi www/urlenc.cmi \
     commons/tkresource.cmi display/textw_fo.cmi display/table.cmi \
-    display/styles.cmi retrieve/scheduler.cmi viewers/save.cmi \
-    browser/prefs.cmi protocols/mailto.cmo commons/log.cmi html/lexhtml.cmi \
-    commons/lang.cmi i18n/japan/japan.cmi display/imgload.cmi \
-    retrieve/img.cmi commons/i18n.cmi http/http.cmo display/htmlw.cmi \
-    display/html_disp.cmi commons/hotlist.cmo commons/glevents.cmi \
-    browser/gcache.cmi display/form.cmi display/fonts.cmi \
-    browser/fontprefs.cmo display/fit.cmi protocols/file.cmi html/dtd.cmi \
-    protocols/cache.cmi http/auth.cmi browser/mmmprefs.cmi
-browser/mmmprefs.cmx: viewers/viewers.cmx globals/version.cmx www/urlenc.cmx \
+    display/styles.cmi retrieve/scheduler.cmi viewers/save.cmi gui/prefs.cmi \
+    protocols/mailto.cmo commons/log.cmi html/lexhtml.cmi commons/lang.cmi \
+    i18n/japan/japan.cmi display/imgload.cmi retrieve/img.cmi \
+    commons/i18n.cmi http/http.cmo display/htmlw.cmi display/html_disp.cmi \
+    commons/hotlist.cmo commons/glevents.cmi gui/gcache.cmi display/form.cmi \
+    display/fonts.cmi gui/fontprefs.cmo display/fit.cmi protocols/file.cmi \
+    html/dtd.cmi protocols/cache.cmi http/auth.cmi gui/mmmprefs.cmi
+gui/mmmprefs.cmx: viewers/viewers.cmx globals/version.cmx www/urlenc.cmx \
     commons/tkresource.cmx display/textw_fo.cmx display/table.cmx \
-    display/styles.cmx retrieve/scheduler.cmx viewers/save.cmx \
-    browser/prefs.cmx protocols/mailto.cmx commons/log.cmx html/lexhtml.cmx \
-    commons/lang.cmx i18n/japan/japan.cmx display/imgload.cmx \
-    retrieve/img.cmx commons/i18n.cmx http/http.cmx display/htmlw.cmx \
-    display/html_disp.cmx commons/hotlist.cmx commons/glevents.cmx \
-    browser/gcache.cmx display/form.cmx display/fonts.cmx \
-    browser/fontprefs.cmx display/fit.cmx protocols/file.cmx html/dtd.cmx \
-    protocols/cache.cmx http/auth.cmx browser/mmmprefs.cmi
-browser/nav.cmo: www/www.cmi viewers/viewers.cmi www/url.cmi www/uri.cmi \
-    viewers/save.cmi retrieve/retrieve.cmi browser/plink.cmi www/maps.cmi \
+    display/styles.cmx retrieve/scheduler.cmx viewers/save.cmx gui/prefs.cmx \
+    protocols/mailto.cmx commons/log.cmx html/lexhtml.cmx commons/lang.cmx \
+    i18n/japan/japan.cmx display/imgload.cmx retrieve/img.cmx \
+    commons/i18n.cmx http/http.cmx display/htmlw.cmx display/html_disp.cmx \
+    commons/hotlist.cmx commons/glevents.cmx gui/gcache.cmx display/form.cmx \
+    display/fonts.cmx gui/fontprefs.cmx display/fit.cmx protocols/file.cmx \
+    html/dtd.cmx protocols/cache.cmx http/auth.cmx gui/mmmprefs.cmi
+gui/nav.cmo: www/www.cmi viewers/viewers.cmi www/url.cmi www/uri.cmi \
+    viewers/save.cmi retrieve/retrieve.cmi gui/plink.cmi www/maps.cmi \
     protocols/mailto.cmo commons/log.cmi commons/i18n.cmi www/hyper.cmi \
-    http/http_headers.cmi browser/gcache.cmi commons/error.cmi \
-    viewers/embed.cmi www/document.cmi protocols/cache.cmi browser/nav.cmi
-browser/nav.cmx: www/www.cmx viewers/viewers.cmx www/url.cmx www/uri.cmx \
-    viewers/save.cmx retrieve/retrieve.cmx browser/plink.cmx www/maps.cmx \
+    http/http_headers.cmi gui/gcache.cmi commons/error.cmi viewers/embed.cmi \
+    www/document.cmi protocols/cache.cmi gui/nav.cmi
+gui/nav.cmx: www/www.cmx viewers/viewers.cmx www/url.cmx www/uri.cmx \
+    viewers/save.cmx retrieve/retrieve.cmx gui/plink.cmx www/maps.cmx \
     protocols/mailto.cmx commons/log.cmx commons/i18n.cmx www/hyper.cmx \
-    http/http_headers.cmx browser/gcache.cmx commons/error.cmx \
-    viewers/embed.cmx www/document.cmx protocols/cache.cmx browser/nav.cmi
-browser/plink.cmo: www/www.cmi commons/i18n.cmi www/hyper.cmi \
-    browser/plink.cmi
-browser/plink.cmx: www/www.cmx commons/i18n.cmx www/hyper.cmx \
-    browser/plink.cmi
-browser/prefs.cmo: commons/tkresource.cmi commons/munix.cmo \
-    commons/mstring.cmi commons/i18n.cmi browser/fontprefs.cmo \
-    browser/prefs.cmi
-browser/prefs.cmx: commons/tkresource.cmx commons/munix.cmx \
-    commons/mstring.cmx commons/i18n.cmx browser/fontprefs.cmx \
-    browser/prefs.cmi
+    http/http_headers.cmx gui/gcache.cmx commons/error.cmx viewers/embed.cmx \
+    www/document.cmx protocols/cache.cmx gui/nav.cmi
+gui/plink.cmo: www/www.cmi commons/i18n.cmi www/hyper.cmi gui/plink.cmi
+gui/plink.cmx: www/www.cmx commons/i18n.cmx www/hyper.cmx gui/plink.cmi
+gui/prefs.cmo: commons/tkresource.cmi commons/munix.cmo commons/mstring.cmi \
+    commons/i18n.cmi gui/fontprefs.cmo gui/prefs.cmi
+gui/prefs.cmx: commons/tkresource.cmx commons/munix.cmx commons/mstring.cmx \
+    commons/i18n.cmx gui/fontprefs.cmx gui/prefs.cmi
 i18n/japan/encode.cmi: i18n/japan/wchar.cmi
 i18n/japan/japan.cmi: i18n/japan/charset.cmo
 i18n/japan/jisx0201.cmi: i18n/japan/wchar.cmi
@@ -534,8 +525,6 @@ i18n/japan/wstream.cmo: i18n/japan/wchar.cmi i18n/japan/charset.cmo \
     i18n/japan/wstream.cmi
 i18n/japan/wstream.cmx: i18n/japan/wchar.cmx i18n/japan/charset.cmx \
     i18n/japan/wstream.cmi
-safe/safe418.cmi:
-safe/safe418mmm.cmi:
 safe/safeapplets.cmi:
 safe/safefrx.cmi:
 safe/safeio.cmi: appsys/capabilities.cmi
@@ -551,44 +540,14 @@ safe/crcs.cmo:
 safe/crcs.cmx:
 safe/crcsmmm.cmo:
 safe/crcsmmm.cmx:
-safe/safe418.cmo: www/www.cmi viewers/viewers.cmi www/url.cmi \
-    retrieve/retrieve.cmi retrieve/progress.cmi browser/nav.cmi \
-    commons/mstring.cmi commons/mlist.cmi www/lexurl.cmi retrieve/img.cmi \
-    commons/i18n.cmi www/hyper.cmi commons/feed.cmi commons/error.cmi \
-    www/document.cmi appsys/capabilities.cmi protocols/cache.cmi \
-    appsys/applets.cmi safe/safe418.cmi
-safe/safe418.cmx: www/www.cmx viewers/viewers.cmx www/url.cmx \
-    retrieve/retrieve.cmx retrieve/progress.cmx browser/nav.cmx \
-    commons/mstring.cmx commons/mlist.cmx www/lexurl.cmx retrieve/img.cmx \
-    commons/i18n.cmx www/hyper.cmx commons/feed.cmx commons/error.cmx \
-    www/document.cmx appsys/capabilities.cmx protocols/cache.cmx \
-    appsys/applets.cmx safe/safe418.cmi
-safe/safe418mmm.cmo: www/www.cmi viewers/viewers.cmi www/url.cmi \
-    retrieve/retrieve.cmi retrieve/progress.cmi browser/nav.cmi \
-    commons/mstring.cmi browser/mmm.cmi commons/mlist.cmi www/maps.cmi \
-    www/lexurl.cmi retrieve/img.cmi commons/i18n.cmi www/hyper.cmi \
-    display/htmlfmt.cmi html/html_eval.cmi display/html_disp.cmi \
-    html/html.cmi display/fonts.cmi commons/feed.cmi commons/error.cmi \
-    viewers/embed.cmi html/dtd.cmi www/document.cmi viewers/decoders.cmi \
-    appsys/capabilities.cmi protocols/cache.cmi appsys/applets.cmi \
-    safe/safe418mmm.cmi
-safe/safe418mmm.cmx: www/www.cmx viewers/viewers.cmx www/url.cmx \
-    retrieve/retrieve.cmx retrieve/progress.cmx browser/nav.cmx \
-    commons/mstring.cmx browser/mmm.cmx commons/mlist.cmx www/maps.cmx \
-    www/lexurl.cmx retrieve/img.cmx commons/i18n.cmx www/hyper.cmx \
-    display/htmlfmt.cmi html/html_eval.cmx display/html_disp.cmx \
-    html/html.cmx display/fonts.cmx commons/feed.cmx commons/error.cmx \
-    viewers/embed.cmx html/dtd.cmx www/document.cmx viewers/decoders.cmx \
-    appsys/capabilities.cmx protocols/cache.cmx appsys/applets.cmx \
-    safe/safe418mmm.cmi
 safe/safeapplets.cmo: www/www.cmi viewers/viewers.cmi www/url.cmi \
-    retrieve/retrieve.cmi retrieve/progress.cmi browser/nav.cmi \
+    retrieve/retrieve.cmi retrieve/progress.cmi gui/nav.cmi \
     commons/mstring.cmi commons/mlist.cmi www/lexurl.cmi retrieve/img.cmi \
     www/hyper.cmi commons/feed.cmi commons/error.cmi www/document.cmi \
     appsys/capabilities.cmi protocols/cache.cmi appsys/applets.cmi \
     safe/safeapplets.cmi
 safe/safeapplets.cmx: www/www.cmx viewers/viewers.cmx www/url.cmx \
-    retrieve/retrieve.cmx retrieve/progress.cmx browser/nav.cmx \
+    retrieve/retrieve.cmx retrieve/progress.cmx gui/nav.cmx \
     commons/mstring.cmx commons/mlist.cmx www/lexurl.cmx retrieve/img.cmx \
     www/hyper.cmx commons/feed.cmx commons/error.cmx www/document.cmx \
     appsys/capabilities.cmx protocols/cache.cmx appsys/applets.cmx \
@@ -600,17 +559,17 @@ safe/safeio.cmx: commons/i18n.cmx appsys/capabilities.cmx safe/safeio.cmi
 safe/safejtk.cmo: safe/safejtk.cmi
 safe/safejtk.cmx: safe/safejtk.cmi
 safe/safemmm.cmo: viewers/viewers.cmi www/url.cmi retrieve/retrieve.cmi \
-    browser/nav.cmi browser/mmm.cmi www/maps.cmi commons/i18n.cmi \
-    www/hyper.cmi display/htmlfmt.cmi html/html_eval.cmi \
-    display/html_disp.cmi html/html.cmi display/fonts.cmi viewers/embed.cmi \
-    html/dtd.cmi www/document.cmi viewers/decoders.cmi \
-    appsys/capabilities.cmi protocols/cache.cmi safe/safemmm.cmi
+    gui/nav.cmi gui/mmm.cmi www/maps.cmi commons/i18n.cmi www/hyper.cmi \
+    display/htmlfmt.cmi html/html_eval.cmi display/html_disp.cmi \
+    html/html.cmi display/fonts.cmi viewers/embed.cmi html/dtd.cmi \
+    www/document.cmi viewers/decoders.cmi appsys/capabilities.cmi \
+    protocols/cache.cmi safe/safemmm.cmi
 safe/safemmm.cmx: viewers/viewers.cmx www/url.cmx retrieve/retrieve.cmx \
-    browser/nav.cmx browser/mmm.cmx www/maps.cmx commons/i18n.cmx \
-    www/hyper.cmx display/htmlfmt.cmi html/html_eval.cmx \
-    display/html_disp.cmx html/html.cmx display/fonts.cmx viewers/embed.cmx \
-    html/dtd.cmx www/document.cmx viewers/decoders.cmx \
-    appsys/capabilities.cmx protocols/cache.cmx safe/safemmm.cmi
+    gui/nav.cmx gui/mmm.cmx www/maps.cmx commons/i18n.cmx www/hyper.cmx \
+    display/htmlfmt.cmi html/html_eval.cmx display/html_disp.cmx \
+    html/html.cmx display/fonts.cmx viewers/embed.cmx html/dtd.cmx \
+    www/document.cmx viewers/decoders.cmx appsys/capabilities.cmx \
+    protocols/cache.cmx safe/safemmm.cmi
 safe/safestd.cmo: safe/safestd.cmi
 safe/safestd.cmx: safe/safestd.cmi
 safe/safestr.cmo: safe/safestr.cmi

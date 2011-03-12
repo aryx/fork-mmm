@@ -19,7 +19,7 @@ INCLUDEDIRS= \
 SYSINCLUDES=$(TKCOMPFLAGS)
 
 #pad: the rm gen/*.ml is really just for codemap ...
-all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo
+all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo crcs.cmo crcsmmm.cmo
 	rm gen/*.ml*
 
 gen/safe418mmm.mli: gen/safe418.mli safemmm.mli
@@ -39,7 +39,7 @@ safe418mmm.cmo: safe418mmm.cmi \
 
 crcsmmm.ml: safe418mmm.cmi
 	-mv $@ $@.bak
-	$(LIBDIR)/extract_crc -I safe -I $(LIBDIR) \
+	$(LIBDIR)/extract_crc -I gen -I $(LIBDIR) \
 	  Safe418mmm \
 	  > $@ || rm $@
 	@-diff $@ $@.bak || echo "WARNING: CRCs have changed"
@@ -145,7 +145,7 @@ safejtk.mli:
 
 crcs.ml : safe418.cmi
 	-mv $@ $@.bak
-	$(LIBDIR)/extract_crc -I safe -I $(LIBDIR) \
+	$(LIBDIR)/extract_crc -I gen -I $(LIBDIR) \
 	  Oo Safe418 \
 	  > $@ || rm $@
 	@-diff $@ $@.bak || echo "WARNING: CRCs have changed"
