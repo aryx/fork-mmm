@@ -231,7 +231,8 @@ distribute:
 # Developer rules
 ##############################################################################
 
-DIRS=$(filter-out sandbox, $(MAKESUBDIRS))
+#DIRS=$(filter-out sandbox, $(MAKESUBDIRS))
+DIRS=$(filter-out sandbox, $(MAINDIRS))
 
 PP1=-pp camlp4o
 # you want "-dot-reduce"
@@ -239,7 +240,7 @@ PP1=-pp camlp4o
 #  color per directory ! quite useful
 # todo? generate a graph using the  -dot-types flag ? (type dependencies)
 
-DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,slategray3,black
+DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,slategray3,limegreen
 
 dotall:
 	ocamldoc $(PP1) $(TKCOMPFLAGS) $(INCLUDES) -I demos/sboard -I demos/applets $(DIRS:=/*.ml) -dot -dot-reduce -dot-colors $(DOTCOLORS)
