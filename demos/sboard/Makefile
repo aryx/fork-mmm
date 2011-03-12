@@ -1,6 +1,7 @@
-include ../Makefile.config
+TOP=../..
+include $(TOP)/Makefile.config
 
-INCLUDES=-I .. -I ../commons -I ../www -I ../html 
+INCLUDES=-I $(TOP) -I $(TOP)/commons -I $(TOP)/www -I $(TOP)/html 
 
 DEPFLAGS=$(INCLUDES)
 
@@ -8,7 +9,7 @@ COMPFLAGS= $(TKCOMPFLAGS) $(INCLUDES)
 
 all : surfboard surfboard_remote
 
-JDIR=../i18n/japan
+JDIR=$(TOP)/i18n/japan
 JAPAN= 	$(JDIR)/bug.cmo \
 	$(JDIR)/charset.cmo $(JDIR)/wchar.cmo $(JDIR)/wstream.cmo \
         $(JDIR)/tool.cmo \
@@ -17,9 +18,9 @@ JAPAN= 	$(JDIR)/bug.cmo \
 	$(JDIR)/encode.cmo \
 	$(JDIR)/japan.cmo
 
-LIBS=../commons/lib.cma
+LIBS=$(TOP)/commons/lib.cma
 
-HTML=../html/dtd.cmo ../html/html.cmo ../html/lexhtml.cmo ../html/html_eval.cmo
+HTML=$(TOP)/html/dtd.cmo $(TOP)/html/html.cmo $(TOP)/html/lexhtml.cmo $(TOP)/html/html_eval.cmo
 
 OBJS= misc.cmo \
       tree.cmo \
@@ -33,7 +34,7 @@ surfboard: $(OBJS)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o surfboard \
 		unix.cma str.cma $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
 		$(LIBS) $(JAPAN) \
-		../www/uri.cmo $(HTML) $(OBJS)
+		$(TOP)/www/uri.cmo $(HTML) $(OBJS)
 
 #		 $(WITH_UNIX) $(WITH_STR) \
 #		 $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \

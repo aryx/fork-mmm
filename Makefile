@@ -10,6 +10,7 @@ TOP=$(shell pwd)
 
 PROGS=mmm
 #PROGS+=htparse, surfboard
+
 OPTPROGS= $(PROGS:=.opt)
 
 SRC=main.ml
@@ -25,7 +26,7 @@ MAINDIRS= \
   sandbox \
 
 # dynamically loaded extensions
-MOREDIRS= extensions demos/applets
+MOREDIRS= extensions demos/applets demos/sboard
 
 MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
 
@@ -66,7 +67,7 @@ opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
 
-allbyte: mmm mmm_remote htparse surfboard
+allbyte: mmm mmm_remote htparse
 
 all.opt: opt
 top: $(TARGET).top
@@ -119,13 +120,6 @@ mmm_remote: main_remote.cmo
 
 clean::
 	rm -f mmm mmmx.bin mmm_remote htparse
-
-# JPF's bookmark tool
-surfboard: 
-	cd sboard; $(MAKE)
-
-clean::
-	cd sboard; $(MAKE) clean
 
 # Default rules
 depend:: beforedepend
