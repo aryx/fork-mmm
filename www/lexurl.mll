@@ -5,7 +5,7 @@ open Lexing
 open Mlist
 
 let normalize_port = function
-    HTTP, Some 80 -> None
+  | HTTP, Some 80 -> None
   | FTP, Some 21 -> None
   (* incomplete, but we don't care yet *)
   | _, p -> p
@@ -31,7 +31,7 @@ rule f = parse
       	let protocol =
       	  String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
 	begin match protocol with
-	  "FTP" -> (* we don't need the detail of path *)
+	| "FTP" -> (* we don't need the detail of path *)
 	     slashslash lexbuf;
 	     let u,p = userpass lexbuf in
 	     let h,po = hostport lexbuf in
