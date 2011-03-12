@@ -1,26 +1,26 @@
-open Html
-open Htmlfmt
 
 val form_bg : string ref
 
 type t = {
-  text_input : Widget.widget -> tag -> unit;
+  text_input : Widget.widget -> Html.tag -> unit;
       (* [text_input top tag] *)
-  checkbox_input : Widget.widget ->  tag -> unit;
+  checkbox_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
-  radio_input : Widget.widget ->  tag -> unit;
+  radio_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
-  image_input : Widget.widget ->  tag -> Embed.embobject;
+  image_input : Widget.widget ->  Html.tag -> Embed.embobject;
       (* [input top tag] *)
-  submit_input : Widget.widget ->  tag -> unit;
+  submit_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
-  reset_input : Widget.widget ->  tag -> unit;
+  reset_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
-  select : Widget.widget -> (string * string * bool) list -> tag -> unit;
+  select : Widget.widget -> (string * string * bool) list -> Html.tag -> unit;
       (* [select top elements tag] *)
-  textarea:  Widget.widget -> string -> tag -> unit
-      (* [textarea top initial attrs] *)
-  }
 
-val create : string -> form_behaviour -> Viewers.context -> t
+  textarea:  Widget.widget -> string -> Html.tag -> unit
+      (* [textarea top initial attrs] *)
+}
+
+val create: 
+  string -> Htmlfmt.form_behaviour -> Viewers.context -> t
 

@@ -242,5 +242,4 @@ let view attach did redisplay errors annotations coding =
   with
     Not_found ->
      Error.default#f "document not in cache"
-  
 

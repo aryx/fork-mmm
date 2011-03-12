@@ -153,6 +153,7 @@ class spacing :
     method pop : Tk.textIndex -> int -> unit
     method push : Tk.textIndex -> int -> unit
   end
+
 val circle_data : string
 val disc_data : string
 val square_data : string

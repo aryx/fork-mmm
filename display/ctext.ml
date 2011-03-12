@@ -6,11 +6,11 @@ let tag_name = "CTEXT_RO"
 
 let navigation_keys tx =
   let tags = bindtags_get tx in
-    match tags with
-      (WidgetBindings t)::l when t = tx ->
-	Canvas.configure (Winfo.parent t) [YScrollIncrement (Pixels 15)];
-      	bindtags tx ((WidgetBindings tx) :: (TagBindings tag_name) :: l)
-    | _ -> ()
+  match tags with
+  | (WidgetBindings t)::l when t = tx ->
+      Canvas.configure (Winfo.parent t) [YScrollIncrement (Pixels 15)];
+      bindtags tx ((WidgetBindings tx) :: (TagBindings tag_name) :: l)
+  | _ -> ()
 
 
 let create top opts navigation =

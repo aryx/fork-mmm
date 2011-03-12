@@ -5,7 +5,7 @@ open Fonts
 open Embed
 
 type gattr =
-     Margin of int
+  |  Margin of int
   |  Justification of string
   |  Font of fontInfo		        (* mostly size and face *)
   |  FgColor of string
@@ -17,7 +17,7 @@ type gattr =
   |  Lowerscript
 
 type formatterSpec = 
-    TopFormatter of bool		(* flag is pixel-scrolling mode *)
+  | TopFormatter of bool		(* flag is pixel-scrolling mode *)
   | NestedFormatter
   | FrameFormatter of (string * string) list (* decoration ... *)
 
@@ -122,7 +122,7 @@ module type FormDisplay = sig
 
 (* Table manager *)
 type width_constraint =
-    TopWidth				(* toplevel window size*)
+  | TopWidth				(* toplevel window size*)
   | FixedWidth of int			(* width is given in pixels *)
   | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
 

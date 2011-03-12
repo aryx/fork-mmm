@@ -10,9 +10,7 @@ cells (td and th) and for rows.
  *)
 
 
-
-
-module Make( TableDisplay : TableDisplay) =
+module Make (TableDisplay: TableDisplay) =
 struct
 open TableDisplay
 

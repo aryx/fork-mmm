@@ -28,8 +28,8 @@ let alt_mode emb m l =
 	      (fun ei -> Menu.popup menu ei.ev_RootX ei.ev_RootY)))
 
 let printTagOrId = function
-  Id n -> Log.f (sprintf "Id %d" n)
- |Tag s -> Log.f (sprintf "Tag %s" s)
+  | Id n -> Log.f (sprintf "Id %d" n)
+  | Tag s -> Log.f (sprintf "Tag %s" s)
 
 
 (* See Htbind for semantics of this class *)
