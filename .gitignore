@@ -49,3 +49,7 @@
 /commons/ocamldoc.out
 /viewers/ocamldoc.out
 /mmm
+/safe/gen/safe418.ml
+/safe/gen/safe418.mli
+/safe/gen/safe418mmm.ml
+/safe/gen/safe418mmm.mli
