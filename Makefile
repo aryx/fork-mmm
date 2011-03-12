@@ -123,8 +123,7 @@ clean::
 #	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 #	done; $(CAMLDEP) main.ml* ) > .depend
 #	cd sboard; $(MAKE) depend
-
-include .depend
+#include .depend
 
 # add -custom so dont need add e.g. ocamlbdb/ in LD_LIBRARY_PATH
 CUSTOM=-custom
