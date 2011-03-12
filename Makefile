@@ -9,12 +9,13 @@ include Makefile.config
 TOP=$(shell pwd)
 
 PROGS=mmm
-#PROGS+=htparse, surboard
+#PROGS+=htparse, surfboard
 OPTPROGS= $(PROGS:=.opt)
 
 SRC=main.ml
 
-MAKESUBDIRS= \
+# for the basic browser
+MAINDIRS= \
   commons i18n/japan globals \
   www http html \
   protocols retrieve viewers \
@@ -23,8 +24,13 @@ MAKESUBDIRS= \
   appsys \
   safe \
 
-INCLUDEDIRS=$(MAKESUBDIRS) safe/gen
-LIBS=$(MAKESUBDIRS:%=%/lib.cma)
+# dynamically loaded extensions
+MOREDIRS= extensions applets
+
+MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
+
+INCLUDEDIRS=$(MAINDIRS) safe/gen
+LIBS=$(MAINDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
 SYSLIBS=unix.cma str.cma  dynlink.cma
@@ -49,7 +55,7 @@ OCAMLCFLAGS+=$(COMPFLAGS)
 # Top rules
 ##############################################################################
 
-.PHONY: all all.opt opt top clean distclean   applets modules
+.PHONY: all all.opt opt top clean distclean
 
 # Bytecode targets
 all:: 
@@ -60,7 +66,7 @@ opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
 
-allbyte: mmm mmm_remote htparse surfboard applets modules
+allbyte: mmm mmm_remote htparse surfboard
 
 all.opt: opt
 top: $(TARGET).top
@@ -110,9 +116,16 @@ HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo
 htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
+
 # Remote command
 mmm_remote: remote/mmm_remote.cmo
 	$(CAMLC) -custom -o mmm_remote unix.cma remote/mmm_remote.cmo
+
+
+clean::
+	rm -rf remote/*.cm* remote/*.o
+	rm -f mmm mmmx.bin mmm_remote htparse
+
 
 # JPF's bookmark tool
 surfboard: 
@@ -121,23 +134,6 @@ surfboard:
 clean::
 	cd sboard; $(MAKE) clean
 
-# Applets examples
-applets:
-	cd applets; $(MAKE) all
-
-clean::
-	cd applets; $(MAKE) clean
-
-# User's additional modules examples
-modules:
-	cd modules; $(MAKE) all
-
-clean::
-	cd modules; $(MAKE) clean
-
-clean::
-	rm -rf remote/*.cm* remote/*.o
-	rm -f mmm mmmx.bin mmm_remote htparse
 
 # Default rules
 
