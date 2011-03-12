@@ -1,14 +1,19 @@
+open Common
+
 (* Utilities for tags and attributes *)
+
 open Printf
 open Protocol
 open Tk
 open Frx_text
 open Fonts
+
 open Htmlfmt
 
 (* Delayed and shared configuration of tags *)
 
-module TagSet = Set.Make(struct type t = string let compare = compare end)
+module TagSet = Common.StringSet
+
 class tags (thtml) =
  object
   val mutable onhold = []
@@ -26,19 +31,18 @@ class tags (thtml) =
 
   (* change a tag value *)
   method change tagname attrs =
-      onhold <- (tagname,attrs) :: onhold;
-      configured <- TagSet.add tagname configured
+    onhold <- (tagname,attrs) :: onhold;
+    configured <- TagSet.add tagname configured
 
   method add deco =
     decorations <- deco :: decorations
 
   (* flush tag definitions *)
   method flush =
-    List.iter (fun (t,d) -> 
-      try Text.tag_configure wid t d with TkError _ -> ()) 
-     (List.rev onhold);
-    List.iter (fun (t,d,e) -> Text.tag_add wid t d e)
-     (List.rev decorations);
+    onhold +> List.rev +> List.iter (fun (t,d) -> 
+      try Text.tag_configure wid t d with TkError _ -> ());
+    decorations +> List.rev +> List.iter (fun (t,d,e) -> 
+      Text.tag_add wid t d e);
     onhold <- [];
     decorations <- []
 end
@@ -62,12 +66,12 @@ class anchortags (thtml) =
 
   method flush =
     tags#flush;
-    List.iter (fun (s,e,h) ->
+    mappings +> List.iter (fun (s,e,h) ->
       let loc1 = Text.index wid s
       and loc2 = Text.index wid e
       in
-      anchor_table <- LocMap.add (loc1,loc2) h anchor_table)
-      mappings;
+      anchor_table <- LocMap.add (loc1,loc2) h anchor_table
+    );
     mappings <- []
 
   method getlink ei =
