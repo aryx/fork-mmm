@@ -5,7 +5,7 @@ CAMLLIBR=ocamlc -a
 CAMLDEP=ocamldep
 
 
-COMPFLAGS= -I ../safe
+COMPFLAGS= -I ../safe/gen
 
 OBJS=cube3d.cmo molecule.cmo \
      mondrian.cmo taquin.cmo \

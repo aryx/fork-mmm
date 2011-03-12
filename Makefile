@@ -19,19 +19,17 @@ MAKESUBDIRS= \
   www http html \
   protocols retrieve viewers \
   display \
+  gui \
   appsys \
-  gui
+  safe \
 
-INCLUDEDIRS=$(MAKESUBDIRS) safe
+INCLUDEDIRS=$(MAKESUBDIRS) safe/gen
 LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
 SYSLIBS=unix.cma str.cma  dynlink.cma
 TKLIBS=$(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK)\
   $(WITH_TK80)
-
-# This number defines the revision of the applet system
-VERSION=418
 
 #------------------------------------------------------------------------------
 #package dependencies
@@ -89,7 +87,7 @@ depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
 # Exported safe libraries
-SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
+SAFE= appsys/appsys.cmo safe/gen/safe418.cmo safe/gen/safe418mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
@@ -104,6 +102,9 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 	  $(WITH_TK80_OPT) \
 	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
+# Plain text viewer
+#TXTDISP=viewers/plain.cmo ??
+
 # The standalone HTML syntax checker
 HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo
 htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
@@ -111,7 +112,7 @@ htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
 
 # Remote command
 mmm_remote: remote/mmm_remote.cmo
-	$(CAMLC) -custom -o mmm_remote $(WITH_UNIX) remote/mmm_remote.cmo
+	$(CAMLC) -custom -o mmm_remote unix.cma remote/mmm_remote.cmo
 
 # JPF's bookmark tool
 surfboard: 
@@ -135,7 +136,6 @@ clean::
 	cd modules; $(MAKE) clean
 
 clean::
-	rm -rf safe/*.cm* safe/*.o
 	rm -rf remote/*.cm* remote/*.o
 	rm -f mmm mmmx.bin mmm_remote htparse
 
@@ -171,58 +171,6 @@ distclean:: clean
 ##############################################################################
 # Build documentation
 ##############################################################################
-
-##############################################################################
-# Misc rules
-##############################################################################
-
-# Plain text viewer
-TXTDISP=viewers/plain.cmo
-
-## The common safe library
-include Makefile.safe
-
-## For applets specific to MMM
-SAFEMMMINTF= safe/safe$(VERSION).mli safe/safemmm.mli
-SAFEMMMIMPL= safe/safe$(VERSION).ml safe/safemmm.ml
-
-safe-mmm: $(SAFEMMM) safe/safe$(VERSION)mmm.cmi safe/safe$(VERSION)mmm.cmo
-
-SAFEMMM= $(SAFEMMMINTF) $(SAFEMMMIMPL)
-
-safe/safe$(VERSION)mmm.mli: $(SAFEMMMINTF)
-	(echo '(* Automatically generated. Do NOT edit *)'; \
-	 cat $(SAFEMMMINTF)) > $@
-
-safe/safe$(VERSION)mmm.ml: $(SAFEMMMIMPL)
-	(echo '(* Automatically generated. Do NOT edit *)'; \
-	 cat $(SAFEMMMIMPL)) > $@
-
-safe/safe$(VERSION)mmm.cmi: safe/safe$(VERSION)mmm.mli $(APPSYS) $(OBJS)
-	$(CAMLC) -c -nopervasives safe/safe$(VERSION)mmm.mli
-
-safe/safe$(VERSION)mmm.cmo: safe/safe$(VERSION)mmm.cmi \
-	                    safe/safe$(VERSION)mmm.ml $(APPSYS) $(OBJS)
-	$(CAMLC) $(COMPFLAGS) -c safe/safe$(VERSION)mmm.ml
-
-safe/crcsmmm.ml: safe/safe$(VERSION)mmm.cmi
-	-mv $@ $@.bak
-	$(LIBDIR)/extract_crc -I safe -I $(LIBDIR) \
-	  Safe$(VERSION)mmm \
-	  > $@ || rm $@
-	@-diff $@ $@.bak || echo "WARNING: CRCs have changed"
-
-beforedepend:: safe/safe$(VERSION)mmm.ml safe/safe$(VERSION)mmm.mli
-
-clean::
-	rm -f safe/safe$(VERSION)mmm.cm*
-	rm -f safe/safe$(VERSION)mmm.ml safe/safe$(VERSION)mmm.mli
-
-# just for authors
-safe-precheck:
-	md5 $(CAMLTKDIR)/*.cmi | sort -n | md5
-
-safe: safe-common safe-mmm safe/crcs.ml safe/crcsmmm.ml
 
 ##############################################################################
 # Install
@@ -271,7 +219,7 @@ install-mdk:
 	if [ ! -d $(INSTALLLIBDIR)/mdk ]; then \
          mkdir -p $(INSTALLLIBDIR)/mdk; \
         fi
-	cp safe/safe$(VERSION)*.mli safe/safe$(VERSION)*.cmi \
+	cp safe/safe418*.mli safe/safe418*.cmi \
 	    $(INSTALLLIBDIR)/mdk
 	sed -e '/_MDKDIR_/s,_MDKDIR_,$(INSTALLLIBDIR)/mdk,g' \
 	     scripts/mmmc > $(INSTALLBINDIR)/mmmc
@@ -302,7 +250,7 @@ distribute:
 # Developer rules
 ##############################################################################
 
-DIRS=$(filter-out commons2, $(MAKESUBDIRS))
+DIRS=$(filter-out safe, $(MAKESUBDIRS))
 
 PP1=-pp camlp4o
 # you want "-dot-reduce"

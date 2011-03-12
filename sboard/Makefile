@@ -31,7 +31,7 @@ OBJS= misc.cmo \
 
 surfboard: $(OBJS)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o surfboard \
-		$(WITH_UNIX) $(WITH_STR) $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
+		unix.cma str.cma $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
 		$(LIBS) $(JAPAN) \
 		../www/uri.cmo $(HTML) $(OBJS)
 
@@ -47,7 +47,7 @@ surfboard: $(OBJS)
 
 surfboard_remote: surfboard_remote.cmo
 	$(CAMLC) -custom -o surfboard_remote \
-		$(WITH_UNIX) surfboard_remote.cmo
+		unix.cma surfboard_remote.cmo
 
 install: surfboard
 	echo "$(MAKE) install for surfboard: not yet"

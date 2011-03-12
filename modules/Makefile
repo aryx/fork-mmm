@@ -5,7 +5,7 @@ CAMLLIBR=ocamlc -a
 CAMLDEP=ocamldep
 
 
-COMPFLAGS= -I ../safe
+COMPFLAGS= -I ../safe/gen
 
 OBJS=images.cmo tachy_test.cmo tachy_space.cmo audio.cmo \
 	tachy_aftermmm.cmo remove_simple_table.cmo
