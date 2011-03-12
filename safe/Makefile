@@ -123,25 +123,6 @@ safe418.cmo: safe418.cmi gen/safe418.ml \
 
 beforedepend:: $(SAFEINTF) $(SAFEIMPL)
 
-# These are shared with the Calves plugin
-safestd.ml:
-	-ln -s ../shared/$@ $@
-safestd.mli:
-	-ln -s ../shared/$@ $@
-safeio.ml:
-	-ln -s ../shared/$@ $@
-safeio.mli:
-	-ln -s ../shared/$@ $@
-safestr.ml:
-	-ln -s ../shared/$@ $@
-safestr.mli:
-	-ln -s ../shared/$@ $@
-safeunix.ml:
-	-ln -s ../shared/$@ $@
-safeunix.mli:
-	-ln -s ../shared/$@ $@
-safeapplets.mli:
-	-ln -s ../shared/$@ $@
 # safeapplet.ml depends on the particular implementation
 
 # These come from ocamltk
