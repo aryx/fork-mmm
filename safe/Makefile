@@ -13,7 +13,7 @@ INCLUDEDIRS= \
  $(TOP)/commons \
  $(TOP)/www $(TOP)/http $(TOP)/html \
  $(TOP)/retrieve $(TOP)/protocols $(TOP)/viewers \
- $(TOP)/appsys $(TOP)/display $(TOP)/gui \
+ $(TOP)/applets $(TOP)/display $(TOP)/gui \
  gen
 
 SYSINCLUDES=$(TKCOMPFLAGS)

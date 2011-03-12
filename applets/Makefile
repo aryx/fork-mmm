@@ -41,28 +41,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-
-# Most files are shared with the Calves plugin
-applets.ml:
-	-ln -s ../shared/$@ $@
-applets.mli:
-	-ln -s ../shared/$@ $@
-capabilities.ml:
-	-ln -s ../shared/$@ $@
-capabilities.mli:
-	-ln -s ../shared/$@ $@
-dload.ml:
-	-ln -s ../shared/$@ $@
-dload.mli:
-	-ln -s ../shared/$@ $@
-pgp.ml:
-	-ln -s ../shared/$@ $@
-
-beforedepend:: applets.ml applets.mli \
-	       capabilities.ml capabilities.mli \
-	       dload.ml dload.mli \
-	       pgp.ml
-
 ##############################################################################
 # Literate Programming rules
 ##############################################################################

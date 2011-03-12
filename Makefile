@@ -21,7 +21,7 @@ MAINDIRS= \
   protocols retrieve viewers \
   display \
   gui \
-  appsys \
+  applets \
   safe \
 
 # dynamically loaded extensions
@@ -93,7 +93,7 @@ depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
 # Exported safe libraries
-SAFE= appsys/appsys.cmo safe/gen/safe418.cmo safe/gen/safe418mmm.cmo
+SAFE= applets/appsys.cmo safe/gen/safe418.cmo safe/gen/safe418mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
@@ -132,7 +132,7 @@ depend:: beforedepend
 	(for d in commons; \
 	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; \
-        for d in www http html protocols retrieve viewers display appsys gui i18n/japan safe; \
+        for d in www http html protocols retrieve viewers display applets gui i18n/japan safe; \
 	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
 	done; $(CAMLDEP) main.ml* ) > .depend
 	cd sboard; $(MAKE) depend

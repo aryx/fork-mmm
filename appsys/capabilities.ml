@@ -1,1 +1,0 @@
-../shared/appsys/capabilities.ml
