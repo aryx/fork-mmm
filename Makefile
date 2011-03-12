@@ -38,14 +38,7 @@ SYSLIBS=unix.cma str.cma  dynlink.cma
 TKLIBS=$(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK)\
   $(WITH_TK80)
 
-#------------------------------------------------------------------------------
-#package dependencies
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Main variables
-#------------------------------------------------------------------------------
-COMPFLAGS=$(TKCOMPFLAGS) $(INCLUDES)
-OCAMLCFLAGS+=$(COMPFLAGS)
+SYSINCLUDES=$(TKCOMPFLAGS)
 
 ##############################################################################
 # Generic
@@ -97,12 +90,12 @@ depend::
 SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
 CRCS= sandbox/crcs.cmo sandbox/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
-	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
+	$(OCAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
          $(SYSLIBS) $(TKLIBS) $^
 
 # The native version does not support applets !
 mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
-	$(CAMLOPT) -o $@ $(PROFILING) \
+	$(OCAMLOPT) -o $@ $(PROFILING) \
         $(SYSLIBS:%.cma=%.cmxa)
 	  $(WITH_TK_OPT) \
 	  $(WITH_FRX_OPT) $(WITH_JPF_OPT) $(WITH_TKANIM_OPT) $(WITH_JTK_OPT) \

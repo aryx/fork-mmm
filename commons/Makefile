@@ -7,16 +7,17 @@ TARGET=lib
 -include $(TOP)/Makefile.config
 
 # Miscellaneous additional libraries
-SRC= low.ml mstring.ml mlist.ml msys.ml \
-     ebuffer.ml munix.ml date.ml \
-     log.ml \
-     condition.ml feed.ml \
-     lexpath.ml \
-     ibtree.ml \
-     tkresource.ml \
-     glevents.ml \
-     i18nprintf.ml lang.ml i18n.ml \
-     error.ml hotlist.ml \
+SRC= common.ml \
+  low.ml mstring.ml mlist.ml msys.ml \
+  ebuffer.ml munix.ml date.ml \
+  log.ml \
+  condition.ml feed.ml \
+  lexpath.ml \
+  ibtree.ml \
+  tkresource.ml \
+  glevents.ml \
+  i18nprintf.ml lang.ml i18n.ml \
+  error.ml hotlist.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
