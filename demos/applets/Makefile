@@ -6,7 +6,7 @@ CAMLDEP=ocamldep
 
 TOP=../..
 
-COMPFLAGS= -I $(TOP)/safe/gen
+COMPFLAGS= -I $(TOP)/sandbox/gen
 
 OBJS=cube3d.cmo molecule.cmo \
      mondrian.cmo taquin.cmo \

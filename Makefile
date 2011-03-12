@@ -22,14 +22,14 @@ MAINDIRS= \
   display \
   gui \
   applets \
-  safe \
+  sandbox \
 
 # dynamically loaded extensions
 MOREDIRS= extensions demos/applets
 
 MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
 
-INCLUDEDIRS=$(MAINDIRS) safe/gen
+INCLUDEDIRS=$(MAINDIRS) sandbox/gen
 LIBS=$(MAINDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
@@ -92,9 +92,9 @@ clean::
 depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
-# Exported safe libraries
-SAFE= applets/appsys.cmo safe/gen/safe418.cmo safe/gen/safe418mmm.cmo
-CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
+# Exported sandbox libraries
+SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
+CRCS= sandbox/crcs.cmo sandbox/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
          $(SYSLIBS) $(TKLIBS) $^
@@ -206,7 +206,7 @@ install-mdk:
 	if [ ! -d $(INSTALLLIBDIR)/mdk ]; then \
          mkdir -p $(INSTALLLIBDIR)/mdk; \
         fi
-	cp safe/safe418*.mli safe/safe418*.cmi \
+	cp sandbox/safe418*.mli sandbox/safe418*.cmi \
 	    $(INSTALLLIBDIR)/mdk
 	sed -e '/_MDKDIR_/s,_MDKDIR_,$(INSTALLLIBDIR)/mdk,g' \
 	     scripts/mmmc > $(INSTALLBINDIR)/mmmc
@@ -237,7 +237,7 @@ distribute:
 # Developer rules
 ##############################################################################
 
-DIRS=$(filter-out safe, $(MAKESUBDIRS))
+DIRS=$(filter-out sandbox, $(MAKESUBDIRS))
 
 PP1=-pp camlp4o
 # you want "-dot-reduce"
