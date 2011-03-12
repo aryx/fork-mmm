@@ -27,6 +27,8 @@ LIBS=$(MAKESUBDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
 SYSLIBS=unix.cma str.cma  dynlink.cma
+TKLIBS=$(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK)\
+  $(WITH_TK80)
 
 # This number defines the revision of the applet system
 VERSION=418
@@ -91,9 +93,7 @@ SAFE= appsys/appsys.cmo safe/safe$(VERSION).cmo safe/safe$(VERSION)mmm.cmo
 CRCS= safe/crcs.cmo safe/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
-         $(SYSLIBS) \
-          $(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) $(WITH_TK80) \
-		$(OBJS) $(CRCS) $(SAFE) $(MAIN)
+         $(SYSLIBS) $(TKLIBS) $^
 
 # The native version does not support applets !
 mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
