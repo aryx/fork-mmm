@@ -25,7 +25,7 @@ MAINDIRS= \
   safe \
 
 # dynamically loaded extensions
-MOREDIRS= extensions applets
+MOREDIRS= extensions demos/applets
 
 MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
 
@@ -108,24 +108,17 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 	  $(WITH_TK80_OPT) \
 	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
-# Plain text viewer
-#TXTDISP=viewers/plain.cmo ??
-
 # The standalone HTML syntax checker
 HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo
 htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
-
 # Remote command
-mmm_remote: remote/mmm_remote.cmo
-	$(CAMLC) -custom -o mmm_remote unix.cma remote/mmm_remote.cmo
-
+mmm_remote: main_remote.cmo
+	$(CAMLC) -custom -o $@ unix.cma $^
 
 clean::
-	rm -rf remote/*.cm* remote/*.o
 	rm -f mmm mmmx.bin mmm_remote htparse
-
 
 # JPF's bookmark tool
 surfboard: 
@@ -134,9 +127,7 @@ surfboard:
 clean::
 	cd sboard; $(MAKE) clean
 
-
 # Default rules
-
 depend:: beforedepend
 	(for d in commons; \
 	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
