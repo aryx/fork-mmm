@@ -115,14 +115,14 @@ clean::
 	rm -f mmm mmmx.bin mmm_remote htparse
 
 # Default rules
-depend:: beforedepend
-	(for d in commons; \
-	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; \
-        for d in www http html protocols retrieve viewers display applets gui i18n/japan safe; \
-	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
-	done; $(CAMLDEP) main.ml* ) > .depend
-	cd sboard; $(MAKE) depend
+#depend:: beforedepend
+#	(for d in commons; \
+#	do $(CAMLDEPPP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
+#	done; \
+#        for d in www http html protocols retrieve viewers display applets gui i18n/japan safe; \
+#	do $(CAMLDEP) $(INCLUDES) $$d/*.mli $$d/*.ml; \
+#	done; $(CAMLDEP) main.ml* ) > .depend
+#	cd sboard; $(MAKE) depend
 
 include .depend
 
@@ -236,7 +236,7 @@ PP1=-pp camlp4o
 DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,slategray3,limegreen
 
 dotall:
-	ocamldoc $(PP1) $(TKCOMPFLAGS) $(INCLUDES) -I demos/sboard -I demos/applets $(DIRS:=/*.ml) -dot -dot-reduce -dot-colors $(DOTCOLORS)
+	ocamldoc $(PP1) $(TKCOMPFLAGS) $(INCLUDES) -I demos/sboard -I demos/applets $(DIRS:=/*.ml) main.ml -dot -dot-reduce -dot-colors $(DOTCOLORS)
 	perl -p -i -e 's/\[style=filled, color=white\]//;' ocamldoc.out
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps

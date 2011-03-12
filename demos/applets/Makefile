@@ -34,4 +34,4 @@ clean:
 depend:
 	$(CAMLDEP) *.ml *.mli > .depend
 
-include .depend
+-include .depend
