@@ -25,10 +25,10 @@ HTML=$(TOP)/html/dtd.cmo $(TOP)/html/html.cmo $(TOP)/html/lexhtml.cmo $(TOP)/htm
 OBJS= misc.cmo \
       tree.cmo \
       connection.cmo \
-      version.cmo \
+      version_sboard.cmo \
       treeview.cmo \
       addpage.cmo \
-      main.cmo
+      main_sboard.cmo
 
 surfboard: $(OBJS)
 	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o surfboard \

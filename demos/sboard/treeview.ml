@@ -7,6 +7,8 @@
 open Tk
 open Tree
 
+module Version = Version_sboard
+
 exception FoundItem of item
 
 let viewers = ref [] (* : treeview list ref *)

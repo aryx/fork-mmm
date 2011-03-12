@@ -8,7 +8,7 @@ TOP=../..
 
 COMPFLAGS= -I $(TOP)/sandbox/gen
 
-OBJS=cube3d.cmo molecule.cmo \
+OBJS=foo.cmo cube3d.cmo molecule.cmo \
      mondrian.cmo taquin.cmo \
      goto.cmo slide.cmo icons.cmo \
      morph.cma \
