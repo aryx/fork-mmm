@@ -70,3 +70,4 @@
 /crcs/crcs.ml.bak
 /crcs/crcsmmm.ml.bak
 /dependencies.marshall
+sandbox/gen/*.*
