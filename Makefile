@@ -30,7 +30,7 @@ MOREDIRS= extensions demos/applets demos/sboard
 
 MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
 
-INCLUDEDIRS=$(MAINDIRS) sandbox/gen
+INCLUDEDIRS=$(MAINDIRS) sandbox/gen crcs
 LIBS=$(MAINDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
