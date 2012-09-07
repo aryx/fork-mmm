@@ -18,9 +18,7 @@ INCLUDEDIRS= \
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 
-#pad: the rm gen/*.ml is really just for codemap ...
-all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo crcs.cmo crcsmmm.cmo
-	rm gen/*.ml*
+all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo ../crcs/crcs.cmo ../crcs/crcsmmm.cmo
 
 gen/safe418mmm.mli: gen/safe418.mli safemmm.mli
 	(echo '(* Automatically generated. Do NOT edit *)'; \
@@ -37,7 +35,7 @@ safe418mmm.cmo: safe418mmm.cmi \
 	                    gen/safe418mmm.ml $(APPSYS) $(OBJS)
 	$(CAMLC) $(SYSINCLUDES) $(INCLUDES) $(COMPFLAGS) -c gen/safe418mmm.ml
 
-crcsmmm.ml: safe418mmm.cmi
+../crcs/crcsmmm.ml: safe418mmm.cmi
 	-mv $@ $@.bak
 	$(LIBDIR)/extract_crc -I gen -I $(LIBDIR) \
 	  Safe418mmm \
@@ -54,7 +52,7 @@ clean::
 safe-precheck:
 	md5 $(CAMLTKDIR)/*.cmi | sort -n | md5
 
-safe: safe-common safe-mmm crcs.ml crcsmmm.ml
+safe: safe-common safe-mmm ../crcs/crcs.ml ../crcs/crcsmmm.ml
 
 ##############################################################################
 # Generic variables
@@ -143,7 +141,7 @@ safejtk.ml:
 safejtk.mli:
 	-ln -s $(CAMLTKDIR)/safejtk.mli $@
 
-crcs.ml : safe418.cmi
+../crcs/crcs.ml : safe418.cmi
 	-mv $@ $@.bak
 	$(LIBDIR)/extract_crc -I gen -I $(LIBDIR) \
 	  Oo Safe418 \
@@ -151,6 +149,10 @@ crcs.ml : safe418.cmi
 	@-diff $@ $@.bak || echo "WARNING: CRCs have changed"
 
 clean:: clean-safe
+
+distclean::
+	make clean
+	rm -f ../crcs/crcs.ml ../crcs/crcsmmm.ml
 
 clean-safe:
 	rm -f safe418.cm*

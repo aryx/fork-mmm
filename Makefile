@@ -88,7 +88,7 @@ depend::
 
 # Exported sandbox libraries
 SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
-CRCS= sandbox/crcs.cmo sandbox/crcsmmm.cmo 
+CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(OCAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
          $(SYSLIBS) $(TKLIBS) $^
