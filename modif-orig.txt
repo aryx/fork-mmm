@@ -1,9 +1,15 @@
-was mmm418, ported to use camltk418 and ocaml 3.12 and Mac. It works!
+The original code was called 'mmm418' and was ported to use camltk418.
+Then I ported it to ocaml 3.12 and Mac. It now works!
+Ported to ocaml 4.00.1.
 
 Moved arount lots of stuff. Simplified the Makefiles.
 
-have first to:
+Have first to:
  $ cd external/ocamltk
  $ ./configure
  $ make
  $ make install
+
+Then:
+ $ make depend # adjust path to ocamltk in some .depend
+ $ make
