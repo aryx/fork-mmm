@@ -1,0 +1,174 @@
+bell.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+button.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+canvas.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+checkbutton.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+clipboard.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+dialog.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+entry.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+focus.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+frame.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+grab.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+grid.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+imagebitmap.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+imagephoto.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+label.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+listbox.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+menu.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+menubutton.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+message.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+optionmenu.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+pack.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+palette.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+pixmap.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+place.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+radiobutton.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+resource.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+scale.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+scrollbar.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+selection.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+text.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+tk.cmi: ../support/widget.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi
+tkgen.cmi:
+tkwait.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+toplevel.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+winfo.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+wm.cmi: ../support/widget.cmi tk.cmi ../support/textvariable.cmi
+bell.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi bell.cmi
+bell.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx bell.cmi
+button.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi button.cmi
+button.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx button.cmi
+canvas.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi canvas.cmi
+canvas.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx canvas.cmi
+checkbutton.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi checkbutton.cmi
+checkbutton.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx checkbutton.cmi
+clipboard.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi clipboard.cmi
+clipboard.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx clipboard.cmi
+dialog.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi dialog.cmi
+dialog.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx dialog.cmi
+entry.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi entry.cmi
+entry.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx entry.cmi
+focus.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi focus.cmi
+focus.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx focus.cmi
+frame.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi frame.cmi
+frame.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx frame.cmi
+grab.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi grab.cmi
+grab.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx grab.cmi
+grid.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi grid.cmi
+grid.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx grid.cmi
+imagebitmap.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi imagebitmap.cmi
+imagebitmap.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx imagebitmap.cmi
+imagephoto.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi imagephoto.cmi
+imagephoto.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx imagephoto.cmi
+label.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi label.cmi
+label.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx label.cmi
+listbox.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi listbox.cmi
+listbox.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx listbox.cmi
+menu.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi menu.cmi
+menu.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx menu.cmi
+menubutton.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi menubutton.cmi
+menubutton.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx menubutton.cmi
+message.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi message.cmi
+message.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx message.cmi
+optionmenu.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi optionmenu.cmi
+optionmenu.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx optionmenu.cmi
+pack.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi pack.cmi
+pack.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx pack.cmi
+palette.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi palette.cmi
+palette.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx palette.cmi
+pixmap.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi imagephoto.cmi pixmap.cmi
+pixmap.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx imagephoto.cmx pixmap.cmi
+place.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi place.cmi
+place.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx place.cmi
+radiobutton.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi radiobutton.cmi
+radiobutton.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx radiobutton.cmi
+resource.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi resource.cmi
+resource.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx resource.cmi
+scale.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi scale.cmi
+scale.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx scale.cmi
+scrollbar.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi scrollbar.cmi
+scrollbar.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx scrollbar.cmi
+selection.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi selection.cmi
+selection.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx selection.cmi
+text.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi text.cmi
+text.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx text.cmi
+tk.cmo: ../support/widget.cmi ../support/textvariable.cmi \
+    ../support/support.cmi ../support/protocol.cmi tk.cmi
+tk.cmx: ../support/widget.cmx ../support/textvariable.cmx \
+    ../support/support.cmx ../support/protocol.cmx tk.cmi
+tkgen.cmo: ../support/widget.cmi tkgen.cmi
+tkgen.cmx: ../support/widget.cmx tkgen.cmi
+tkwait.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi tkwait.cmi
+tkwait.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx tkwait.cmi
+toplevel.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi toplevel.cmi
+toplevel.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx toplevel.cmi
+winfo.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi winfo.cmi
+winfo.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx winfo.cmi
+wm.cmo: ../support/widget.cmi tk.cmi ../support/textvariable.cmi \
+    ../support/protocol.cmi wm.cmi
+wm.cmx: ../support/widget.cmx tk.cmx ../support/textvariable.cmx \
+    ../support/protocol.cmx wm.cmi
