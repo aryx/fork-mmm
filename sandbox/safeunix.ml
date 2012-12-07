@@ -121,6 +121,7 @@ type open_flag = Unix.open_flag =
   | O_DSYNC                     (** Writes complete as `Synchronised I/O data integrity completion' *)
   | O_SYNC                      (** Writes complete as `Synchronised I/O file integrity completion' *)
   | O_RSYNC                     (** Reads complete as writes (depending on O_SYNC/O_DSYNC) *)
+  | O_SHARE_DELETE
 
         (* The flags to [open]. *)
 
