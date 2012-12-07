@@ -24,7 +24,7 @@ EXCRC=$(LIBDIR)/extract_crc
 EXPUNGE=$(LIBDIR)/expunge
 
 CAMLC=ocamlc
-CAMLCOMP=$(CAMLC) -c
+CAMLCOMP=$(CAMLC) -c -bin-annot
 CPP=/lib/cpp -P -Dunix
 CAMLYACC=ocamlyacc -v
 CAMLLEX=ocamllex
