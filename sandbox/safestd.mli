@@ -608,7 +608,7 @@ module Hashtbl : sig
 type ('a, 'b) t
         (* The type of hash tables from type ['a] to type ['b]. *)
 
-val create : int -> ('a,'b) t
+val create : ?random:bool -> int -> ('a,'b) t
         (* [Hashtbl.create n] creates a new, empty hash table, with
            initial size [n].  For best results, [n] should be on the
            order of the expected number of elements that will be in
@@ -692,12 +692,15 @@ module type HashedType =
            ([(==)], [Hashtbl.hash]) for comparing objects by addresses
            (e.g. for mutable or cyclic keys). *)
 
+type statistics
+
 module type S =
   sig
     type key
     type 'a t
     val create : int -> 'a t
     val clear : 'a t -> unit
+    val reset : 'a t -> unit
     val copy : 'a t -> 'a t
     val add : 'a t -> key -> 'a -> unit
     val remove : 'a t -> key -> unit
@@ -708,6 +711,8 @@ module type S =
     val iter : (key -> 'a -> unit) -> 'a t -> unit
     val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
     val length : 'a t -> int
+
+    val stats: 'a t -> statistics
   end
 
 module Make(H : HashedType) : (S with type key = H.t)
@@ -729,7 +734,7 @@ val hash : 'a -> int
            Moreover, [hash] always terminates, even on cyclic
            structures. *)
 
-external hash_param : int -> int -> 'a -> int = "caml_hash_univ_param" "noalloc"
+val hash_param : int -> int -> 'a -> int
         (* [Hashtbl.hash_param n m x] computes a hash value for [x], with the
            same properties as for [hash]. The two extra parameters [n] and
            [m] give more precise control over hashing. Hashing performs a
