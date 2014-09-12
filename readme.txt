@@ -7,7 +7,7 @@ This is release 0.418 of MMM; its main features are:
    Check the FAQ for more information on this.
  - supports Objective Caml applets
  - supports CGI calling (no need for a server)
- - localized to english, français, and japanese
+ - localized to english, franÃ§ais, and japanese
    (can easily be localized for other western languages)
  - supports japanese documents (if linked with appropriate Tk libs)
  - can display HTML errors and edit HTML source
@@ -17,7 +17,7 @@ This is release 0.418 of MMM; its main features are:
  - can be distributed unmodified freely
 
 Distributions and documentation are available from
-<URL:http://pauillac.inria.fr/~rouaix/mmm/>
+<URL:http://pauillac.inria.fr/mmm/>
 
 Compilation requirements:
  Objective Caml 3.00
