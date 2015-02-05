@@ -1,5 +1,16 @@
 # -*- sh -*-
 
+# ocaml object files
+
+*.o
+*.cm*
+*.annot
+.depend
+*.so
+*.a
+
+.depend
+
 #
 *Fig_graph_ml.pdf
 
