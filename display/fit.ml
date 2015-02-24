@@ -1,9 +1,13 @@
+(*s: ./display/fit.ml *)
 open Printf
 open Tk
 open Protocol
 
+(*s: constant Fit.debug *)
 let debug = ref false
+(*e: constant Fit.debug *)
 
+(*s: function Fit.set_initial_width *)
 (* initial width : a nested formatter starts with w=1 h=1
  * if the only contents is an embedded window, it's a bit short
  * thus we check for max width of embedded windows
@@ -23,56 +27,62 @@ let set_initial_width wid =
   end
   else
     None
+(*e: function Fit.set_initial_width *)
 
 (* initial height: we have to grow at least to the number of
  * lines of text so that the entire text is visible. Moreover,
  * large lines will fold so adjust. Moreover, embedded window
  * provide height.
  *)
+(*s: function Fit.wheight *)
 (* I still don't understand the difference between height and reqheight *)
 let wheight w = max (Winfo.height w) (Winfo.reqheight w)
+(*e: function Fit.wheight *)
 
+(*s: function Fit.set_initial_height *)
 let set_initial_height wid =
   match Text.index wid (TextIndex(End,[])) with
     LineChar (l,_) ->
       let height = ref (l-1) in
       for i = 0 to l - 1 do
-	match Text.index wid (TextIndex(LineChar(i,0), [LineEnd])) with
-	  LineChar (_,c) -> height := !height + c / 100
-	| _ -> ()
+    match Text.index wid (TextIndex(LineChar(i,0), [LineEnd])) with
+      LineChar (_,c) -> height := !height + c / 100
+    | _ -> ()
       done;
       begin
-	let embedded = Text.window_names wid in
-	if embedded = [] then () 
-	else begin
-	  let lines = Hashtbl.create (List.length embedded) in
-	  let addh l h =
-	    try
-	      let r = Hashtbl.find lines l in
-	      r := max h !r
-	    with
-	      Not_found -> Hashtbl.add lines l (ref h)
-	  in
-	  List.iter (fun w ->
-	    match Text.index wid (TextIndex(Embedded w, [])) with
-	      LineChar(l,_) -> addh l (wheight w)
-	    | _ -> assert false)
-	    embedded;
-	  Hashtbl.iter (fun _ r -> height := !height + !r / 15) lines
+    let embedded = Text.window_names wid in
+    if embedded = [] then () 
+    else begin
+      let lines = Hashtbl.create (List.length embedded) in
+      let addh l h =
+        try
+          let r = Hashtbl.find lines l in
+          r := max h !r
+        with
+          Not_found -> Hashtbl.add lines l (ref h)
+      in
+      List.iter (fun w ->
+        match Text.index wid (TextIndex(Embedded w, [])) with
+          LineChar(l,_) -> addh l (wheight w)
+        | _ -> assert false)
+        embedded;
+      Hashtbl.iter (fun _ r -> height := !height + !r / 15) lines
       	end;
     	let curheight = int_of_string (cget wid CHeight) in
-	if !height > curheight then begin
-	  if !debug then 
-	    Log.f (sprintf "Setting initial height of %s to %d (%d)"
+    if !height > curheight then begin
+      if !debug then 
+        Log.f (sprintf "Setting initial height of %s to %d (%d)"
    	                   (Widget.name wid) !height (l-1));
       	  Text.configure wid [TextHeight (!height)]
-	end else if !debug then 
-	    Log.f (sprintf "Initial height of %s is %d (%d)"
+    end else if !debug then 
+        Log.f (sprintf "Initial height of %s is %d (%d)"
    	                   (Widget.name wid) !height (l-1))
       end
   | _ -> ()
+(*e: function Fit.set_initial_height *)
 
 
+(*s: function Fit.fixed_horiz *)
 (* Grow horizontally until we reached the maxium authorized width 
  * (or bound is reached)
  *)
@@ -83,11 +93,13 @@ let rec fixed_horiz wid maxw =
     let w = (succ (int_of_string (cget wid CWidth))) in
     if !debug then
       Log.f (sprintf "Growing %s to %d (w=%d) (max=%d)"
-	             (Widget.name wid) w curw maxw);
+                 (Widget.name wid) w curw maxw);
     Text.configure wid [TextWidth w];
     fixed_horiz wid maxw
   end
+(*e: function Fit.fixed_horiz *)
 
+(*s: function Fit.horiz *)
 let horiz wid stop continuation =
   (* all conditions for stopping *)
   let finished visible = visible >= 0.999 || stop()
@@ -110,12 +122,12 @@ let horiz wid stop continuation =
     (* Especially, DO NOT DECIDE TO STOP *)
     if not (Winfo.viewable wid) then begin
       if !debug then
-	Log.f (sprintf "%s HC %d %f %f notviewable"
-	               (Widget.name wid) curwidth first last);
+    Log.f (sprintf "%s HC %d %f %f notviewable"
+                   (Widget.name wid) curwidth first last);
       (* Try again later *)
       bind wid [[], Expose] (BindSet ([], fun _ ->
-	bind wid [[], Expose] BindRemove;
-	check()))
+    bind wid [[], Expose] BindRemove;
+    check()))
     end
     else if finished visible then over()
     else if visible = !last_visible then 
@@ -123,35 +135,37 @@ let horiz wid stop continuation =
       ()
     else begin
       (* how much do we need to grow
-	 This code is disabled because it causes masking of table cells
-	 (we don't have a reasonable estimation of a minimum horiz growth
-	  that would avoid masking). We now grow by 1, despite the 
-	  slowness.
+     This code is disabled because it causes masking of table cells
+     (we don't have a reasonable estimation of a minimum horiz growth
+      that would avoid masking). We now grow by 1, despite the 
+      slowness.
       let delta = 
-	if last = 0.0 then 1
+    if last = 0.0 then 1
         else begin
-	  last_visible := visible;
-	  let visible = max 0.2 visible in
-	  let missing = 1. -. visible in
-	  (* at least one char, but not too much *)
-	  let computed = truncate (float curwidth *. missing /. visible) in
-	  if computed = 0 then 1 else min 5 computed
+      last_visible := visible;
+      let visible = max 0.2 visible in
+      let missing = 1. -. visible in
+      (* at least one char, but not too much *)
+      let computed = truncate (float curwidth *. missing /. visible) in
+      if computed = 0 then 1 else min 5 computed
         end
       in
       let newsize = curwidth + delta in
-	 *)
+     *)
       last_visible := visible;
       let newsize = curwidth + (if visible < 0.1 then 5 else 1) in
       if !debug then
       	Log.f (sprintf "%s H %d %f %f newsize: %d"
-	               (Widget.name wid) curwidth first last newsize);
+                   (Widget.name wid) curwidth first last newsize);
       Text.configure wid [TextWidth newsize];
     end
-	
+    
   in
   scroll, check
+(*e: function Fit.horiz *)
 
 
+(*s: function Fit.vert *)
 (* somehow we need to do it differently : resize is delayed *)
 let vert wid =
   let finished visible = visible >= 0.999
@@ -174,15 +188,15 @@ let vert wid =
     (* Don't attempt anything if widget is not visible *)
     if not (Winfo.viewable wid) then begin
       if !debug then
-	Log.f (sprintf "%s VC %d %f %f notviewable"
-	               (Widget.name wid) curheight first last);
+    Log.f (sprintf "%s VC %d %f %f notviewable"
+                   (Widget.name wid) curheight first last);
       (* Try again later *)
       if not !delayed then begin
-	delayed := true;
+    delayed := true;
       	bind wid [[], Expose] (BindSet ([], fun _ ->
-	  bind wid [[], Expose] BindRemove;
-	  delayed := false;
-	  check()))
+      bind wid [[], Expose] BindRemove;
+      delayed := false;
+      check()))
       end
     end
     else if finished visible then ()
@@ -198,23 +212,23 @@ let vert wid =
       let delta = 
  	if visible = !last_visible then (stuck := true; 1) 
         else if last = 0.0 then (last_visible := 0.0; 1)
-	else begin
-	  last_visible := visible; stuck := false;
+    else begin
+      last_visible := visible; stuck := false;
           (* never to more than double *)
-	  let visible = max 0.5 visible in
-	  let missing = 1. -. visible in
-	  (* at least one char, but not too much *)
-	  let computed = truncate (float curheight *. missing /. visible) in
-	  if computed = 0 then 1 else min 5 computed
+      let visible = max 0.5 visible in
+      let missing = 1. -. visible in
+      (* at least one char, but not too much *)
+      let computed = truncate (float curheight *. missing /. visible) in
+      if computed = 0 then 1 else min 5 computed
         end 
       in
       newsize := max (curheight + delta) !newsize;
       (* Since we may not be fully visible anyway, decouple the loop *)
       if !pending_resize then ()
       else begin
-	if !debug then 
-	  Log.f (sprintf "Scheduling resize of %s" (Widget.name wid));
-	pending_resize := true;
+    if !debug then 
+      Log.f (sprintf "Scheduling resize of %s" (Widget.name wid));
+    pending_resize := true;
         Timer.set 50 (fun () -> Frx_after.idle (resize first last))
       end
     end
@@ -224,23 +238,27 @@ let vert wid =
     if !newsize > curheight then begin
       if !debug then
       	Log.f (sprintf "%s V %d %f %f newsize: %d"
-		       (Widget.name wid) curheight first last !newsize);
+               (Widget.name wid) curheight first last !newsize);
       Text.configure wid [TextHeight !newsize]
     end
   in
   scroll, check
+(*e: function Fit.vert *)
 
+(*s: function Fit.bound_check *)
 let bound_check wid width =
   let stop_now = ref false in
   bind wid [[], Configure]
     (BindExtend([Ev_Width], (fun ei ->
       if !debug then
-	Log.f (sprintf "Configure %s width is %d (max %d) (req %d)"
-	              (Widget.name wid) ei.ev_Width width
-	              (Winfo.reqwidth wid));
+    Log.f (sprintf "Configure %s width is %d (max %d) (req %d)"
+                  (Widget.name wid) ei.ev_Width width
+                  (Winfo.reqwidth wid));
       if ei.ev_Width >= width then begin
-	stop_now := true;
+    stop_now := true;
  	bind wid [[], Configure] BindRemove
       end)));
   (fun () -> !stop_now)
+(*e: function Fit.bound_check *)
 
+(*e: ./display/fit.ml *)

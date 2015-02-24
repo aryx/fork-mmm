@@ -1,6 +1,8 @@
+(*s: ./http/retype.ml *)
 open Document
 open Http_headers
 
+(*s: function Retype.f *)
 (* Attempt to find a decent Content-Type *)
 let f dh =
   let url = Url.string_of dh.document_id.document_url in
@@ -12,5 +14,7 @@ let f dh =
   with
     Not_found ->
       dh.document_headers <- merge_headers dh.document_headers (hints url)
+(*e: function Retype.f *)
 
 
+(*e: ./http/retype.ml *)

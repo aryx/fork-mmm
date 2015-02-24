@@ -1,3 +1,4 @@
+(*s: ./display/html_disp.ml *)
 (* HTML Display Machine *)
 open Printf
 open Html
@@ -10,10 +11,15 @@ open Embed
 open Viewers
 open Fonts
 
+(*s: constant Html_disp.attempt_tables *)
 (* Preference settings *)
 let attempt_tables = ref false
+(*e: constant Html_disp.attempt_tables *)
+(*s: constant Html_disp.verbose *)
 let verbose = ref false
+(*e: constant Html_disp.verbose *)
 
+(*s: function Html_disp.lowernumber *)
 (* SMOP Utilities for OL numbering *)
 let lowernumber n =
   let rec f cur n = 
@@ -21,27 +27,34 @@ let lowernumber n =
     else  f (String.make 1 (Char.chr (97 + n mod 26)) ^ cur) (n / 26 - 1)
   in 
   if n <= 0 then "*" else f "" (n-1)
+(*e: function Html_disp.lowernumber *)
 
+(*s: function Html_disp.uppernumber *)
 let uppernumber n =
   let rec f cur n = 
     if n < 0 then cur
     else  f (String.make 1 (Char.chr (64 + n mod 26)) ^ cur) (n / 26 - 1)
   in
   if n <= 0 then "*" else f "" (n-1)
+(*e: function Html_disp.uppernumber *)
 
+(*s: constant Html_disp.romans *)
 let romans = [|
+(*e: constant Html_disp.romans *)
   [| ""; "I"; "II"; "III"; "IV"; "V"; "VI"; "VII"; "VIII"; "IX" |];
   [| ""; "X"; "XX"; "XXX"; "XL"; "L"; "LX"; "LXX"; "LXXX"; "XC" |];
   [| ""; "C"; "CC"; "CCC"; "CD"; "D"; "DC"; "DCC"; "DCCC"; "CM" |];
   [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
   |]
 
+(*s: function Html_disp.roman *)
 let roman n =
   let rec r cur level n =
     if n = 0 then cur
     else if level > 3 then "*" ^ cur
     else r (romans.(level).(n mod 10) ^ cur) (succ level)  (n / 10)
   in if n <= 0 then "*" else r "" 0 n
+(*e: function Html_disp.roman *)
 
 class  virtual imgloader (unit : unit) =
  object
@@ -80,11 +93,16 @@ class  virtual machine (unit : unit) =
   method virtual set_i18n_encoder : (string -> string) -> unit
 end
 
+(*s: constant Html_disp.user_hooks *)
 (* Hooks for applets/modules. Control is made elsewhere *)
 let user_hooks = ref []
+(*e: constant Html_disp.user_hooks *)
+(*s: function Html_disp.add_hook *)
 let add_hook f = 
   user_hooks := f :: !user_hooks
+(*e: function Html_disp.add_hook *)
 
+(*s: constant Html_disp.default_fo *)
 (* This is the default formatter *)
 let default_fo = {
   new_paragraph = (fun () -> ());
@@ -105,6 +123,7 @@ let default_fo = {
   see_frag = (fun _ -> ());
   flush = (fun () -> ());
 } 
+(*e: constant Html_disp.default_fo *)
 
 module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
 
@@ -119,7 +138,7 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
         tag_open  : formatter -> tag -> unit;
   	tag_close : formatter -> unit
     }
-	
+    
   let ignore_open = fun _ _ -> ()
   let ignore_close = fun _ -> ()
 
@@ -154,7 +173,7 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
     val mutable (*private*) action = (fun s -> ())
     val mutable (*private*) action_stack = []
     val mutable (*private*) formatter_stack = []
-	
+    
     (* Accessing the variables *)
     val mutable (*private*) formatter = default_fo
     method formatter = formatter
@@ -174,8 +193,8 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
       match action_stack with
       | [] -> Log.f "Warning: empty action stack"
       |	old::l ->
-	  action_stack <- l;
-	  action <- match l with [] -> (fun s ->()) | newa::_ -> newa
+      action_stack <- l;
+      action <- match l with [] -> (fun s ->()) | newa::_ -> newa
 
     (* This is an intrusion of graphics, but I don't see any other way 
      * The last formatter always tries see_frag...
@@ -193,21 +212,21 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
     method pop_formatter =
       self#pop_action;
       match formatter_stack with
-	[] -> 
-	  Log.f "Warning: empty formatter stack";
-	  default_fo
+    [] -> 
+      Log.f "Warning: empty formatter stack";
+      default_fo
       | old::l ->
-	  old.flush();
-	  see_frag <- old.see_frag;
-	  formatter_stack <- l;
-	  formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
-	  old
+      old.flush();
+      see_frag <- old.see_frag;
+      formatter_stack <- l;
+      formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
+      old
 
     (* This is only for robustness *)
     method flush_formatters =
       while List.length formatter_stack > 0 do
-	Log.f "WARNING: too many formatters in stack";
-	self#pop_formatter.flush()
+    Log.f "WARNING: too many formatters in stack";
+    self#pop_formatter.flush()
       done
 
 
@@ -223,26 +242,26 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
 
     (* Dispatching a token *)
     method private normal_send = function
-	EOF -> self#flush_formatters;
+    EOF -> self#flush_formatters;
       | CData s -> action s
       | PCData s -> action s
       | OpenTag t ->
-	   begin try
-	     let tag = Hashtbl.find tags t.tag_name in
-	       tag.tag_open formatter t
-	   with
-	     Not_found ->
-	       if !verbose then
-		 Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
-	   end
+       begin try
+         let tag = Hashtbl.find tags t.tag_name in
+           tag.tag_open formatter t
+       with
+         Not_found ->
+           if !verbose then
+         Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
+       end
       | CloseTag n ->
-	   begin try
-	     (Hashtbl.find tags n).tag_close formatter
-	   with
-	     Not_found ->
-	       if !verbose then
-		 Log.f (sprintf "Display machine: </%s> ignored" n)
-	   end
+       begin try
+         (Hashtbl.find tags n).tag_close formatter
+       with
+         Not_found ->
+           if !verbose then
+         Log.f (sprintf "Display machine: </%s> ignored" n)
+       end
       | Comment _ -> ()
       | Doctype _ -> ()
 
@@ -250,10 +269,10 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
      match look_for with
        None -> self#normal_send tok
      | Some it when it = tok -> 
-	 self#normal_send tok;
-	 look_for <- None
+     self#normal_send tok;
+     look_for <- None
      | _ -> ()
-	 
+     
    val mutable i18n_encoder = (fun s -> s : string -> string)
    method i18n_encoder = i18n_encoder
    method set_i18n_encoder enc = i18n_encoder <- enc
@@ -302,13 +321,13 @@ mach#add_tag "title" ignore_open ignore_close;
 mach#add_tag "base"
     (fun fo tag ->
       begin 
-	try mach#set_target (get_attribute tag "target")
+    try mach#set_target (get_attribute tag "target")
       	with Not_found -> ()
       end;
       begin 
-	try mach#set_base (get_attribute tag "href")
+    try mach#set_base (get_attribute tag "href")
       	with Not_found -> 
-	raise (Invalid_Html "HREF required in BASE")
+    raise (Invalid_Html "HREF required in BASE")
       end)
     ignore_close;
 
@@ -380,9 +399,9 @@ and close_header fo =
 in
 
 List.iter (function headnum ->
-	     mach#add_tag (sprintf "h%d" headnum)
-		  (open_header headnum)
-		  close_header)
+         mach#add_tag (sprintf "h%d" headnum)
+          (open_header headnum)
+          close_header)
       	  [1;2;3;4;5;6];
 
 (*
@@ -400,8 +419,8 @@ mach#add_tag "p"
      fo.new_paragraph ();
      try
        let a = get_attribute tag "align" in
-	 paligns := (Some a) :: !paligns;
-	 fo.push_attr [Justification a]
+     paligns := (Some a) :: !paligns;
+     fo.push_attr [Justification a]
      with
        Not_found -> paligns := None :: !paligns)
   (fun fo ->
@@ -409,10 +428,10 @@ mach#add_tag "p"
      match !paligns with
        [] -> () (* that's an error actually *)
      | (Some a)::l ->
-	 fo.pop_attr [Justification a];
-	 paligns := l
+     fo.pop_attr [Justification a];
+     paligns := l
      | None::l ->
-	 paligns := l
+     paligns := l
     );
 
 (* 
@@ -484,9 +503,9 @@ let open_list fo tag =
   mach#add_tag "li"
      (fun fo tag -> 
         if !first_line then first_line := false
-	else if compact then fo.print_newline false else fo.new_paragraph();
+    else if compact then fo.print_newline false else fo.new_paragraph();
         let bullet = try get_attribute tag "type" with Not_found -> bullet in
-	fo.bullet bullet)
+    fo.bullet bullet)
      (fun fo -> 
         if not compact then fo.close_paragraph())
 
@@ -547,27 +566,27 @@ let open_nlist, close_nlist =
      and compact = has_attribute tag "compact" in
      mach#add_tag "li"
        (fun fo tag ->
-	  fo.new_paragraph();
-	  if compact then fo.push_attr [Spacing 0];
-	  (* if value is given, use it as number *)
-	  begin
-	    try
-	      let n = int_of_string (get_attribute tag "value") in
-	      match !nesting with
-		c::_ -> c := n
-	      |	_ -> () (* assert false *)
-	    with
-	      Not_found | Failure "int_of_string" -> ()
-	  end;
-	  List.iter (function i ->
-			fo.format_string (numbering !i);
-			fo.format_string ".")
-		    thisnumbers
-	  )
+      fo.new_paragraph();
+      if compact then fo.push_attr [Spacing 0];
+      (* if value is given, use it as number *)
+      begin
+        try
+          let n = int_of_string (get_attribute tag "value") in
+          match !nesting with
+        c::_ -> c := n
+          |	_ -> () (* assert false *)
+        with
+          Not_found | Failure "int_of_string" -> ()
+      end;
+      List.iter (function i ->
+            fo.format_string (numbering !i);
+            fo.format_string ".")
+            thisnumbers
+      )
        (fun fo ->
-	 incr li_counter;
-	  if compact then fo.pop_attr [Spacing 0];
-	  fo.close_paragraph())),
+     incr li_counter;
+      if compact then fo.pop_attr [Spacing 0];
+      fo.close_paragraph())),
   (* close_list *)
   (fun fo ->
     fo.pop_attr [Margin 10];
@@ -597,41 +616,41 @@ let open_dl, close_dl =
       fo.push_attr [Margin 10];
       if not compact then begin
       let prev_is_dt = ref false in
-	mach#add_tag "dt"
-	  (fun fo tag -> 
-	    if not !prev_is_dt then begin
-	      fo.new_paragraph();
-	      prev_is_dt := true
-	     end
-	    else fo.print_newline false;
-	    push_style fo "bold")
-	  (fun fo -> pop_style fo "bold");
-	mach#add_tag "dd"
-	  (fun fo tag ->
-	      if !prev_is_dt then begin
-		fo.close_paragraph();
-		prev_is_dt := false
-	       end;
-	      fo.new_paragraph();
-	      fo.push_attr [Margin 20])
-	  (fun fo ->
-	      fo.pop_attr [Margin 20];
-	      fo.close_paragraph())
+    mach#add_tag "dt"
+      (fun fo tag -> 
+        if not !prev_is_dt then begin
+          fo.new_paragraph();
+          prev_is_dt := true
+         end
+        else fo.print_newline false;
+        push_style fo "bold")
+      (fun fo -> pop_style fo "bold");
+    mach#add_tag "dd"
+      (fun fo tag ->
+          if !prev_is_dt then begin
+        fo.close_paragraph();
+        prev_is_dt := false
+           end;
+          fo.new_paragraph();
+          fo.push_attr [Margin 20])
+      (fun fo ->
+          fo.pop_attr [Margin 20];
+          fo.close_paragraph())
        end
       else begin
-	let first_item = ref true in
-	mach#add_tag "dt"
-	  (fun fo tag -> 
-	    if not !first_item then fo.print_newline false
+    let first_item = ref true in
+    mach#add_tag "dt"
+      (fun fo tag -> 
+        if not !first_item then fo.print_newline false
             else first_item := false;
             push_style fo "bold")
-	  (fun fo -> pop_style fo "bold");
-	mach#add_tag "dd"
-	  (fun fo tag ->
-	    if not !first_item then fo.print_newline false
+      (fun fo -> pop_style fo "bold");
+    mach#add_tag "dd"
+      (fun fo tag ->
+        if not !first_item then fo.print_newline false
             else first_item := false;
-	    fo.push_attr [Margin 20])
-	  (fun fo -> fo.pop_attr [Margin 20])
+        fo.push_attr [Margin 20])
+      (fun fo -> fo.pop_attr [Margin 20])
        end),
    (* close_dl *)
    (fun fo ->
@@ -707,29 +726,29 @@ let open_anchor fo tag =
     try
       let href = get_attribute tag "href" in
       let h_params =
-	try ["target", get_attribute tag "target"]
-	with
-	  Not_found ->
-	    match mach#target with
-	      Some s -> ["target", s]
-	    | None -> []
+    try ["target", get_attribute tag "target"]
+    with
+      Not_found ->
+        match mach#target with
+          Some s -> ["target", s]
+        | None -> []
       in
       anchor_link := 
-	{ h_uri = href;
-	  h_context = Some mach#base;
-	  h_method = 
-	     (try parse_method (get_attribute tag "methods")
-	      with _ -> GET);
-	  h_params = h_params};
+    { h_uri = href;
+      h_context = Some mach#base;
+      h_method = 
+         (try parse_method (get_attribute tag "methods")
+          with _ -> GET);
+      h_params = h_params};
       in_anchor := true;
       anchor_type := Some HREF;
       fo.start_anchor ();
       (* push_style fo "anchor" *)
     with
       Not_found ->
-	match !anchor_type with
-	  None -> raise (Invalid_Html "Missing NAME or HREF in <A>")
-	| _ -> ()
+    match !anchor_type with
+      None -> raise (Invalid_Html "Missing NAME or HREF in <A>")
+    | _ -> ()
   end
 
 and close_anchor fo =
@@ -762,11 +781,11 @@ mach#add_tag "br"
 mach#add_tag "hr"
     (fun fo tag -> 
       let width =
-	try length_of_string (get_attribute tag "width")
-	with Not_found -> Nolength 
+    try length_of_string (get_attribute tag "width")
+    with Not_found -> Nolength 
       and height =
-	try int_of_string (get_attribute tag "size")
-	with Not_found | Failure "int_of_string" -> 1
+    try int_of_string (get_attribute tag "size")
+    with Not_found | Failure "int_of_string" -> 1
       and solid = has_attribute tag "noshade" in
       fo.print_newline false;
       fo.hr width height solid;
@@ -783,62 +802,62 @@ mach#add_tag "img"
        let src = get_attribute tag "src" in
        let align = get_attribute tag "align"
        and width = 
-	 try Some (int_of_string (get_attribute tag "width"))
-	 with Not_found | Failure "int_of_string" -> None
+     try Some (int_of_string (get_attribute tag "width"))
+     with Not_found | Failure "int_of_string" -> None
        and height = 
-	 try Some (int_of_string (get_attribute tag "height"))
-	 with Not_found | Failure "int_of_string" -> None
+     try Some (int_of_string (get_attribute tag "height"))
+     with Not_found | Failure "int_of_string" -> None
        and alt = 
-	 try get_attribute tag "alt"
+     try get_attribute tag "alt"
          with Not_found ->
           let image_name = 
-	   let pos = 
-	     let cpos = ref (String.length src) in
-	     try
-	       while !cpos > 0 do
-		 match src.[!cpos - 1] with
-		   '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
-		 | _ -> decr cpos
-	       done;
-	       0
-	     with
-	       Exit -> !cpos
-	   in
-	   if pos = String.length src then "IMAGE"
-	   else String.sub src pos (String.length src - pos)
-	 in
+       let pos = 
+         let cpos = ref (String.length src) in
+         try
+           while !cpos > 0 do
+         match src.[!cpos - 1] with
+           '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
+         | _ -> decr cpos
+           done;
+           0
+         with
+           Exit -> !cpos
+       in
+       if pos = String.length src then "IMAGE"
+       else String.sub src pos (String.length src - pos)
+     in
          Printf.sprintf "[%s]" image_name	 
        in          
        let w = fo.create_embedded align width height in
        let link =
-	  { h_uri = src; h_context = Some mach#base;
-	    h_method = GET; h_params = []} in
+      { h_uri = src; h_context = Some mach#base;
+        h_method = GET; h_params = []} in
        (* some people use both ismap and usemap...
           prefer usemap
         *)
        let map = 
-	 try 
-	   let mapname = get_attribute tag "usemap"  in
-	     Maps.ClientSide { h_uri = mapname;
-			       h_context = Some mach#base;
-			       h_method = GET;
-			       h_params = []}
-	 with Not_found -> 
-	   if !in_anchor then
-	     if has_attribute tag "ismap"
-	     then Maps.ServerSide !anchor_link
-	     else Maps.Direct !anchor_link
-	   else NoMap
+     try 
+       let mapname = get_attribute tag "usemap"  in
+         Maps.ClientSide { h_uri = mapname;
+                   h_context = Some mach#base;
+                   h_method = GET;
+                   h_params = []}
+     with Not_found -> 
+       if !in_anchor then
+         if has_attribute tag "ismap"
+         then Maps.ServerSide !anchor_link
+         else Maps.Direct !anchor_link
+       else NoMap
        in
        mach#imgmanager#add_image  
-		    {embed_hlink = link;
-		     embed_frame = w;
-		     embed_context = mach#ctx#for_embed tag.attributes [];
-		     embed_map = map;
-		     embed_alt = alt}
+            {embed_hlink = link;
+             embed_frame = w;
+             embed_context = mach#ctx#for_embed tag.attributes [];
+             embed_map = map;
+             embed_alt = alt}
       with
        Not_found -> (* only on SRC *)
-	raise (Invalid_Html "missing SRC in IMG"))
+    raise (Invalid_Html "missing SRC in IMG"))
    ignore_close;
 
 (* FORMS: they are defined elsewhere (html_form) *)
@@ -850,8 +869,8 @@ mach#add_tag "img"
   else begin
     let behave_as oldtag newtag =
       mach#add_tag newtag
-	(fun fo t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
-	(fun fo -> mach#send (CloseTag oldtag)) in
+    (fun fo t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
+    (fun fo -> mach#send (CloseTag oldtag)) in
     (* use DL for tables *)
     behave_as "dl" "table";
     mach#add_tag "tr" ignore_open ignore_close;
@@ -868,30 +887,30 @@ mach#add_tag "img"
   mach#add_tag "embed"
     (fun fo tag -> 
        try
-	 let link = {
-	   h_uri = get_attribute tag "src";
-	   h_method = GET;
-	   h_context = Some mach#base;
-	   h_params = []} in
-	 let width =
-	   try Some (int_of_string (get_attribute tag "width"))
-	   with Not_found -> None
-	 and height =
-	   try Some (int_of_string (get_attribute tag "height"))
-	   with Not_found -> None
-	 and alttxt = get_attribute tag "alt" in
+     let link = {
+       h_uri = get_attribute tag "src";
+       h_method = GET;
+       h_context = Some mach#base;
+       h_params = []} in
+     let width =
+       try Some (int_of_string (get_attribute tag "width"))
+       with Not_found -> None
+     and height =
+       try Some (int_of_string (get_attribute tag "height"))
+       with Not_found -> None
+     and alttxt = get_attribute tag "alt" in
 
-	 let fr = fo.create_embedded "" width height in
-	 mach#add_embedded {
-	     embed_hlink = link;
-	     embed_frame = fr;
-	     embed_context = mach#ctx#for_embed tag.attributes [];
-	     embed_map = NoMap; (* yet *)
-	     embed_alt = alttxt
-	    }
+     let fr = fo.create_embedded "" width height in
+     mach#add_embedded {
+         embed_hlink = link;
+         embed_frame = fr;
+         embed_context = mach#ctx#for_embed tag.attributes [];
+         embed_map = NoMap; (* yet *)
+         embed_alt = alttxt
+        }
        with
-	 Not_found ->
-	   raise (Invalid_Html ("SRC missing in EMBED")))
+     Not_found ->
+       raise (Invalid_Html ("SRC missing in EMBED")))
     ignore_close;
 
   (* Some HTML 3.2 obnoxious features *)
@@ -933,46 +952,46 @@ mach#add_tag "img"
       (fun fo  -> fo.pop_attr [Lowerscript]);
   mach#add_tag "basefont"
       (fun fo t -> 
-	try
-	  let n = int_of_string (get_attribute t "size") in
-	  fo.set_defaults "font" [Font (FontIndex n)]
-	with
-	  Not_found | Failure "int_of_string" ->
-	    raise (Invalid_Html "invalide SIZE"))
+    try
+      let n = int_of_string (get_attribute t "size") in
+      fo.set_defaults "font" [Font (FontIndex n)]
+    with
+      Not_found | Failure "int_of_string" ->
+        raise (Invalid_Html "invalide SIZE"))
       ignore_close;
   let fontchanges = ref [] in
   mach#add_tag "font"
       (fun fo t ->
-	 let attrs = [] in
-	 let attrs =
-	   try
+     let attrs = [] in
+     let attrs =
+       try
              let size = get_attribute t "size" in
              let l = String.length size in
-	       if l = 0 then raise Not_found
-	       else if size.[0] = '+' then
-		(Font (FontDelta (int_of_string (String.sub size 1 (pred l)))))
+           if l = 0 then raise Not_found
+           else if size.[0] = '+' then
+        (Font (FontDelta (int_of_string (String.sub size 1 (pred l)))))
                      :: attrs
                else if size.[0] = '-' then
-		     (Font (FontDelta (int_of_string size)))::attrs
+             (Font (FontDelta (int_of_string size)))::attrs
                else (Font (FontIndex (int_of_string size)))::attrs
-	   with 
-	      Not_found -> attrs 
+       with 
+          Not_found -> attrs 
             | Failure _ -> attrs
-	   in
+       in
          let attrs = 
-	   try
-	     let color = get_attribute t "color" in
+       try
+         let color = get_attribute t "color" in
                (FgColor color)::attrs
-	   with Not_found -> attrs in
-	 (* attrs may well be the empty list *)
-	  if attrs <> [] then fo.push_attr attrs;
-	  fontchanges := attrs :: !fontchanges)
+       with Not_found -> attrs in
+     (* attrs may well be the empty list *)
+      if attrs <> [] then fo.push_attr attrs;
+      fontchanges := attrs :: !fontchanges)
       (fun fo -> 
-	 match !fontchanges with
-	  [] -> raise (Invalid_Html "unmatched </font>")
+     match !fontchanges with
+      [] -> raise (Invalid_Html "unmatched </font>")
         | x::l -> 
-	    fontchanges := l;
-	    if x <> [] then fo.pop_attr x);
+        fontchanges := l;
+        if x <> [] then fo.pop_attr x);
 
   (* Some HTML 3.2 good features *)
   let areas = ref []
@@ -983,59 +1002,59 @@ mach#add_tag "img"
          (* the name of the map *)
          let absname = 
            try 
-	    let name = get_attribute t "name" in
-	    (* we must get a normalized name here *)
-	      Hyper.string_of {h_uri = "#"^name; h_context = Some mach#base;
-			      h_method = GET; h_params = []}
+        let name = get_attribute t "name" in
+        (* we must get a normalized name here *)
+          Hyper.string_of {h_uri = "#"^name; h_context = Some mach#base;
+                  h_method = GET; h_params = []}
            with
-	     Not_found -> 
-	       Hyper.string_of {h_uri = mach#base; h_context = None;
-				h_method = GET; h_params = []}
+         Not_found -> 
+           Hyper.string_of {h_uri = mach#base; h_context = None;
+                h_method = GET; h_params = []}
          in
          mapname := absname;
          areas := [];
          mach#add_tag "area" 
-	    (fun fo tag -> 
-	       let shape = String.lowercase (get_attribute tag "shape")
-	       and href = 
-		 try Some (get_attribute tag "href") with Not_found -> None
+        (fun fo tag -> 
+           let shape = String.lowercase (get_attribute tag "shape")
+           and href = 
+         try Some (get_attribute tag "href") with Not_found -> None
                and coords =
-		 try Maps.parse_coords (get_attribute tag "coords")
-		 with _ -> [] 
+         try Maps.parse_coords (get_attribute tag "coords")
+         with _ -> [] 
                and alttxt =
                  try get_attribute tag "alt" with Not_found -> ""
                in
-	       let h_params =
-		 try ["target", get_attribute tag "target"]
-		 with
-		   Not_found ->
-		     match mach#target with
-		       Some s -> ["target", s]
-		     |	None -> []
-	       in
+           let h_params =
+         try ["target", get_attribute tag "target"]
+         with
+           Not_found ->
+             match mach#target with
+               Some s -> ["target", s]
+             |	None -> []
+           in
                match href with
-		 None -> () (* this creates a HOLE. not yet supported *)
-	       | Some uri ->
-		  let link = {h_uri = uri; h_context = Some mach#base;
-			      h_method = GET; h_params = h_params} in
+         None -> () (* this creates a HOLE. not yet supported *)
+           | Some uri ->
+          let link = {h_uri = uri; h_context = Some mach#base;
+                  h_method = GET; h_params = h_params} in
                   let area = 
-		    match shape with
-		     "default" -> {area_kind = Default; area_coords = [];
-				   area_link = link; area_alt = alttxt}
-		   | "rect" -> {area_kind = Rect; area_coords = coords;
-				area_link = link; area_alt = alttxt}
-		   | "circle" -> {area_kind = Circle; area_coords = coords;
-				  area_link = link; area_alt = alttxt}
-		   | "poly" -> {area_kind = Poly; area_coords = coords;
-				area_link = link; area_alt = alttxt} 
-		   | _ -> {area_kind = Default; area_coords = [];
-			    area_link = link; area_alt = alttxt} in
+            match shape with
+             "default" -> {area_kind = Default; area_coords = [];
+                   area_link = link; area_alt = alttxt}
+           | "rect" -> {area_kind = Rect; area_coords = coords;
+                area_link = link; area_alt = alttxt}
+           | "circle" -> {area_kind = Circle; area_coords = coords;
+                  area_link = link; area_alt = alttxt}
+           | "poly" -> {area_kind = Poly; area_coords = coords;
+                area_link = link; area_alt = alttxt} 
+           | _ -> {area_kind = Default; area_coords = [];
+                area_link = link; area_alt = alttxt} in
                   areas := area :: !areas)
             ignore_close)
  
      (fun fo -> 
-	 mach#remove_tag "area";
-	 Maps.add !mapname !areas)
+     mach#remove_tag "area";
+     Maps.add !mapname !areas)
 
 
 let create (ctx, imgmanager) =
@@ -1046,3 +1065,4 @@ let create (ctx, imgmanager) =
 
 end
 
+(*e: ./display/html_disp.ml *)

@@ -1,14 +1,22 @@
+(*s: ./globals/version.ml *)
 (* To merge FR and JP strings correctly, you have to encode the characters
  * more than 0x7F, for example "Fran\231ois".
  *) 
 
+(*s: constant Version.number *)
 (* Version *)
 let number = 418
+(*e: constant Version.number *)
+(*s: constant Version.version_number *)
 let version_number = string_of_int number;;
+(*e: constant Version.version_number *)
 
+(*s: constant Version.http *)
 (* User-Agent field *)
 let http = "MMM/0." ^ string_of_int number
+(*e: constant Version.http *)
 
+(*s: function Version.about *)
 (* dialog uses an gigantic font ! *)
 let about = function
   | "iso8859" ->
@@ -47,29 +55,37 @@ Jun.Furuse@inria.fr
 http://pauillac.inria.fr/~furuse/
 "
   | _ -> assert false
+(*e: function Version.about *)
 
+(*s: function Version.home *)
 let home = function 
   | "iso8859" -> "http://pauillac.inria.fr/mmm/"
   | "ja" -> "http://pauillac.inria.fr/mmm/jmmm/"
   | _ -> assert false
+(*e: function Version.home *)
 
+(*s: function Version.initurl *)
 (* MUST BE NORMALIZED *)
 let initurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
   | "ja" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/jmmm/v%d/about.html"
-	number
+    number
   | _ -> assert false
+(*e: function Version.initurl *)
 
+(*s: function Version.helpurl *)
 let helpurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
   | "ja" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex-ja.html"
-	number
+    number
   | _ -> assert false
+(*e: function Version.helpurl *)
 
+(*s: function Version.html *)
 let html = function
   | "iso8859" ->
 "<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
@@ -143,6 +159,10 @@ get an updated copy.
 </HTML>
 "
   |  _ -> assert false
+(*e: function Version.html *)
 
+(*s: constant Version.applet_init *)
 (* Make it easier to compile both bytecode and native versions *)
 let applet_init = ref (fun _ -> ())
+(*e: constant Version.applet_init *)
+(*e: ./globals/version.ml *)

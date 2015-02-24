@@ -1,3 +1,4 @@
+(*s: ./gui/fontprefs.ml *)
 open Printf
 open Tk
 (* Specify set of attributes of a font *)
@@ -9,6 +10,7 @@ open Tk
 *)
 open Fonts
 
+(*s: function Fontprefs.fontspec2attrs *)
 let fontspec2attrs s =
   let tokens = Mstring.split_str (fun c -> c='-') s in
   if List.length tokens <> 14 then
@@ -23,12 +25,14 @@ let fontspec2attrs s =
        with "*" -> () | s -> attrs := (Slant s) :: !attrs);
       (match List.nth tokens 6 with
          "*" -> () 
-	| s -> try
-	         attrs := (FontIndex (font_index (int_of_string s))) :: !attrs
-	       with Failure "int_of_string" ->
-		 failwith ("pxlsz not an integer: " ^ s));
+    | s -> try
+             attrs := (FontIndex (font_index (int_of_string s))) :: !attrs
+           with Failure "int_of_string" ->
+         failwith ("pxlsz not an integer: " ^ s));
       !attrs
+(*e: function Fontprefs.fontspec2attrs *)
 
+(*s: function Fontprefs.attrs2fontspec *)
 let attrs2fontspec l =
   let rec family = function
      [] -> "*"
@@ -49,38 +53,62 @@ let attrs2fontspec l =
 
   sprintf "-*-%s-%s-%s-normal-*-%s-*-*-*-*-*-iso8859-1"
           (family l) (weight l) (slant l) (pxlsz l)
+(*e: function Fontprefs.attrs2fontspec *)
 
+(*s: constant Fontprefs.default_families *)
 (* Build a family menu *)
 let default_families = 
   ["courier"; "helvetica"; "lucida"; "new century schoolbook";
    "times"; "fixed"; "*"]
+(*e: constant Fontprefs.default_families *)
+(*s: function Fontprefs.families *)
 let families () =
  Tkresource.stringlist "fontFamilies" default_families
+(*e: function Fontprefs.families *)
 
+(*s: function Fontprefs.family_select *)
 let family_select top v = 
   Optionmenu.create  top v (families())
+(*e: function Fontprefs.family_select *)
 
+(*s: constant Fontprefs.default_weights *)
 (* Build a weight menu *)
 let default_weights = ["bold"; "medium"; "*"]
+(*e: constant Fontprefs.default_weights *)
+(*s: function Fontprefs.weights *)
 let weights () =
   Tkresource.stringlist "fontWeights" default_weights
+(*e: function Fontprefs.weights *)
+(*s: function Fontprefs.weight_select *)
 let weight_select top v =
   Optionmenu.create top v (weights())
+(*e: function Fontprefs.weight_select *)
 
+(*s: constant Fontprefs.default_slants *)
 (* Build a slant menu *)
 let default_slants = ["r"; "i"; "o"; "*"]
+(*e: constant Fontprefs.default_slants *)
+(*s: function Fontprefs.slants *)
 let slants () = 
   Tkresource.stringlist "fontSlants" default_slants
+(*e: function Fontprefs.slants *)
+(*s: function Fontprefs.slant_select *)
 let slant_select top v =
   Optionmenu.create top v (slants())
+(*e: function Fontprefs.slant_select *)
 
+(*s: function Fontprefs.pixels *)
 (* Build a pixel size menu *)
 let pixels() =
   Tkresource.stringlist "fontPixels" Fonts.default_sizes
+(*e: function Fontprefs.pixels *)
+(*s: function Fontprefs.pixels_select *)
 let pixels_select top v = 
   Optionmenu.create top v (pixels())
+(*e: function Fontprefs.pixels_select *)
 
 
+(*s: function Fontprefs.font_select *)
 (* fontspecv is the variable used for the full X font name; it is used
  * internally (and for saving the prefs), and must be maintained consistent
  * with the displayed state.
@@ -112,8 +140,8 @@ let font_select top getattrs setattrs =
   let setv _ =
     let font = sprintf "-*-%s-%s-%s-normal-*-%s-*-*-*-*-*-iso8859-1"
         (Textvariable.get familyv)
-	(Textvariable.get weightv)
-	(Textvariable.get slantv)
+    (Textvariable.get weightv)
+    (Textvariable.get slantv)
         (Textvariable.get pixelsv)
     in 
     let attrs = fontspec2attrs font in
@@ -151,6 +179,8 @@ let font_select top getattrs setattrs =
       attrs
   in
   f, fontspecv, init_pref, set_pref
+(*e: function Fontprefs.font_select *)
 
     
 
+(*e: ./gui/fontprefs.ml *)

@@ -1,3 +1,5 @@
+(*s: ./retrieve/scheduler.mli *)
+(*s: signature Scheduler.debug *)
 (*
  * Certain kind of documents need to be shared, such as in-lined images.
  * In this case, instead of working with Retrieve.f and the normal
@@ -9,8 +11,11 @@
  *)
 
 val debug : bool ref
+(*e: signature Scheduler.debug *)
 
+(*s: enum Scheduler.progress_func *)
 type progress_func = int option -> int -> unit
+(*e: enum Scheduler.progress_func *)
 
 module type Data =
   sig
@@ -21,7 +26,7 @@ module type Data =
    val load : 
      Document.handle -> Document.document_id list -> string -> t
         (* [load dh referers file]
-	 *   is responsible for creating the shared handle
+     *   is responsible for creating the shared handle
          *)
    val cache_access : Url.t -> Document.document_id -> t
         (* [cache_access url referer]
@@ -30,7 +35,7 @@ module type Data =
          *)       	     
    val error : 
         Url.t -> 
-	  (Document.document_id * ((Url.t -> t -> unit) * progress_func)) list -> unit
+      (Document.document_id * ((Url.t -> t -> unit) * progress_func)) list -> unit
         (* [error url [(did,(cont,progress))]]
          *  if an error occurs, then each pending continuation is called
          *  (if necessary) as required (e.g. with "default" information)
@@ -69,3 +74,4 @@ module type S =
 
 
 module Make(J : Data):(S with type shared_data = J.t)
+(*e: ./retrieve/scheduler.mli *)

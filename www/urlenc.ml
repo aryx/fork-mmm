@@ -1,3 +1,4 @@
+(*s: ./www/urlenc.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -12,14 +13,17 @@
 (* $Id: urlenc.ml,v 1.7 1998/03/31 12:34:39 rouaix Exp $ *)
 open Mstring
 
+(*s: function Urlenc.hexchar *)
 let hexchar c = 
   let s = String.make 3 '%'
   and i = Char.code c in
   s.[1] <- dec_to_hex (i/16);
   s.[2] <- dec_to_hex (i mod 16);
   s
+(*e: function Urlenc.hexchar *)
 
 (* Decode escaped characters *)
+(*s: function Urlenc.decode *)
 (* Note: beware of order of splitting wrt '&' and decoding *)
 let decode s =
   let l = String.length s in
@@ -29,8 +33,8 @@ let decode s =
     if s.[!pos] = '%' & !pos + 2 < l  then begin
       let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
       	Ebuffer.output_char target (Char.chr c);
-	pos := !pos + 3
-	end
+    pos := !pos + 3
+    end
     else if s.[!pos] = '+' then begin
       Ebuffer.output_char target ' ';
       incr pos
@@ -41,13 +45,17 @@ let decode s =
       end
   done;
   Ebuffer.get target
+(*e: function Urlenc.decode *)
 
+(*s: constant Urlenc.keep_quoted *)
 (* Unquote an url path:
    We decode all % except those corresponding to significative
    characters for parsing: /, ?, #, sp, :
  *)
 let keep_quoted = 
   ['/'; '?'; '#'; ' '; '\t'; '\r'; '\n'; ':'; '%'; '&'; '='; '+']
+(*e: constant Urlenc.keep_quoted *)
+(*s: function Urlenc.unquote *)
 let unquote s =
   try
     (* optim *)
@@ -57,35 +65,37 @@ let unquote s =
     let pos = ref 0 in
     try
       while !pos < l do
-	let perpos = String.index_from s !pos '%' in
-	if perpos > !pos then Ebuffer.output target s !pos (perpos - !pos);
-	pos := perpos;
+    let perpos = String.index_from s !pos '%' in
+    if perpos > !pos then Ebuffer.output target s !pos (perpos - !pos);
+    pos := perpos;
       	if s.[!pos] = '%' & !pos + 2 < l  then begin
       	  let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
-	  let substc = Char.chr c in
-	  if List.mem substc keep_quoted then
-	    for i = 0 to 2 do
+      let substc = Char.chr c in
+      if List.mem substc keep_quoted then
+        for i = 0 to 2 do
       	      Ebuffer.output_char target s.[!pos];
       	      incr pos
-	      done
-	      else begin
+          done
+          else begin
       	      Ebuffer.output_char target (Char.chr c);
-	      pos := !pos + 3
-	   end
-	 end
-	 else begin
+          pos := !pos + 3
+       end
+     end
+     else begin
       	 Ebuffer.output_char target s.[!pos];
       	 incr pos
-	 end
+     end
       done;
       Ebuffer.get target
     with
       Not_found -> (* no more substitutions *)
-	Ebuffer.output target s !pos (l - !pos);
-	Ebuffer.get target
+    Ebuffer.output target s !pos (l - !pos);
+    Ebuffer.get target
   with
     Not_found -> s
+(*e: function Urlenc.unquote *)
 
+(*s: function Urlenc.encode *)
 let encode s =
   let target = Ebuffer.create (String.length s) in
   for pos = 0 to String.length s - 1 do
@@ -96,10 +106,14 @@ let encode s =
     | c -> Ebuffer.output_string target (hexchar c)
     done;
   Ebuffer.get target
+(*e: function Urlenc.encode *)
 
 
+(*s: constant Urlenc.strict_form_standard *)
 let strict_form_standard = ref true
+(*e: constant Urlenc.strict_form_standard *)
 
+(*s: function Urlenc.form_encode *)
 let form_encode = function 
   [] -> ""
  | (e,v)::l ->
@@ -109,22 +123,26 @@ let form_encode = function
     Ebuffer.output_char b '=';
     Ebuffer.output_string b (encode v);
     List.iter (fun (e,v) ->
-		 Ebuffer.output_char b '&';
-		 Ebuffer.output_string b (
+         Ebuffer.output_char b '&';
+         Ebuffer.output_string b (
                    if !strict_form_standard then encode e
-		   else e);
-		 Ebuffer.output_char b '=';
-		 Ebuffer.output_string b (encode v))
+           else e);
+         Ebuffer.output_char b '=';
+         Ebuffer.output_string b (encode v))
              l;
     Ebuffer.get b
+(*e: function Urlenc.form_encode *)
 
+(*s: constant Urlenc.form_decode *)
 let form_decode =
   let ampersand c = c = '&' and equals c = c = '=' in
   (function  s ->
      List.map (fun encp ->
        match split_str equals encp with
-	   [x;y] -> (decode x, decode y)
-	 | [x] -> (decode x, "")
-	 | _ -> invalid_arg "form_decode")
+       [x;y] -> (decode x, decode y)
+     | [x] -> (decode x, "")
+     | _ -> invalid_arg "form_decode")
        (split_str ampersand s))
-		 
+(*e: constant Urlenc.form_decode *)
+         
+(*e: ./www/urlenc.ml *)

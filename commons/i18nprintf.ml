@@ -1,3 +1,4 @@
+(*s: ./commons/i18nprintf.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Objective Caml                            *)
@@ -14,6 +15,7 @@
 external format_int: string -> int -> string = "caml_format_int"
 external format_float: string -> float -> string = "caml_format_float"
 
+(*s: function I18nprintf.fprintf *)
 let fprintf outchan format =
   let format = (Obj.magic format : string) in
   let outside_iso8859 = ref false in
@@ -23,11 +25,11 @@ let fprintf outchan format =
     else begin
       let c = String.unsafe_get format i in
       if c = '\027' then begin
-	if i+2 < String.length format &&
-	   String.unsafe_get format (i+1) = '\040' && 
-	   String.unsafe_get format (i+2) = '\066' then
-	     outside_iso8859 := false
-	else outside_iso8859 := true
+    if i+2 < String.length format &&
+       String.unsafe_get format (i+1) = '\040' && 
+       String.unsafe_get format (i+2) = '\066' then
+         outside_iso8859 := false
+    else outside_iso8859 := true
       end;
       if c <> '%' || !outside_iso8859 then begin
         output_char outchan c;
@@ -97,10 +99,12 @@ let fprintf outchan format =
     | c -> j
 
   in doprn 0
+(*e: function I18nprintf.fprintf *)
 
 let printf fmt = fprintf stdout fmt
 and eprintf fmt = fprintf stderr fmt
 
+(*s: function I18nprintf.sprintf *)
 let sprintf format =
   let format = (Obj.magic format : string) in
   let outside_iso8859 = ref false in
@@ -114,11 +118,11 @@ let sprintf format =
     end else
       let c = String.unsafe_get format i in
       if c = '\027' then begin
-	if i+2 < String.length format &&
-	   String.unsafe_get format (i+1) = '\040' && 
-	   String.unsafe_get format (i+2) = '\066' then
-	     outside_iso8859 := false
-	else outside_iso8859 := true
+    if i+2 < String.length format &&
+       String.unsafe_get format (i+1) = '\040' && 
+       String.unsafe_get format (i+2) = '\066' then
+         outside_iso8859 := false
+    else outside_iso8859 := true
       end;
       if c <> '%' || !outside_iso8859 then
         doprn start (i+1) accu
@@ -180,3 +184,5 @@ let sprintf format =
     | c -> j
 
   in doprn 0 0 []
+(*e: function I18nprintf.sprintf *)
+(*e: ./commons/i18nprintf.ml *)

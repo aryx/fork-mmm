@@ -1,19 +1,27 @@
+(*s: ./display/styles.ml *)
 (* Styles are common display attributes *)
 open Htmlfmt
 open Fonts
 
 
+(*s: constant Styles.fonttable *)
 (* Definition of font attributes *)
 let fonttable = (Hashtbl.create 37 : (string, fontAttrs) Hashtbl.t)
+(*e: constant Styles.fonttable *)
 
+(*s: constant Styles.get_font *)
 let get_font =  Hashtbl.find fonttable
+(*e: constant Styles.get_font *)
+(*s: function Styles.set_font *)
 let set_font name attrs =
   Hashtbl.remove fonttable name;
   Hashtbl.add fonttable name attrs;
   if name = "default" then 
     Fonts.default := Fonts.merge !Fonts.default attrs
+(*e: function Styles.set_font *)
 
 
+(*s: constant Styles.table *)
 (* 
  * Graphical attributes for a given symbolic name 
  * TODO: to support a notion of style sheet, this table should be
@@ -21,7 +29,9 @@ let set_font name attrs =
  * of the style sheet display model
  *)
 let table = (Hashtbl.create 37 : (string, gattr list) Hashtbl.t)
+(*e: constant Styles.table *)
 
+(*s: function Styles.get *)
 (* Merge font attributes and other attributes *)
 let get s = 
   let fontattrs = 
@@ -32,11 +42,15 @@ let get s =
   let attrs =  List.map (fun fi -> Font fi) fontattrs @ otherattrs 
   in
    if attrs = [] then raise Not_found else attrs
+(*e: function Styles.get *)
 
+(*s: function Styles.define_style *)
 let define_style name attrs =
   Hashtbl.remove table name;
   Hashtbl.add table name attrs
+(*e: function Styles.define_style *)
 
+(*s: function Styles.init *)
 let init family slant =
   Hashtbl.clear fonttable;
   Hashtbl.clear table;
@@ -66,6 +80,10 @@ let init family slant =
       "header5", [Justification "left"];
       "header6", [Justification "left"]
     ]
+(*e: function Styles.init *)
 
 
+(*s: toplevel Styles._1 *)
 let _ = init "helvetica" "o"
+(*e: toplevel Styles._1 *)
+(*e: ./display/styles.ml *)

@@ -1,20 +1,31 @@
+(*s: ./viewers/viewers.mli *)
 open Www
 open Document
 open Http_headers
 
+(*s: enum Viewers.vparams *)
 type vparams = (string * string) list
+(*e: enum Viewers.vparams *)
+(*s: enum Viewers.frame_targets *)
 type frame_targets = (string * Widget.widget) list
+(*e: enum Viewers.frame_targets *)
 
+(*s: signature Viewers.frame_adopt *)
 val frame_adopt : Widget.widget -> frame_targets -> frame_targets
     (* remap _self and _parent *)
+(*e: signature Viewers.frame_adopt *)
+(*s: signature Viewers.frame_fugue *)
 val frame_fugue : frame_targets -> frame_targets
     (* forget about _self and _parents *)
+(*e: signature Viewers.frame_fugue *)
 
+(*s: enum Viewers.hyper_func *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
   hyper_func : frame_targets -> Hyper.link -> unit
   }
+(*e: enum Viewers.hyper_func *)
 
 (* list of additionnal parameters for the viewer, according to its
    activation point *)
@@ -71,20 +82,35 @@ class trivial_display : (Widget.widget * Url.t) -> object
 end
 
 
+(*s: signature Viewers.di_compare *)
 val di_compare : display_info -> display_info -> bool
+(*e: signature Viewers.di_compare *)
 
+(*s: enum Viewers.t *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
+(*e: enum Viewers.t *)
 
+(*s: signature Viewers.add_viewer *)
 val add_viewer : media_type -> t -> unit
     (* [add_viewer type viewer] *)
+(*e: signature Viewers.add_viewer *)
 
+(*s: signature Viewers.add_builtin *)
 val add_builtin : media_type -> t -> unit
     (* [add_builtin type viewer] makes viewer a builtin for type *)
+(*e: signature Viewers.add_builtin *)
 
+(*s: signature Viewers.rem_viewer *)
 val rem_viewer : media_type -> unit
+(*e: signature Viewers.rem_viewer *)
 
+(*s: signature Viewers.view *)
 val view : Widget.widget -> context -> handle -> display_info option
+(*e: signature Viewers.view *)
 
+(*s: signature Viewers.reset *)
 val reset : unit -> unit
+(*e: signature Viewers.reset *)
+(*e: ./viewers/viewers.mli *)

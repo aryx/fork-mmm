@@ -1,15 +1,19 @@
+(*s: ./gui/about.ml *)
 open Tk
 
+(*s: function About.f *)
 let f () =
   ignore (
     Frx_dialog.f Widget.default_toplevel (Mstring.gensym "about")
-	"About MMM" (Version.about (Lang.lang ()))
-	(Tk.Predefined "info") 0 ["Thanks"])
+    "About MMM" (Version.about (Lang.lang ()))
+    (Tk.Predefined "info") 0 ["Thanks"])
+(*e: function About.f *)
 
 
 (* Tachymeter *)
 
 (* gif is 80x65 *)
+(*s: constant About.tachy_data *)
 (* inside bitmap, circle is in +16+7 +66+57, radius 25 *)
 
 let tachy_data = "GIF\056\057aP\000A\000\227\000\000\000\000\000\
@@ -53,6 +57,8 @@ i\211\148Z\215y\189\026\140l\052\170a\127\186M\
 \130\048\012HA\131\009\244\007a\056\060\024\232\223\133\
 \024\158\192\030\135\032\134\040\226\136\036\194\016\001\000\059\
 "
+(*e: constant About.tachy_data *)
+(*s: constant About.park_data *)
 let park_data =
 "#define break_width 15
 #define break_height 11
@@ -60,10 +66,15 @@ static char break_bits[] = {
    0x0c, 0x18, 0xf4, 0x17, 0x3a, 0x2e, 0xba, 0x2d, 0xb9, 0x4d, 0x3d, 0x5e,
    0xb9, 0x4f, 0xba, 0x2f, 0xba, 0x2f, 0xf4, 0x17, 0x08, 0x08};
 "
+(*e: constant About.park_data *)
 
 
+(*s: constant About.pi *)
 let pi = 3.1415926 
+(*e: constant About.pi *)
+(*s: constant About.log10 *)
 let log10 = log 10.0 
+(*e: constant About.log10 *)
 
 class default_tachy (top : Widget.widget) =
  object (self)
@@ -90,11 +101,11 @@ class default_tachy (top : Widget.widget) =
     let tachy_image = 
       begin
       	try
-	  let bgc = Tk.cget c CBackground in
+      let bgc = Tk.cget c CBackground in
            Protocol.tkCommand 
-	    [|Protocol.TkToken "set";
-	      Protocol.TkToken "TRANSPARENT_GIF_COLOR";
-	      Protocol.TkToken bgc |]
+        [|Protocol.TkToken "set";
+          Protocol.TkToken "TRANSPARENT_GIF_COLOR";
+          Protocol.TkToken bgc |]
       	with _ -> ()
       end;
     (* Agghaaa !!! TCL/TK doesn't support -data for GIF !!! *)
@@ -112,13 +123,13 @@ class default_tachy (top : Widget.widget) =
       Canvas.create_rectangle c 
     	(Pixels 72) (Pixels 3) 
     	(Pixels 75) (Pixels 6) [FillColor Black];
-	
+    
     kilos <-
       Canvas.create_text c (Pixels 40) (Pixels 73) [Text "0"];
     
     aig <-
       Canvas.create_line c [Pixels 41; Pixels 32; Pixels 41; Pixels 57]
-	                   [Width (Pixels 2)];
+                       [Width (Pixels 2)];
     pendings <-
       Canvas.create_text c (Pixels 70) (Pixels 60) [Text "0"];
 
@@ -150,14 +161,14 @@ class default_tachy (top : Widget.widget) =
   method update speed total =
     if speed = 0.0 then begin
       if not idle then begin
-	Canvas.configure_rectangle canvas i_park [FillColor Black;
-					      Outline Black];
-	idle <- true
+    Canvas.configure_rectangle canvas i_park [FillColor Black;
+                          Outline Black];
+    idle <- true
       end
     end
     else begin
       Canvas.configure_rectangle canvas i_park [FillColor Green;
-						 Outline Green];
+                         Outline Green];
       idle <- false
     end;
     if total <> last_total then
@@ -174,20 +185,20 @@ class default_tachy (top : Widget.widget) =
       let x = 41.0 -. (sin angle *. 25.0)
       and y = 32.0 +. (cos angle *. 25.0) in
       Canvas.coords_set canvas aig 
-	[Pixels 41; Pixels 32;
-	  Pixels (truncate x); Pixels (truncate y)];
+    [Pixels 41; Pixels 32;
+      Pixels (truncate x); Pixels (truncate y)];
       Low.update_idletasks()
     end
 
   method report_cnx n = 
     if Winfo.exists canvas then
       if n = 0 then begin
-	Canvas.configure_text canvas pendings [Text ""];
+    Canvas.configure_text canvas pendings [Text ""];
       	Canvas.lower_bot canvas pendings
       end
       else begin
-	Canvas.configure_text canvas pendings 
-	  [Text (string_of_int n)];
+    Canvas.configure_text canvas pendings 
+      [Text (string_of_int n)];
       	Canvas.raise_top canvas pendings
       end
 
@@ -195,20 +206,20 @@ class default_tachy (top : Widget.widget) =
     if Winfo.exists canvas then
       if busy then begin
       	Canvas.lower_bot canvas pendings;
-	Canvas.configure_rectangle canvas i_park [FillColor Red;
-					      Outline Red];
-	Low.update_idletasks()
+    Canvas.configure_rectangle canvas i_park [FillColor Red;
+                          Outline Red];
+    Low.update_idletasks()
       end
       else begin
       	Canvas.raise_top canvas pendings;
-	Canvas.configure_rectangle canvas i_park [FillColor Black;
-					      Outline Black]
+    Canvas.configure_rectangle canvas i_park [FillColor Black;
+                          Outline Black]
       end
 
   method report_traffic tick_duration bytes_read sample_read =
     if alive then
       self#update (float sample_read *. 1000. /. float tick_duration)
-	bytes_read
+    bytes_read
 
   method quit =
     alive <- false;
@@ -216,8 +227,11 @@ class default_tachy (top : Widget.widget) =
 
 end
 
+(*s: function About.create_tachy *)
 let create_tachy top = 
   let o = new default_tachy top in
   o#start;
+(*e: function About.create_tachy *)
   (o :> Low.tachymeter)
 
+(*e: ./gui/about.ml *)

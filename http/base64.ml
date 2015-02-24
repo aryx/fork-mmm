@@ -1,3 +1,4 @@
+(*s: ./http/base64.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -13,17 +14,23 @@
 
 (* For basic credentials only *)
 (* Encoding is [A-Z][a-z][0-9]+/= *)
+(*s: constant Base64.index64 *)
 (* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
 
 let index64 = Array.create 128 0
+(* Init the index *)
+(*e: constant Base64.index64 *)
+(*s: toplevel Base64._1 *)
 (* Init the index *)
 let _ =
   for i = 0 to 25 do index64.(i + Char.code 'A') <- i done;
   for i = 0 to 25 do index64.(i + Char.code 'a') <- i + 26 done;
   for i = 0 to 9 do  index64.(i + Char.code '0') <- i + 52 done;
   index64.(Char.code '+') <- 62;
+(*e: toplevel Base64._1 *)
   index64.(Char.code '/') <- 63
 
+(*s: function Base64.decode *)
 let decode s =
   let rpos = ref 0
   and wpos = ref 0
@@ -49,16 +56,22 @@ let decode s =
     else 0 
   in
   String.sub res 0 (String.length res - cut)
+(*e: function Base64.decode *)
 
 
+(*s: constant Base64.char64 *)
 let char64 = Array.create 64 'a'
+(*e: constant Base64.char64 *)
+(*s: toplevel Base64._2 *)
 let _ =
   for i = 0 to 25 do char64.(i) <- Char.chr (Char.code 'A' + i) done;
   for i = 0 to 25 do char64.(i+26) <- Char.chr (Char.code 'a' + i) done;
   for i = 0 to 9 do char64.(i+52) <- Char.chr (Char.code '0' + i) done;
   char64.(62) <- '+';
+(*e: toplevel Base64._2 *)
   char64.(63) <- '/'
 
+(*s: function Base64.encode *)
 (* Encoding *)
 let encode s =
   let rpos = ref 0 
@@ -86,4 +99,6 @@ let encode s =
   (* Correct padding *)
   for i = 1 to len - origlen do res.[String.length res - i] <- '=' done;
   res
+(*e: function Base64.encode *)
 
+(*e: ./http/base64.ml *)

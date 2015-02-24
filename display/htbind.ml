@@ -1,3 +1,4 @@
+(*s: ./display/htbind.ml *)
 (* Bindings for hypernavigation *)
 open Printf
 open Tk
@@ -28,12 +29,12 @@ class  virtual active () =
     try 
       let hyperf = List.assoc hyname ctx#hyper_funs in
       self#binder (Glevents.get hyname)
-	(BindSet ([Ev_MouseX; Ev_MouseY],
-		  (fun ei -> 
-		     try let link = self#getlink ei in
-		          self#markused ei;
-		          ctx#invoke hyname link;
-		     with Not_found -> ())))
+    (BindSet ([Ev_MouseX; Ev_MouseY],
+          (fun ei -> 
+             try let link = self#getlink ei in
+                  self#markused ei;
+                  ctx#invoke hyname link;
+             with Not_found -> ())))
     with
       Not_found -> ())
     ["goto"; "save"; "gotonew"];
@@ -46,46 +47,46 @@ class  virtual active () =
         (* The first entry has its text replaced by the link url *)
         Menu.add_command m [Label ""];
         Menu.add_separator m;
-	List.iter (fun (fname, f) ->
-		     if f.hyper_visible then
-		      Menu.add_command m
-			   [Label f.hyper_title; 
-			    Command (fun () -> 
-			      match !menuei, !menulink with
-				Some ei, Some link ->
-				  self#markused ei;
-				  ctx#invoke fname link
-			      |	_, _ -> ())])
-	      ctx#hyper_funs;
-	m) in
+    List.iter (fun (fname, f) ->
+             if f.hyper_visible then
+              Menu.add_command m
+               [Label f.hyper_title; 
+                Command (fun () -> 
+                  match !menuei, !menulink with
+                Some ei, Some link ->
+                  self#markused ei;
+                  ctx#invoke fname link
+                  |	_, _ -> ())])
+          ctx#hyper_funs;
+    m) in
   self#binder (Glevents.get "hypermenu")
    (BindSet ([Ev_MouseX; Ev_MouseY; Ev_RootX; Ev_RootY], 
        (fun ei -> 
-	 try
-	   let link = self#getlink ei in
-	   menuei := Some ei; menulink := Some link;
-	   let m = hypermenu() in
-	   Menu.configure_command m (Number 1) [Label (Hyper.string_of link)];
-	   Menu.popup m ei.ev_RootX ei.ev_RootY
-	 with
-	   Not_found -> ())));
+     try
+       let link = self#getlink ei in
+       menuei := Some ei; menulink := Some link;
+       let m = hypermenu() in
+       Menu.configure_command m (Number 1) [Label (Hyper.string_of link)];
+       Menu.popup m ei.ev_RootX ei.ev_RootY
+     with
+       Not_found -> ())));
 
   (* Install the pointsto internal bindings *)
   self#binder [[], Enter]
     (BindExtend ([Ev_MouseX; Ev_MouseY], 
-		 (fun ei ->
-		   try
-		     let link = self#getlink ei in
-		     self#highlight true;
-		     ctx#invoke "pointsto" link
-		   with Not_found -> ())));
+         (fun ei ->
+           try
+             let link = self#getlink ei in
+             self#highlight true;
+             ctx#invoke "pointsto" link
+           with Not_found -> ())));
   let fakehlink =
     {h_uri = ""; h_context = None; h_method = GET; h_params = [] } in
   self#binder [[], Leave]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
-	      (fun ei ->
-		self#highlight false;
-		ctx#invoke "clearpointsto" fakehlink)))
+          (fun ei ->
+        self#highlight false;
+        ctx#invoke "clearpointsto" fakehlink)))
 end
 
 (*
@@ -129,12 +130,12 @@ class  virtual hypertext (thtml) =
     super#init ctx;
     self#binder [[], Motion]
       (BindSet ([Ev_MouseX; Ev_MouseY], 
-		(fun ei ->
-		  try
-		    let link = self#getlink ei in
-		    ctx#invoke "pointsto" link
-		  with
-		    Not_found -> ())))
+        (fun ei ->
+          try
+            let link = self#getlink ei in
+            ctx#invoke "pointsto" link
+          with
+            Not_found -> ())))
 end
 
 
@@ -182,3 +183,4 @@ end
 
 
 (* Client side image maps are defined in Cmap *)
+(*e: ./display/htbind.ml *)

@@ -1,3 +1,4 @@
+(*s: ./display/html_table.ml *)
 open Html
 open Htmlfmt
 
@@ -63,19 +64,19 @@ let init mach =
     in
     let change_aligns t =
       current_row_align := 
-	 (try Some (String.lowercase (get_attribute t "align"))
-	  with Not_found -> None);
+     (try Some (String.lowercase (get_attribute t "align"))
+      with Not_found -> None);
       current_row_valign := 
-	 (try Some (String.lowercase (get_attribute t "valign"))
-	  with Not_found -> None)
+     (try Some (String.lowercase (get_attribute t "valign"))
+      with Not_found -> None)
     in 
 
    let cell_aligns attrs =
      begin try Some (String.lowercase (get_attribute attrs "align"))
-	   with Not_found -> !current_row_align
+       with Not_found -> !current_row_align
      end,
      begin try Some (String.lowercase (get_attribute attrs "valign"))
-	   with Not_found -> !current_row_valign
+       with Not_found -> !current_row_valign
      end
    in
     (* <TR> : starts a row *)
@@ -87,16 +88,16 @@ let init mach =
     let open_cell kind fo t =
       let align,valign = cell_aligns t in
       let align = match align with 
-	Some align -> align
+    Some align -> align
       |	None -> match kind with 
-	  HeaderCell -> "center"
-	| DataCell -> "left"
+      HeaderCell -> "center"
+    | DataCell -> "left"
       in
       (* Create a new formatter, given as parent the table widget *)
       let formatter, tcell = 
-	mach#create_formatter NestedFormatter tm.table_master in
-	mach#push_formatter formatter;
-	push_width (tm.new_cell kind t tcell align)
+    mach#create_formatter NestedFormatter tm.table_master in
+    mach#push_formatter formatter;
+    push_width (tm.new_cell kind t tcell align)
 
     and close_cell fo =
       (* fo is the formatter that was open for *this* cell *)
@@ -124,3 +125,4 @@ let init mach =
   mach#add_tag "table" open_table close_table;
 
 end
+(*e: ./display/html_table.ml *)

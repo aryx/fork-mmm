@@ -1,13 +1,17 @@
+(*s: ./commons/glevents.ml *)
 open Printf
 open Tk
 
+(*s: constant Glevents.events *)
 (* A global table for describing events
  * TODO: use virtual events because here we don't change bindings in 
  * place after a preference reload
  *)
 
 let events = Hashtbl.create 37
+(*e: constant Glevents.events *)
 
+(*s: constant Glevents.builtin_defaults *)
 let builtin_defaults = [
   (* tachymeter bindings *)
   "tachy_about", [[], ButtonPressDetail 3];
@@ -27,9 +31,13 @@ let builtin_defaults = [
   "gotonew", [[], ButtonPressDetail 3];
   "hypermenu", [[Control], ButtonPressDetail 1];
 ]
+(*e: constant Glevents.builtin_defaults *)
 
+(*s: constant Glevents.get *)
 let get = Hashtbl.find events
+(*e: constant Glevents.get *)
 
+(*s: function Glevents.reset *)
 (* This is for preferences *)
 let reset () =
   Hashtbl.clear events;
@@ -39,5 +47,7 @@ let reset () =
     Hashtbl.add events 
       name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
     builtin_defaults
+(*e: function Glevents.reset *)
     
   
+(*e: ./commons/glevents.ml *)

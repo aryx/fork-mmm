@@ -1,8 +1,10 @@
+(*s: ./display/table.ml *)
 open Printf
 open Tk
 open Html
 open Htmlfmt
 
+(*s: constant Table.debug *)
 (* Table support using the grid manager and a gross hack to obtain 
    resizing of a text widget to show its entire content.
 
@@ -22,14 +24,20 @@ open Htmlfmt
  *)
 
 let debug = ref false
+(*e: constant Table.debug *)
+(*s: constant Table.strict_32 *)
 let strict_32 = ref true
     (* in this mode, we ignore WIDTH of TD defined with %
        This is also better for pages written for MSIE where you find
        either TD WIDTH=100% or TD WIDTH=NN
        *)
+(*e: constant Table.strict_32 *)
 
+(*s: enum Table.cell_type (./display/table.ml) *)
 (* a manager for a single TABLE *)
 type cell_type = HeaderCell | DataCell
+(*e: enum Table.cell_type (./display/table.ml) *)
+(*s: enum Table.t (./display/table.ml) *)
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -39,7 +47,9 @@ type t = {
   new_cell : cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
   bound : unit -> bool
   }
+(*e: enum Table.t (./display/table.ml) *)
 
+(*s: enum Table.table *)
 (* Internal structure of tables *)
 type table = {
   master_widget : Widget.widget;
@@ -53,7 +63,9 @@ type table = {
   cellpadding : int;
   cellspacing : int
   }
+(*e: enum Table.table *)
 
+(*s: function Table.topwidth *)
 (* Get up to the widget that has HFrame class, or to toplevel *)
 let topwidth wid =
   let f = ref wid in
@@ -67,8 +79,10 @@ let topwidth wid =
   with
     Exit ->    
       truncate (float (Winfo.width !f) *. 0.95)
+(*e: function Table.topwidth *)
 
 
+(*s: function Table.text_align *)
 let text_align cell align =
   Text.tag_add cell "align" Frx_text.textBegin Frx_text.textEnd;
   Text.tag_configure cell "align"
@@ -76,55 +90,59 @@ let text_align cell align =
       "right" -> [Justify Justify_Right]
     | "center" -> [Justify Justify_Center]
     | _ -> [Justify Justify_Left])
+(*e: function Table.text_align *)
 
+(*s: function Table.dynamic_fight *)
 (* Fight for your life ! *)
 let dynamic_fight cell nowrap gameover align =
   match Winfo.class_name cell with
   | "Text" ->
       if !debug then
-	Log.f (sprintf "DYNAMIC %s" (Widget.name cell));
+    Log.f (sprintf "DYNAMIC %s" (Widget.name cell));
       let when_finished () =
    	if !debug then
-	  Log.f (sprintf "Switching %s to vertical resize"
-	                 (Widget.name cell));
+      Log.f (sprintf "Switching %s to vertical resize"
+                     (Widget.name cell));
         (* in all cases, we have to grow vertically *)
       	let scroll, check = Fit.vert cell in
       	Text.configure cell [YScrollCommand scroll];
         (* A posteriori updates for embedded windows
       	List.iter 
-	  (fun embedded ->
-	    bind embedded [[], Configure]
-	      (BindSet([], (fun _ ->
-	      	bind embedded [[], Configure] BindRemove;
-	      	Frx_after.idle check;
+      (fun embedded ->
+        bind embedded [[], Configure]
+          (BindSet([], (fun _ ->
+          	bind embedded [[], Configure] BindRemove;
+          	Frx_after.idle check;
       	      	()))))
           (Text.window_names cell)
          *)
       in
       let scroll, check = Fit.horiz cell gameover (
-	let first_time = ref true in
-	(fun () ->
-	  if !first_time then begin
-	    first_time := false;
-	    text_align cell align;
-	    if not nowrap then Text.configure cell [Wrap WrapWord];
-	    when_finished()
+    let first_time = ref true in
+    (fun () ->
+      if !first_time then begin
+        first_time := false;
+        text_align cell align;
+        if not nowrap then Text.configure cell [Wrap WrapWord];
+        when_finished()
  	  end))
       in
       Text.configure cell [XScrollCommand scroll];
       check()
   | s ->
       if !debug then
-	Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
+    Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
+(*e: function Table.dynamic_fight *)
       assert false
 
 
+(*s: function Table.fixed_size *)
 (* We know the size in pixels *)
 let fixed_size cell width nowrap align =
   match Winfo.class_name cell with
   | "Text" ->
       if !debug then
-	Log.f (sprintf "FIXED %s to %d" (Widget.name cell) width);
+    Log.f (sprintf "FIXED %s to %d" (Widget.name cell) width);
       if not nowrap then Text.configure cell [Wrap WrapWord];
       Fit.fixed_horiz cell width;
       (* we have to do alignment here, because it kills horizontal resizing *)
@@ -134,20 +152,22 @@ let fixed_size cell width nowrap align =
       Text.configure cell [YScrollCommand scroll];
       (* A posteriori updates for embedded windows
       List.iter 
-	(fun embedded ->
-	  bind embedded [[], Configure]
-	    (BindSet([], (fun _ ->
-	      bind embedded [[], Configure] BindRemove;
-	      Frx_after.idle check;
+    (fun embedded ->
+      bind embedded [[], Configure]
+        (BindSet([], (fun _ ->
+          bind embedded [[], Configure] BindRemove;
+          Frx_after.idle check;
       	      ()))))
         (Text.window_names cell);
        *)
       check()
   | s ->
       if !debug then
-	Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
+    Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
+(*e: function Table.fixed_size *)
       assert false
 
+(*s: function Table.sizing *)
 (*
  * Determine how we should set resizing for our cells
  *  table.width contains the specified width for the table
@@ -160,8 +180,8 @@ let sizing table nowrap width =
     if n > colwidths.(col) then begin
       colwidths.(col) <- n;
       if !debug then
-	Log.f (sprintf "%s col %d minsize %d"
-		       (Widget.name table.master_widget) col n);
+    Log.f (sprintf "%s col %d minsize %d"
+               (Widget.name table.master_widget) col n);
       Grid.column_configure table.master_widget col [Minsize (Pixels n)]
     end
   in
@@ -178,10 +198,10 @@ let sizing table nowrap width =
     and _ = Fit.set_initial_height w in
     match cellwidth with
       FixedWidth n ->
-	if cspan=1 then setcolwidth col n; (* this col is at least n*)
-	fixed_size w (adjust n) nowrap align
+    if cspan=1 then setcolwidth col n; (* this col is at least n*)
+    fixed_size w (adjust n) nowrap align
     | UnknownWidth bound ->
-	add_dynamic w bound
+    add_dynamic w bound
     | _ -> assert false)
     (List.rev table.slaves);
   (* second pass on dynamics : if we know exactly the size of the
@@ -198,7 +218,9 @@ let sizing table nowrap width =
     if not !unknown_col then fixed_size w (adjust !width) nowrap align
     else dynamic_fight w nowrap f align)
     !dynamic
+(*e: function Table.sizing *)
 
+(*s: function Table.packem *)
 (* TODO: alignment *)
 let packem table =
   let default_opts = [Sticky "nswe";
@@ -211,8 +233,10 @@ let packem table =
        grid [w] ([Row row; Column col; RowSpan rspan; ColumnSpan cspan]
                  @default_opts))
     table.slaves
+(*e: function Table.packem *)
 
 
+(*s: function Table.get_slot *)
 (* 
  * Slots represent, by column, the number of "pending" row-spanning cells 
  * If this number is zero, the slot is empty. When we allocate slots for
@@ -247,17 +271,21 @@ let get_slot table needed_cols rspan =
       table.slots <- Array.append table.slots (Array.create needed_cols rspan);
       table.cur_col <- Array.length table.slots;
       first
+(*e: function Table.get_slot *)
       
 
+(*s: function Table.next_row *)
 let next_row table =
   for i = 0 to Array.length table.slots - 1 do
     table.slots.(i) <- 
       	match table.slots.(i) with
-	  0|1 -> 0
-	| n -> n-1
+      0|1 -> 0
+    | n -> n-1
   done
+(*e: function Table.next_row *)
 
 
+(*s: function Table.create *)
 (*
  * The table manager 
  * [top] is the frame that will be embedded in the text widget
@@ -299,49 +327,49 @@ let create top tag contextwidth =
    match width with
      Nolength | LengthRel _ -> (* assume then 100% of context *)
        begin match contextwidth with
-	 TopWidth ->
-	   let w = topwidth tab.master_widget in
-	   None, Fit.bound_check tab.master_widget w
+     TopWidth ->
+       let w = topwidth tab.master_widget in
+       None, Fit.bound_check tab.master_widget w
        | FixedWidth n -> (* size of parent cell *)
-	   Some n, Fit.bound_check tab.master_widget n
+       Some n, Fit.bound_check tab.master_widget n
        | UnknownWidth f -> 
            (* the previous bound must have been reached
-	    * and we (the frame) may occupy 100% of the context 
-	    * (the text widget). Adjust to 95% for tuning.
-	    *)
-	   None, (fun () ->
-	     f() &&
-	       let w1 = Winfo.reqwidth top
-	       and w2 = Winfo.width (Winfo.parent top) in
-	       if !debug then
-		 Log.f (sprintf "Grow check %s=%d %s=%d"
-			        (Widget.name top) w1
-			        (Widget.name (Winfo.parent top)) w2);
-	        float w1 >= (float w2 *. 0.95))
+        * and we (the frame) may occupy 100% of the context 
+        * (the text widget). Adjust to 95% for tuning.
+        *)
+       None, (fun () ->
+         f() &&
+           let w1 = Winfo.reqwidth top
+           and w2 = Winfo.width (Winfo.parent top) in
+           if !debug then
+         Log.f (sprintf "Grow check %s=%d %s=%d"
+                    (Widget.name top) w1
+                    (Widget.name (Winfo.parent top)) w2);
+            float w1 >= (float w2 *. 0.95))
        end
    | LengthPixels n -> 
        Some n, Fit.bound_check tab.master_widget n
    | LengthRatio r -> (* check the context *)
        begin match contextwidth with
-	 TopWidth ->
-	   let w = truncate (float (topwidth tab.master_widget) *. r) in
-	   Some w, Fit.bound_check tab.master_widget w
+     TopWidth ->
+       let w = truncate (float (topwidth tab.master_widget) *. r) in
+       Some w, Fit.bound_check tab.master_widget w
        | FixedWidth n -> (* size of parent cell *)
-	   let w = truncate (float n *. r) in
-	   Some w, Fit.bound_check tab.master_widget w
+       let w = truncate (float n *. r) in
+       Some w, Fit.bound_check tab.master_widget w
        | UnknownWidth f -> 
-	   None,
-	  (* the previous bound must have been reached,
-	     and we must occupy the ratio *)
-	   (fun () -> f()
-	       && 
-	     (let w1 = Winfo.reqwidth top in
-	      let w2 = Winfo.width (Winfo.parent top) in
-	       if !debug then
-		 Log.f (sprintf "Grow check %s=%d %s=%d"
-			        (Widget.name top) w1
-			        (Widget.name (Winfo.parent top)) w2);
-	      w1 >= truncate (r *. float w2)))
+       None,
+      (* the previous bound must have been reached,
+         and we must occupy the ratio *)
+       (fun () -> f()
+           && 
+         (let w1 = Winfo.reqwidth top in
+          let w2 = Winfo.width (Winfo.parent top) in
+           if !debug then
+         Log.f (sprintf "Grow check %s=%d %s=%d"
+                    (Widget.name top) w1
+                    (Widget.name (Winfo.parent top)) w2);
+          w1 >= truncate (r *. float w2)))
        end
   in
   (* SPECIAL FIX FOR THE PEOPLE WHO DON'T RESPECT THE DTD : we always make
@@ -364,12 +392,12 @@ let create top tag contextwidth =
        with Not_found | Failure "int_of_string" -> None
       in 
       for i = 1 to span do
-	tab.cols <- width :: tab.cols 
+    tab.cols <- width :: tab.cols 
       done);
 
     open_row = (fun t ->
-	tab.cur_col <- 0;
-	tab.cur_row <- 1 + tab.cur_row;
+    tab.cur_col <- 0;
+    tab.cur_row <- 1 + tab.cur_row;
         in_row := true;
         next_row tab);
 
@@ -378,13 +406,13 @@ let create top tag contextwidth =
     new_cell = (fun ctype attrs w align ->
       (* SPECIAL FIX FOR THE PEOPLE WHO DON'T RESPECT THE DTD *)
       if not !in_row then begin
-	tab.cur_col <- 0;
-	tab.cur_row <- 1 + tab.cur_row;
+    tab.cur_col <- 0;
+    tab.cur_row <- 1 + tab.cur_row;
         in_row := true;
         next_row tab
-	end;
+    end;
       let opts = match ctype with
-	 HeaderCell -> [Relief Groove]
+     HeaderCell -> [Relief Groove]
        | DataCell -> [Relief Sunken]
       in
       begin match Winfo.class_name w with
@@ -393,46 +421,48 @@ let create top tag contextwidth =
       end;
       (* Tk needs spans > 0 *)
       let rspan = 
-	try max 1 (int_of_string (get_attribute attrs "rowspan")) 
-	with Not_found | Failure "int_of_string" -> 1
+    try max 1 (int_of_string (get_attribute attrs "rowspan")) 
+    with Not_found | Failure "int_of_string" -> 1
       and cspan = 
-	try max 1 (int_of_string (get_attribute attrs "colspan"))
-	with Not_found | Failure "int_of_string" -> 1
+    try max 1 (int_of_string (get_attribute attrs "colspan"))
+    with Not_found | Failure "int_of_string" -> 1
       and width = 
-	try length_of_string (get_attribute attrs "width")
-	with Not_found -> Nolength
+    try length_of_string (get_attribute attrs "width")
+    with Not_found -> Nolength
       and height = 
-	try length_of_string (get_attribute attrs "height")
-	with Not_found -> Nolength
+    try length_of_string (get_attribute attrs "height")
+    with Not_found -> Nolength
       in
       (* find its place *)
       let real_col = get_slot tab cspan rspan in
       if !debug then
           Log.f (sprintf "Cell %s at row=%d col=%d rspan=%d cspan=%d"
-		         (Widget.name w)
-	                 tab.cur_row real_col rspan cspan);
+                 (Widget.name w)
+                     tab.cur_row real_col rspan cspan);
       (* compute the size of this cell, so that tables in it have 
-	 something to work on *)
+     something to work on *)
       let wconstraint = match width with
       	Nolength | LengthRel _ -> UnknownWidth bound
       |	LengthPixels n -> FixedWidth n
       |	LengthRatio r -> 
-	  if !strict_32 then UnknownWidth bound
-	  else
+      if !strict_32 then UnknownWidth bound
+      else
         (* variable size : do we know the size of the table ? *)
-	  match size with
-	    None -> UnknownWidth (fun () ->
-	      bound() &&
-	       let w1 = Winfo.reqwidth w
-	       and w2 = Winfo.width top in
-	       w1 >= truncate (float w2 *. r))
-	  | Some n -> FixedWidth (truncate (float n *. r))
+      match size with
+        None -> UnknownWidth (fun () ->
+          bound() &&
+           let w1 = Winfo.reqwidth w
+           and w2 = Winfo.width top in
+           w1 >= truncate (float w2 *. r))
+      | Some n -> FixedWidth (truncate (float n *. r))
       in
        (* We delay the gridding until we have all cells *)
        tab.slaves <- 
           (w, (tab.cur_row, real_col,
-	       rspan, cspan,
-	       wconstraint, height, align))
+           rspan, cspan,
+           wconstraint, height, align))
          :: tab.slaves;
        wconstraint
        )}
+(*e: function Table.create *)
+(*e: ./display/table.ml *)

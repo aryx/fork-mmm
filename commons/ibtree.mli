@@ -1,3 +1,4 @@
+(*s: ./commons/ibtree.mli *)
 module type S =
   sig
     type key
@@ -10,3 +11,4 @@ module type S =
 
 module Make(Ord: Map.OrderedType): (S with type key = Ord.t)
 
+(*e: ./commons/ibtree.mli *)

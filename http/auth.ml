@@ -1,3 +1,4 @@
+(*s: ./http/auth.ml *)
 (* HTTP Basic Authentication *)
 open Printf
 open Tk
@@ -6,6 +7,7 @@ open Http_headers
 open Url
 open Www
 
+(*s: enum Auth.authSpace (./http/auth.ml) *)
 (* Authorizations are remembered on the base of the directory url and realm
  * They are kept during the whole MMM session, with expiration
  *)
@@ -17,24 +19,34 @@ type authSpace = {
    auth_dir : string;
    auth_realm : string
   }
+(*e: enum Auth.authSpace (./http/auth.ml) *)
 
+(*s: enum Auth.authEntry *)
 type authEntry = {
    auth_cookie : string;
    mutable auth_lastused : float
    }
+(*e: enum Auth.authEntry *)
 
+(*s: constant Auth.authorizations *)
 let authorizations = Hashtbl.create 37
+(*e: constant Auth.authorizations *)
 
 
+(*s: function Auth.get *)
 let get space = 
   let entry = Hashtbl.find authorizations space in
     entry.auth_lastused <- Unix.time();
     entry.auth_cookie
+(*e: function Auth.get *)
 
+(*s: constant Auth.lifetime *)
 (* Lifetime, in minutes. Default is one hour *)
 let lifetime = ref 60
+(*e: constant Auth.lifetime *)
 
 
+(*s: function Auth.lookup *)
 let rec lookup space = 
   (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
   try
@@ -47,11 +59,13 @@ let rec lookup space =
       let newdir = Filename.dirname space.auth_dir in
       	lookup {auth_proxy = space.auth_proxy;
       	        auth_host = space.auth_host;
-	        auth_port = space.auth_port;
-		auth_dir = newdir;
-		auth_realm = space.auth_realm}
+            auth_port = space.auth_port;
+        auth_dir = newdir;
+        auth_realm = space.auth_realm}
+(*e: function Auth.lookup *)
 
 
+(*s: function Auth.ask_cookie *)
 let ask_cookie forwhere =
   try
     let u,p = Frx_req.open_passwd forwhere in
@@ -60,21 +74,27 @@ let ask_cookie forwhere =
     Failure "cancelled" -> failwith "cancelled"
   | _ -> Error.default#f (I18n.sprintf "Error in base 64 encoding");
         failwith "cancelled"
+(*e: function Auth.ask_cookie *)
 
+(*s: function Auth.replace *)
 let replace kind cookie l =
   let rec repl acc = function
     [] -> (kind,cookie)::acc
   | (k,_)::l when k = kind -> repl (acc) l
   | p::l -> repl (p::acc) l in
   repl [] l
+(*e: function Auth.replace *)
   
 
+(*s: function Auth.add *)
 let add space cookie =
   Log.debug "adding cookie";
   Hashtbl.add authorizations 
       space 
       {auth_cookie = cookie; auth_lastused = Unix.time()}
+(*e: function Auth.add *)
 
+(*s: function Auth.check *)
 (* Kind is either: realm or proxy *)
 let check wwwr challenge authspace =
   let kind = if authspace.auth_proxy then "proxy" else "realm" in
@@ -119,9 +139,11 @@ let check wwwr challenge authspace =
       Some (cookie, isnew, authspace)
      with
       Failure "cancelled" -> None
+(*e: function Auth.check *)
 
 
 (* Authorisation control *)
+(*s: function Auth.edit *)
 (* needs to be refined *)
 let edit () =
   let top =
@@ -131,8 +153,8 @@ let edit () =
     let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
       Hashtbl.iter (fun space cookie ->
       	Listbox.insert lb End
-	  [Printf.sprintf "(%s) http://%s:%d/%s" 
-	     space.auth_realm space.auth_host space.auth_port space.auth_dir])
+      [Printf.sprintf "(%s) http://%s:%d/%s" 
+         space.auth_realm space.auth_host space.auth_port space.auth_dir])
       	authorizations;
     let buts = Frame.create top [] in
     let clearb = Button.create_named buts "clear"
@@ -144,10 +166,14 @@ let edit () =
       pack [dismissb] [Side Side_Right; Expand true];
       pack [buts][Side Side_Bottom; Fill Fill_X];
       pack [f][Side Side_Top; Fill Fill_Both; Expand true]
+(*e: function Auth.edit *)
 
+(*s: constant Auth.auth_file *)
 (* Saving authorizations to file *)
 let auth_file = ref ""
+(*e: constant Auth.auth_file *)
 
+(*s: function Auth.save *)
 let save () =
  if !auth_file <> "" then
   let auth_file = Msys.tilde_subst !auth_file in
@@ -166,7 +192,9 @@ let save () =
 
  else 
    Error.default#f (I18n.sprintf "No authorisation file defined")
+(*e: function Auth.save *)
 
+(*s: function Auth.load *)
 let load () =
   if !auth_file <> "" then
     let auth_file = Msys.tilde_subst !auth_file in
@@ -176,17 +204,19 @@ let load () =
       and time = Unix.time() in
       	Hashtbl.iter
           (fun spacerealm entry ->
-	       entry.auth_lastused <- time;
-	       Hashtbl.add authorizations spacerealm entry)
+           entry.auth_lastused <- time;
+           Hashtbl.add authorizations spacerealm entry)
           table;
-	close_in ic
+    close_in ic
     with
       Sys_error s ->
       	Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
  else 
    Error.default#f (I18n.sprintf "No authorisation file defined")
+(*e: function Auth.load *)
 
 
+(*s: function Auth.init *)
 let init () =
   let check () =
     let remove = ref []
@@ -195,7 +225,7 @@ let init () =
     Hashtbl.iter 
       (fun space entry ->
       	let expiration_time = entry.auth_lastused +. lifetime in
-	if time > expiration_time then remove := space :: !remove)
+    if time > expiration_time then remove := space :: !remove)
       authorizations;
     List.iter (Hashtbl.remove authorizations) !remove
   in
@@ -203,6 +233,8 @@ let init () =
     Timer.set (!lifetime * 30000) (fun () -> check(); tim ())
   in
   tim ()
+(*e: function Auth.init *)
 
 
        
+(*e: ./http/auth.ml *)

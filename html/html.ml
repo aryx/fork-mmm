@@ -1,15 +1,25 @@
+(*s: ./html/html.ml *)
 open Printf
 
+(*s: enum Html.attribute_name (./html/html.ml) *)
 type attribute_name = string 
+(*e: enum Html.attribute_name (./html/html.ml) *)
+(*s: enum Html.attribute_value (./html/html.ml) *)
 type attribute_value = string
+(*e: enum Html.attribute_value (./html/html.ml) *)
+(*s: enum Html.attributes (./html/html.ml) *)
 type attributes = (attribute_name * attribute_value) list
+(*e: enum Html.attributes (./html/html.ml) *)
 
+(*s: enum Html.tag (./html/html.ml) *)
 type tag = {
   tag_name : string;
   attributes: attributes
 }
+(*e: enum Html.tag (./html/html.ml) *)
 
 
+(*s: enum Html.token (./html/html.ml) *)
 type token =
    PCData of string
  | CData of string
@@ -18,33 +28,47 @@ type token =
  | Comment of string
  | Doctype of string
  | EOF
+(*e: enum Html.token (./html/html.ml) *)
 
+(*s: enum Html.location (./html/html.ml) *)
 type location = Loc of int * int
+(*e: enum Html.location (./html/html.ml) *)
 
+(*s: exception Html.Html_Lexing (./html/html.ml) *)
 exception Html_Lexing of string * int
+(*e: exception Html.Html_Lexing (./html/html.ml) *)
+(*s: exception Html.Invalid_Html (./html/html.ml) *)
 exception Invalid_Html of string
+(*e: exception Html.Invalid_Html (./html/html.ml) *)
 
+(*s: constant Html.verbose *)
 let verbose = ref false
+(*e: constant Html.verbose *)
 
+(*s: function Html.warning *)
 let warning s (Loc(n,m)) = 
   if !verbose then begin 
     eprintf "HTML Warning: %s at (%d, %d)\n" s n m;
     flush stderr
    end
+(*e: function Html.warning *)
 
 
+(*s: function Html.print *)
 let print = function
     PCData s -> eprintf "PCData: %s\n" s
   | CData s -> eprintf "CData: %s\n" s
   | OpenTag {tag_name = n; attributes = l} ->
       	     eprintf "Open: %s\n" n;
-	     List.iter (function (a,v) ->
-	               eprintf "%s=%s\n" a v) l
+         List.iter (function (a,v) ->
+                   eprintf "%s=%s\n" a v) l
   | CloseTag n -> eprintf "Close: %s\n" n
   | Comment s -> eprintf "Comment: %s\n" s
   | Doctype s -> eprintf "Doctype: %s\n" s
   | EOF -> eprintf "EOF\n"
+(*e: function Html.print *)
 
+(*s: function Html.beautify *)
 (*
  * Remove sequences of white
  *   turns out to be faster than global_replace in libstr
@@ -57,21 +81,25 @@ let beautify remove_leading s =
   for i = 0 to String.length s - 1 do
     match s.[i] with
       ' '|'\t'|'\r'|'\n'|'\000' -> 
-	if not !white then begin
-	   s.[!j] <- ' '; incr j; white := true
-	   end
+    if not !white then begin
+       s.[!j] <- ' '; incr j; white := true
+       end
     | c -> s.[!j] <- c; white := false; incr j
   done;
   String.sub s 0 !j
+(*e: function Html.beautify *)
 
+(*s: function Html.beautify2 *)
 (* Remove also trailing space. Used for OPTION tags and TITLE *)
 let beautify2 s =
   let s1 = beautify true s in
    match String.length s1 with
      0 | 1 -> s1
    | n -> if s1.[n-1] = ' ' then String.sub s1 0 (n-1) else s1
+(*e: function Html.beautify2 *)
 
 
+(*s: function Html.issp *)
 (* Is SP: when a PCData is only spaces, we skip it *)
 let issp s =
   try
@@ -83,14 +111,18 @@ let issp s =
     true
   with
     Failure "subliminal" -> false
+(*e: function Html.issp *)
   
+(*s: constant Html.ampersand_table *)
 (* 
  * HTML encoding of ISO-latin1 characters
  *  cf Appendix B - Proposed Entities
  *)
 
 let ampersand_table = (Hashtbl.create 101: (string , string) Hashtbl.t)
+(*e: constant Html.ampersand_table *)
 
+(*s: constant Html.latin1_normal *)
 let latin1_normal = [
   "amp", 	"&";
   "gt", 	">";
@@ -193,7 +225,9 @@ let latin1_normal = [
   "thorn", 	"\254";	(* þ small thorn, Icelandic *)
   "yuml", 	"\255" 	(* ÿ small y, dieresis or umlaut mark *)
   ]
+(*e: constant Html.latin1_normal *)
 
+(*s: constant Html.latin1_japan *)
 let latin1_japan = [
   "amp", 	"&";
   "gt", 	">";
@@ -296,7 +330,9 @@ let latin1_japan = [
   "thorn", 	"b";	(* þ small thorn, Icelandic *)
   "yuml", 	"y\"" 	(* ÿ small y, dieresis or umlaut mark *)
   ]
+(*e: constant Html.latin1_japan *)
 
+(*s: constant Html.latin1_japan (./html/html.ml) *)
 (* To notice Tk that it is not EUC, but ISO8859, we have to put ESC SEQ
    before these entities. If Tk knows the file is JIS already, of course
    this seq is not required at all, but I don't want to write the detection
@@ -304,14 +340,20 @@ let latin1_japan = [
 
 let latin1_japan = List.map (fun (str,c) ->
   (str, "\027\040\066" ^ c))  latin1_normal
+(*e: constant Html.latin1_japan (./html/html.ml) *)
 
+(*s: function Html.init *)
 let init japan =
   List.iter (fun (str, c) -> Hashtbl.add ampersand_table str c) 
     (if japan then latin1_japan else latin1_normal) 
+(*e: function Html.init *)
 
+(*s: constant Html.get_entity *)
 let get_entity = Hashtbl.find ampersand_table
+(*e: constant Html.get_entity *)
 
 
+(*s: constant Html.default_attributes *)
 (* Attribute values *)
 let default_attributes = [ 
   ("isindex", "prompt"), "Document is indexed/searchable: ";
@@ -337,25 +379,33 @@ let default_attributes = [
   ("frameset", "rows"), "100%";
   ("frameset", "cols"), "100%";
   ]
+(*e: constant Html.default_attributes *)
 
+(*s: function Html.get_attribute *)
 let get_attribute tag attr =
   try
     List.assoc attr tag.attributes 
   with
     Not_found ->
      List.assoc (tag.tag_name, attr) default_attributes
+(*e: function Html.get_attribute *)
 
+(*s: function Html.has_attribute *)
 let has_attribute tag attr =
      List.mem_assoc attr tag.attributes
   || List.mem_assoc (tag.tag_name, attr) default_attributes
+(*e: function Html.has_attribute *)
 
+(*s: enum Html.length (./html/html.ml) *)
 (* HTML length *)
 type length = 
     Nolength
   | LengthPixels of int
   | LengthRatio of float
   | LengthRel of int
+(*e: enum Html.length (./html/html.ml) *)
 
+(*s: function Html.length_of_string *)
 (* Either size in pixels or ration in percent *)
 let length_of_string s =
   try
@@ -366,12 +416,14 @@ let length_of_string s =
     Not_found ->
       try
       	let pos = String.index s '*' in
-	if pos = 0 then LengthRel 1
-	else
-	  try LengthRel (int_of_string (String.sub s 0 pos))
-	  with Failure "int_of_string" -> Nolength
+    if pos = 0 then LengthRel 1
+    else
+      try LengthRel (int_of_string (String.sub s 0 pos))
+      with Failure "int_of_string" -> Nolength
       with
-	Not_found ->
-	  try LengthPixels (int_of_string s)
-	  with Failure "int_of_string" -> Nolength
+    Not_found ->
+      try LengthPixels (int_of_string s)
+      with Failure "int_of_string" -> Nolength
+(*e: function Html.length_of_string *)
 
+(*e: ./html/html.ml *)

@@ -1,3 +1,4 @@
+(*s: ./commons/ebuffer.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -11,25 +12,34 @@
 
 (* $Id: ebuffer.ml,v 1.1 1996/10/22 13:12:41 rouaix Exp $ *)
 
+(*s: enum Ebuffer.t *)
 (* Extensible buffers *)
 type t = {
     mutable buffer : string;
     mutable pos : int;
     mutable len : int}
+(*e: enum Ebuffer.t *)
 
+(*s: function Ebuffer.create *)
 let create n = {
    buffer = String.create n;
    pos = 0;
    len = n
    }
+(*e: function Ebuffer.create *)
 
+(*s: function Ebuffer.reset *)
 let reset buf =
     buf.pos <- 0
+(*e: function Ebuffer.reset *)
 
+(*s: function Ebuffer.newsize *)
 let newsize old added =
   if added < old then old + old
   else old + old + added
+(*e: function Ebuffer.newsize *)
 
+(*s: function Ebuffer.output_string *)
 let output_string buf s =
   let l = String.length s in
   if buf.pos + l > buf.len then begin
@@ -41,6 +51,8 @@ let output_string buf s =
     end;
   String.unsafe_blit s 0 buf.buffer buf.pos l;
   buf.pos <- buf.pos + l
+(*e: function Ebuffer.output_string *)
+(*s: function Ebuffer.output_char *)
 let output_char buf c =
   if buf.pos >= buf.len then begin
     let size = newsize buf.len 1 in
@@ -51,7 +63,9 @@ let output_char buf c =
     end;
   buf.buffer.[buf.pos] <- c;
   buf.pos <- buf.pos + 1
+(*e: function Ebuffer.output_char *)
 
+(*s: function Ebuffer.output *)
 let output buf s ofs l =
   if buf.pos + l > buf.len then begin
     let size = newsize buf.len l in
@@ -62,10 +76,16 @@ let output buf s ofs l =
     end;
   String.blit s ofs buf.buffer buf.pos l;
   buf.pos <- buf.pos + l
+(*e: function Ebuffer.output *)
 
 
+(*s: function Ebuffer.get *)
 let get buf = 
   String.sub buf.buffer 0 buf.pos
+(*e: function Ebuffer.get *)
 
+(*s: function Ebuffer.used *)
 let used buf =
   buf.pos
+(*e: function Ebuffer.used *)
+(*e: ./commons/ebuffer.ml *)

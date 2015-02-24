@@ -1,3 +1,4 @@
+(*s: ./retrieve/scheduler.ml *)
 (* Scheduled downloading *)
 open Printf
 open Unix
@@ -8,9 +9,13 @@ open Feed
 open Retrieve
 open Http_headers
 
+(*s: constant Scheduler.debug *)
 let debug = ref false 
+(*e: constant Scheduler.debug *)
 
+(*s: enum Scheduler.progress_func (./retrieve/scheduler.ml) *)
 type progress_func = int option -> int -> unit
+(*e: enum Scheduler.progress_func (./retrieve/scheduler.ml) *)
 
 (* Handling of data downloaded by this scheduler *)
 module type Data =
@@ -34,7 +39,7 @@ module type S =
     type shared_data
     val add_request : 
       	Www.request -> document_id -> (Url.t -> shared_data -> unit) -> 
-	  progress_func -> unit
+      progress_func -> unit
         (* [add_request wwwr ref_did cont progress_func] *)
     val stop : document_id -> unit
         (* [stop ref_did] *)
@@ -44,7 +49,7 @@ module type S =
     val new_delayed : unit -> delayed
     val add_delayed : 
       	delayed -> Www.request -> document_id -> 
-	  (Url.t -> shared_data -> unit) -> progress_func -> unit
+      (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
     val is_empty : delayed -> bool
@@ -64,7 +69,7 @@ module Make(J: Data) = struct
   type job = {
       mutable stop : unit -> unit;
       mutable conts : (document_id * 
-			 ((Url.t -> shared_data -> unit) * progress_func)) list;
+             ((Url.t -> shared_data -> unit) * progress_func)) list;
       mutable bytes_loaded : int;
       mutable contentlength : int option  
     }
@@ -79,7 +84,7 @@ module Make(J: Data) = struct
      2- we can use maxactive connexions
      3- there is a max of maxsamehost connexions on the same host
      *)
-	
+    
   let samehost = (Hashtbl.create 11 : (string, int ref) Hashtbl.t)
     (* count of cnx on each host (IP number is best choice), but for
        performance reason (DNS lookups), we take FQDN *)
@@ -91,8 +96,8 @@ module Make(J: Data) = struct
       if !count < !maxsamehost then (incr count; true) else false
     with
       Not_found -> 
-	Hashtbl.add samehost s (ref 1);
-	true (* assumes maxsamehost >= 1 *)
+    Hashtbl.add samehost s (ref 1);
+    true (* assumes maxsamehost >= 1 *)
 
   let remhost url =
     let s = match url.host with Some s -> s | None -> "" in
@@ -121,25 +126,25 @@ module Make(J: Data) = struct
   let pick() =
     let pick_in_batch q =
       try
-	let (wr,_,_,_) = Queue.peek q in
-	let url = wr.www_url in
-	if addhost url then Some (Queue.take q) else None
+    let (wr,_,_,_) = Queue.peek q in
+    let url = wr.www_url in
+    if addhost url then Some (Queue.take q) else None
       with
-	Queue.Empty -> (* this batch is empty *)
-	  raise Queue.Empty
+    Queue.Empty -> (* this batch is empty *)
+      raise Queue.Empty
     in
     let rec walk_batches remaining = function
       | [] ->
-	  (* we've reached the end : reset the remaining scheduled jobs *)
-	  queues := List.rev remaining;
-	  raise Busy
+      (* we've reached the end : reset the remaining scheduled jobs *)
+      queues := List.rev remaining;
+      raise Busy
       |	x::l -> 
-	  try match pick_in_batch x with
-	  | Some r -> r
-	  | None -> (* nothing pickable yet, look further *)
-	      walk_batches (x::remaining) l
-	  with Queue.Empty -> (* this queue is empty ! *)
-	    walk_batches remaining l
+      try match pick_in_batch x with
+      | Some r -> r
+      | None -> (* nothing pickable yet, look further *)
+          walk_batches (x::remaining) l
+      with Queue.Empty -> (* this queue is empty ! *)
+        walk_batches remaining l
     in
     walk_batches [] !queues
 
@@ -186,21 +191,21 @@ module Make(J: Data) = struct
         let url = wr.www_url in
         try
           let oldjob = Hashtbl.find actives url in
-	  (* then add a new continuation *)
+      (* then add a new continuation *)
           oldjob.conts <- (did, (cont, prog)) :: oldjob.conts;
-	  remhost wr.www_url;       (* we're done *)
+      remhost wr.www_url;       (* we're done *)
         with
           Not_found -> begin (* start a new job *)
             if !debug then
               Log.f (sprintf "Starting job for %s" (Url.string_of url));
             let job = {
               stop = (fun () ->
-		Hashtbl.remove actives url;
-		decr active;
-		remhost url);
+        Hashtbl.remove actives url;
+        decr active;
+        remhost url);
               conts =  [did, (cont, prog)];
               contentlength = None;
-	      bytes_loaded = 0
+          bytes_loaded = 0
             } in
             (* Add to set of active *)
             incr active;
@@ -210,126 +215,126 @@ module Make(J: Data) = struct
 
            (* Continuations for the retrieval *)
             let handle_data dh =
-	      (* add more things to do in stop *)
-	      let oldstop = job.stop in
-	      job.stop <- (fun () -> dclose true dh; oldstop());
+          (* add more things to do in stop *)
+          let oldstop = job.stop in
+          job.stop <- (fun () -> dclose true dh; oldstop());
               try
                 (* open the temporary file in which doc is to be saved *)
                 let file = Msys.mktemp "data" in
                 let oc = open_out file 
                 and buffer = String.create 2048 in
 
-		(* JPF HACK -- for Image retrieval progress meter *)
-		begin try 
-		  job.contentlength <-
-		    Some (Http_headers.contentlength dh.document_headers)
-		with
-		  Not_found -> ()
-		end;
+        (* JPF HACK -- for Image retrieval progress meter *)
+        begin try 
+          job.contentlength <-
+            Some (Http_headers.contentlength dh.document_headers)
+        with
+          Not_found -> ()
+        end;
 
-		(* actually start sucking data *)
+        (* actually start sucking data *)
                 dh.document_feed.feed_schedule (fun _ ->
-		  try
-		    let n = dh.document_feed.feed_read buffer 0 2048 in
+          try
+            let n = dh.document_feed.feed_read buffer 0 2048 in
 
-		    (* JPF HACK -- for Image retrieval progress meter *)
-		    job.bytes_loaded <- job.bytes_loaded + n;
-			  List.iter (fun (_,(_,prog)) -> 
-			    prog job.contentlength job.bytes_loaded) 
-			      job.conts;
+            (* JPF HACK -- for Image retrieval progress meter *)
+            job.bytes_loaded <- job.bytes_loaded + n;
+              List.iter (fun (_,(_,prog)) -> 
+                prog job.contentlength job.bytes_loaded) 
+                  job.conts;
 
-		    if n <> 0 then output oc buffer 0 n
-		    else begin (* end of document *)
-		      dclose true dh; (* see comment below *)
-		      close_out oc;
-		      (* proceed to load and run continuations *)
-		      let referers = List.map fst job.conts in
-		      begin
-			try 
+            if n <> 0 then output oc buffer 0 n
+            else begin (* end of document *)
+              dclose true dh; (* see comment below *)
+              close_out oc;
+              (* proceed to load and run continuations *)
+              let referers = List.map fst job.conts in
+              begin
+            try 
       	       	       	  let data = J.load dh referers file in
-			  List.iter (fun (referer,(cont,_)) -> 
-			    try Printexc.print 
-				(cont dh.document_id.document_url) data
-			    with _ -> flush Pervasives.stderr)
+              List.iter (fun (referer,(cont,_)) -> 
+                try Printexc.print 
+                (cont dh.document_id.document_url) data
+                with _ -> flush Pervasives.stderr)
       	       	       	    job.conts
-			with (* load failed *)
-			  e -> 
-			    Log.f (sprintf "Load error %s" 
+            with (* load failed *)
+              e -> 
+                Log.f (sprintf "Load error %s" 
       	       	       	       	           (Printexc.to_string e));
       	       	       	    J.error url job.conts
-		      end;
-		      (* we must remove from active only after 
-			 loading because otherwise, if loading is interactive,
-			 there could be a moment during which the document 
-			 is not marked as loaded, but not active either.
-			 This would cause multiple retrievals.
-			 But then dh has to be closed otherwise the
-			 callback will we called indefinitely *)
-		      oldstop();
-		      if !debug then
-			Log.f (sprintf "Finished job for %s" 
-			               (Url.string_of url));
-		      (* proceed with more requests *)
-		      next_request()
-		    end
-		  with (* errors in retrieval *)
-		    Unix_error(code,s,s') -> 
-		      Log.f (sprintf "Unix error (%s) in scheduler %s %s"
-			             (error_message code) s s');
-		      close_out oc;
-		      error url job
+              end;
+              (* we must remove from active only after 
+             loading because otherwise, if loading is interactive,
+             there could be a moment during which the document 
+             is not marked as loaded, but not active either.
+             This would cause multiple retrievals.
+             But then dh has to be closed otherwise the
+             callback will we called indefinitely *)
+              oldstop();
+              if !debug then
+            Log.f (sprintf "Finished job for %s" 
+                           (Url.string_of url));
+              (* proceed with more requests *)
+              next_request()
+            end
+          with (* errors in retrieval *)
+            Unix_error(code,s,s') -> 
+              Log.f (sprintf "Unix error (%s) in scheduler %s %s"
+                         (error_message code) s s');
+              close_out oc;
+              error url job
       	       	  | Sys_error s ->
-		      Log.f (sprintf "IO error (%s) in scheduler" s);
+              Log.f (sprintf "IO error (%s) in scheduler" s);
       	       	      close_out oc;
-		      error url job
+              error url job
       	       	  | e -> 
-		      Log.f (sprintf "Bug in scheduler %s"
-			             (Printexc.to_string e));
+              Log.f (sprintf "Bug in scheduler %s"
+                         (Printexc.to_string e));
       	       	      close_out oc;
-		      error url job)
+              error url job)
               with (* error creating tmp file *)
-		Sys_error s -> 
-		  Log.f (sprintf "Can't create temporary file (%s)" s);
+        Sys_error s -> 
+          Log.f (sprintf "Can't create temporary file (%s)" s);
       	       	  error url job
-	      | e -> 
-		  Log.f (sprintf "Bug in scheduler %s" (Printexc.to_string e));
-		  error url job
+          | e -> 
+          Log.f (sprintf "Bug in scheduler %s" (Printexc.to_string e));
+          error url job
 
            (* Data has moved. The best way to do this properly is to 
               reschedule the job conts as new requests *)
-	    and retry_data hlink =
-	      try
-		job.stop();
-		let newr = Www.make hlink in
-		newr.www_error <- wr.www_error;
-		newr.www_logging <- wr.www_logging;
-		List.iter (fun (did,(cont,prog)) ->
-		  add_request newr did cont prog)
-		  job.conts
-	      with (* can't proceed with retry *)
-		_ -> error url job
+        and retry_data hlink =
+          try
+        job.stop();
+        let newr = Www.make hlink in
+        newr.www_error <- wr.www_error;
+        newr.www_logging <- wr.www_logging;
+        List.iter (fun (did,(cont,prog)) ->
+          add_request newr did cont prog)
+          job.conts
+          with (* can't proceed with retry *)
+        _ -> error url job
             in
-	   (* Okay, go for the retrieval now *)
-	    try 
-	      match Retrieve.f wr retry_data
-		       {document_process = handle_data;
-		        document_finish = (fun f -> if f then error url job)}
+       (* Okay, go for the retrieval now *)
+        try 
+          match Retrieve.f wr retry_data
+               {document_process = handle_data;
+                document_finish = (fun f -> if f then error url job)}
               with
-		Retrieve.Started _ -> ()
-	      | Retrieve.InUse ->
-		  (* somebody else has started a request bypassing the
-		     scheduler, dammit. Our only hope is that he's going
-		     to set the cache properly, so we can reschedule 
-		     ourself and try later *)
-		  job.stop();
-		  List.iter (fun (did,(cont,prog)) -> 
-		    add_request wr did cont prog)
-		    job.conts
-	    with
-	      Invalid_request(w,msg) -> (* retrieve failed *)
-	        J.error_msg (w,msg);
-		error url job
-	  end 
+        Retrieve.Started _ -> ()
+          | Retrieve.InUse ->
+          (* somebody else has started a request bypassing the
+             scheduler, dammit. Our only hope is that he's going
+             to set the cache properly, so we can reschedule 
+             ourself and try later *)
+          job.stop();
+          List.iter (fun (did,(cont,prog)) -> 
+            add_request wr did cont prog)
+            job.conts
+        with
+          Invalid_request(w,msg) -> (* retrieve failed *)
+            J.error_msg (w,msg);
+        error url job
+      end 
 
 
 
@@ -343,13 +348,13 @@ module Make(J: Data) = struct
        the predicate, it is removed from the queue. *)
     queues := 
        List.map (fun q ->
-	 let newq = Queue.create () in
-	 Queue.iter (function
-	   | (wr, didr, cont, progress) when did = didr -> ()
-	   | r -> Queue.add r newq)
-	   q;
-	 newq)
-	 !queues;
+     let newq = Queue.create () in
+     Queue.iter (function
+       | (wr, didr, cont, progress) when did = didr -> ()
+       | r -> Queue.add r newq)
+       q;
+     newq)
+     !queues;
 
     (* If the request is active, remove the particular continuation, and if it
        was the only continuation, kill the job
@@ -357,11 +362,11 @@ module Make(J: Data) = struct
     let rem = ref [] in (* jobs to kill *)
     Hashtbl.iter 
       (fun url job ->
-	try 
-	  job.conts <- Mlist.except_assoc did job.conts;
-	  if job.conts = [] then rem := job :: !rem
-	with
-	  Not_found -> ())
+    try 
+      job.conts <- Mlist.except_assoc did job.conts;
+      if job.conts = [] then rem := job :: !rem
+    with
+      Not_found -> ())
       actives;
     (* each stop closes the cnx properly and remove the job from actives *)
     List.iter (fun job -> job.stop()) !rem;
@@ -402,8 +407,8 @@ module Make(J: Data) = struct
     (* split in two *)
     Queue.iter (function
       | (wr,did,cont,prog) when wr.www_url = url ->
-	  prog None 0; (* create the gauge *)
-	  Queue.add (wr,did,cont,prog) flushedqueue
+      prog None 0; (* create the gauge *)
+      Queue.add (wr,did,cont,prog) flushedqueue
       | r -> Queue.add r restqueue)
       l;
     (* the flushed goes at the beginning *)
@@ -415,3 +420,4 @@ module Make(J: Data) = struct
     next_request()
 
 end
+(*e: ./retrieve/scheduler.ml *)

@@ -1,3 +1,4 @@
+(*s: ./display/html_form.mli *)
 
 class behaviour :
   string * Html.tag * string option * (string -> string) ->
@@ -32,3 +33,4 @@ module Make :
           remove_tag : string -> unit; target : string option; .. > ->
         unit
     end
+(*e: ./display/html_form.mli *)

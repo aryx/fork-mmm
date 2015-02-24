@@ -1,3 +1,4 @@
+(*s: ./display/attrs.ml *)
 open Common
 
 (* Utilities for tags and attributes *)
@@ -124,7 +125,7 @@ class  virtual ['a] nested (tagdef) =
        [] ->
         last_change <- current_pos
      | c::l ->
-	stack <- l;
+    stack <- l;
         self#put current_pos c
 end
 
@@ -136,7 +137,7 @@ class align (tagdef) =
   inherit [string] nested tagdef
   method push_convert ad =
     match String.lowercase ad with
-	 "right" -> "right", [Justify Justify_Right]
+     "right" -> "right", [Justify Justify_Right]
        | "center" -> "center", [Justify Justify_Center]
        | _ -> "left", [Justify Justify_Left]
   method pop_convert ad = ()
@@ -200,8 +201,11 @@ class font (tagdef) =
 end
 
 
+(*s: constant Attrs.color_mappings *)
 (* Special mapping of pre-defined HTML3.2 colors *)
 let color_mappings = Hashtbl.create 37
+(*e: constant Attrs.color_mappings *)
+(*s: toplevel Attrs._1 *)
 let _ = List.iter (fun (name, value) -> Hashtbl.add color_mappings name value)
   [ "black",   "#000000";
     "silver",  "#c0c0c0";
@@ -219,10 +223,13 @@ let _ = List.iter (fun (name, value) -> Hashtbl.add color_mappings name value)
     "blue",    "#0000ff";
     "teal",    "#008080";
     "aqua",    "#00ffff" ]
+(*e: toplevel Attrs._1 *)
 
+(*s: function Attrs.html_color *)
 let html_color s =
   try Hashtbl.find color_mappings (String.lowercase s)
   with Not_found -> s
+(*e: function Attrs.html_color *)
 
 (*
  * Foreground color
@@ -308,9 +315,9 @@ class spacing (tagdef) =
      tagdef#define topname [Spacing1 (Pixels n)];
      match current_pos with
        TextIndex(base,[x]) ->
-	 tagdef#add (topname, TextIndex(base, [x;LineStart]),
-		              TextIndex(base, [x;LineEnd]));
-	 ()
+     tagdef#add (topname, TextIndex(base, [x;LineStart]),
+                      TextIndex(base, [x;LineEnd]));
+     ()
      | _ -> assert false
 
   method pop current_pos n =
@@ -318,12 +325,13 @@ class spacing (tagdef) =
     tagdef#define botname [Spacing3 (Pixels n)];
      match current_pos with
        TextIndex(base,[x]) ->
-	 tagdef#add (botname, TextIndex(base, [x;LineStart]),
-		              TextIndex(base, [x;LineEnd]));
-	 ()
+     tagdef#add (botname, TextIndex(base, [x;LineStart]),
+                      TextIndex(base, [x;LineEnd]));
+     ()
      | _ -> assert false
 end
 
+(*s: constant Attrs.circle_data *)
 (* Bullet images *)
 let circle_data = 
 "#define circle_width 9
@@ -331,22 +339,30 @@ let circle_data =
 static unsigned char circle_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x44, 0x00, 0x44, 0x00, 0x44, 0x00,
    0x38, 0x00, 0x00, 0x00, 0x00, 0x00};"
+(*e: constant Attrs.circle_data *)
 
+(*s: constant Attrs.disc_data *)
 let disc_data =
 "#define disc_width 9
 #define disc_height 9
 static unsigned char disc_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x7c, 0x00,
    0x38, 0x00, 0x00, 0x00, 0x00, 0x00};"
+(*e: constant Attrs.disc_data *)
 
+(*s: constant Attrs.square_data *)
 let square_data = 
 "#define square_width 9
 #define square_height 9
 static unsigned char square_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x7c, 0x00,
    0x7c, 0x00, 0x00, 0x00, 0x00, 0x00};"
+(*e: constant Attrs.square_data *)
 
+(*s: constant Attrs.bullet_table *)
 let bullet_table = Hashtbl.create 11
+(*e: constant Attrs.bullet_table *)
+(*s: function Attrs.init *)
 let init bg =
   let bg = Background (NamedColor bg) in
   Hashtbl.add bullet_table
@@ -355,3 +371,5 @@ let init bg =
      "disc" (ImageBitmap(Imagebitmap.create [Data disc_data]));
   Hashtbl.add bullet_table
      "square" (ImageBitmap(Imagebitmap.create [Data square_data]))
+(*e: function Attrs.init *)
+(*e: ./display/attrs.ml *)

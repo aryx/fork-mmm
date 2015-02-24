@@ -1,3 +1,4 @@
+(*s: ./http/messages.mli *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -13,22 +14,28 @@
 
 (* HTTP Messages *)
 
+(*s: enum Messages.request *)
 (* Request-Line of a Request *)
 type request = {
   request_version: string;	(* HTTP/1.0 *)
   request_method : string;	(* GET, POST, etc... *)
   request_uri : string		(* the uri *)
   }
+(*e: enum Messages.request *)
 
+(*s: enum Messages.status *)
 (* Status-Line of a Response *)
 type status =  { 
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
  }
+(*e: enum Messages.status *)
 
+(*s: enum Messages.header *)
 (* Other headers *)
 type header = string
+(*e: enum Messages.header *)
 
 
 (* HTTP messages: requests and responses
@@ -36,6 +43,7 @@ type header = string
  *  What a server answers is called a response
  *)
 
+(*s: enum Messages.request_message *)
 (* HTTP-Message *)
 type request_message = {
   request : request;
@@ -44,10 +52,14 @@ type request_message = {
   request_auth : (string * string) option 
       	    (* have we authentified the emitter (authtype, authuser) *)
   }
+(*e: enum Messages.request_message *)
 
+(*s: enum Messages.response_message *)
 type response_message = {
   status : status;
   response_headers : header list;
   response_body : string        (* responde body is *not* the document body *)
   }
+(*e: enum Messages.response_message *)
 
+(*e: ./http/messages.mli *)

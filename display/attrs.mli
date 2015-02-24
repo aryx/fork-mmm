@@ -1,3 +1,4 @@
+(*s: ./display/attrs.mli *)
 module TagSet : Set.S with type elt = string
 
 class tags :
@@ -97,8 +98,12 @@ class font :
     method put : Tk.textIndex -> string -> unit
     method set_base : Tk.textIndex -> int -> unit
   end
+(*s: signature Attrs.color_mappings *)
 val color_mappings : (string, string) Hashtbl.t
+(*e: signature Attrs.color_mappings *)
+(*s: signature Attrs.html_color *)
 val html_color : string -> string
+(*e: signature Attrs.html_color *)
 class fgcolor :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -154,8 +159,19 @@ class spacing :
     method push : Tk.textIndex -> int -> unit
   end
 
+(*s: signature Attrs.circle_data *)
 val circle_data : string
+(*e: signature Attrs.circle_data *)
+(*s: signature Attrs.disc_data *)
 val disc_data : string
+(*e: signature Attrs.disc_data *)
+(*s: signature Attrs.square_data *)
 val square_data : string
+(*e: signature Attrs.square_data *)
+(*s: signature Attrs.bullet_table *)
 val bullet_table : (string, Tk.options) Hashtbl.t
+(*e: signature Attrs.bullet_table *)
+(*s: signature Attrs.init *)
 val init : string -> unit
+(*e: signature Attrs.init *)
+(*e: ./display/attrs.mli *)

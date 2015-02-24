@@ -1,3 +1,4 @@
+(*s: ./commons/condition.ml *)
 (* Conditions *)
 (* We don't take any chance with the semantics of tkwait variable, in the
    sense that we make sure that the value changes each time we set the
@@ -6,7 +7,9 @@
 
 open Printf
 
+(*s: enum Condition.t *)
 type t = Textvariable.textVariable * int ref
+(*e: enum Condition.t *)
 
 let create () =
   Textvariable.create(), ref 0
@@ -17,3 +20,4 @@ and set (v , r) =
 and wait (v, _) = Tkwait.variable v
 
 and free (v, _) = Textvariable.free v
+(*e: ./commons/condition.ml *)

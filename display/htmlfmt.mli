@@ -1,9 +1,11 @@
+(*s: ./display/htmlfmt.mli *)
 (* HTML  "display device" *)
 open Html
 open Www
 open Fonts
 open Embed
 
+(*s: enum Htmlfmt.gattr *)
 type gattr =
   |  Margin of int
   |  Justification of string
@@ -15,12 +17,16 @@ type gattr =
   |  Spacing of int
   |  Superscript
   |  Lowerscript
+(*e: enum Htmlfmt.gattr *)
 
+(*s: enum Htmlfmt.formatterSpec *)
 type formatterSpec = 
   | TopFormatter of bool		(* flag is pixel-scrolling mode *)
   | NestedFormatter
   | FrameFormatter of (string * string) list (* decoration ... *)
+(*e: enum Htmlfmt.formatterSpec *)
 
+(*s: enum Htmlfmt.formatter *)
 type formatter = {
   (* Text primitives of the device *)
   new_paragraph: unit -> unit;  	(* Open a new paragraph *)
@@ -47,12 +53,13 @@ type formatter = {
   create_embedded : 
      string -> int option -> int option -> Widget.widget;
        (* [create_embedded align w h ]: 
-	  returns a widget that we can pass as target to the embed manager.
-	  Should respect background color ?
-	*)
+      returns a widget that we can pass as target to the embed manager.
+      Should respect background color ?
+    *)
   (* Re-centering on a fragment *)
   see_frag : string option -> unit;
 }
+(*e: enum Htmlfmt.formatter *)
 
 module type GfxHTML = sig
  val create : 
@@ -82,8 +89,10 @@ module type ImgDisplay = sig
    val create : unit -> loader
  end
 
+(*s: enum Htmlfmt.input_kind *)
 (* Form manager *)
 type input_kind = EntryInput | FileInput | OtherInput
+(*e: enum Htmlfmt.input_kind *)
     
 class  virtual form_behaviour : (unit) -> object
     method virtual add_get : input_kind -> (unit -> (string * string) list) -> unit
@@ -97,21 +106,21 @@ module type FormDisplay = sig
    (* A form manager *)
    type t = {
      text_input : Widget.widget -> tag -> unit;
-	 (* [text_input top tag] *)
+     (* [text_input top tag] *)
      checkbox_input : Widget.widget ->  tag -> unit;
-	 (* [input top tag] *)
+     (* [input top tag] *)
      radio_input : Widget.widget ->  tag -> unit;
-	 (* [input top tag] *)
+     (* [input top tag] *)
      image_input : Widget.widget ->  tag -> embobject;
-	 (* [input top tag] *)
+     (* [input top tag] *)
      submit_input : Widget.widget ->  tag -> unit;
-	 (* [input top tag] *)
+     (* [input top tag] *)
      reset_input : Widget.widget ->  tag -> unit;
-	 (* [input top tag] *)
+     (* [input top tag] *)
      select : Widget.widget -> (string * string * bool) list -> tag -> unit;
-	 (* [select top elements tag] *)
+     (* [select top elements tag] *)
      textarea:  Widget.widget -> string -> tag -> unit
-	 (* [textarea top initial attrs] *)
+     (* [textarea top initial attrs] *)
      }
 
    val create : string -> form_behaviour -> Viewers.context -> t
@@ -120,11 +129,13 @@ module type FormDisplay = sig
  end
 
 
+(*s: enum Htmlfmt.width_constraint *)
 (* Table manager *)
 type width_constraint =
   | TopWidth				(* toplevel window size*)
   | FixedWidth of int			(* width is given in pixels *)
   | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
+(*e: enum Htmlfmt.width_constraint *)
 
 module type TableDisplay = sig
     type cell_type = HeaderCell | DataCell
@@ -135,7 +146,7 @@ module type TableDisplay = sig
       close_row : unit -> unit;
       close_table : unit -> unit;
       new_cell : 
-	  cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
+      cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
       bound : unit -> bool
       }
 
@@ -144,3 +155,4 @@ module type TableDisplay = sig
     val topwidth : Widget.widget -> int
 
  end
+(*e: ./display/htmlfmt.mli *)

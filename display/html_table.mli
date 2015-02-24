@@ -1,3 +1,4 @@
+(*s: ./display/html_table.mli *)
 module Make :
   functor (TableDisplay : Htmlfmt.TableDisplay) ->
     sig
@@ -11,3 +12,4 @@ module Make :
           remove_tag : string -> unit; .. > ->
         unit
     end
+(*e: ./display/html_table.mli *)

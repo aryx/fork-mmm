@@ -1,6 +1,8 @@
+(*s: ./gui/plink.ml *)
 open Tk
 open Hyper
 
+(*s: function Plink.dial *)
 let dial hlink err =
   let t = Toplevel.create Widget.default_toplevel [Class "Dialog"] in
   Focus.set t;
@@ -26,10 +28,10 @@ let dial hlink err =
   let cancelled = ref false in
   let fb = Frame.create t [] in
     let bok = Button.create fb
-	        [Text "Ok"; Command (fun _ -> Grab.release t; destroy t)]
+            [Text "Ok"; Command (fun _ -> Grab.release t; destroy t)]
     and bcancel = Button.create fb
-	        [Text "Cancel"; Command (fun _ -> cancelled := true;
-		                                  Grab.release t; destroy t)]
+            [Text "Cancel"; Command (fun _ -> cancelled := true;
+                                          Grab.release t; destroy t)]
     in
 
     pack [bok] [Side Side_Left; Expand true];
@@ -43,12 +45,14 @@ let dial hlink err =
     if !cancelled then None
     else Some
          {h_uri = Textvariable.get vuri;
-	  h_context = (match Textvariable.get vcontext with
-		         "" -> None
-		        | s -> Some s);
+      h_context = (match Textvariable.get vcontext with
+                 "" -> None
+                | s -> Some s);
           h_method = hlink.h_method;
-	  h_params = hlink.h_params}
+      h_params = hlink.h_params}
+(*e: function Plink.dial *)
 
+(*s: function Plink.make *)
 (* Utility for catching link resolving errors *)
 let rec make hlink =
   try
@@ -56,7 +60,9 @@ let rec make hlink =
   with
     Invalid_link msg ->
       match dial hlink msg with
-	None -> raise (Invalid_link msg)
+    None -> raise (Invalid_link msg)
       | Some hlink -> make hlink
+(*e: function Plink.make *)
 
-	    
+        
+(*e: ./gui/plink.ml *)

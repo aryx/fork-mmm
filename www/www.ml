@@ -1,6 +1,8 @@
+(*s: ./www/www.ml *)
 open Uri
 open Url
 
+(*s: enum Www.request (./www/www.ml) *)
 type request =
   { 
     www_link : Hyper.link;	  (* the link that produced this request *)
@@ -12,11 +14,17 @@ type request =
     mutable www_error : Error.t
 
   }
+(*e: enum Www.request (./www/www.ml) *)
 
+(*s: exception Www.Invalid_request (./www/www.ml) *)
 exception Invalid_request of request * string
+(*e: exception Www.Invalid_request (./www/www.ml) *)
 
+(*s: constant Www.sp *)
 let sp = Str.regexp "[ \t\n]"
+(*e: constant Www.sp *)
 
+(*s: function Www.make *)
 let make hlink =
   let absuri = Hyper.resolve hlink in 
   let url = Lexurl.make absuri.uri_url in
@@ -35,6 +43,7 @@ let make hlink =
       www_logging = (fun _ -> ());
       www_error = Error.default
     }
+(*e: function Www.make *)
  
 
 
@@ -52,10 +61,13 @@ let make hlink =
 module UrlSet =
   Set.Make(struct type t = Url.t let compare = compare end)
 
+(*s: constant Www.active_connexions *)
 let active_connexions = ref UrlSet.empty
+(*e: constant Www.active_connexions *)
 let is_active_cnx url = UrlSet.mem url !active_connexions
 and add_active_cnx url = 
   active_connexions := UrlSet.add url !active_connexions
 and rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 
+(*e: ./www/www.ml *)

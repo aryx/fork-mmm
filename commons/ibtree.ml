@@ -1,3 +1,4 @@
+(*s: ./commons/ibtree.ml *)
 (* Simple binary trees with no redondant elements, and no delete function *)
 
 module type S =
@@ -186,3 +187,4 @@ for i = 0 to 10000 do
 done
 *)
 end
+(*e: ./commons/ibtree.ml *)

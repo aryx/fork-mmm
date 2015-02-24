@@ -1,7 +1,9 @@
+(*s: ./commons/mstring.ml *)
 (*
  * String utilities
  *)
 
+(*s: function Mstring.split_str *)
 (* split a string according to char_sep predicate *)
 let split_str char_sep str =
   let len = String.length str in
@@ -12,17 +14,19 @@ let split_str char_sep str =
       else cur  in
     let rec split beg cur =
       if cur >= len then 
-	if beg = cur then []
-	else [String.sub str beg (len - beg)]
+    if beg = cur then []
+    else [String.sub str beg (len - beg)]
       else if char_sep str.[cur] 
-	   then 
-	     let nextw = skip_sep cur in
-	      (String.sub str beg (cur - beg))
-		::(split nextw nextw)
-	   else split beg (succ cur) in
+       then 
+         let nextw = skip_sep cur in
+          (String.sub str beg (cur - beg))
+        ::(split nextw nextw)
+       else split beg (succ cur) in
     let wstart = skip_sep 0 in
     split wstart wstart
+(*e: function Mstring.split_str *)
 
+(*s: function Mstring.get_suffix *)
 (* extract the . suffix (dot excluded) of a string *)
 let get_suffix s =
   try
@@ -30,18 +34,24 @@ let get_suffix s =
       String.sub s dotpos (String.length s - dotpos)
   with
     Not_found -> ""
+(*e: function Mstring.get_suffix *)
 
+(*s: function Mstring.hex_to_dec *)
 (* HEX/DEC conversions *)
 let hex_to_dec c = match c with
     '0'..'9' -> Char.code c - 48
   | 'a'..'f' -> Char.code c - 87 (* 87 = Char.code 'a' - 10 *)
   | 'A'..'F' -> Char.code c - 55 (* 55 = Char.code 'A' - 10 *)
   | _ -> failwith "hex_to_dec"
+(*e: function Mstring.hex_to_dec *)
 
+(*s: function Mstring.dec_to_hex *)
 let dec_to_hex i =
   if i < 10 then Char.chr (i + 48)  (* 48 = Char.code '0' *)
   else Char.chr (i + 55)            (* 55 = Char.code 'A' - 10 *)
+(*e: function Mstring.dec_to_hex *)
 
+(*s: function Mstring.hex_to_string *)
 (* Converting a hex stored string *)
 let hex_to_string s =
   let len = String.length s / 2 in
@@ -50,31 +60,41 @@ let hex_to_string s =
       res.[i] <- Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1])
       done;
     res
+(*e: function Mstring.hex_to_string *)
 
+(*s: constant Mstring.gensym *)
 let gensym =
   let cnter = ref 0 in
   (fun n ->
     incr cnter;
     n ^ string_of_int !cnter)
+(*e: constant Mstring.gensym *)
 
+(*s: function Mstring.egensym *)
 let egensym s =
   let cnter = ref 0 in
   (fun () ->
     incr cnter;
     s ^ string_of_int !cnter)
+(*e: function Mstring.egensym *)
 
+(*s: function Mstring.rem_trailing_sp *)
 let rem_trailing_sp s =
   let l = String.length s in
   let pos = ref (l - 1) in
   while !pos >= 0 && List.mem s.[!pos] [' '; '\t'] do decr pos done;
   if !pos = l - 1 then s
   else String.sub s 0 (succ !pos)
+(*e: function Mstring.rem_trailing_sp *)
 
+(*s: function Mstring.catenate_sep *)
 let catenate_sep sep =
   function 
       [] -> ""
     | x::l -> List.fold_left (fun s s' -> s^sep^s') x l
+(*e: function Mstring.catenate_sep *)
 
+(*s: function Mstring.norm_crlf *)
 (* Filters CRLF:
  *  CR -> LF
  *  CRLF -> LF
@@ -103,9 +123,9 @@ let norm_crlf lastwascr buf offs len =
     match buf.[!rpos] with
       '\n' -> dest.[!wpos] <- '\n'; incr rpos; incr wpos
     | '\r' -> 
-	if buf.[!rpos + 1] = '\n'
-	then begin dest.[!wpos] <- '\n'; rpos := !rpos + 2; incr wpos end
-	else begin dest.[!wpos] <- '\n'; incr rpos; incr wpos end
+    if buf.[!rpos + 1] = '\n'
+    then begin dest.[!wpos] <- '\n'; rpos := !rpos + 2; incr wpos end
+    else begin dest.[!wpos] <- '\n'; incr rpos; incr wpos end
     | c -> dest.[!wpos] <- c; incr rpos; incr wpos 
   done;
   begin match buf.[offs+len-1] with
@@ -114,6 +134,8 @@ let norm_crlf lastwascr buf offs len =
   | c -> dest.[!wpos] <- c; incr wpos
   end;
   String.sub dest 0 !wpos, !lastiscr
+(*e: function Mstring.norm_crlf *)
 
 
 
+(*e: ./commons/mstring.ml *)

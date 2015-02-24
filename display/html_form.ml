@@ -1,3 +1,4 @@
+(*s: ./display/html_form.ml *)
 open Printf
 open Hyper
 open Www
@@ -23,9 +24,9 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
   val (*private*) h_params = try ["target", get_attribute formtag "target"]
     with
       Not_found ->
-	match deftarget with
-	  Some s -> ["target", s]
-	| None -> []
+    match deftarget with
+      Some s -> ["target", s]
+    | None -> []
 
   val mutable (*private*) entries = 0 (* number of text entries *)
 
@@ -49,21 +50,21 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
     let evalues = Urlenc.form_encode (List.rev values_i18n) in
      match fmethod with
        "POST" -> {h_uri = action;
-		  h_context = Some base;
-		  h_method = POST evalues;
-		  h_params = h_params
+          h_context = Some base;
+          h_method = POST evalues;
+          h_params = h_params
                  }
      | _ -> 
        let uri = 
          let l = String.length action in 
          if l = 0 then sprintf "?%s" evalues
-	 else if action.[l-1] = '?' then action ^ evalues
+     else if action.[l-1] = '?' then action ^ evalues
          else sprintf "%s?%s" action evalues
        in
             {h_uri = uri;
              h_context = Some base;
-	     h_method = GET;
-	     h_params = h_params}
+         h_method = GET;
+         h_params = h_params}
 
   (* Submit if only one entry in the form. This may not be the proper test. *)
   method single_submit =
@@ -101,24 +102,24 @@ mach#add_tag "form"
     (* HTML 3.2 doesn't specify that NAME and VALUE are required, but
        this is stupid *)
     if inputtype = "HIDDEN" then
-	begin try 
-	  let name = get_attribute t "name" in
-	  let v = get_attribute t "value" in
+    begin try 
+      let name = get_attribute t "name" in
+      let v = get_attribute t "value" in
             behav#add_get OtherInput (fun () -> [name, v])
-	with
-	  Not_found -> 
-	     raise (Invalid_Html "missing NAME or VALUE in input HIDDEN")
+    with
+      Not_found -> 
+         raise (Invalid_Html "missing NAME or VALUE in input HIDDEN")
         end
     else (* Other cases *)
       let fr = fo.create_embedded (get_attribute t "align") None None in
        match inputtype with
-	  "TEXT" | "PASSWORD" ->  fm.text_input fr t
+      "TEXT" | "PASSWORD" ->  fm.text_input fr t
         | "CHECKBOX" -> fm.checkbox_input fr t
         | "RADIO" -> fm.radio_input fr t
         | "IMAGE" -> mach#imgmanager#add_image (fm.image_input fr t)
         | "SUBMIT" -> fm.submit_input fr t
         | "RESET" -> fm.reset_input fr t
-	(* TODO: file *)
+    (* TODO: file *)
         | s -> raise (Invalid_Html ("Invalid INPUT TYPE="^s))
   in
   mach#add_tag "input" open_input (fun _ -> ());
@@ -133,14 +134,14 @@ mach#add_tag "form"
     tselect := t;
     mach#add_tag "option"
        (fun fo tag ->
-	  mach#push_action 
+      mach#push_action 
       	    (fun s ->
-	       let s = beautify2 s in
-	       (* the val is by default the "content" of the tag *)
+           let s = beautify2 s in
+           (* the val is by default the "content" of the tag *)
                let va = try get_attribute tag "value" with Not_found -> s in
-	       options := (va, s,
+           options := (va, s,
       	       	       	   has_attribute tag "selected") :: !options;
-	       ))
+           ))
        (fun _ -> mach#pop_action)
   and close_select fo =
     mach#remove_tag "option";
@@ -172,3 +173,4 @@ mach#add_tag "form"
 (function fo -> List.iter mach#remove_tag ["input"; "select"; "textarea"])
 
 end
+(*e: ./display/html_form.ml *)

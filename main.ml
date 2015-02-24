@@ -1,3 +1,4 @@
+(*s: ./main.ml *)
 open Common
 
 (*****************************************************************************)
@@ -10,6 +11,7 @@ open Common
 
 (*****************************************************************************)
 (* Helpers *)
+(*s: function Main.safe_loop *)
 (*****************************************************************************)
 
 let rec safe_loop() =
@@ -22,12 +24,15 @@ let rec safe_loop() =
   | e -> 
       flush Pervasives.stderr; 
       safe_loop()
+(*e: function Main.safe_loop *)
        
+(*s: function Main.localize *)
 let localize file =
   let localized = spf "%s.%s" file !I18n.language in
   if Sys.file_exists localized 
   then localized 
   else file
+(*e: function Main.localize *)
 
 (*****************************************************************************)
 (* The options *)
@@ -35,6 +40,7 @@ let localize file =
 
 (*****************************************************************************)
 (* Main entry point *)
+(*s: function Main.main *)
 (*****************************************************************************)
 
 let main () =
@@ -164,7 +170,9 @@ let main () =
     Cache.postmortem();
     Gcache.postmortem()
   end
+(*e: function Main.main *)
       
+(*s: function Main.postmortem *)
 (*****************************************************************************)
 let postmortem () =
   try 
@@ -178,6 +186,10 @@ let postmortem () =
         Gcache.postmortem();
       end;
       raise e
+(*e: function Main.postmortem *)
 
+(*s: toplevel Main._1 *)
 let _ = 
   Printexc.catch postmortem ()
+(*e: toplevel Main._1 *)
+(*e: ./main.ml *)

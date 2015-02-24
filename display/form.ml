@@ -1,3 +1,4 @@
+(*s: ./display/form.ml *)
 (* Tk based FormDisplay  *)
 open Printf
 open Tk
@@ -9,8 +10,11 @@ open Maps
 open Embed
 open Viewers
 
+(*s: constant Form.form_bg *)
 let form_bg = ref "#d9d9d9"
+(*e: constant Form.form_bg *)
 
+(*s: enum Form.t (./display/form.ml) *)
 type t = {
   text_input : Widget.widget -> tag -> unit;
       (* [text_input top tag] *)
@@ -29,6 +33,7 @@ type t = {
   textarea:  Widget.widget -> string -> tag -> unit
       (* [textarea top initial attrs] *)
   }
+(*e: enum Form.t (./display/form.ml) *)
 
 (* Most of the widgets created here are created with [TakeFocus false];
  * The reason is that otherwise, in "focus follows mouse" mode, when scrolling
@@ -43,12 +48,15 @@ type t = {
  *)
 
 
+(*s: function Form.mapi *)
 (* mapi (fun n x -> ...) n0 l *)
 let rec mapi f n l =
   match l with
     [] -> [] 
   | x::l -> let v = f n x in v::(mapi f (succ n) l)
+(*e: function Form.mapi *)
 
+(*s: function Form.focus_link *)
 (* Do our own Tab/Shift-Tab : don't call it for Text widgets ! *)
 let focus_link prev w =
   match !prev with
@@ -59,8 +67,10 @@ let focus_link prev w =
       bind w [[Shift], KeyPressDetail "Tab"]
        (BindSetBreakable ([], fun ei -> try Focus.set old with _ -> ()));
       prev := Some w
+(*e: function Form.focus_link *)
 
 (* A TEXT or PASSWORD input *)
+(*s: function Form.text_input *)
 (* TODO: MAXLENGTH *)
 let text_input prev_widget ctx behav top tag =
   try
@@ -68,13 +78,13 @@ let text_input prev_widget ctx behav top tag =
     and inputtype = get_attribute tag "type" in
     (* Create an entry widget : don't take focus unless we click in it *)
     let e = Entry.create top [ExportSelection false; TakeFocus false; 
-			      Background (NamedColor !form_bg)] in
+                  Background (NamedColor !form_bg)] in
     (* Check for size *)
     begin try 
      let s = get_attribute tag "size" in
       try Entry.configure e [TextWidth (int_of_string s)]
       with Failure "int_of_string" ->
-	 Log.f (sprintf "%s not a valid val for SIZE" s)
+     Log.f (sprintf "%s not a valid val for SIZE" s)
     with Not_found -> ()
     end;
     (* Check for passwd *)
@@ -83,12 +93,12 @@ let text_input prev_widget ctx behav top tag =
     (* The behaviours *)
     let reset = 
       try
-	let v = get_attribute tag "value" in
-	 Entry.insert e End v;
-	 (fun () -> Entry.delete_range e (Number 0) End;
-		    Entry.insert e End v)
+    let v = get_attribute tag "value" in
+     Entry.insert e End v;
+     (fun () -> Entry.delete_range e (Number 0) End;
+            Entry.insert e End v)
       with Not_found ->
-	 (fun () -> Entry.delete_range e (Number 0) End)
+     (fun () -> Entry.delete_range e (Number 0) End)
     (* spec says we could omit if empty *)
     and get_value () = [name, Entry.get e]
     in
@@ -99,14 +109,16 @@ let text_input prev_widget ctx behav top tag =
      (* single-entry : enter submits the form *)
       Tk.bind e [[], KeyPressDetail "Return"] 
          (BindSet ([], (fun _ -> 
-	   match behav#single_submit with
-	     Some h -> ctx#goto h
-	   | None -> ())))
+       match behav#single_submit with
+         Some h -> ctx#goto h
+       | None -> ())))
   with
     Not_found ->
       raise (Invalid_Html "Missing NAME in TEXT or PASSWORD")
+(*e: function Form.text_input *)
 
 
+(*s: function Form.checkbox_input *)
 (* A CHECKBOX input *)
 let checkbox_input prev_widget behav top tag =
   try
@@ -115,23 +127,23 @@ let checkbox_input prev_widget behav top tag =
     let c = Checkbutton.create top [Variable v; TakeFocus false] in
     let reset =
       if has_attribute tag "checked" then begin
-	Checkbutton.select c;
-	(fun () -> Checkbutton.select c)
-	end
+    Checkbutton.select c;
+    (fun () -> Checkbutton.select c)
+    end
       else (fun () -> Checkbutton.deselect c)
     and get_value =
       let value = 
-	try get_attribute tag "value" 
-	with Not_found ->
+    try get_attribute tag "value" 
+    with Not_found ->
          (* other browsers seem to use "on". Thanks to Dave Love for pointing
             this out *)
-	 Log.f "no VALUE given for input CHECKBOX, using \"on\"";
-	 "on" in
+     Log.f "no VALUE given for input CHECKBOX, using \"on\"";
+     "on" in
       (* spec says we SHOULD omit when not selected *)
       (fun () -> 
-	 match Textvariable.get v with 
-	   "1" -> [name, value]
-	 | _ -> [])
+     match Textvariable.get v with 
+       "1" -> [name, value]
+     | _ -> [])
     in
       focus_link prev_widget c;
       pack [c][];
@@ -140,9 +152,11 @@ let checkbox_input prev_widget behav top tag =
   with
     Not_found ->
       raise (Invalid_Html "Missing NAME in CHECKBOX")
+(*e: function Form.checkbox_input *)
 
 
 (* A RADIO input *)
+(*s: function Form.radio_input *)
 (* ONLY THE FIRST BUTTON RESET/GET_VALUE IS USED *)
 let radio_input prev_widget behav = 
   (* Table of radio names *)
@@ -155,39 +169,41 @@ let radio_input prev_widget behav =
        and va = try get_attribute tag "value" with Not_found -> "on"
        in
        try
-	 let v, sel = Hashtbl.find radios name in
-	   (* We already have a radiobutton with this name *)
-	   Radiobutton.configure r [Variable v; Value va];
-	   if checked then begin 
-	     Radiobutton.select r; (* select it *)
-	     sel := r (* store it in table for reset *)
-	   end;
-	   (* no need to add behaviour *)
-	   focus_link prev_widget r;
-	   pack [r][]
+     let v, sel = Hashtbl.find radios name in
+       (* We already have a radiobutton with this name *)
+       Radiobutton.configure r [Variable v; Value va];
+       if checked then begin 
+         Radiobutton.select r; (* select it *)
+         sel := r (* store it in table for reset *)
+       end;
+       (* no need to add behaviour *)
+       focus_link prev_widget r;
+       pack [r][]
        with
-	 Not_found ->
-	   (* this is the first radio button with this name *)
-	   (* it this thus assumed checked *)
-	    let v = Textvariable.create_temporary top in
-	     Hashtbl.add radios name (v, ref r);
-	    let get_value () = [name, Textvariable.get v]
-	    and reset () = 
-	       (* to reset, we must lookup the table *)
-	      let _, sel = Hashtbl.find radios name in
-		Radiobutton.select !sel 
-	    in
-	    Radiobutton.configure r [Variable v; Value va];
-	    Radiobutton.select r; (* assume selected *)
-	    focus_link prev_widget r;
-	    pack [r][];
-	    behav#add_get OtherInput get_value;
-	    behav#add_reset reset
+     Not_found ->
+       (* this is the first radio button with this name *)
+       (* it this thus assumed checked *)
+        let v = Textvariable.create_temporary top in
+         Hashtbl.add radios name (v, ref r);
+        let get_value () = [name, Textvariable.get v]
+        and reset () = 
+           (* to reset, we must lookup the table *)
+          let _, sel = Hashtbl.find radios name in
+        Radiobutton.select !sel 
+        in
+        Radiobutton.configure r [Variable v; Value va];
+        Radiobutton.select r; (* assume selected *)
+        focus_link prev_widget r;
+        pack [r][];
+        behav#add_get OtherInput get_value;
+        behav#add_reset reset
     with
       Not_found ->
-	raise (Invalid_Html "Missing NAME in RADIO"))
+    raise (Invalid_Html "Missing NAME in RADIO"))
+(*e: function Form.radio_input *)
 
 
+(*s: function Form.image_input *)
 (* An IMAGE input 
  * Q: no target here ?
  *)
@@ -205,16 +221,18 @@ let image_input prev_widget ctx base behav top tag =
       embed_frame = top;
       embed_context = ctx; (* pass as is... *)
       embed_map = FormMap (fun (x, y) ->
-			     let subargs =
+                 let subargs =
                                 [sprintf "%s.x" n, string_of_int x;
                                  sprintf "%s.y" n, string_of_int y] in
-			       behav#submit subargs);
+                   behav#submit subargs);
       embed_alt = alt}
   with
   Not_found ->
     raise (Invalid_Html "missing NAME or SRC in input IMAGE")
+(*e: function Form.image_input *)
 
 
+(*s: function Form.submit_input *)
 (* A Submit button *)
 let submit_input prev_widget ctx behav top tag = 
   let l = 
@@ -224,23 +242,26 @@ let submit_input prev_widget ctx behav top tag =
   try
     let n = get_attribute tag "name" in
     pack [Button.create top [Text l; TakeFocus false;
-	     Command (fun () -> ctx#goto (behav#submit [n,l]))]]
+         Command (fun () -> ctx#goto (behav#submit [n,l]))]]
          []
   with
     Not_found ->
      (* if name is not present, the button does not contribute a value *)
      pack [Button.create top [Text l; TakeFocus false;
-	      Command (fun () -> ctx#goto (behav#submit []))]]
-	  []
+          Command (fun () -> ctx#goto (behav#submit []))]]
+      []
+(*e: function Form.submit_input *)
 
 
+(*s: function Form.reset_input *)
 let reset_input prev_widget behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> I18n.sprintf "Reset" in
   let b = Button.create top [Text l; TakeFocus false;
-			     Command (fun () -> behav#reset)] in
+                 Command (fun () -> behav#reset)] in
     pack[b][]
+(*e: function Form.reset_input *)
 
 
 
@@ -249,6 +270,7 @@ let reset_input prev_widget behav top tag =
 
 
 (* A SELECT list *)
+(*s: function Form.select *)
 (* options is: (val, displayed thing, selected) list *)    
 let select prev_widget behav top options tag =
   let name = get_attribute tag "name" in
@@ -256,8 +278,8 @@ let select prev_widget behav top options tag =
   let size =
      try int_of_string ssize
      with _ -> 
-	Log.f (sprintf "%s not a valid val for SIZE" ssize);
-	5 in
+    Log.f (sprintf "%s not a valid val for SIZE" ssize);
+    5 in
   let multiple = has_attribute tag "multiple" in
   (* assume 20 vertical pixels per menu item *)
   let fit_vertical n = 20 * n < Winfo.screenheight top in
@@ -272,23 +294,23 @@ let select prev_widget behav top options tag =
      Menubutton.configure m [Menu mmenu];
      let initial =
        match options with
-	 [] -> raise (Invalid_Html ("No OPTION in SELECT"))
+     [] -> raise (Invalid_Html ("No OPTION in SELECT"))
        | opt :: _ -> ref opt in
      List.iter (function (v,d,s) as x ->
-		Menu.add_command mmenu
-		    [Label d;
-		     Command (fun () -> 
-			       Textvariable.set varv v;
-			       Textvariable.set vard d
-			      )];
-		if s then initial := x
-		)
-	      options;
+        Menu.add_command mmenu
+            [Label d;
+             Command (fun () -> 
+                   Textvariable.set varv v;
+                   Textvariable.set vard d
+                  )];
+        if s then initial := x
+        )
+          options;
      let reset () =
        match !initial with
-	(v,d,_) -> 
-	     Textvariable.set varv v;
-	     Textvariable.set vard d
+    (v,d,_) -> 
+         Textvariable.set varv v;
+         Textvariable.set vard d
      and get_value () = [name, Textvariable.get varv] in
        reset();
        focus_link prev_widget m;
@@ -310,20 +332,20 @@ let select prev_widget behav top options tag =
     let initial = ref [] in
     let entries =
      mapi (fun i (_,v,s) -> 
-	       if s then initial := i :: !initial;
-	       v) 0 options in
+           if s then initial := i :: !initial;
+           v) 0 options in
       Listbox.insert lb End entries;
     if !initial = [] then initial := [0];
     let reset () = 
        Listbox.selection_clear lb (Number 0) End;
        List.iter (fun i ->
-		 Listbox.selection_set lb (Number i)(Number i))
-	       !initial
+         Listbox.selection_set lb (Number i)(Number i))
+           !initial
     and get_value () =
        List.map (function
-	      Number n -> name, nth_entry n options
-	    | _ -> name, nth_entry 0 options (* fatal error ! *))
-	   (Listbox.curselection lb)
+          Number n -> name, nth_entry n options
+        | _ -> name, nth_entry 0 options (* fatal error ! *))
+       (Listbox.curselection lb)
     in
       reset (); 
       focus_link prev_widget f;
@@ -331,7 +353,9 @@ let select prev_widget behav top options tag =
       behav#add_reset reset;
       behav#add_get OtherInput get_value
     end
+(*e: function Form.select *)
 
+(*s: function Form.textarea *)
 let textarea prev_widget behav top initial tag = 
   try 
     let name = get_attribute tag "name" in
@@ -343,14 +367,14 @@ let textarea prev_widget behav top initial tag =
       let w = get_attribute tag "cols" in
       try Text.configure t [TextWidth (int_of_string w)]
       with Failure "int_of_string" ->
-	Log.f (sprintf "%s not a valid val for COLS" w)
+    Log.f (sprintf "%s not a valid val for COLS" w)
     with Not_found -> ()
     end;
     begin try
       let h = get_attribute tag "rows" in
       try Text.configure t [TextHeight (int_of_string h)]
       with Failure "int_of_string" ->
-	Log.f (sprintf "%s not a valid val for ROWS" h)
+    Log.f (sprintf "%s not a valid val for ROWS" h)
     with Not_found -> ()
     end;
     Text.insert t Frx_text.textEnd initial [];
@@ -359,15 +383,17 @@ let textarea prev_widget behav top initial tag =
       Text.insert t Frx_text.textEnd initial []
     and get_value () =
       [name, Text.get t (TextIndex(LineChar(0,0), [])) 
-		   (TextIndex(End, [CharOffset (-1)]))]
+           (TextIndex(End, [CharOffset (-1)]))]
     in
        pack [f][];
        behav#add_reset reset;
        behav#add_get EntryInput get_value
   with
     Not_found -> raise (Invalid_Html "Missing NAME in TEXTAREA")
+(*e: function Form.textarea *)
 
 
+(*s: function Form.create *)
 let create base behav ctx =
   let prev_widget = ref None in
   { text_input = text_input prev_widget ctx behav;
@@ -379,3 +405,5 @@ let create base behav ctx =
     select = select prev_widget behav;
     textarea = textarea prev_widget behav
   }
+(*e: function Form.create *)
+(*e: ./display/form.ml *)

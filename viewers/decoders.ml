@@ -1,15 +1,19 @@
+(*s: ./viewers/decoders.ml *)
 open Unix
 open Document
 open Feed
 open Http_headers
 
+(*s: constant Decoders.decoders *)
 (* Insert a decoding if necessary.
  * We don't do it in http, since we don't want do decompress when we
  * save for example.
  *)
 
 let decoders = Hashtbl.create 37
+(*e: constant Decoders.decoders *)
 
+(*s: function Decoders.gzip *)
 (* Note: we must use the feed interface to read from the old dh,
  * and not read directly from the feed_internal file descriptor, because
  * the feed might implement side effects (such as caching).
@@ -33,41 +37,47 @@ let gzip dh =
      (* it is safe to close feed because the son has a copy *)
       let newdh =
       	{ document_id = dh.document_id;
-	  document_referer = dh.document_referer;
+      document_referer = dh.document_referer;
           document_status = dh.document_status;
-	  document_headers = rem_contentencoding dh.document_headers;
-	  document_feed = Feed.of_fd mread;
-	  document_fragment = dh.document_fragment;
-	  document_logger = dh.document_logger }
+      document_headers = rem_contentencoding dh.document_headers;
+      document_feed = Feed.of_fd mread;
+      document_fragment = dh.document_fragment;
+      document_logger = dh.document_logger }
       in
       let buffer = String.create 4096 in
       let rec copy () =
-	  try
-	    let n = dh.document_feed.feed_read buffer 0 4096 in
+      try
+        let n = dh.document_feed.feed_read buffer 0 4096 in
             if n = 0 then (dclose true dh; close mwrite)
             else begin
-	      dh.document_feed.feed_unschedule();
-	      Fileevent.add_fileoutput mwrite
-		(fun () -> 
-		  ignore (write mwrite buffer 0 n);
-		  Fileevent.remove_fileoutput mwrite;
-		  dh.document_feed.feed_schedule copy)
-	    end
-	  with
-	    Unix_error(e,_,_) -> dclose true dh; close mwrite
+          dh.document_feed.feed_unschedule();
+          Fileevent.add_fileoutput mwrite
+        (fun () -> 
+          ignore (write mwrite buffer 0 n);
+          Fileevent.remove_fileoutput mwrite;
+          dh.document_feed.feed_schedule copy)
+        end
+      with
+        Unix_error(e,_,_) -> dclose true dh; close mwrite
       in
       dh.document_feed.feed_schedule copy;
       newdh
+(*e: function Decoders.gzip *)
   
 
+(*s: toplevel Decoders._1 *)
 let _ =  List.iter (fun (s,t) -> Hashtbl.add decoders s t)
   [ "COMPRESS", gzip;
     "X-COMPRESS", gzip;
     "GZIP", gzip;
     "X-GZIP", gzip]
+(*e: toplevel Decoders._1 *)
 
+(*s: constant Decoders.add *)
 let add = Hashtbl.add decoders
+(*e: constant Decoders.add *)
 
+(*s: function Decoders.insert *)
 let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
   if dh.document_status >= 400 then dh else
@@ -77,4 +87,6 @@ let insert dh =
   with
     Not_found -> dh
   | Unix_error(_,_,_) -> dh
+(*e: function Decoders.insert *)
 
+(*e: ./viewers/decoders.ml *)

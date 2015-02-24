@@ -1,9 +1,11 @@
+(*s: ./display/source.ml *)
 open Printf
 open Tk
 open Frx_text
 open Document
 open Html
 
+(*s: function Source.annotate *)
 (* HTML source viewer/editor *)
 let annotate txt =
   Hashtbl.iter (fun elem _  ->
@@ -12,11 +14,13 @@ let annotate txt =
     !Dtd.current.Dtd.contents;
     (fun annotations ->
       List.iter (function (name,Loc(s,e)) ->
-	let idxs = abs_index s
-	and idxe = abs_index e in
-	Text.tag_add txt name idxs idxe)
+    let idxs = abs_index s
+    and idxe = abs_index e in
+    Text.tag_add txt name idxs idxe)
       annotations)
+(*e: function Source.annotate *)
 
+(*s: function Source.view *)
 (* Commit modifies the cache *)
 let view attach did redisplay errors annotations coding =
   try 
@@ -28,59 +32,59 @@ let view attach did redisplay errors annotations coding =
      *)
     let load, cachesave, saveurl =
       match doc.document_data with
-	FileData (fname,_) ->
-	 let tmpfile = Msys.mktemp "buf" in
-	 (* load *)
-	 (fun t ->
-	    if !Lang.japan then begin
-	      (* In Japanese mode, We must insert line by line. *) 
+    FileData (fname,_) ->
+     let tmpfile = Msys.mktemp "buf" in
+     (* load *)
+     (fun t ->
+        if !Lang.japan then begin
+          (* In Japanese mode, We must insert line by line. *) 
   	      let ic = open_in fname 
   	      and buf = String.create 2048
-	      and prevbuf = ref ""
+          and prevbuf = ref ""
   	      in
   	       try
   		 while true do
   		   let n = input ic buf 0 2048 in
-		   let txt = 
-		     if n = 2048 then begin
-		       (* try to find last newline *)
-		       let pos = 
-			 try String.rindex buf '\n' + 1 
-			 with Not_found -> 0
-		       in
-		       let txt = !prevbuf ^ (String.sub buf 0 pos) in
-		       prevbuf := String.sub buf pos 
-				  (String.length buf - pos);
-		       txt
-		     end else begin
-		       let txt = !prevbuf ^ (String.sub buf 0 n) in
-		       prevbuf := "";
-		       txt
-		     end
-		   in
-		   (* if coding = ISO8859 or JIS, the chars > \127
-		    * must be preceded with esc sequence 
-		    *)
-		   let txt =
-		     if coding = Japan.Code Japan.ISO8859 || 
-		        coding = Japan.Code Japan.JIS then
-		       let buf = Ebuffer.create (String.length txt * 2) in
-		       for i = 0 to String.length txt - 1 do
-			 if txt.[i] > '\127' then 
-			   (* sorry for hard coding *)
-			   Ebuffer.output_string buf "\027\040\066";
-			 Ebuffer.output_char buf txt.[i]
-		       done;
-		       Ebuffer.get buf
-		     else txt
-		   in
-		   Text.insert t textEnd txt [];
-		   (* Then EOF check *)
-		   if n = 0 then raise End_of_file
+           let txt = 
+             if n = 2048 then begin
+               (* try to find last newline *)
+               let pos = 
+             try String.rindex buf '\n' + 1 
+             with Not_found -> 0
+               in
+               let txt = !prevbuf ^ (String.sub buf 0 pos) in
+               prevbuf := String.sub buf pos 
+                  (String.length buf - pos);
+               txt
+             end else begin
+               let txt = !prevbuf ^ (String.sub buf 0 n) in
+               prevbuf := "";
+               txt
+             end
+           in
+           (* if coding = ISO8859 or JIS, the chars > \127
+            * must be preceded with esc sequence 
+            *)
+           let txt =
+             if coding = Japan.Code Japan.ISO8859 || 
+                coding = Japan.Code Japan.JIS then
+               let buf = Ebuffer.create (String.length txt * 2) in
+               for i = 0 to String.length txt - 1 do
+             if txt.[i] > '\127' then 
+               (* sorry for hard coding *)
+               Ebuffer.output_string buf "\027\040\066";
+             Ebuffer.output_char buf txt.[i]
+               done;
+               Ebuffer.get buf
+             else txt
+           in
+           Text.insert t textEnd txt [];
+           (* Then EOF check *)
+           if n = 0 then raise End_of_file
   		 done
   	       with
   		 End_of_file -> close_in ic
-	    end else begin
+        end else begin
   	      let ic = open_in fname 
   	      and buf = String.create 2048
   	      in
@@ -95,33 +99,33 @@ let view attach did redisplay errors annotations coding =
   		 done
   	       with
   		 End_of_file -> close_in ic
-	    end
-	   ),
+        end
+       ),
          (* commit *)
          (fun t ->
-	    let oc = open_out tmpfile in
-	     output_string oc
-	      (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-	     close_out oc;
-	     (* SWITCH CACHE *)
-	     doc.document_data <- FileData(tmpfile, true)),
-	 (* save *)
-	 Some (fun t ->
-	    let oc = open_out fname in
-	     output_string oc
-	      (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-	     close_out oc;
-	     (* SWITCH CACHE *)
-	     doc.document_data <- FileData(fname, false))
+        let oc = open_out tmpfile in
+         output_string oc
+          (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+         close_out oc;
+         (* SWITCH CACHE *)
+         doc.document_data <- FileData(tmpfile, true)),
+     (* save *)
+     Some (fun t ->
+        let oc = open_out fname in
+         output_string oc
+          (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+         close_out oc;
+         (* SWITCH CACHE *)
+         doc.document_data <- FileData(fname, false))
 
       | MemoryData buf ->
-	 (* load *)
-	 (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
-	 (* commit *)
-	 (fun t -> 
-	    Ebuffer.reset buf;
-	    Ebuffer.output_string buf
-		(Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
+     (* load *)
+     (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
+     (* commit *)
+     (fun t -> 
+        Ebuffer.reset buf;
+        Ebuffer.output_string buf
+        (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
          None
     in
   let top = Toplevel.create attach [Class "MMMSource"] in
@@ -130,7 +134,7 @@ let view attach did redisplay errors annotations coding =
   let f, t = new_scrollable_text top [Foreground Black; Background White] false
   and f' = Frame.create_named top "buttons" [] in
   let dismiss = Button.create_named f' "dismiss"
-	[Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] 
+    [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] 
   and commit = Button.create_named f' "commit" [Text (I18n.sprintf "Commit")]
   and save = Button.create_named f' "save" [Text (I18n.sprintf "Save")]
   and err = Button.create_named f' "errors" []
@@ -148,7 +152,7 @@ let view attach did redisplay errors annotations coding =
         [] -> raise Not_found
       | (s,e,msg)::l ->
       	 if Text.compare t s LE idx & Text.compare t idx LE e then msg
-	 else f l in
+     else f l in
     f !error_idx in
   let show_error = Text.yview_index t in
   (* alternative is : Text.see t but is less practical *)
@@ -157,18 +161,18 @@ let view attach did redisplay errors annotations coding =
     (fun () ->
       match !current with
       	None -> (* select the first error *)
-	  let (s,e,_) = List.hd !error_idx in
-	   current := Some e;
-	   show_error s
+      let (s,e,_) = List.hd !error_idx in
+       current := Some e;
+       show_error s
       | Some s -> (* select the next one *)
       	 try
       	  let (s,e) = Text.tag_nextrange t "errors" s textEnd in
-	   current := Some (TextIndex (e,[]));
-	   show_error (TextIndex(s,[]))
-	 with _ -> (* no more *)
-	   let (s,e,_) = List.hd !error_idx in
-	    current := Some e;
-	    show_error s) in
+       current := Some (TextIndex (e,[]));
+       show_error (TextIndex(s,[]))
+     with _ -> (* no more *)
+       let (s,e,_) = List.hd !error_idx in
+        current := Some e;
+        show_error s) in
 
   let mark_errors () =
     error_idx := [];
@@ -182,8 +186,8 @@ let view attach did redisplay errors annotations coding =
       0 ->
       	Button.configure err [Text (I18n.sprintf "No Errors"); State Disabled]
     | n ->
-	Button.configure err
-	    [Text (I18n.sprintf "%d errors" (List.length !errors));
+    Button.configure err
+        [Text (I18n.sprintf "%d errors" (List.length !errors));
       	     State Normal; Command loop_in_errors]
   and decorate = annotate t
   in
@@ -210,23 +214,23 @@ let view attach did redisplay errors annotations coding =
         None -> Button.configure save [State Disabled]
       | Some f -> 
           Button.configure save
-	      [Command (fun () -> reset(); f t; redisplay())]);
+          [Command (fun () -> reset(); f t; redisplay())]);
      Button.configure err 
       	[Text (I18n.sprintf "Display Errors");
-	 Command (fun () -> mark_errors(); decorate !annotations);
+     Command (fun () -> mark_errors(); decorate !annotations);
       	 State Normal];
      Text.configure t [Background (NamedColor "white")];
      Text.tag_configure t "errors" [Underline true];
      Text.tag_bind t "errors" [[], Enter]
        (BindSet ([Ev_MouseX; Ev_MouseY],
-	 (fun ei ->
-	    (* The index of the click position *)
-	    let i = Text.index t
-		    (TextIndex (AtXY (ei.ev_MouseX, ei.ev_MouseY), [])) in
-	      try
-		Textvariable.set errorv (get_msg (TextIndex(i,[])))
-	      with
-		Not_found -> ())));
+     (fun ei ->
+        (* The index of the click position *)
+        let i = Text.index t
+            (TextIndex (AtXY (ei.ev_MouseX, ei.ev_MouseY), [])) in
+          try
+        Textvariable.set errorv (get_msg (TextIndex(i,[])))
+          with
+        Not_found -> ())));
      Text.tag_bind t "errors" [[], Leave]
        (BindSet ([], (fun ei -> Textvariable.set errorv "")));
 
@@ -242,4 +246,6 @@ let view attach did redisplay errors annotations coding =
   with
     Not_found ->
      Error.default#f "document not in cache"
+(*e: function Source.view *)
 
+(*e: ./display/source.ml *)

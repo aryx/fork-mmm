@@ -1,3 +1,4 @@
+(*s: ./commons/error.ml *)
 open Tk
 open Widget
 open Mstring
@@ -38,10 +39,13 @@ method ari msg =
 
 end
 
+(*s: constant Error.default *)
 let default = new t default_toplevel
+(*e: constant Error.default *)
 
 (* backward compatibility *)
 let f msg = default#f msg
 and ok msg = default#ok msg
 and choose msg = default#choose msg
 and ari msg = default#ari msg
+(*e: ./commons/error.ml *)

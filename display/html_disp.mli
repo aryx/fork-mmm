@@ -1,6 +1,11 @@
+(*s: ./display/html_disp.mli *)
 
+(*s: signature Html_disp.attempt_tables *)
 val attempt_tables : bool ref
+(*e: signature Html_disp.attempt_tables *)
+(*s: signature Html_disp.verbose *)
 val verbose : bool ref
+(*e: signature Html_disp.verbose *)
 
 class  virtual imgloader : (unit) -> object
   method virtual add_image : Embed.embobject -> unit	 (* add one image *)
@@ -46,7 +51,9 @@ class  virtual machine : (unit) -> object
   method virtual set_i18n_encoder : (string -> string) -> unit
 end
 
+(*s: signature Html_disp.add_hook *)
 val add_hook: (machine -> unit) -> unit
+(*e: signature Html_disp.add_hook *)
 
 module Make 
   (G: Htmlfmt.GfxHTML) 
@@ -58,3 +65,4 @@ module Make
      *)
     val create : Viewers.context * imgloader -> machine
 end
+(*e: ./display/html_disp.mli *)

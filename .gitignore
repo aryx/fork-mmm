@@ -2,6 +2,8 @@
 
 external/ocamltk
 
+.md5sum_*
+
 # ocaml object files
 
 *.o

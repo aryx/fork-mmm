@@ -1,3 +1,4 @@
+(*s: ./commons/msys.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -17,12 +18,15 @@ open Unix
 
 (* Tilde substitution *)
 
+(*s: function Msys.next_slash *)
 (* skip to next / *)
 let rec next_slash s n =
   if  n >= String.length s or s.[n] = '/' 
   then n
   else next_slash s (succ n)
+(*e: function Msys.next_slash *)
 
+(*s: function Msys.tilde_subst *)
 let tilde_subst s =
  try
   if s = "" or s.[0] <> '~' then s 
@@ -44,9 +48,13 @@ let tilde_subst s =
     Unix_error(_,_,_) -> s
   | Sys_error _ -> s
   | Not_found -> s
+(*e: function Msys.tilde_subst *)
 
+(*s: function Msys.rm *)
 (* Quiet unlink *)
 let rm s = try unlink s with Unix_error _ -> ()
+(*e: function Msys.rm *)
+(*s: function Msys.rmdir *)
 let rmdir dir =
   try
     let dh = opendir dir 
@@ -57,18 +65,24 @@ let rmdir dir =
     done
     with
       End_of_file -> 
-	closedir dh;
-	List.iter (fun f -> rm (Filename.concat dir f)) !l;
-	Unix.rmdir dir
+    closedir dh;
+    List.iter (fun f -> rm (Filename.concat dir f)) !l;
+    Unix.rmdir dir
   with
     Unix_error _ -> ()
+(*e: function Msys.rmdir *)
 
+(*s: function Msys.fsize *)
 let fsize f =
   try (Unix.stat f).st_size
   with Unix_error(_,_,_) -> raise Not_found
+(*e: function Msys.fsize *)
 
+(*s: constant Msys.tmp_dir *)
 let tmp_dir = ref "/tmp"
+(*e: constant Msys.tmp_dir *)
 
+(*s: constant Msys.mktemp *)
 (* We know use our own private directory in /tmp, cleared at exit-time,
    so no one can snoop our temporary files *)
 let mktemp =
@@ -79,12 +93,12 @@ let mktemp =
     let testdir = ref "" in
     try while true do
       testdir := Filename.concat !tmp_dir ("mmm" ^ string_of_int pid
-					     ^ "_" ^ string_of_int !id);
+                         ^ "_" ^ string_of_int !id);
       if not (Sys.file_exists !testdir) then raise Exit;
       incr id;
       if !id >= 16 then 
-	raise (Failure ("Too many MMM temporary directory in " ^ !tmp_dir ^
-			". Clean them first."))
+    raise (Failure ("Too many MMM temporary directory in " ^ !tmp_dir ^
+            ". Clean them first."))
     done; "" (* cannot reach *)
     with
       Exit -> !testdir
@@ -94,3 +108,5 @@ let mktemp =
   (function prefx -> 
       incr cnter; 
       (Filename.concat thisdir (prefx ^ string_of_int !cnter)))
+(*e: constant Msys.mktemp *)
+(*e: ./commons/msys.ml *)

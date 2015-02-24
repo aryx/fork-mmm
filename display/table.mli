@@ -1,10 +1,18 @@
+(*s: ./display/table.mli *)
+(*s: signature Table.debug *)
 (* TABLES *)
 
 val debug : bool ref
+(*e: signature Table.debug *)
+(*s: signature Table.strict_32 *)
 val strict_32 : bool ref
+(*e: signature Table.strict_32 *)
 
+(*s: enum Table.cell_type *)
 type cell_type = HeaderCell | DataCell
+(*e: enum Table.cell_type *)
 
+(*s: enum Table.t *)
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -14,7 +22,13 @@ type t = {
   new_cell : cell_type -> Html.tag -> Widget.widget -> string -> Htmlfmt.width_constraint;
   bound : unit -> bool
   }
+(*e: enum Table.t *)
 
+(*s: signature Table.create *)
 val create : Widget.widget -> Html.tag -> Htmlfmt.width_constraint -> t
+(*e: signature Table.create *)
 
+(*s: signature Table.topwidth *)
 val topwidth : Widget.widget -> int
+(*e: signature Table.topwidth *)
+(*e: ./display/table.mli *)

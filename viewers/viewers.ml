@@ -1,3 +1,4 @@
+(*s: ./viewers/viewers.ml *)
 (*
  * Multimedia
  *)
@@ -12,17 +13,24 @@ open Www
 open Hyper
 
 (* The context given to a viewer *)
+(*s: enum Viewers.vparams (./viewers/viewers.ml) *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
+(*e: enum Viewers.vparams (./viewers/viewers.ml) *)
+(*s: enum Viewers.frame_targets (./viewers/viewers.ml) *)
 type frame_targets = (string * Widget.widget) list
+(*e: enum Viewers.frame_targets (./viewers/viewers.ml) *)
 
+(*s: function Viewers.frame_adopt *)
 let frame_adopt w targets = 
   List.map (function 
     | "_self",_ -> "_self", w
     | "_parent", _ -> "_parent", Winfo.parent w
     | s, f -> s, f)
     targets
+(*e: function Viewers.frame_adopt *)
 
+(*s: function Viewers.frame_fugue *)
 let frame_fugue targets =
   let rec ff accu = function
       [] -> accu
@@ -31,15 +39,18 @@ let frame_fugue targets =
     | p :: l -> ff (p::accu) l
   in
   ff [] targets
+(*e: function Viewers.frame_fugue *)
 
+(*s: enum Viewers.hyper_func (./viewers/viewers.ml) *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
   hyper_func : frame_targets -> Hyper.link -> unit
   }
+(*e: enum Viewers.hyper_func (./viewers/viewers.ml) *)
 
 class  virtual context ((did : Document.document_id), 
-		       (v : vparams)) =
+               (v : vparams)) =
  object (self : 'a)
 
   val base = did
@@ -77,7 +88,7 @@ class  virtual context ((did : Document.document_id),
           targets
       | l -> 
           (* assume I'm given new _self and _parent *)
-	  l @ frame_fugue targets 
+      l @ frame_fugue targets 
     in
     (* old:
        {< 
@@ -140,12 +151,15 @@ class trivial_display (w, url) =
   method di_update = ()
 end
 
+(*s: function Viewers.di_compare *)
 let di_compare di di' = di#di_last_used > di'#di_last_used
+(*e: function Viewers.di_compare *)
 
 (* 
  * The default external viewer
  *)
 
+(*s: function Viewers.metamail *)
 (* Metamail options
    -b : not an RFC822 message
    -z : delete when finished 
@@ -153,18 +167,22 @@ let di_compare di di' = di#di_last_used > di'#di_last_used
  *)
 let metamail ctype file =
   ignore (Munix.system "metamail -b -z -x -c" [ctype; file] true)
+(*e: function Viewers.metamail *)
 
+(*s: function Viewers.extern_batch *)
 (* Batch version: we transfer everything and then run metamail *)
 let extern_batch dh ctype = 
   let outfile = Msys.mktemp "mmm" in
   Document.add_log dh (
     I18n.sprintf "Saving %s\nfor external display with MIME type %s"
-	      (Url.string_of dh.document_id.document_url) ctype)
+          (Url.string_of dh.document_id.document_url) ctype)
     (fun () -> Msys.rm outfile);
   let endmsg =
     I18n.sprintf "Running metamail with MIME media-type: %s" ctype in
     Save.tofile (metamail ctype) (Decoders.insert dh) outfile endmsg
+(*e: function Viewers.extern_batch *)
 
+(*s: function Viewers.extern *)
 (* "interactive" version: 
  *    send data to metamail as it arrives, but allow abort
  * NOTE: There are sometimes weird errors when the child dumps core
@@ -183,12 +201,12 @@ let extern dh ctype =
       let kill () = 
          try Unix.kill pid 2
       	 with Unix_error (e,_,_) ->
-	     Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
+         Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
       	      in
       let url = Url.string_of dh.document_id.document_url in
       Document.add_log dh (
-	I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
-		     url ctype)
+    I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
+             url ctype)
       	kill;
 
       let red = ref 0 
@@ -198,28 +216,29 @@ let extern dh ctype =
       and buffer = String.create 4096 in
       dh.document_feed.feed_schedule
       	(fun () ->
-	  try
-	   let n = dh.document_feed.feed_read buffer 0 4096 in
-	   if n = 0 then begin
-	       dclose true dh;
-	       close pout;
-	       Document.end_log dh (I18n.sprintf "End of transmission")
-	       end
-	   else begin
-	     ignore (write pout buffer 0 n);
-	     red := !red + n;
-	     Document.progress_log dh (!red * 100 / size)
-	     end
-	  with
-	   Unix_error(e,_,_) ->
-	     Log.f (sprintf "Error writing to viewer (%s)"
-		            (Unix.error_message e));
-	     dclose true dh;
-	     kill();
-	     close pout;
-	     Document.destroy_log dh false;
-	     Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
-	   )
+      try
+       let n = dh.document_feed.feed_read buffer 0 4096 in
+       if n = 0 then begin
+           dclose true dh;
+           close pout;
+           Document.end_log dh (I18n.sprintf "End of transmission")
+           end
+       else begin
+         ignore (write pout buffer 0 n);
+         red := !red + n;
+         Document.progress_log dh (!red * 100 / size)
+         end
+      with
+       Unix_error(e,_,_) ->
+         Log.f (sprintf "Error writing to viewer (%s)"
+                    (Unix.error_message e));
+         dclose true dh;
+         kill();
+         close pout;
+         Document.destroy_log dh false;
+         Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
+       )
+(*e: function Viewers.extern *)
 
 (*
  * Viewer control
@@ -234,18 +253,24 @@ let extern dh ctype =
  * will be passed to metamail.
  *)
 
+(*s: enum Viewers.t (./viewers/viewers.ml) *)
 (* Definition of an internal viewer *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
+(*e: enum Viewers.t (./viewers/viewers.ml) *)
 
+(*s: enum Viewers.spec *)
 type spec =
     Internal of t
   | External         (* pass to metamail *)
   | Save	     (* always save *)
   | Interactive	     (* ask what to do about it *)
+(*e: enum Viewers.spec *)
 
+(*s: constant Viewers.viewers *)
 let viewers = Hashtbl.create 17
+(*e: constant Viewers.viewers *)
 
 (* That's for internal viewers only *)
 let add_viewer ctype viewer =
@@ -256,13 +281,13 @@ and rem_viewer ctype =
 let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (I18n.sprintf "MMM Warning")
-	 (I18n.sprintf
-	   "No MIME type given for the document\n%s"
-	   (Url.string_of dh.document_id.document_url))
+     (I18n.sprintf
+       "No MIME type given for the document\n%s"
+       (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
-	 [I18n.sprintf "Retry with type";
-	  I18n.sprintf "Save to file";
-	  I18n.sprintf "Abort"] with
+     [I18n.sprintf "Retry with type";
+      I18n.sprintf "Save to file";
+      I18n.sprintf "Abort"] with
    0 ->
     let v = Textvariable.create_temporary frame in
      Textvariable.set v "text/html";
@@ -283,15 +308,15 @@ let rec unknown frame ctx dh =
 and interactive frame ctx dh ctype =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (I18n.sprintf "MMM Viewers")
-	 (I18n.sprintf
-	   "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
-	    ctype
-	    (Url.string_of dh.document_id.document_url))
+     (I18n.sprintf
+       "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
+        ctype
+        (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
-	 [I18n.sprintf "Retry with another type";
-	  I18n.sprintf "Display with metamail";
-	  I18n.sprintf "Save to file";
-	  I18n.sprintf "Abort"] with
+     [I18n.sprintf "Retry with another type";
+      I18n.sprintf "Display with metamail";
+      I18n.sprintf "Save to file";
+      I18n.sprintf "Abort"] with
   | 0 ->
       let v = Textvariable.create_temporary frame in
       Textvariable.set v "text/html";
@@ -317,31 +342,31 @@ and view frame ctx dh =
     try (* Get the viewer *)
       let viewer =
  	try Hashtbl.find viewers (typ,sub)
-	with
-	  Not_found -> Hashtbl.find viewers (typ,"*")
+    with
+      Not_found -> Hashtbl.find viewers (typ,"*")
       in
       match viewer with
       |	Internal viewer ->
-	  ctx#log (I18n.sprintf "Displaying...");
+      ctx#log (I18n.sprintf "Displaying...");
       	  viewer pars frame ctx (Decoders.insert dh)
       |	External ->
-	  ctx#log (I18n.sprintf "Displaying externally");
-	  extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
-	  None
+      ctx#log (I18n.sprintf "Displaying externally");
+      extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
+      None
       |	Interactive ->
-	  interactive frame ctx dh ctype
+      interactive frame ctx dh ctype
       |	Save ->
-	  Save.interactive (fun _ -> ()) dh;
-	  None
+      Save.interactive (fun _ -> ()) dh;
+      None
     with
     | Failure "too late" -> (* custom for our internal viewers *)
-	dclose true dh;
-	Document.destroy_log dh false;
-	None
+    dclose true dh;
+    Document.destroy_log dh false;
+    None
     | Not_found -> 
         (* we don't know how to handle this *)
-	ctx#log (I18n.sprintf "Displaying externally");
-	interactive frame ctx dh ctype
+    ctx#log (I18n.sprintf "Displaying externally");
+    interactive frame ctx dh ctype
   with 
   | Invalid_HTTP_header e ->
       ctx#log (I18n.sprintf "Malformed type: %s" e);
@@ -352,10 +377,15 @@ and view frame ctx dh =
     unknown frame ctx dh
 
 
+(*s: constant Viewers.builtin_viewers *)
 let builtin_viewers = ref []
+(*e: constant Viewers.builtin_viewers *)
+(*s: function Viewers.add_builtin *)
 let add_builtin t v =
   builtin_viewers := (t,v) :: !builtin_viewers
+(*e: function Viewers.add_builtin *)
 
+(*s: function Viewers.reset *)
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
@@ -369,7 +399,7 @@ let reset () =
       Hashtbl.add viewers (typ,sub) External
     with
       Invalid_HTTP_header e ->
-	Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
+    Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
     l;
   let l = Tkresource.stringlist "savedTypes" [] in
   List.iter (fun ctype -> 
@@ -378,6 +408,8 @@ let reset () =
       Hashtbl.add viewers (typ,sub) Save
     with
       Invalid_HTTP_header e ->
-	Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
+    Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
     l
+(*e: function Viewers.reset *)
     
+(*e: ./viewers/viewers.ml *)

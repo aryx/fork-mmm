@@ -1,9 +1,13 @@
+(*s: ./www/url.ml *)
 open Printf
 
+(*s: enum Url.protocol (./www/url.ml) *)
 type protocol =
    FTP | HTTP | GOPHER | MAILTO | NEWS | NNTP | TELNET | WAIS | FILE | PROSPERO
  | OtherProtocol of string
+(*e: enum Url.protocol (./www/url.ml) *)
 
+(*s: function Url.string_of_protocol *)
 let string_of_protocol = function
    FTP -> "ftp"
  | HTTP -> "http"
@@ -16,8 +20,10 @@ let string_of_protocol = function
  | FILE -> "file"
  | PROSPERO -> "prospero"
  | OtherProtocol s -> s
+(*e: function Url.string_of_protocol *)
 
 
+(*s: enum Url.t (./www/url.ml) *)
 (* Not all components are used for all protocols *)
 type t = 
   { mutable protocol : protocol;
@@ -28,10 +34,16 @@ type t =
     mutable path : string option;
     mutable search: string option
   }
+(*e: enum Url.t (./www/url.ml) *)
 
+(*s: exception Url.Url_Lexing (./www/url.ml) *)
 exception Url_Lexing of string * int
+(*e: exception Url.Url_Lexing (./www/url.ml) *)
+(*s: exception Url.Invalid_url *)
 exception Invalid_url of t * string
+(*e: exception Url.Invalid_url *)
 
+(*s: function Url.string_of *)
 let string_of p =
   let buf = Ebuffer.create 128 in
   let ws = Ebuffer.output_string buf
@@ -49,7 +61,7 @@ let string_of p =
        | Some h, None -> ws (String.lowercase h)
        | Some h, Some p when p = def -> ws (String.lowercase h)
        | Some h, Some p -> 
-	  ws (String.lowercase h); wc ':'; ws (string_of_int p)
+      ws (String.lowercase h); wc ':'; ws (string_of_int p)
        | None, Some _ -> failwith "url_of_parsed"	    
 
   and write_pathsearch () =
@@ -97,8 +109,10 @@ let string_of p =
   | OtherProtocol s -> ws s; ws ":"; write_path()
   end;
   Ebuffer.get buf
+(*e: function Url.string_of *)
 
 
+(*s: function Url.distant_path *)
 (* For http only *)
 let distant_path urlp =
   match urlp.path, urlp.search with
@@ -106,4 +120,6 @@ let distant_path urlp =
    | Some p, None -> "/"^p
    | Some p, Some s -> "/"^p^"?"^s
    | None, Some s -> "/?" ^ s (* ??? *)
+(*e: function Url.distant_path *)
 
+(*e: ./www/url.ml *)

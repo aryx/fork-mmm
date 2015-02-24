@@ -1,3 +1,4 @@
+(*s: ./viewers/plain.ml *)
 open Tk
 open Unix
 open Frx_text
@@ -6,8 +7,8 @@ open Viewers
 open Feed
 
 class plain ((top : Widget.widget),
-	     (ctx : Viewers.context),
-	     (dh : Document.handle)) =
+         (ctx : Viewers.context),
+         (dh : Document.handle)) =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit Htmlw.viewer_globs (ctx,dh)
@@ -27,7 +28,7 @@ class plain ((top : Widget.widget),
       self#init
     with
       Not_found ->
-	Error.default#f (I18n.sprintf "Document not in cache anymore")
+    Error.default#f (I18n.sprintf "Document not in cache anymore")
 
   (* [finish abort?] *)
   val mutable (*private*) terminated = false
@@ -92,25 +93,25 @@ class plain ((top : Widget.widget),
     let lastwascr = ref false in
     dh.document_feed.feed_schedule
       (fun () ->
-	 try let n = dh.document_feed.feed_read buffer 0 2048 in
-	   if n = 0 then begin
-	     if !lastwascr then self#add_text "\n";
-	     self#add_text ""; (* special case to indicate end *)
-	     self#set_progress (Some !red) !red;
-	     self#finish false
-	     end
-	   else begin
-	     red := !red + n;
-	     self#set_progress size !red;
-	     let s,flag = Mstring.norm_crlf !lastwascr buffer 0 n in
-	     lastwascr := flag;
-	     self#add_text s
-	   end
-	 with
-	   Unix_error(_,_,_) ->
-	     self#set_progress size (-1);
-	     self#finish true
-	   );
+     try let n = dh.document_feed.feed_read buffer 0 2048 in
+       if n = 0 then begin
+         if !lastwascr then self#add_text "\n";
+         self#add_text ""; (* special case to indicate end *)
+         self#set_progress (Some !red) !red;
+         self#finish false
+         end
+       else begin
+         red := !red + n;
+         self#set_progress size !red;
+         let s,flag = Mstring.norm_crlf !lastwascr buffer 0 n in
+         lastwascr := flag;
+         self#add_text s
+       end
+     with
+       Unix_error(_,_,_) ->
+         self#set_progress size (-1);
+         self#finish true
+       );
 
   method di_widget = frame
   method di_abort = self#finish true
@@ -124,12 +125,17 @@ class plain ((top : Widget.widget),
   method di_update = ()
 end
 
+(*s: function Plain.display_plain *)
 (* Viewing text/plain *)
 
 let display_plain mediapars top vcontext dh =
   let viewer = new plain (top,vcontext,dh) in
   viewer#init;
   Some (viewer :> Viewers.display_info)
+(*e: function Plain.display_plain *)
 
+(*s: toplevel Plain._1 *)
 let _ =
   Viewers.add_builtin ("text","plain") display_plain
+(*e: toplevel Plain._1 *)
+(*e: ./viewers/plain.ml *)

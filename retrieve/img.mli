@@ -1,5 +1,8 @@
+(*s: ./retrieve/img.mli *)
 open Document
+(*s: signature Img.gif_anim_load *)
 val gif_anim_load : bool ref
+(*e: signature Img.gif_anim_load *)
 
 module ImageData : sig
   type t = Tkanim.imageType
@@ -19,6 +22,11 @@ module ImageData : sig
 module ImageScheduler : Scheduler.S with
     type shared_data = ImageData.t
 
+(*s: signature Img.get *)
 val get : document_id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
             Scheduler.progress_func -> unit
+(*e: signature Img.get *)
+(*s: signature Img.update *)
 val update : Url.t -> unit
+(*e: signature Img.update *)
+(*e: ./retrieve/img.mli *)
