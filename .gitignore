@@ -3,6 +3,14 @@
 external/ocamltk
 
 .md5sum_*
+*.opti
+
+*.aux
+*.brf
+*.log
+*.out
+*.tex
+*.toc
 
 # ocaml object files
 
@@ -86,3 +94,5 @@ external/ocamltk
 /crcs/crcsmmm.ml.bak
 /dependencies.marshall
 sandbox/gen/*.*
+/Browser.pdf
+/graph_code.marshall

@@ -247,6 +247,10 @@ tags:
 
 graph:
 	~/pfff/codegraph -lang cmt -build .
+check:
+	~/pfff/scheck -with_graph_code graph_code.marshall -filter 3 .
+
+# 2>&1 | grep -v stdlib | grep Function
 
 ##############################################################################
 # Pad specific rules
