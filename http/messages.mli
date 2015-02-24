@@ -50,7 +50,7 @@ type request_message = {
   request_headers : header list;
   request_body : string;
   request_auth : (string * string) option 
-      	    (* have we authentified the emitter (authtype, authuser) *)
+           (* have we authentified the emitter (authtype, authuser) *)
   }
 (*e: enum Messages.request_message *)
 

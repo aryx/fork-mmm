@@ -70,16 +70,16 @@ let internal address referer =
   let bok = Button.create fbut 
       [Text (I18n.sprintf "Send"); 
        Command 
-      	 (fun () -> 
+        (fun () -> 
        let msg = 
-      	     {dest = Textvariable.get dest;
+            {dest = Textvariable.get dest;
           (* Japanese e-mails must be in JIS code, but they must be *)
           (* already in JIS --- JPF *)
           subject = Textvariable.get subject; 
           body = Text.get tbody (TextIndex(LineChar(0,0), [])) textEnd
-      	     } in
+            } in
        sendmail msg;
-      	   destroy top)]
+          destroy top)]
   and bdismiss = Button.create fbut 
       [Text (I18n.sprintf "Dismiss"); Command (fun () -> destroy top)] in
     pack [bok] [Side Side_Left];

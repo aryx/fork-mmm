@@ -38,7 +38,7 @@ module type S =
   sig
     type shared_data
     val add_request : 
-      	Www.request -> document_id -> (Url.t -> shared_data -> unit) -> 
+       Www.request -> document_id -> (Url.t -> shared_data -> unit) -> 
       progress_func -> unit
         (* [add_request wwwr ref_did cont progress_func] *)
     val stop : document_id -> unit
@@ -48,7 +48,7 @@ module type S =
     type delayed
     val new_delayed : unit -> delayed
     val add_delayed : 
-      	delayed -> Www.request -> document_id -> 
+       delayed -> Www.request -> document_id -> 
       (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
@@ -181,9 +181,9 @@ module Make(J: Data) = struct
     try (* if we are in the cache of shared objects, apply continuation *)
       if skip_cache wr then raise Not_found
       else begin
-      	let data = J.cache_access wr.www_url did in
-      	remhost wr.www_url; (* we're done *)
-      	cont wr.www_url data
+       let data = J.cache_access wr.www_url did in
+       remhost wr.www_url; (* we're done *)
+       cont wr.www_url data
       end
     with
       Not_found ->
@@ -251,17 +251,17 @@ module Make(J: Data) = struct
               let referers = List.map fst job.conts in
               begin
             try 
-      	       	       	  let data = J.load dh referers file in
+                         let data = J.load dh referers file in
               List.iter (fun (referer,(cont,_)) -> 
                 try Printexc.print 
                 (cont dh.document_id.document_url) data
                 with _ -> flush Pervasives.stderr)
-      	       	       	    job.conts
+                           job.conts
             with (* load failed *)
               e -> 
                 Log.f (sprintf "Load error %s" 
-      	       	       	       	           (Printexc.to_string e));
-      	       	       	    J.error url job.conts
+                                          (Printexc.to_string e));
+                           J.error url job.conts
               end;
               (* we must remove from active only after 
              loading because otherwise, if loading is interactive,
@@ -283,19 +283,19 @@ module Make(J: Data) = struct
                          (error_message code) s s');
               close_out oc;
               error url job
-      	       	  | Sys_error s ->
+                 | Sys_error s ->
               Log.f (sprintf "IO error (%s) in scheduler" s);
-      	       	      close_out oc;
+                     close_out oc;
               error url job
-      	       	  | e -> 
+                 | e -> 
               Log.f (sprintf "Bug in scheduler %s"
                          (Printexc.to_string e));
-      	       	      close_out oc;
+                     close_out oc;
               error url job)
               with (* error creating tmp file *)
         Sys_error s -> 
           Log.f (sprintf "Can't create temporary file (%s)" s);
-      	       	  error url job
+                 error url job
           | e -> 
           Log.f (sprintf "Bug in scheduler %s" (Printexc.to_string e));
           error url job

@@ -29,7 +29,7 @@ let f cont dh fname endmsg =
     end
     else begin
           output oc buffer 0 n;
-      	  red := !red + n;
+         red := !red + n;
       Document.progress_log dh (!red * 100 / size)
     end
       with
@@ -101,7 +101,7 @@ let transfer wr dh dest =
       end;
       let buffer = String.create 1024 in
       dh.document_feed.feed_schedule
-      	(fun () ->
+       (fun () ->
       try
         let n = dh.document_feed.feed_read buffer 0 1024 in
         if n = 0 then begin
@@ -129,12 +129,12 @@ let save_from_string url s f =
                          (Url.string_of url) f)
      with
        Sys_error e ->
-      	 Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
      end;
      close_out oc
   with
     Sys_error e ->
-      	 Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
 (*e: function Save.save_from_string *)
 
 (*s: function Save.copy_file *)
@@ -179,7 +179,7 @@ let pipe_from_string url data cmd =
     exit 0
     | n ->
     close fd_in;
-      	Fileevent.add_fileoutput fd_out (fun () ->
+       Fileevent.add_fileoutput fd_out (fun () ->
       if !pos < len then begin
         let n = min 512 (len - !pos) in
         try
@@ -223,7 +223,7 @@ let document did arg =
   let open_selection_box act =
     Fileselect.f (I18n.sprintf "Save or pipe to file")
       (function [] -> ()
-      	      | [s] -> act s
+             | [s] -> act s
           | l -> raise (Failure "multiple selection"))
       "*" (* should be better *)
       (Filename.basename (Url.string_of did.document_url))

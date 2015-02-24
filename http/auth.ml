@@ -57,8 +57,8 @@ let rec lookup space =
      then raise Not_found 
      else
       let newdir = Filename.dirname space.auth_dir in
-      	lookup {auth_proxy = space.auth_proxy;
-      	        auth_host = space.auth_host;
+       lookup {auth_proxy = space.auth_proxy;
+               auth_host = space.auth_host;
             auth_port = space.auth_port;
         auth_dir = newdir;
         auth_realm = space.auth_realm}
@@ -148,18 +148,18 @@ let check wwwr challenge authspace =
 let edit () =
   let top =
     Toplevel.create Widget.default_toplevel 
-      	  [Class "MMMAuthorizations"] in
+         [Class "MMMAuthorizations"] in
     Wm.title_set top (I18n.sprintf "Authorizations");
     let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
       Hashtbl.iter (fun space cookie ->
-      	Listbox.insert lb End
+       Listbox.insert lb End
       [Printf.sprintf "(%s) http://%s:%d/%s" 
          space.auth_realm space.auth_host space.auth_port space.auth_dir])
-      	authorizations;
+       authorizations;
     let buts = Frame.create top [] in
     let clearb = Button.create_named buts "clear"
        [Text (I18n.sprintf "Clear"); 
-      	Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
+       Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
     and dismissb = Button.create_named buts "dismiss"
        [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] in
       pack [clearb] [Side Side_Left; Expand true];
@@ -186,7 +186,7 @@ let save () =
   with
     Unix_error(e,_,_) ->
       Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
-      	       	  (Unix.error_message e))
+                 (Unix.error_message e))
   | Sys_error s ->
       Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
 
@@ -202,7 +202,7 @@ let load () =
       let ic = open_in auth_file in
       let table = input_value ic
       and time = Unix.time() in
-      	Hashtbl.iter
+       Hashtbl.iter
           (fun spacerealm entry ->
            entry.auth_lastused <- time;
            Hashtbl.add authorizations spacerealm entry)
@@ -210,7 +210,7 @@ let load () =
     close_in ic
     with
       Sys_error s ->
-      	Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+       Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
  else 
    Error.default#f (I18n.sprintf "No authorisation file defined")
 (*e: function Auth.load *)
@@ -224,7 +224,7 @@ let init () =
     and time = Unix.time () in
     Hashtbl.iter 
       (fun space entry ->
-      	let expiration_time = entry.auth_lastused +. lifetime in
+       let expiration_time = entry.auth_lastused +. lifetime in
     if time > expiration_time then remove := space :: !remove)
       authorizations;
     List.iter (Hashtbl.remove authorizations) !remove

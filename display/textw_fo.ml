@@ -40,25 +40,25 @@ let create namer spec top ctx =
     match spec with
       TopFormatter pscrolling ->
     let f,t = 
-  	  if pscrolling then begin
-  	   let f,t = 
-  	     Ctext.create top [Wrap WrapWord; State Disabled] true in
-  	     Canvas.configure (Winfo.parent t)
-  			      [Background (NamedColor !html_bg)];
+     if pscrolling then begin
+      let f,t = 
+        Ctext.create top [Wrap WrapWord; State Disabled] true in
+        Canvas.configure (Winfo.parent t)
+           [Background (NamedColor !html_bg)];
          other_bg := Canvas.configure (Winfo.parent t);
-  	     f, t
-  	   end
-  	  else
-  	    new_scrollable_text top 
-  	       [Wrap WrapWord; State Disabled]
-  	       true 
+        f, t
+      end
+     else
+       new_scrollable_text top 
+          [Wrap WrapWord; State Disabled]
+          true 
     in
     (* Try to solve focus problem -- JPF *)
     bind t [[],Enter] (BindSet ([], fun _ -> Focus.set t));
     f, t
     | NestedFormatter -> (* Embedded formatters (tables) *)
-      	let t = Text.create_named top (namer())
-      	     [BorderWidth (Pixels 0); State Disabled; 
+       let t = Text.create_named top (namer())
+            [BorderWidth (Pixels 0); State Disabled; 
               Relief Sunken; Wrap WrapNone;
           TextWidth 1; TextHeight 1]
     in
@@ -71,12 +71,12 @@ let create namer spec top ctx =
       try [PadY (Pixels (int_of_string (List.assoc "marginheight" args)))]
       with Not_found | Failure "int_of_string" -> []
     in
-  	let f,t = 
-  	  Ctext.create top (marginwidth @ marginheight @ 
+   let f,t = 
+     Ctext.create top (marginwidth @ marginheight @ 
                 [TextHeight 1; 
                   Wrap WrapWord; State Disabled]) true in
-  	Canvas.configure (Winfo.parent t)
-  	  [Background (NamedColor !html_bg)];
+   Canvas.configure (Winfo.parent t)
+     [Background (NamedColor !html_bg)];
          other_bg := Canvas.configure (Winfo.parent t);
 
     f, t
@@ -247,10 +247,10 @@ let create namer spec top ctx =
 
     format_string = 
       (function s -> 
-      	 if not !prev_is_newline then (* we are in text *)
-      	    put_text (Html.beautify !trailing_space s)
+        if not !prev_is_newline then (* we are in text *)
+           put_text (Html.beautify !trailing_space s)
      else (* decide if we should start a text *)
-      	  let bs = Html.beautify true s in
+         let bs = Html.beautify true s in
         if bs = "" then () (* it was all spaces *)
         else begin
           put_text bs;
@@ -451,18 +451,18 @@ let create namer spec top ctx =
     TopFormatter true -> (* this is pscrolling mode *)
       (function
           None -> (* no place in particular *)
-      	if !prev_frag then begin
+       if !prev_frag then begin
           try Canvas.yview (Winfo.parent thtml) (MoveTo !view_mem)
           with Protocol.TkError _ -> ()
-      	end;
-      	prev_frag := false
+       end;
+       prev_frag := false
         | Some s ->
-      	if not !prev_frag then begin
+       if not !prev_frag then begin
           try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
           with Protocol.TkError _ -> ()
-      	end;
-      	prev_frag := true;
-      	if s <> "" then
+       end;
+       prev_frag := true;
+       if s <> "" then
           try
             let _,y,_,_,_  = Text.dlineinfo thtml
             (TextIndex (Mark ("#"^s), [LineOffset (-2)]))
@@ -474,20 +474,20 @@ let create namer spec top ctx =
       |	_ ->
       (function
           None -> (* no place in particular *)
-         	if !prev_frag then begin
+          if !prev_frag then begin
           (* we were at view_mem *)
           try Text.yview thtml (MoveTo !view_mem)
           with Protocol.TkError _ -> ()
-         	end;
-         	prev_frag := false
+          end;
+          prev_frag := false
         | Some s -> (* go to s *)
-         	if not !prev_frag then begin
+          if not !prev_frag then begin
           (* we were not in some special place, remember it *)
           try view_mem := fst (Text.yview_get thtml)
           with Protocol.TkError _ -> ()
-         	end;
-         	prev_frag := true;
-         	if s <> "" then
+          end;
+          prev_frag := true;
+          if s <> "" then
           try Text.yview_index thtml 
               (TextIndex (Mark ("#"^s), [LineOffset (-1)]))
           with Protocol.TkError _ -> ())

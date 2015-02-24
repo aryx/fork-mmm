@@ -108,7 +108,7 @@ let gethostbyname h =
   with
     Not_found ->
       let addr = Unix.gethostbyname h in
-      	 Hashtbl.add dns h addr;
+        Hashtbl.add dns h addr;
      addr
 (*e: function Munix.gethostbyname *)
 

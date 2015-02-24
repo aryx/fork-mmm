@@ -21,7 +21,7 @@ let set_initial_width wid =
     let w = !ewidth / 10 in
     if !debug then
       Log.f (sprintf "Setting initial width of %s to %d"
-   	             (Widget.name wid) w);
+                 (Widget.name wid) w);
     Text.configure wid [TextWidth w];
     Some w
   end
@@ -67,16 +67,16 @@ let set_initial_height wid =
         | _ -> assert false)
         embedded;
       Hashtbl.iter (fun _ r -> height := !height + !r / 15) lines
-      	end;
-    	let curheight = int_of_string (cget wid CHeight) in
+       end;
+     let curheight = int_of_string (cget wid CHeight) in
     if !height > curheight then begin
       if !debug then 
         Log.f (sprintf "Setting initial height of %s to %d (%d)"
-   	                   (Widget.name wid) !height (l-1));
-      	  Text.configure wid [TextHeight (!height)]
+                       (Widget.name wid) !height (l-1));
+         Text.configure wid [TextHeight (!height)]
     end else if !debug then 
         Log.f (sprintf "Initial height of %s is %d (%d)"
-   	                   (Widget.name wid) !height (l-1))
+                       (Widget.name wid) !height (l-1))
       end
   | _ -> ()
 (*e: function Fit.set_initial_height *)
@@ -155,7 +155,7 @@ let horiz wid stop continuation =
       last_visible := visible;
       let newsize = curwidth + (if visible < 0.1 then 5 else 1) in
       if !debug then
-      	Log.f (sprintf "%s H %d %f %f newsize: %d"
+       Log.f (sprintf "%s H %d %f %f newsize: %d"
                    (Widget.name wid) curwidth first last newsize);
       Text.configure wid [TextWidth newsize];
     end
@@ -193,7 +193,7 @@ let vert wid =
       (* Try again later *)
       if not !delayed then begin
     delayed := true;
-      	bind wid [[], Expose] (BindSet ([], fun _ ->
+       bind wid [[], Expose] (BindSet ([], fun _ ->
       bind wid [[], Expose] BindRemove;
       delayed := false;
       check()))
@@ -210,7 +210,7 @@ let vert wid =
       end
     else begin
       let delta = 
- 	if visible = !last_visible then (stuck := true; 1) 
+  if visible = !last_visible then (stuck := true; 1) 
         else if last = 0.0 then (last_visible := 0.0; 1)
     else begin
       last_visible := visible; stuck := false;
@@ -237,7 +237,7 @@ let vert wid =
     let curheight = int_of_string (cget wid CHeight) in
     if !newsize > curheight then begin
       if !debug then
-      	Log.f (sprintf "%s V %d %f %f newsize: %d"
+       Log.f (sprintf "%s V %d %f %f newsize: %d"
                (Widget.name wid) curheight first last !newsize);
       Text.configure wid [TextHeight !newsize]
     end
@@ -256,7 +256,7 @@ let bound_check wid width =
                   (Winfo.reqwidth wid));
       if ei.ev_Width >= width then begin
     stop_now := true;
- 	bind wid [[], Configure] BindRemove
+  bind wid [[], Configure] BindRemove
       end)));
   (fun () -> !stop_now)
 (*e: function Fit.bound_check *)

@@ -32,7 +32,7 @@ let contents h =
   let rec walk e =
     l := e :: !l;
     match e.h_next with
-      	None -> !l
+       None -> !l
       | Some e -> walk e
   in walk h.h_start
 (*e: function History.contents *)
@@ -101,8 +101,8 @@ let create =
   let keycnter = ref 0 in
   (fun did ->
     let e = { h_did = did;
-      	      h_fragment = None;
-      	      h_prev = None;
+             h_fragment = None;
+             h_prev = None;
           h_next = None} in
     { h_key = (incr keycnter; !keycnter);
       h_start = e;
@@ -114,14 +114,14 @@ let create =
 (*s: function History.back *)
 let back h =
     match h.h_current.h_prev with
-      	None -> None
+       None -> None
       | Some e -> h.h_current <- e; Some (e.h_did, e.h_fragment)
 (*e: function History.back *)
 
 (*s: function History.forward *)
 let forward h =
     match h.h_current.h_next with
-      	None -> None
+       None -> None
       | Some e -> h.h_current <-e ; Some (e.h_did, e.h_fragment)
 (*e: function History.forward *)
 

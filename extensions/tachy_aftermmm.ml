@@ -137,21 +137,21 @@ class default_tachy (top : Widget.widget) =
   method start =
     let c =
       Canvas.create_named top "tachymeter"
-      	[Width (Pixels 56); Height (Pixels 60); 
-      	  BorderWidth (Pixels 0);
-      	  HighlightThickness (Pixels 0);
-      	  TakeFocus true (* pl3 fix *)] in
+       [Width (Pixels 56); Height (Pixels 60); 
+         BorderWidth (Pixels 0);
+         HighlightThickness (Pixels 0);
+         TakeFocus true (* pl3 fix *)] in
     (* Use colors so that images are not transparent *)  
     (*
     let tachy_image = 
       begin
-      	try
+       try
       let bgc = Tk.cget c CBackground in
       Protocol.tkEval 
         [|Protocol.TkToken "set";
           Protocol.TkToken "TRANSPARENT_GIF_COLOR";
           Protocol.TkToken bgc |]; () 
-      	with _ -> ()
+       with _ -> ()
       end;
       *)
     let tachy_image = Frx_misc.create_photo [Data tachy_data]
@@ -160,8 +160,8 @@ class default_tachy (top : Widget.widget) =
 
     i_park <-
       Canvas.create_rectangle c 
-    	(Pixels 50) (Pixels 4) 
-    	(Pixels 53) (Pixels 7) [FillColor Black];
+     (Pixels 50) (Pixels 4) 
+     (Pixels 53) (Pixels 7) [FillColor Black];
     
     kilos <-
       Canvas.create_text c (Pixels 28) (Pixels 52) [Text "0"; Font "-adobe-helvetica-medium-r-*-*-8-*-*-*-*-*-*-*"];
@@ -174,7 +174,7 @@ class default_tachy (top : Widget.widget) =
 
     let i_tachy =
       Canvas.create_image c (Pixels 56) (Pixels 0)
-      	[ImagePhoto tachy_image; Anchor NE]
+       [ImagePhoto tachy_image; Anchor NE]
 
     in
 
@@ -236,24 +236,24 @@ class default_tachy (top : Widget.widget) =
     if Winfo.exists canvas then
       if n = 0 then begin
     Canvas.configure_text canvas pendings [Text ""];
-      	Canvas.lower_bot canvas pendings
+       Canvas.lower_bot canvas pendings
       end
       else begin
     Canvas.configure_text canvas pendings 
       [Text (string_of_int n)];
-      	Canvas.raise_top canvas pendings
+       Canvas.raise_top canvas pendings
       end
 
   method report_busy busy =
     if Winfo.exists canvas then
       if busy then begin
-      	Canvas.lower_bot canvas pendings;
+       Canvas.lower_bot canvas pendings;
     Canvas.configure_rectangle canvas i_park [FillColor Red;
                           Outline Red];
     update_idletasks()
       end
       else begin
-      	Canvas.raise_top canvas pendings;
+       Canvas.raise_top canvas pendings;
     Canvas.configure_rectangle canvas i_park [FillColor Black;
                           Outline Black]
       end

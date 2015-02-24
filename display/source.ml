@@ -38,13 +38,13 @@ let view attach did redisplay errors annotations coding =
      (fun t ->
         if !Lang.japan then begin
           (* In Japanese mode, We must insert line by line. *) 
-  	      let ic = open_in fname 
-  	      and buf = String.create 2048
+         let ic = open_in fname 
+         and buf = String.create 2048
           and prevbuf = ref ""
-  	      in
-  	       try
-  		 while true do
-  		   let n = input ic buf 0 2048 in
+         in
+          try
+     while true do
+       let n = input ic buf 0 2048 in
            let txt = 
              if n = 2048 then begin
                (* try to find last newline *)
@@ -81,24 +81,24 @@ let view attach did redisplay errors annotations coding =
            Text.insert t textEnd txt [];
            (* Then EOF check *)
            if n = 0 then raise End_of_file
-  		 done
-  	       with
-  		 End_of_file -> close_in ic
+     done
+          with
+     End_of_file -> close_in ic
         end else begin
-  	      let ic = open_in fname 
-  	      and buf = String.create 2048
-  	      in
-  	       try
-  		 while true do
-  		   let n = input ic buf 0 2048 in
-  		    if n = 0 then raise End_of_file
-  		    else
-  		    Text.insert t textEnd (
-  		      if n = 2048 then buf else String.sub buf 0 n)
-  		      []
-  		 done
-  	       with
-  		 End_of_file -> close_in ic
+         let ic = open_in fname 
+         and buf = String.create 2048
+         in
+          try
+     while true do
+       let n = input ic buf 0 2048 in
+        if n = 0 then raise End_of_file
+        else
+        Text.insert t textEnd (
+          if n = 2048 then buf else String.sub buf 0 n)
+          []
+     done
+          with
+     End_of_file -> close_in ic
         end
        ),
          (* commit *)
@@ -151,7 +151,7 @@ let view attach did redisplay errors annotations coding =
     let rec f = function
         [] -> raise Not_found
       | (s,e,msg)::l ->
-      	 if Text.compare t s LE idx & Text.compare t idx LE e then msg
+        if Text.compare t s LE idx & Text.compare t idx LE e then msg
      else f l in
     f !error_idx in
   let show_error = Text.yview_index t in
@@ -160,13 +160,13 @@ let view attach did redisplay errors annotations coding =
     let current = ref None in
     (fun () ->
       match !current with
-      	None -> (* select the first error *)
+       None -> (* select the first error *)
       let (s,e,_) = List.hd !error_idx in
        current := Some e;
        show_error s
       | Some s -> (* select the next one *)
-      	 try
-      	  let (s,e) = Text.tag_nextrange t "errors" s textEnd in
+        try
+         let (s,e) = Text.tag_nextrange t "errors" s textEnd in
        current := Some (TextIndex (e,[]));
        show_error (TextIndex(s,[]))
      with _ -> (* no more *)
@@ -184,11 +184,11 @@ let view attach did redisplay errors annotations coding =
         !errors;
     match List.length !errors with
       0 ->
-      	Button.configure err [Text (I18n.sprintf "No Errors"); State Disabled]
+       Button.configure err [Text (I18n.sprintf "No Errors"); State Disabled]
     | n ->
     Button.configure err
         [Text (I18n.sprintf "%d errors" (List.length !errors));
-      	     State Normal; Command loop_in_errors]
+            State Normal; Command loop_in_errors]
   and decorate = annotate t
   in
   let reset () =
@@ -198,14 +198,14 @@ let view attach did redisplay errors annotations coding =
         [] -> ()
       | [x] -> ()
       | s::e::l ->
-      	Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
-      	remall l
+       Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
+       remall l
       in
     remall (Text.tag_ranges t "errors");
     errors := [];
     Button.configure err 
-      	[Text (I18n.sprintf "Display Errors"); Command mark_errors;
-      	 State Normal]
+       [Text (I18n.sprintf "Display Errors"); Command mark_errors;
+        State Normal]
 
   in
      Button.configure commit
@@ -216,9 +216,9 @@ let view attach did redisplay errors annotations coding =
           Button.configure save
           [Command (fun () -> reset(); f t; redisplay())]);
      Button.configure err 
-      	[Text (I18n.sprintf "Display Errors");
+       [Text (I18n.sprintf "Display Errors");
      Command (fun () -> mark_errors(); decorate !annotations);
-      	 State Normal];
+        State Normal];
      Text.configure t [Background (NamedColor "white")];
      Text.tag_configure t "errors" [Underline true];
      Text.tag_bind t "errors" [[], Enter]

@@ -55,7 +55,7 @@ let meter frame =
         if cur <> 0 then begin
           let w = Lazy.force width / 16 in
           Canvas.coords_set (Lazy.force canv) (Lazy.force rect)
-          	[ Pixels (1 + w * !rotate); Pixels 1; 
+           [ Pixels (1 + w * !rotate); Pixels 1; 
           Pixels (1 + w * (!rotate + 2)); Pixels 4 ];
           rotate := (!rotate + 1) mod 15
         end)

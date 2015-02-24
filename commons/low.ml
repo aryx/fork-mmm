@@ -72,9 +72,9 @@ let fork () =
       (*
       Printf.eprintf "%d\n" p;
       begin match s with
-      	 WEXITED n -> Printf.eprintf "Exit %d\n" n
+        WEXITED n -> Printf.eprintf "Exit %d\n" n
        | WSIGNALED(n,_) -> 
-      	    Printf.eprintf "SIG %d\n" n
+           Printf.eprintf "SIG %d\n" n
        | WSTOPPED n -> Printf.eprintf "Stopped %d\n" n
       end;
       flush Pervasives.stderr;

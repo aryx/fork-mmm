@@ -123,7 +123,7 @@ and f request retry cont =
      let req,cache = Protos.get request.www_url.protocol in
       Started (req request
         {document_finish = cont.document_finish;
-      	 document_process = http_check cache retry cont request})
+        document_process = http_check cache retry cont request})
 
    with Not_found ->
       Www.rem_active_cnx request.www_url;
@@ -153,7 +153,7 @@ let code200 wwwr dh = Ok
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 wwwr dh =
   Stop (I18n.sprintf "Request fulfilled.\n(%s)"
-      	       	     (status_msg dh.document_headers))
+                    (status_msg dh.document_headers))
 (*e: function Retrieve.code204 *)
 
 (*s: function Retrieve.forward *)
@@ -169,7 +169,7 @@ let forward wwwr dh =
         wwwr.www_error#choose (I18n.sprintf 
          "Destination for your POST request has changed\n\
               from %s\nto %s\nConfirm action ?"
-      	     (Url.string_of wwwr.www_url) newurl)
+            (Url.string_of wwwr.www_url) newurl)
     | _ -> true 
      then begin (* consider forwarding as a link *)
        wwwr.www_logging "Forwarding";
@@ -181,8 +181,8 @@ let forward wwwr dh =
        end
      else 
       (* not forwarding a moved POST. We show the document after all,
-      	 since some people (servers ?) use this trick to show the results
-      	 of a POST, despite what the protocol says about this *)
+        since some people (servers ?) use this trick to show the results
+        of a POST, despite what the protocol says about this *)
        Ok
   with 
     Not_found -> 

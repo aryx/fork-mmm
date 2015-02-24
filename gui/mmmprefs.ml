@@ -107,7 +107,7 @@ let html top =
       (fun v ->
      let color = Textvariable.get v in
         Textw_fo.html_bg := color;
- 	    (* transparent GIF hack, for the initial images *)
+      (* transparent GIF hack, for the initial images *)
         Textvariable.set (Textvariable.coerce "TRANSPARENT_GIF_COLOR")
                          color;
             (* set the resource for each possible class of embedded windows *)
@@ -148,7 +148,7 @@ let images top =
   family top (I18n.sprintf "Images") [
     bool_pref "No images at all" Imgload.no_images;
     option_pref "Image loading" image_loading;
-      	(* image_loading_i image_loading_s image_loading_p; *)
+       (* image_loading_i image_loading_s image_loading_p; *)
     int_pref "Max image connections" Img.ImageScheduler.maxactive;
     int_pref "Max image connections (same host)" Img.ImageScheduler.maxsamehost;
     float_pref "Gamma correction" Img.ImageData.gamma;

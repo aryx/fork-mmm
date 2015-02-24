@@ -61,7 +61,7 @@ type pref_type =
  | Int of int ref
  | Float of float ref
  | AbstractType of (Textvariable.textVariable -> unit) * 
-      	       	 (Textvariable.textVariable -> unit)
+                (Textvariable.textVariable -> unit)
                  (* init, set  as defined below *)
 (*e: enum Prefs.pref_type (./gui/prefs.ml) *)
 
@@ -107,13 +107,13 @@ let set_pref {pref_type = typ; pref_variable = v} = match typ with
      let s = Textvariable.get v in
       begin try r := int_of_string s
       with Failure "int_of_string" ->
-      	     pref_error (I18n.sprintf "Not an integer: %s" s)
+            pref_error (I18n.sprintf "Not an integer: %s" s)
       end
  | Float r ->
      let s = Textvariable.get v in
       begin try r := float_of_string s
       with Failure "float_of_string" ->
-      	     pref_error (I18n.sprintf "Not a float: %s" s)
+            pref_error (I18n.sprintf "Not a float: %s" s)
       end
  | AbstractType(_,s) -> s v
 (*e: function Prefs.set_pref *)
@@ -352,8 +352,8 @@ let save_file prefmaps f =
     with
       Sys_error _ 
     | End_of_file ->
-  	(* the delimiter is found, no delimiter in the file
-  	   or no pref file is found *)
+   (* the delimiter is found, no delimiter in the file
+      or no pref file is found *)
     output_string oc (delimiter ^ "\n");
     List.iter (
     PrefMap.iter (fun name data ->
@@ -413,7 +413,7 @@ let family top title preff =
 
 let rec init filename status interactive mute =
   let top = Toplevel.create_named Widget.default_toplevel "prefs" 
-      	       	  [Class "MMMPrefs"] in
+                 [Class "MMMPrefs"] in
    Wm.title_set top (I18n.sprintf "MMM Preferences");
    Wm.withdraw top;
    status := Some top;
@@ -427,7 +427,7 @@ let rec init filename status interactive mute =
   let mbar = Frame.create_named top "menubar" [] in
   let file = 
       Menubutton.create_named mbar "file"
-      	 [Text (I18n.sprintf "File"); UnderlinedChar 0]
+        [Text (I18n.sprintf "File"); UnderlinedChar 0]
   in
   pack [file][Side Side_Left];
   pack [mbar][Side Side_Top; Anchor W; Fill Fill_X];
@@ -481,7 +481,7 @@ let rec init filename status interactive mute =
                              s)
               | l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
-      	"*")
+       "*")
       (Filename.basename (Textvariable.get preffilev))
       false
       false
@@ -494,15 +494,15 @@ let rec init filename status interactive mute =
         | [s] ->
         Textvariable.set preffilev s;
         filename := s;
-  	    begin
+       begin
               try 
         save_file (List.map (fun f -> f.family_save()) families) s;
         dismiss()
-  	      with Failure s -> pref_error s
+         with Failure s -> pref_error s
             end
         | l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
-      	"*")
+       "*")
       (Filename.basename (Textvariable.get preffilev))
       false
       false
@@ -524,11 +524,11 @@ let rec init filename status interactive mute =
   (* Fill in the menu *)
   let mfile = Menu.create_named file "filemenu" [] in
     Menu.add_command mfile 
-      	[Label (I18n.sprintf "Load"); Command load; UnderlinedChar 0];
+       [Label (I18n.sprintf "Load"); Command load; UnderlinedChar 0];
     Menu.add_command mfile 
-      	[Label (I18n.sprintf "Save"); Command save; UnderlinedChar 0];
+       [Label (I18n.sprintf "Save"); Command save; UnderlinedChar 0];
     Menu.add_command mfile 
-      	[Label (I18n.sprintf "Save As"); Command save_as; UnderlinedChar 0];
+       [Label (I18n.sprintf "Save As"); Command save_as; UnderlinedChar 0];
     Menu.add_command mfile 
         [Label (I18n.sprintf "Dismiss"); Command dismiss; UnderlinedChar 0];
     Menubutton.configure file [Menu mfile];

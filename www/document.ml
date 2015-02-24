@@ -76,7 +76,7 @@ let new_stamp () =
 let document_id wwwr =
   match wwwr.www_link.h_method with
     POST _  ->
-      	 { document_url = wwwr.www_url; document_stamp = new_stamp()}
+        { document_url = wwwr.www_url; document_stamp = new_stamp()}
   | _ -> { document_url = wwwr.www_url; document_stamp = no_stamp}
 (*e: function Document.document_id *)
 
@@ -125,7 +125,7 @@ let add_log dh initmsg abort =
   let finished msg =
     putmsg msg;
     Button.configure b 
-      	[Text (I18n.sprintf "Ok"); 
+       [Text (I18n.sprintf "Ok"); 
          Command (fun () -> if Winfo.exists t then destroy t)] in
   let iconified = ref true in
   let logger = {

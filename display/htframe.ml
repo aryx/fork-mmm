@@ -140,20 +140,20 @@ let add_frames load_frames kill_body top mach =
       and delta_y = ref 0 and delta_rely = ref 0.
       in
       List.iter (function
-      	| Nolength | LengthRel _ -> assert false
-      	| LengthPixels n ->
+       | Nolength | LengthRel _ -> assert false
+       | LengthPixels n ->
         place_opts := Width (Pixels n) :: !place_opts;
         delta_x := n
-      	| LengthRatio w -> 
+       | LengthRatio w -> 
         place_opts := RelWidth w :: !place_opts;
         delta_relx := w)
     cell.cell_width;
       List.iter (function
-      	| Nolength | LengthRel _ -> assert false
-      	| LengthPixels n ->
+       | Nolength | LengthRel _ -> assert false
+       | LengthPixels n ->
         place_opts := Height (Pixels n) :: !place_opts;
         delta_y := n
-      	| LengthRatio w -> 
+       | LengthRatio w -> 
         place_opts := RelHeight w :: !place_opts;
         delta_rely := w)
     cell.cell_height;
@@ -274,16 +274,16 @@ let add_frames load_frames kill_body top mach =
           let src = get_attribute t "src"
           and name = try get_attribute t "name" with Not_found -> ""
           and border = 
-          	try int_of_string (get_attribute t "frameborder")
-          	with Failure "int_of_string" -> 
+           try int_of_string (get_attribute t "frameborder")
+           with Failure "int_of_string" -> 
         (* compatibility ? *)
           if String.lowercase (get_attribute t "frameborder") = "no"
           then 0 else 1
           and scrolling = String.lowercase (get_attribute t "scrolling")
           in
           let borderopts = 
-          	if border = 0 then [BorderWidth (Pixels 0)]
-          	else [BorderWidth (Pixels border); Relief Ridge]
+           if border = 0 then [BorderWidth (Pixels 0)]
+           else [BorderWidth (Pixels border); Relief Ridge]
           in
           set.(!ri).(!rj).cell_contents <-
          Some (Frame { frame_src = src;
@@ -294,7 +294,7 @@ let add_frames load_frames kill_body top mach =
           next_cell set ri rj
         with
           Not_found -> 
-          	raise (Invalid_Html "missing src in <FRAME>")
+           raise (Invalid_Html "missing src in <FRAME>")
       end)
     ignore_close;
 

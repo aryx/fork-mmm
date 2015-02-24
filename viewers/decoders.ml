@@ -36,7 +36,7 @@ let gzip dh =
       close gread; close gwrite;
      (* it is safe to close feed because the son has a copy *)
       let newdh =
-      	{ document_id = dh.document_id;
+       { document_id = dh.document_id;
       document_referer = dh.document_referer;
           document_status = dh.document_status;
       document_headers = rem_contentencoding dh.document_headers;

@@ -136,7 +136,7 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
     
   type html_behavior = {
         tag_open  : formatter -> tag -> unit;
-  	tag_close : formatter -> unit
+   tag_close : formatter -> unit
     }
     
   let ignore_open = fun _ _ -> ()
@@ -322,11 +322,11 @@ mach#add_tag "base"
     (fun fo tag ->
       begin 
     try mach#set_target (get_attribute tag "target")
-      	with Not_found -> ()
+       with Not_found -> ()
       end;
       begin 
     try mach#set_base (get_attribute tag "href")
-      	with Not_found -> 
+       with Not_found -> 
     raise (Invalid_Html "HREF required in BASE")
       end)
     ignore_close;
@@ -402,7 +402,7 @@ List.iter (function headnum ->
          mach#add_tag (sprintf "h%d" headnum)
           (open_header headnum)
           close_header)
-      	  [1;2;3;4;5;6];
+         [1;2;3;4;5;6];
 
 (*
  * 5.5.1 Paragraph: <P>

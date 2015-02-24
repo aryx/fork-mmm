@@ -59,7 +59,7 @@ class plain ((top : Widget.widget),
     pack [hgbas] [Side Side_Bottom; Fill Fill_X];
     let (headgroup,_,_,_,_) = 
       Htmlw.html_head_ui dh.document_headers (fun () -> ()) (ref false)
-      	frame ctx in 
+       frame ctx in 
     pack [headgroup][Side Side_Top; Fill Fill_X];
     (* Scrollable text widget *)
     let hgroup = Frame.create_named frame "textw" [Class "Plain"]

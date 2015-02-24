@@ -41,8 +41,8 @@ module EmbeddedData =
       with
         Not_found ->
           let doc = { document_address = dh.document_id.document_url;
-              	  document_data = FileData (file, true);
-              	  document_info = dh.document_headers} in
+                 document_data = FileData (file, true);
+                 document_info = dh.document_headers} in
           Cache.add dh.document_id doc;
           Cache.finished dh.document_id;
           doc
@@ -98,12 +98,12 @@ let embedded_viewer frame ctx doc =
   with
     Not_found ->
       let t = I18n.sprintf "Embed Error: no type for document %s" 
-      	       	           (Url.string_of doc.document_address) in 
+                          (Url.string_of doc.document_address) in 
       let l = Label.create frame [Text t] in pack [l][]
   | Invalid_HTTP_header e ->
       let t = 
-      	I18n.sprintf "Embed Error: malformed type %s (%s)"
-      	  (contenttype doc.document_info) e in
+       I18n.sprintf "Embed Error: malformed type %s (%s)"
+         (contenttype doc.document_info) e in
       let l = Label.create frame [Text t] in pack [l][]
 (*e: function Embed.embedded_viewer *)
 
@@ -240,10 +240,10 @@ let update frame embed_ctx doc notchanged =
       let given_type = List.assoc "type" embed_ctx#params in
       let ((typ,subtyp), parms) = Lexheaders.media_type given_type in
       try
-     	let viewer = 
+      let viewer = 
       try Hashtbl.find embedded_viewers (typ,subtyp)
       with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
-     	in
+      in
        EmbeddedScheduler.add_request
        (rewrite_wr (Www.make link))
        (embed_ctx#base)
@@ -258,7 +258,7 @@ let update frame embed_ctx doc notchanged =
      smart_viewer (viewer parms) frame embed_ctx doc)
        (Progress.meter frame)
       with
-     	Not_found -> (* no viewer for this *)
+      Not_found -> (* no viewer for this *)
       let t = 
             I18n.sprintf "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
@@ -272,7 +272,7 @@ let update frame embed_ctx doc notchanged =
     with
       Not_found -> (* not type given, we have to retrieve to know *)
        (* Firing the request *)
-       	try
+        try
       EmbeddedScheduler.add_request
         (rewrite_wr (Www.make link))
         (embed_ctx#base)
@@ -280,12 +280,12 @@ let update frame embed_ctx doc notchanged =
      (* In general, we don't know the type before we get the document *)
         (fun url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
         (Progress.meter frame)
-       	with
+        with
       Invalid_request (w,msg) ->
         let t = I18n.sprintf "Embed Error: %s\n(%s)"
         (Url.string_of w.www_url) msg in
         pack [Message.create frame [Text t]][]
-       	| Invalid_link err ->
+        | Invalid_link err ->
         let t = I18n.sprintf "Embed Error: invalid link" in
         pack [Message.create frame [Text t ]][]
   with

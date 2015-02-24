@@ -73,11 +73,11 @@ let request nav usecache wrapwr process specific =
   and handle_wr wr =
     try
       match wr.www_url.protocol with
-      	MAILTO -> Mailto.f wr
+       MAILTO -> Mailto.f wr
     (* mailto: is really a pain. It doesn't fit the retrieval semantics
        of WWW requests. *)
       | _ ->
-      	  if (not usecache) || dont_check_cache wr then retrieve_and_handle wr
+         if (not usecache) || dont_check_cache wr then retrieve_and_handle wr
       else
           (* If the the document can be cached, then it is with no_stamp *)
         let did = {document_url = wr.www_url; document_stamp = no_stamp} in
@@ -85,27 +85,27 @@ let request nav usecache wrapwr process specific =
           specific nav did wr
         with
           Not_found ->
-              	try
-         	  let doc = Cache.find did in
-         	  try (* display it from source *)
+               try
+            let doc = Cache.find did in
+            try (* display it from source *)
                 process nav wr (Cache.make_handle wr doc)
-         	  with
+            with
             Sys_error s ->
               wr.www_error#f 
             (I18n.sprintf
                "Cache error occurred during save of temporary buffer (%s)"
                s)
-         	  | Unix_error (e,fname,arg) ->
+            | Unix_error (e,fname,arg) ->
               wr.www_error#f
             (I18n.sprintf 
                "Cache error occurred when opening temporary file\n%s: %s (%s)"
                fname (Unix.error_message e) arg)
-              	with 
-         	  Not_found -> (* we don't have the document *)
+               with 
+            Not_found -> (* we don't have the document *)
             retrieve_and_handle wr
     with
       Duplicate url ->
-       	wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
+        wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
 
   and handle_link h =
     try (* Convert the link into a request *)
@@ -114,9 +114,9 @@ let request nav usecache wrapwr process specific =
       handle_wr (wrapwr wr)
     with
       Invalid_link msg ->
-      	nav.nav_error#f (I18n.sprintf "Invalid link")
+       nav.nav_error#f (I18n.sprintf "Invalid link")
     | Invalid_request (wr, msg) ->
-      	nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
+       nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
                    (Url.string_of wr.www_url) msg)
   in
   handle_link
@@ -158,7 +158,7 @@ let process_save dest = fun nav wr dh ->
     200 -> Save.transfer wr dh dest
   | n ->
     if wr.www_error#choose 
-      	 (I18n.sprintf "Request for %s\nreturned %d %s.\nDo you wish to save ?"
+        (I18n.sprintf "Request for %s\nreturned %d %s.\nDo you wish to save ?"
          (Url.string_of wr.www_url) n (status_msg dh.document_headers))
     then Save.transfer wr dh dest
     else dclose true dh
@@ -266,8 +266,8 @@ class stdctx (did, nav) =
     let frame_goto targets hlink =
       try
       (* target semantics PR-HTML 4.0 16.3.2 *)
-      	match List.assoc "target" hlink.h_params with
-      	| "_blank" ->
+       match List.assoc "target" hlink.h_params with
+       | "_blank" ->
         let w = Toplevel.create Widget.default_toplevel [] in
         Embed.add { 
         embed_hlink = hlink;
@@ -275,7 +275,7 @@ class stdctx (did, nav) =
         embed_context = make_embed_ctx w targets;
         embed_map = Maps.NoMap;
         embed_alt = "" }
-      	| "_self" ->
+       | "_self" ->
         let w = List.assoc "_self" targets in
         Embed.add {
         embed_hlink = hlink;
@@ -283,8 +283,8 @@ class stdctx (did, nav) =
         embed_context = make_embed_ctx w targets;
         embed_map = Maps.NoMap;
         embed_alt = "" }
-      	| "_top" -> follow_link targets hlink
-      	| "_parent" ->
+       | "_top" -> follow_link targets hlink
+       | "_parent" ->
         let w = List.assoc "_parent" targets in
         Embed.add { 
         embed_hlink = hlink;
@@ -292,7 +292,7 @@ class stdctx (did, nav) =
         embed_context = make_embed_ctx w targets;
         embed_map = Maps.NoMap;
         embed_alt = "" }
-      	| s ->
+       | s ->
         let w = List.assoc s targets in
         Embed.add {
         embed_hlink = hlink;
@@ -301,7 +301,7 @@ class stdctx (did, nav) =
         embed_map = Maps.NoMap;
         embed_alt = "" }
       with
-      	Not_found -> (* if we are in a frame, it is available as _self *)
+       Not_found -> (* if we are in a frame, it is available as _self *)
       try
         let w = List.assoc "_self" targets in
         Embed.add {
@@ -419,7 +419,7 @@ let update nav did nocache =
                (Url.string_of wr.www_url))
     | 200 | _ ->
         (* kill the previous displayed window *)
-    	Gcache.displace nav.nav_id did;
+     Gcache.displace nav.nav_id did;
     (* we may have been redirected : check new did *)
     let oldurl = Url.string_of did.document_url in
     let newurl = Url.string_of dh.document_id.document_url in
@@ -427,8 +427,8 @@ let update nav did nocache =
     if add_hist then 
       wr.www_error#ok (I18n.sprintf "Document %s is relocated to:\n%s"
                  oldurl newurl);
-    	wr.www_logging <- nav.nav_log;
-    	process_viewer add_hist make_ctx nav wr dh
+     wr.www_logging <- nav.nav_log;
+     process_viewer add_hist make_ctx nav wr dh
   in
   try
     let doc = Cache.find did in

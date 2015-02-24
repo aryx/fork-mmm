@@ -8,7 +8,7 @@ let active_cb _ =
     (fun w id ->
       incr cnter;
       Printf.fprintf stdout "%s %s %b\n"
-      	 (Widget.name w) (string_of_cbid id) (Winfo.exists w))
+        (Widget.name w) (string_of_cbid id) (Winfo.exists w))
     callback_memo_table;
   Printf.fprintf stdout "Memo cb: %d\n" !cnter;
   cnter := 0;

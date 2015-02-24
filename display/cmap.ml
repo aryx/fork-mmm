@@ -90,29 +90,29 @@ let gfx_mode emb map c =
   let items = 
     List.map (fun area ->
       try
-       	match area.area_kind with
+        match area.area_kind with
       Default -> Id 1, area.area_link (* the image itself *)
-       	| Rect -> 
+        | Rect -> 
         begin match area.area_coords with
         | [x1;y1;x2;y2] ->
-          	Canvas.create_rectangle c
+           Canvas.create_rectangle c
           (Pixels x1) (Pixels y1) (Pixels x2) (Pixels y2) 
           opts,
-          	area.area_link
+           area.area_link
         | _ -> 
         raise (Syntax "rect")
         end
-       	| Circle ->
+        | Circle ->
         begin match area.area_coords with
         | [x;y;r] ->
-          	Canvas.create_oval c
+           Canvas.create_oval c
           (Pixels (x-r)) (Pixels (y-r))
           (Pixels (x+r)) (Pixels (y+r))
           opts,
-          	area.area_link
+           area.area_link
         | _ -> raise (Syntax "circle")
         end
-       	| Poly ->
+        | Poly ->
         let l = List.length area.area_coords in
         (* there must be at least three points, and by pair *)
         if l < 6 or l mod 2 <> 0 then begin

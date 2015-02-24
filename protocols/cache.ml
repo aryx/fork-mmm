@@ -76,7 +76,7 @@ let postmortem () =
            | FileData (f,true) -> f
            | FileData (f,false) -> "fake " ^f));
       List.iter	(fun h -> Log.f (sprintf "%s" h))
- 	(List.rev entry.cache_document.document_info);
+  (List.rev entry.cache_document.document_info);
       if entry.cache_pending then Log.f "pending ";
       Log.f (sprintf "Last used: %f" entry.cache_lastused);
       Log.f "")
@@ -108,7 +108,7 @@ let make_room () =
   if !debug then Log.f "Trying to make room in cache";
   (* Sort.list according to lru *)
   memory := Sort.list 
-      	     (fun (_,e) (_,e') -> e.cache_lastused < e'.cache_lastused)
+            (fun (_,e) (_,e') -> e.cache_lastused < e'.cache_lastused)
          !memory;
   (* if the more recent entry has lu max_lastused, then we have to augment 
      the cache, since this means that only pending connexions are
@@ -119,7 +119,7 @@ let make_room () =
      if e.cache_lastused = max_lastused then max_documents := !max_documents + 5
      else (* cleanup the oldests entries *)
        let rec rem1 n l = 
-       	if n = 0 then l
+        if n = 0 then l
      else match l with
        [] -> []
     | (did, e)::l ->
@@ -174,7 +174,7 @@ let kill did =
 let add did doc =
   if !debug then
      Log.f (sprintf  "Adding new cache entry %s(%d) %s"
-      	       	     (Url.string_of did.document_url)
+                    (Url.string_of did.document_url)
                  did.document_stamp
              (match doc.document_data with
             MemoryData _ -> "in memory"
@@ -249,7 +249,7 @@ let init () =
      document_stamp = no_stamp}, 
     {
     cache_document = {document_address = initurl;
-      	       	      document_data = MemoryData b;
+                     document_data = MemoryData b;
               document_info = ["Content-Type: text/html"]};
     cache_pending = false;
     cache_condition = Condition.create();
@@ -272,7 +272,7 @@ let tofile dh =
 let tobuffer dh =
   let b = Ebuffer.create 1024 in
     MemoryData b, {cache_write = Ebuffer.output b;
-      	           cache_close = (fun () -> ())}
+                  cache_close = (fun () -> ())}
 (*e: function Cache.tobuffer *)
 
 (*s: constant Cache.discard *)
@@ -317,14 +317,14 @@ let wrap c dh =
   let wfeed = {
     feed_read = 
       (fun buf offs len ->
-      	 let r = dh.document_feed.feed_read buf offs len in
+        let r = dh.document_feed.feed_read buf offs len in
      if r <> 0 then c.cache_write buf offs r;
      r);
     feed_schedule = dh.document_feed.feed_schedule;
     feed_unschedule = dh.document_feed.feed_unschedule;
     feed_close =
       (fun () ->
-      	 dh.document_feed.feed_close();
+        dh.document_feed.feed_close();
      c.cache_close();
      finished dh.document_id);
     feed_internal = dh.document_feed.feed_internal
@@ -416,7 +416,7 @@ let cleanup () =
   List.iter 
     (fun (did, entry) ->
       match entry.cache_document.document_data with
-      	FileData (f, true) -> Msys.rm f
+       FileData (f, true) -> Msys.rm f
       | _ -> ())
     !memory
 (*e: function Cache.cleanup *)

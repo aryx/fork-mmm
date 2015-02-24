@@ -260,13 +260,13 @@ let sgml_lexer dtd =
             stack := l; (* pop the stack *)
                 (* the lexer has to be "normal" again, because CDATA
                    can't be nested anyway *)
-      	        current_lex := Lexhtml.html;
+               current_lex := Lexhtml.html;
         Legal, [token]
             | (elem, cts)::l -> (* unmatched close ! *)
         (* if we were in cdata, change the token to cdata *)
         if is_cdata cts then Legal, [CData (sprintf "</%s>" t)]
         else begin
-      	          current_lex := Lexhtml.html;
+                 current_lex := Lexhtml.html;
           let flag, (res, l) = cminimize dtd t !stack in
           stack := l;
           flag, res
@@ -365,7 +365,7 @@ let automat dtd action lexbuf error =
     let lexer = sgml_lexer dtd in
     while true do
       try 
-      	let warnings, correct, tokens, loc = lexer lexbuf in
+       let warnings, correct, tokens, loc = lexer lexbuf in
     List.iter (fun (reason, pos) -> error (Loc(pos,succ pos)) reason)
               warnings;
     begin match correct with

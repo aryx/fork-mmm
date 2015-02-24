@@ -50,14 +50,14 @@ let string_of p =
   and wc = Ebuffer.output_char buf in
   let write_userpass () =
       match p.user, p.password with
-      	 None, None -> ()
+        None, None -> ()
        | Some u, Some p -> ws u; wc ':'; ws p; wc '@'
        | Some u, None ->   ws u; wc ':'; wc '@'
        | None, Some _ -> failwith "url_of_parsed"
   (* hostname is always put in lowercase *)
   and write_hostport def =
       match p.host, p.port with
-      	 None, None -> ()
+        None, None -> ()
        | Some h, None -> ws (String.lowercase h)
        | Some h, Some p when p = def -> ws (String.lowercase h)
        | Some h, Some p -> 
@@ -66,22 +66,22 @@ let string_of p =
 
   and write_pathsearch () =
       match p.path, p.search with
-      	None, None -> wc '/'
+       None, None -> wc '/'
       | Some p, Some s -> wc '/'; ws p; wc '?'; ws s
       | Some p, None -> wc '/'; ws p
       | None, Some _ -> failwith "url_of_parsed"	    
 
   and write_slashpath () =
       match p.path with
-      	None -> ()
+       None -> ()
       | Some p -> wc '/'; ws p
   and write_path () =
       match p.path with
-      	None -> ()
+       None -> ()
       | Some p -> ws p
   and write_fhost () =
       match p.host with
-      	None -> ws "localhost"
+       None -> ws "localhost"
       | Some h -> ws (String.lowercase h)
   in
   begin match p.protocol with
@@ -102,7 +102,7 @@ let string_of p =
       None | Some "localhost" ->
         ws "file://"; write_fhost(); write_slashpath()
     | Some h ->
-      	p.protocol <- FTP;
+       p.protocol <- FTP;
         ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
     end
   | PROSPERO -> ws "prospero://"; write_hostport 1525; write_slashpath()

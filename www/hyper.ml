@@ -55,21 +55,21 @@ let urlconcat contextp newuri =
       sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
     else if newuri.[0] = '/' then (* start from root *)
       string_of {
-      	 protocol = contextp.protocol;
+        protocol = contextp.protocol;
      user = contextp.user;
      password = contextp.password;
-      	 host = contextp.host;
-      	 port = contextp.port;
+        host = contextp.host;
+        port = contextp.port;
      path = Some (Urlenc.unquote 
                 (String.sub newuri 1 (String.length newuri - 1)));
      search = None }
     else if newuri.[0] = '?' then (* change only search part *)
       string_of {
-      	 protocol = contextp.protocol;
+        protocol = contextp.protocol;
      user = contextp.user;
      password = contextp.password;
-      	 host = contextp.host;
-      	 port = contextp.port;
+        host = contextp.host;
+        port = contextp.port;
      path = contextp.path;
      search = Some (String.sub newuri 1 (String.length newuri - 1))}
     else 
@@ -83,7 +83,7 @@ let urlconcat contextp newuri =
       in
       match contextp.path with
       None | Some "" -> 
-      	 string_of {
+        string_of {
         protocol = contextp.protocol;
         user = contextp.user;
         password = contextp.password;
@@ -94,10 +94,10 @@ let urlconcat contextp newuri =
     | Some old ->
         (* only the "dirname" part of the context path is important *)
         (* e.g  .../d/e/f becomes /d/e/ *)
-      	let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
+       let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
         (* we then have to remove dots *)
     let reduced = Lexurl.remove_dots path in
-      	 string_of {
+        string_of {
         protocol = contextp.protocol;
         user = contextp.user;
         password = contextp.password;
@@ -114,11 +114,11 @@ let resolve link =
   let newuri, frag =
     try
       let pos = String.index link.h_uri '#' in
-      	String.sub link.h_uri 0 pos, 
+       String.sub link.h_uri 0 pos, 
         Some (String.sub link.h_uri (succ pos) 
                     (String.length link.h_uri - pos - 1))
     with
-       	Not_found -> link.h_uri, None 
+        Not_found -> link.h_uri, None 
   in
   if Uri.is_absolute newuri then
     try

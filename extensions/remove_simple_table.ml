@@ -75,8 +75,8 @@ let remove_simple_table parentf =
     if tbl.trs <= 1 && tbl.tds <= 1 then begin
       log "ERASE";
       let tokens = 
-  	    (* remove table, tr, td *)
-  	    List.fold_right (fun xtkn st ->
+       (* remove table, tr, td *)
+       List.fold_right (fun xtkn st ->
           match xtkn with
         Token tkn -> begin
           match tkn with

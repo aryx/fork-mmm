@@ -151,9 +151,9 @@ let rec navigator has_tachy initial_url =
   let show_current di frag =
       di#di_touch;
       begin match !current_di with
-      	None -> display di
+       None -> display di
       | Some olddi -> 
-      	 if olddi == di then () 
+        if olddi == di then () 
          else begin
         undisplay olddi;
         display di
@@ -211,7 +211,7 @@ let rec navigator has_tachy initial_url =
     None -> ()
       | Some (did, frag) -> 
      if not (historygoto nav did frag true) then begin
-      	   ignore (History.back hist)
+          ignore (History.back hist)
        end
   and reload () =
     let did = hist.h_current.h_did
@@ -276,21 +276,21 @@ let rec navigator has_tachy initial_url =
   and gohome () = absolutegoto nav !Mmmprefs.home
   and redisplay () =
     match !current_di with
-      	None -> ()
+       None -> ()
       | Some di -> di#di_redisplay
   and add_to_hotlist () =
     match !current_di with
-      	None -> ()
+       None -> ()
       | Some di -> 
       Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
                 di#di_title
   and load_images () =
     match !current_di with
-      	None -> ()
+       None -> ()
       | Some di -> di#di_load_images
   and view_source () =     
     match !current_di with
-      	None -> ()
+       None -> ()
       | Some di -> di#di_source
   in
 
@@ -378,7 +378,7 @@ let rec navigator has_tachy initial_url =
       Frame.create_named vgroup "menubar" [] in
      (* MMM menu *)
      let mmm = Menubutton.create_named mbar 
-      	"mmm" [Text (I18n.sprintf "MMM")] in
+       "mmm" [Text (I18n.sprintf "MMM")] in
      let mmmm = Menu.create_named mmm "menu" [] in
        Menubutton.configure mmm [Menu mmmm];
        configure_menu_elements mmmm [ 	    
@@ -387,24 +387,24 @@ let rec navigator has_tachy initial_url =
          [Label (I18n.sprintf "New Window"); Command new_window];
          [Label (I18n.sprintf "Open Selection"); Command open_sel];
          [Label (I18n.sprintf "Open File..."); Command open_file];
-       	 [Label (I18n.sprintf "Save document..."); Command save];
+         [Label (I18n.sprintf "Save document..."); Command save];
          [Label (I18n.sprintf "Print document"); Command print];
-      	 [Label (I18n.sprintf "Preferences..."); Command !preferences];
+        [Label (I18n.sprintf "Preferences..."); Command !preferences];
      [];
-       	 [Label (I18n.sprintf "Close Window"); Command close];
+         [Label (I18n.sprintf "Close Window"); Command close];
      [];
-      	 [Label (I18n.sprintf "Quit"); Command really_quit]
+        [Label (I18n.sprintf "Quit"); Command really_quit]
         ];
     (* Navigation menu *)
     let navb = 
-      	Menubutton.create_named mbar "navigate"
-      	   [Text (I18n.sprintf "Navigate")] in
+       Menubutton.create_named mbar "navigate"
+          [Text (I18n.sprintf "Navigate")] in
     let navm = Menu.create_named navb "menu" [] in
         Menubutton.configure navb [Menu navm];
         configure_menu_elements navm [ 
-      	  [Label (I18n.sprintf "Home"); Command gohome];
-      	  [Label (I18n.sprintf "Back"); Command back];
-      	  [Label (I18n.sprintf "Forward"); Command forward];
+         [Label (I18n.sprintf "Home"); Command gohome];
+         [Label (I18n.sprintf "Back"); Command back];
+         [Label (I18n.sprintf "Forward"); Command forward];
       []
         ];
         (* The history menu is destroyed and rebuild each time. 
@@ -417,7 +417,7 @@ let rec navigator has_tachy initial_url =
        destroy !hmenu;
        hmenu := Menu.create_named navm "history" [];
        List.iter
-      	      (fun e ->
+             (fun e ->
           let label = ref (Url.string_of e.h_did.document_url) in
           begin match e.h_fragment with
              None -> ()
@@ -437,8 +437,8 @@ let rec navigator has_tachy initial_url =
            (History.contents hist);
            Menu.configure_cascade navm history_mindex [Menu !hmenu]);
     let docb = 
-      	Menubutton.create_named mbar "document"
-      	   [Text (I18n.sprintf "Document")] in
+       Menubutton.create_named mbar "document"
+          [Text (I18n.sprintf "Document")] in
     let docm = Menu.create_named docb "menu" [] in
         Menubutton.configure docb [Menu docm];
         configure_menu_elements docm [	    
@@ -463,10 +463,10 @@ let rec navigator has_tachy initial_url =
     [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
 
 (*      Menu.add_command othersm
-      	[Label (I18n.sprintf "Caml Modules"); 
-      	 Command (fun _ -> Applets.edit())];
+       [Label (I18n.sprintf "Caml Modules"); 
+        Command (fun _ -> Applets.edit())];
       Menu.add_command othersm
-      	[Label (I18n.sprintf "Load Caml Extension");
+       [Label (I18n.sprintf "Load Caml Extension");
      Command (fun _ ->
                 Fileselect.f (I18n.sprintf "Load Caml Extension")
             (function [] -> ()
@@ -485,14 +485,14 @@ let rec navigator has_tachy initial_url =
     let helpm = Menu.create_named helpb "menu" [] in
       Menubutton.configure helpb [Menu helpm];
        Menu.add_command helpm
-       	  [Label (I18n.sprintf "Version information");
+          [Label (I18n.sprintf "Version information");
        Command (fun () -> 
          absolutegoto nav (Version.initurl (Lang.lang ())))];
        Menu.add_command helpm
       [Label (I18n.sprintf "Help on MMM");
        Command (fun () -> navigator false !helpurl; ())];
        Menu.add_command helpm
-       	  [Label (I18n.sprintf "Home Page of MMM");
+          [Label (I18n.sprintf "Home Page of MMM");
        Command (fun () -> navigator false
          (Lexurl.make (Version.home (Lang.lang ()))); ())];
 
@@ -504,9 +504,9 @@ let rec navigator has_tachy initial_url =
       destroy !userm;
       userm := Menu.create_named userb "menu" [];
       List.iter (function (entry, f) ->
-      	       	  Menu.add_command !userm 
-      	       	   [Label entry; 
-      	       	    Command (fun () -> f 
+                 Menu.add_command !userm 
+                  [Label entry; 
+                   Command (fun () -> f 
                       (Nav.make_ctx nav hist.h_current.h_did))])
         !user_menus;
       Menubutton.configure userb [Menu !userm] in
@@ -519,7 +519,7 @@ let rec navigator has_tachy initial_url =
 
     (* URL display and edit *)
     let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
-      	       	      (absolutegoto nav)
+                     (absolutegoto nav)
     (* Navigation buttons *)
     and fb = Frame.create_named vgroup "buttons" [] in
     let backb = Button.create_named fb 
@@ -538,7 +538,7 @@ let rec navigator has_tachy initial_url =
      Entry.configure e [TextVariable entryv; TextWidth 40];
      pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
      pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
-      	  [Side Side_Left; Fill Fill_X];
+         [Side Side_Left; Fill Fill_X];
      pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
      pack [fb][Fill Fill_X];
      (* Initial window only *)
@@ -554,7 +554,7 @@ let rec navigator has_tachy initial_url =
        bind fcontainer [[], Destroy]
      (BindSet ([Ev_Widget],
            (fun ei -> 
-      		     if ei.ev_Widget = fcontainer 
+             if ei.ev_Widget = fcontainer 
                      && Winfo.exists hgroup (* but we're not dead *) then
                restart_tachy())));
 
@@ -591,7 +591,7 @@ let rec navigator has_tachy initial_url =
   bind top [[], Destroy] 
    (BindSet ([Ev_Widget],
       (fun ei -> 
-      	if ei.ev_Widget = top then begin
+       if ei.ev_Widget = top then begin
     decr navigators;
     Gcache.kill hist.h_key;
     (* we were destroyed by wm *)
@@ -615,11 +615,11 @@ let rec navigator has_tachy initial_url =
                       (Url.string_of initial_url)
                   (Printexc.to_string e));
     if !navigators = 1 then begin
-      	    destroy Widget.default_toplevel;
+           destroy Widget.default_toplevel;
         raise e
         end
     else begin 
-      	  destroy top;
+         destroy top;
       None
         end
 

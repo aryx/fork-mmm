@@ -7,7 +7,7 @@ type pref_type =
  | Int of int ref
  | Float of float ref
  | AbstractType of (Textvariable.textVariable -> unit) * 
-      	       	 (Textvariable.textVariable -> unit)
+                (Textvariable.textVariable -> unit)
                  (* init, set *)
 (*e: enum Prefs.pref_type *)
 

@@ -57,7 +57,7 @@ let d2html path d =
       "." -> ()
     | ".." ->
        printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
-       	      (Filename.concat (dirname (dirname pathurl)) "")
+              (Filename.concat (dirname (dirname pathurl)) "")
     | f ->
        try
          let fullname = Filename.concat path f in
@@ -81,7 +81,7 @@ let dir path =
     let d = opendir path in
     let cin, cout = pipe() in
       match Low.fork() with
-      	0 -> 
+       0 -> 
       close cin; dup2 cout stdout; close cout;
       begin
         try d2html path d 
@@ -111,16 +111,16 @@ let fake_cgi wwwr cont path =
     let (cmd_in, cmd_out) = pipe() in
     let cmd, args = 
       try 
-      	let pos = String.index path '?' in
+       let pos = String.index path '?' in
     let cmd = String.sub path 0 pos in
     if pos + 1 = String.length path then cmd, [| cmd |]
     else 
          cmd, [|cmd; String.sub path (pos+1) (String.length path - pos - 1)|]
       with
-      	Not_found -> path, [| path |] in
+       Not_found -> path, [| path |] in
     match Low.fork() with
       0 -> 
-      	close cmd_in;
+       close cmd_in;
     dup2 cmd_out stdout; close cmd_out;
     begin try execvp cmd args 
     with
@@ -252,9 +252,9 @@ let request wr cont =
              Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
           document_fragment = wr.www_fragment;
           document_logger = tty_logger} in
-      	Retype.f dh;
-      	cont.document_process dh;
-          	(fun () -> ())
+       Retype.f dh;
+       cont.document_process dh;
+           (fun () -> ())
           end
         with
           Not_found  (* default case *)
@@ -263,7 +263,7 @@ let request wr cont =
           try openfile path [O_RDONLY] 0
           with Unix_error(_,_,_) -> 
             raise (File_error (I18n.sprintf "cannot open file")) in
-      	let dh =
+       let dh =
           {document_id = document_id wr;
             document_referer = wr.www_link.h_context;
             document_status = 200;
@@ -274,9 +274,9 @@ let request wr cont =
             document_feed = Feed.of_fd s;
             document_fragment = wr.www_fragment;
             document_logger = tty_logger} in
-      	Retype.f dh;
-      	cont.document_process dh;
-          	(fun () -> ())
+       Retype.f dh;
+       cont.document_process dh;
+           (fun () -> ())
       end
       | S_DIR -> 
       let s = dir path in
@@ -287,7 +287,7 @@ let request wr cont =
            document_headers = ["Content-Type: text/html"];
            document_feed = Feed.of_fd s;
            document_fragment = wr.www_fragment;
-      	       document_logger = tty_logger};
+              document_logger = tty_logger};
             (fun () -> ())
 
       | _ -> raise (File_error (I18n.sprintf "cannot open file"))

@@ -14,7 +14,7 @@ let hdn l =
   let rec h l acc = function
     0 -> List.rev acc
   | n -> if l = [] then List.rev acc 
-      	 else h (List.tl l) (List.hd l :: acc) (pred n) in
+        else h (List.tl l) (List.hd l :: acc) (pred n) in
   h l []
 (*e: function Mlist.hdn *)
 

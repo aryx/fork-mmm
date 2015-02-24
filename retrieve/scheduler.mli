@@ -49,7 +49,7 @@ module type S =
   sig
     type shared_data
     val add_request : Www.request -> Document.document_id ->
-      	       	       (Url.t -> shared_data -> unit) -> progress_func -> unit
+                      (Url.t -> shared_data -> unit) -> progress_func -> unit
         (* [add_request delayed wr referer cont progress_func]
          *   returns job handle that can subsequently by awakened
          *)
@@ -63,7 +63,7 @@ module type S =
     type delayed
     val new_delayed : unit -> delayed
     val add_delayed : 
-      	delayed -> Www.request -> Document.document_id -> 
+       delayed -> Www.request -> Document.document_id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit

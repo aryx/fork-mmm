@@ -59,7 +59,7 @@ let print = function
     PCData s -> eprintf "PCData: %s\n" s
   | CData s -> eprintf "CData: %s\n" s
   | OpenTag {tag_name = n; attributes = l} ->
-      	     eprintf "Open: %s\n" n;
+            eprintf "Open: %s\n" n;
          List.iter (function (a,v) ->
                    eprintf "%s=%s\n" a v) l
   | CloseTag n -> eprintf "Close: %s\n" n
@@ -415,7 +415,7 @@ let length_of_string s =
   with
     Not_found ->
       try
-      	let pos = String.index s '*' in
+       let pos = String.index s '*' in
     if pos = 0 then LengthRel 1
     else
       try LengthRel (int_of_string (String.sub s 0 pos))

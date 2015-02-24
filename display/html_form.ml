@@ -135,12 +135,12 @@ mach#add_tag "form"
     mach#add_tag "option"
        (fun fo tag ->
       mach#push_action 
-      	    (fun s ->
+           (fun s ->
            let s = beautify2 s in
            (* the val is by default the "content" of the tag *)
                let va = try get_attribute tag "value" with Not_found -> s in
            options := (va, s,
-      	       	       	   has_attribute tag "selected") :: !options;
+                          has_attribute tag "selected") :: !options;
            ))
        (fun _ -> mach#pop_action)
   and close_select fo =

@@ -81,28 +81,28 @@ class space_tachy (top : Widget.widget) =
   method start =
     fr <- Frame.create_named top "tachymeter" [BorderWidth (Pixels 2)];
     c <- Canvas.create fr
-      	[ Width (Pixels 72); Height (Pixels 72); 
-      	  BorderWidth (Pixels 1);
+       [ Width (Pixels 72); Height (Pixels 72); 
+         BorderWidth (Pixels 1);
       Relief Sunken;
-      	  HighlightThickness (Pixels 0);
-      	  TakeFocus true (* pl3 fix *);
+         HighlightThickness (Pixels 0);
+         TakeFocus true (* pl3 fix *);
       Background Black];
     c2 <- Canvas.create fr [Width (Pixels 72); Height (Pixels 16)];
     pack [c; c2] [Side Side_Top; Fill Fill_X];
 
     i_park <- 
        Canvas.create_rectangle c2 
-    	 (Pixels 1) (Pixels 1) 
-    	 (Pixels 4) (Pixels 4) [FillColor Black];
+      (Pixels 1) (Pixels 1) 
+      (Pixels 4) (Pixels 4) [FillColor Black];
 
     kilos <-
        Canvas.create_text c2
-      	 (Pixels 36) (Pixels 8)
+        (Pixels 36) (Pixels 8)
      [Text "0"; Font "variable"];
 
     pendings <-
        Canvas.create_text c2
-      	 (Pixels 68) (Pixels 8)
+        (Pixels 68) (Pixels 8)
      [Text "0"; Font "variable"];
 
     balls <-
@@ -119,7 +119,7 @@ class space_tachy (top : Widget.widget) =
       and y = 36 - truncate ((20.6 +. y) *. 1.3) 
       in [Pixels x; Pixels y] @ s) 
                        mpoly_data [])
-      	[Width (Pixels 2); FillColor Green; Outline White];
+       [Width (Pixels 2); FillColor Green; Outline White];
 
     for i = 0 to Array.length balls - 1 do
       self#ball_update balls.(i) 0.0
@@ -206,7 +206,7 @@ class space_tachy (top : Widget.widget) =
        in   
        (* let speeds = last_speed *. 0.5 +. speed *. 0.5 in *)
        if abs_float (speeds -. last_speed) > 0.05 then begin
-       	 last_speed <- speeds;
+         last_speed <- speeds;
      let v = speeds /. log10 *. 0.02 in
 
      for i = 0 to Array.length balls - 1 do
@@ -226,24 +226,24 @@ class space_tachy (top : Widget.widget) =
     if Winfo.exists c2 then
       if n = 0 then begin
     Canvas.configure_text c2 pendings [Text ""];
-      	Canvas.lower_bot c2 pendings
+       Canvas.lower_bot c2 pendings
       end
       else begin
     Canvas.configure_text c2 pendings 
       [Text (string_of_int n)];
-      	Canvas.raise_top c2 pendings
+       Canvas.raise_top c2 pendings
       end
 
   method report_busy busy =
     if Winfo.exists c2 then
       if busy then begin
-      	Canvas.lower_bot c2 pendings;
+       Canvas.lower_bot c2 pendings;
     Canvas.configure_rectangle c2 i_park [FillColor Red;
                           Outline Red];
     update_idletasks()
       end
       else begin
-      	Canvas.raise_top c2 pendings;
+       Canvas.raise_top c2 pendings;
     Canvas.configure_rectangle c2 i_park [FillColor Black;
                           Outline Black]
       end

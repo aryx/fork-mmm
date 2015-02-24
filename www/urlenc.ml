@@ -32,7 +32,7 @@ let decode s =
   while !pos < l do
     if s.[!pos] = '%' & !pos + 2 < l  then begin
       let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
-      	Ebuffer.output_char target (Char.chr c);
+       Ebuffer.output_char target (Char.chr c);
     pos := !pos + 3
     end
     else if s.[!pos] = '+' then begin
@@ -68,22 +68,22 @@ let unquote s =
     let perpos = String.index_from s !pos '%' in
     if perpos > !pos then Ebuffer.output target s !pos (perpos - !pos);
     pos := perpos;
-      	if s.[!pos] = '%' & !pos + 2 < l  then begin
-      	  let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
+       if s.[!pos] = '%' & !pos + 2 < l  then begin
+         let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
       let substc = Char.chr c in
       if List.mem substc keep_quoted then
         for i = 0 to 2 do
-      	      Ebuffer.output_char target s.[!pos];
-      	      incr pos
+             Ebuffer.output_char target s.[!pos];
+             incr pos
           done
           else begin
-      	      Ebuffer.output_char target (Char.chr c);
+             Ebuffer.output_char target (Char.chr c);
           pos := !pos + 3
        end
      end
      else begin
-      	 Ebuffer.output_char target s.[!pos];
-      	 incr pos
+        Ebuffer.output_char target s.[!pos];
+        incr pos
      end
       done;
       Ebuffer.get target

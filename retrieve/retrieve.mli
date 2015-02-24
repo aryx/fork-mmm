@@ -12,7 +12,7 @@ type retrievalStatus =
 val f : Www.request ->  (* the request *)
         (Hyper.link -> unit) -> (* the retry function *)
         document_continuation -> (* the handlers *)
-      	 retrievalStatus
+        retrievalStatus
 (*e: signature Retrieve.f *)
 
 (*s: enum Retrieve.behaviour *)

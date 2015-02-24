@@ -200,22 +200,22 @@ let extern dh ctype =
       close pin;
       let kill () = 
          try Unix.kill pid 2
-      	 with Unix_error (e,_,_) ->
+        with Unix_error (e,_,_) ->
          Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
-      	      in
+             in
       let url = Url.string_of dh.document_id.document_url in
       Document.add_log dh (
     I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
              url ctype)
-      	kill;
+       kill;
 
       let red = ref 0 
       and size =   
-      	try Http_headers.contentlength dh.document_headers 
-      	with Not_found -> 40000 (* duh *)
+       try Http_headers.contentlength dh.document_headers 
+       with Not_found -> 40000 (* duh *)
       and buffer = String.create 4096 in
       dh.document_feed.feed_schedule
-      	(fun () ->
+       (fun () ->
       try
        let n = dh.document_feed.feed_read buffer 0 4096 in
        if n = 0 then begin
@@ -293,9 +293,9 @@ let rec unknown frame ctx dh =
      Textvariable.set v "text/html";
      if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
        let ctype = Textvariable.get v in
-      	 dh.document_headers <- 
-      	  ("Content-Type: " ^ ctype) :: dh.document_headers;
-      	 view frame ctx dh
+        dh.document_headers <- 
+         ("Content-Type: " ^ ctype) :: dh.document_headers;
+        view frame ctx dh
      else begin
        Save.interactive (fun _ -> ()) dh;
        None
@@ -321,13 +321,13 @@ and interactive frame ctx dh ctype =
       let v = Textvariable.create_temporary frame in
       Textvariable.set v "text/html";
       if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
-       	let ctype = Textvariable.get v in
-      	dh.document_headers <- 
-      	   ("Content-Type: " ^ ctype) :: dh.document_headers;
-      	view frame ctx dh
+        let ctype = Textvariable.get v in
+       dh.document_headers <- 
+          ("Content-Type: " ^ ctype) :: dh.document_headers;
+       view frame ctx dh
       else begin
-       	Save.interactive (fun _ -> ()) dh;
-       	None
+        Save.interactive (fun _ -> ()) dh;
+        None
       end
   | 1 -> extern (Decoders.insert dh) ctype; None
   | 2 -> Save.interactive (fun _ -> ()) dh; None
@@ -341,14 +341,14 @@ and view frame ctx dh =
     let (typ,sub),pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
       let viewer =
- 	try Hashtbl.find viewers (typ,sub)
+  try Hashtbl.find viewers (typ,sub)
     with
       Not_found -> Hashtbl.find viewers (typ,"*")
       in
       match viewer with
       |	Internal viewer ->
       ctx#log (I18n.sprintf "Displaying...");
-      	  viewer pars frame ctx (Decoders.insert dh)
+         viewer pars frame ctx (Decoders.insert dh)
       |	External ->
       ctx#log (I18n.sprintf "Displaying externally");
       extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);

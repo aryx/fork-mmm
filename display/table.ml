@@ -100,20 +100,20 @@ let dynamic_fight cell nowrap gameover align =
       if !debug then
     Log.f (sprintf "DYNAMIC %s" (Widget.name cell));
       let when_finished () =
-   	if !debug then
+    if !debug then
       Log.f (sprintf "Switching %s to vertical resize"
                      (Widget.name cell));
         (* in all cases, we have to grow vertically *)
-      	let scroll, check = Fit.vert cell in
-      	Text.configure cell [YScrollCommand scroll];
+       let scroll, check = Fit.vert cell in
+       Text.configure cell [YScrollCommand scroll];
         (* A posteriori updates for embedded windows
-      	List.iter 
+       List.iter 
       (fun embedded ->
         bind embedded [[], Configure]
           (BindSet([], (fun _ ->
-          	bind embedded [[], Configure] BindRemove;
-          	Frx_after.idle check;
-      	      	()))))
+           bind embedded [[], Configure] BindRemove;
+           Frx_after.idle check;
+              ()))))
           (Text.window_names cell)
          *)
       in
@@ -125,7 +125,7 @@ let dynamic_fight cell nowrap gameover align =
         text_align cell align;
         if not nowrap then Text.configure cell [Wrap WrapWord];
         when_finished()
- 	  end))
+    end))
       in
       Text.configure cell [XScrollCommand scroll];
       check()
@@ -157,7 +157,7 @@ let fixed_size cell width nowrap align =
         (BindSet([], (fun _ ->
           bind embedded [[], Configure] BindRemove;
           Frx_after.idle check;
-      	      ()))))
+             ()))))
         (Text.window_names cell);
        *)
       check()
@@ -278,7 +278,7 @@ let get_slot table needed_cols rspan =
 let next_row table =
   for i = 0 to Array.length table.slots - 1 do
     table.slots.(i) <- 
-      	match table.slots.(i) with
+       match table.slots.(i) with
       0|1 -> 0
     | n -> n-1
   done
@@ -442,7 +442,7 @@ let create top tag contextwidth =
       (* compute the size of this cell, so that tables in it have 
      something to work on *)
       let wconstraint = match width with
-      	Nolength | LengthRel _ -> UnknownWidth bound
+       Nolength | LengthRel _ -> UnknownWidth bound
       |	LengthPixels n -> FixedWidth n
       |	LengthRatio r -> 
       if !strict_32 then UnknownWidth bound

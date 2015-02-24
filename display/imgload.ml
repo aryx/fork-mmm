@@ -118,7 +118,7 @@ let display emb i =
           try 
         let url = 
           Lexurl.make (Hyper.resolve emb.embed_hlink).uri_url in
-        	bind w (Glevents.get "updateimage")
+         bind w (Glevents.get "updateimage")
           (BindSet ([], (fun _ -> Img.update url)))
           with
         Url.Url_Lexing _ -> ()

@@ -81,7 +81,7 @@ let tcp_connect server_name port log cont error =
       log (I18n.sprintf "%s found" server_name);
       adr
       with Not_found -> 
-      	raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) in
+       raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) in
   (* Attempt to connect *)
   let sock = socket PF_INET SOCK_STREAM 0 in
   Unix.clear_nonblock sock;
@@ -99,16 +99,16 @@ let tcp_connect server_name port log cont error =
     Timer.set 10 (fun () -> cont cnx);
         cnx
       with
-      	Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
-      	  (* that is ok, we are starting something *)
+       Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
+         (* that is ok, we are starting something *)
       let stuck = ref true in
       Fileevent.add_fileoutput sock
           (* we are called when the cnx is established *)
-      	  (fun () -> 
+         (fun () -> 
          stuck := false;
          Fileevent.remove_fileoutput sock;
          Unix.clear_nonblock sock; (* return to blocking mode *)
-  	     begin try (* But has there been a cnx actually *)
+        begin try (* But has there been a cnx actually *)
            let _ = getpeername sock in
            log (I18n.sprintf "connection established");
            cont cnx
@@ -119,7 +119,7 @@ let tcp_connect server_name port log cont error =
                    false
              end);
      (* but also start the timer if nothing happens now
-      	  * the kernel has a timeout, but it might be too long (linux) *)
+         * the kernel has a timeout, but it might be too long (linux) *)
          Timer.set (1000 * !timeout) 
         (fun () -> 
           if not cnx#aborted && !stuck then begin
@@ -132,8 +132,8 @@ let tcp_connect server_name port log cont error =
       end
     with
       Unix_error(e,fn,_) ->  (* other errors in connect *)
-      	 cnx#close;
-      	 raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
+        cnx#close;
+        raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
                              (error_message e) fn))
 (*e: function Http.tcp_connect *)
 
@@ -200,7 +200,7 @@ let full_request w proxy_mode wwwr =
       with
     Not_found -> (* is that in the request ? *)
      try
-      	   let cookie = List.assoc "proxy" wwwr.www_auth in
+          let cookie = List.assoc "proxy" wwwr.www_auth in
           w ("Proxy-Authorization: Basic "^cookie^"\r\n")
      with
        Not_found -> ()
@@ -300,7 +300,7 @@ let rec process_response wwwr cont cnx =
       (fun () -> 
     if not cnx#aborted && !stuck then
       match wwwr.www_error#ari
-      	     (I18n.sprintf "Timeout while waiting for headers of %s" url) with
+            (I18n.sprintf "Timeout while waiting for headers of %s" url) with
         0 -> (* abort *) if !stuck then cnx#abort
       | 1 -> (* retry *) timout ()
       | 2 -> (* ignore *) ()
@@ -334,18 +334,18 @@ let rec process_response wwwr cont cnx =
          (* the guy up there has the old one !*)
              cnx#set_fd newcnx#fd
        | Unix_error(e,_,_) ->
-       	   cnx#abort;
+           cnx#abort;
        wwwr.www_error#f (I18n.sprintf 
-      	       	      "Error while reading headers of %s\n%s" url 
-      	       	      (error_message e))
+                     "Error while reading headers of %s\n%s" url 
+                     (error_message e))
        | Invalid_HTTP_header s ->
-       	   cnx#abort;
+           cnx#abort;
        wwwr.www_error#f (I18n.sprintf 
-      	       	      "Error while reading headers of %s\n%s" url s)
+                     "Error while reading headers of %s\n%s" url s)
        | End_of_file ->
-       	   cnx#abort;
+           cnx#abort;
        wwwr.www_error#f (I18n.sprintf 
-      	       	      "Error while reading headers of %s\n%s" url "eof"))
+                     "Error while reading headers of %s\n%s" url "eof"))
 
 (* The same for HTTP 0.9, so we directly call the continuation *)
 and process_response09  wwwr cont cnx =
@@ -376,12 +376,12 @@ and async_request proxy_mode wwwr cont cnx =
     wwwr.www_logging (I18n.sprintf "Writing request...");
     Fileevent.add_fileoutput cnx#fd (fun _ ->
       let n = write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
-      	curpos := !curpos  + n;
+       curpos := !curpos  + n;
     if !curpos = len then begin
-      	  Fileevent.remove_fileoutput cnx#fd;
+         Fileevent.remove_fileoutput cnx#fd;
       if !verbose then Log.f req;
-      	  cont cnx
-      	  end)
+         cont cnx
+         end)
 
 (* wrappers for request/response transaction *)
 and start_request proxy_mode wwwr cont cnx =

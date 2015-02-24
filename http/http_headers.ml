@@ -114,7 +114,7 @@ let merge_headers oldh newh =
           Invalid_HTTP_header _ -> 
           Log.debug (sprintf "Dumping invalid header (%s)" s);
               filter acc l
-       	| Not_found -> filter (s::acc) l in
+        | Not_found -> filter (s::acc) l in
   (filter [] oldh) @ newh
 (*e: function Http_headers.merge_headers *)
 
@@ -126,7 +126,7 @@ let remove_headers hs names =
    | h::l ->
       try
        let t = header_type h in
-       	 if List.mem t names then rem acc l
+         if List.mem t names then rem acc l
      else rem (h::acc) l
       with
         Invalid_HTTP_header s ->
@@ -234,16 +234,16 @@ let read_suffix_file f =
         let _ = String.index x '/' in
         List.iter 
           (function sufx -> 
-      	       	Hashtbl.add suffixes sufx 
-      	       	   (ContentType ("Content-Type: "^x)))
+               Hashtbl.add suffixes sufx 
+                  (ContentType ("Content-Type: "^x)))
 
         l
        with
          Not_found ->
         List.iter 
           (function sufx ->
-      	       	Hashtbl.add suffixes sufx 
-      	       	    (ContentEncoding ("Content-Encoding: "^x)))
+               Hashtbl.add suffixes sufx 
+                   (ContentEncoding ("Content-Encoding: "^x)))
           l
 
     done
@@ -298,7 +298,7 @@ let hints path =
       match v with
        ContentType t -> [t] (* good, we have a type *)
      | ContentEncoding e ->
-      	(* we have an encoding, but do we have a type too ? *)
+       (* we have an encoding, but do we have a type too ? *)
      let path2 = Filename.chop_suffix path ("."^sufx) in
      let sufx2 = get_suffix path2 in
       begin try let v2 = Hashtbl.find suffixes sufx2 in
@@ -321,7 +321,7 @@ let status_messages = Hashtbl.create 101
 (*e: constant Http_headers.status_messages *)
 (*s: toplevel Http_headers._2 *)
 let _ = List.iter (function (code, msg) ->
-      	       	      Hashtbl.add status_messages code msg)
+                     Hashtbl.add status_messages code msg)
   [ 200, "OK";
     201, "Created";
     202, "Accepted";

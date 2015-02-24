@@ -49,9 +49,9 @@ let create top opts navigation =
     fun first last ->
       scrollcmd first last;
       if !isthere then 
-      	if first = 0.0 && last = 1.0 then rem() else ()
+       if first = 0.0 && last = 1.0 then rem() else ()
       else
-      	if first <> 0.0 || last <> 1.0 then put() else ()
+       if first <> 0.0 || last <> 1.0 then put() else ()
   in
   let t = Text.create_named c "smootht" (BorderWidth(Pixels 0) :: opts) in
     if navigation then navigation_keys t;
@@ -59,7 +59,7 @@ let create top opts navigation =
     (* Make the text widget an embedded canvas object *)
     ignore (
       Canvas.create_window c (Pixels 0) (Pixels 0)
-      	[Anchor NW; Window t; Tags [Tag "main"]]);
+       [Anchor NW; Window t; Tags [Tag "main"]]);
     Canvas.focus c (Tag "main");
     Canvas.configure c 
     [YScrollCommand (wrap_scroll has_y puty remy (Scrollbar.set yscroll))];
@@ -70,12 +70,12 @@ let create top opts navigation =
     Scrollbar.configure yscroll [ScrollCommand (Canvas.yview c)];
     let scroll, check = Fit.vert t in
     Text.configure t [
-      	XScrollCommand (wrap_scroll has_x putx remx (Scrollbar.set xscroll));
+       XScrollCommand (wrap_scroll has_x putx remx (Scrollbar.set xscroll));
         YScrollCommand (fun first last ->
-      	   scroll first last;
+          scroll first last;
        let x,y,w,h = Canvas.bbox c [Tag "main"] in
          Canvas.configure c 
-      	       [ScrollRegion (Pixels x, Pixels y, Pixels w, Pixels h)]);
+              [ScrollRegion (Pixels x, Pixels y, Pixels w, Pixels h)]);
         ];
     (* B2 Scrolling : based on std script text.tcl 
      * Since t has the focus, it will handle the event, even if we play
@@ -128,9 +128,9 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 (* We use Mod1 instead of Meta or Alt *)
 let init () = 
   List.iter (function ev ->
-      	     tag_bind tag_name ev 
-      	       	  (BindSetBreakable ([Ev_Widget], 
-      	       	       	       	 (fun ei -> page_up ei.ev_Widget; break()))))
+            tag_bind tag_name ev 
+                 (BindSetBreakable ([Ev_Widget], 
+                                (fun ei -> page_up ei.ev_Widget; break()))))
        [
         [[], KeyPressDetail "BackSpace"];
         [[], KeyPressDetail "Delete"];
@@ -139,44 +139,44 @@ let init () =
         [[Mod1], KeyPressDetail "v"]
        ];
   List.iter (function ev ->
-      	     tag_bind tag_name ev 
-      	       	  (BindSetBreakable ([Ev_Widget], 
-      	       	       	       	 (fun ei -> page_down ei.ev_Widget; break()))))
+            tag_bind tag_name ev 
+                 (BindSetBreakable ([Ev_Widget], 
+                                (fun ei -> page_down ei.ev_Widget; break()))))
        [
         [[], KeyPressDetail "space"];
         [[], KeyPressDetail "Next"];
         [[Control], KeyPressDetail "v"]
        ];
   List.iter (function ev ->
-      	     tag_bind tag_name ev 
-      	       	  (BindSetBreakable ([Ev_Widget], 
-      	       	       	       	 (fun ei -> line_up ei.ev_Widget; break()))))
+            tag_bind tag_name ev 
+                 (BindSetBreakable ([Ev_Widget], 
+                                (fun ei -> line_up ei.ev_Widget; break()))))
        [
         [[], KeyPressDetail "Up"];
         [[Mod1], KeyPressDetail "z"]
        ];
   List.iter (function ev ->
-      	     tag_bind tag_name ev 
-      	       	  (BindSetBreakable ([Ev_Widget], 
-      	       	       	       	 (fun ei -> line_down ei.ev_Widget; break()))))
+            tag_bind tag_name ev 
+                 (BindSetBreakable ([Ev_Widget], 
+                                (fun ei -> line_down ei.ev_Widget; break()))))
        [
         [[], KeyPressDetail "Down"];
         [[Control], KeyPressDetail "z"]
        ];
 
   List.iter (function ev ->
-      	     tag_bind tag_name ev 
-      	       	  (BindSetBreakable ([Ev_Widget], 
-      	       	       	       	 (fun ei -> top ei.ev_Widget; break()))))
+            tag_bind tag_name ev 
+                 (BindSetBreakable ([Ev_Widget], 
+                                (fun ei -> top ei.ev_Widget; break()))))
        [
         [[], KeyPressDetail "Home"];
         [[Mod1], KeyPressDetail "less"]
        ];
 
   List.iter (function ev ->
-      	     tag_bind tag_name ev 
-      	       	  (BindSetBreakable ([Ev_Widget], 
-      	       	       	       	 (fun ei -> bottom ei.ev_Widget; break()))))
+            tag_bind tag_name ev 
+                 (BindSetBreakable ([Ev_Widget], 
+                                (fun ei -> bottom ei.ev_Widget; break()))))
        [
         [[], KeyPressDetail "End"];
         [[Mod1], KeyPressDetail "greater"]

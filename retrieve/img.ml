@@ -45,11 +45,11 @@ module ImageData =
     (* Debugging *)
     let dump () =
       Hashtbl.iter (fun url (_,r, _) ->
-      	Log.f (sprintf "IMG %s" (Url.string_of url));
+       Log.f (sprintf "IMG %s" (Url.string_of url));
     DocumentIDSet.iter 
-      	  (fun did -> Log.f (sprintf "\tref: %s"
+         (fun did -> Log.f (sprintf "\tref: %s"
                          (Url.string_of did.document_url)))
-      	  !r)
+         !r)
     img_cache
 
     let add url imgdesc referers headers =
@@ -141,7 +141,7 @@ module ImageData =
         try
           let ctype = contenttype dh.document_headers in
           match Lexheaders.media_type ctype with
-          	("image","jpeg"), _ -> Low.busy tk_load_jpeg file
+           ("image","jpeg"), _ -> Low.busy tk_load_jpeg file
           | ("image","gif"), _ -> Low.busy tk_load_gif file
           | _,_ -> Low.busy tk_load_other file
         with
@@ -216,7 +216,7 @@ let update url =
     match oldi, i with
       Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
         Imagephoto.copy oldn newn []
- 	| _, _ -> ())
+  | _, _ -> ())
       Progress.no_meter
 
   with

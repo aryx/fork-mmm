@@ -139,7 +139,7 @@ let html_head_ui headers redisplay pscroll top ctx =
     let txt = sprintf "%s: %s" h v in
     match String.lowercase h with
       "refresh" ->
-      	begin try
+       begin try
           let pos = String.index v ';'
           and pos2 = String.index v '=' in
           let delay = int_of_string (String.sub v 0 pos)
@@ -203,9 +203,9 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
       let prompt = get_attribute tag "prompt" in
       let action s =
     mach#ctx#goto { h_uri = "?" ^ Urlenc.encode s;
-              	h_context = Some mach#base;
-              	h_method = GET;
-              	h_params = []} in
+               h_context = Some mach#base;
+               h_method = GET;
+               h_params = []} in
       let f,e = Frx_entry.new_label_entry headgroup prompt action in
       pack [f] [Fill Fill_X])
     ignore_close;
@@ -243,12 +243,12 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     Not_found -> ignore_open in
     mach#add_tag "meta"
       (fun fo tag ->
-      	try 
+       try 
       old fo tag;
       add_header 
         (get_attribute tag "http-equiv")
         (get_attribute tag "content")
-      	with Not_found -> ())
+       with Not_found -> ())
       ignore_close;
   end;
 
@@ -257,8 +257,8 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     mach#add_tag "frame"
       (fun fo tag ->
     try
-      	  let src = get_attribute tag "src" in
-      	  let name =
+         let src = get_attribute tag "src" in
+         let name =
         sprintf "Frame %s" 
           (try get_attribute tag "name"
           with Not_found -> "unnamed")
@@ -340,17 +340,17 @@ class  virtual html_body () =
     | None -> (* it's the first body *)
         let format, fhtml = 
           self#mach#create_formatter 
-          	(if full then (TopFormatter !current_scroll_mode) 
-          	else FrameFormatter self#ctx#params)
-          	self#frame
+           (if full then (TopFormatter !current_scroll_mode) 
+           else FrameFormatter self#ctx#params)
+           self#frame
         in
         self#mach#push_formatter format;
         body_formatter := Some format;
         body_frame <- Some fhtml;
         pack [fhtml][Side Side_Left; Expand true; Fill Fill_Both];
-    	    List.iter (function
+         List.iter (function
           | "bgcolor", color -> 
-          	  format.set_defaults "background" [BgColor color]
+             format.set_defaults "background" [BgColor color]
           | "text", color -> 
           format.set_defaults "foreground" [FgColor color]
           | "link", color ->
@@ -360,10 +360,10 @@ class  virtual html_body () =
           | "vlink", color ->
           format.set_defaults "vlink" [FgColor color]
           | _,_ -> ())
-      	      t.attributes
+             t.attributes
     | Some f -> (* multiple body... *)
         self#mach#push_formatter f
-    	)
+     )
       (fun t -> 
     ignore self#mach#pop_formatter)
 end
@@ -375,16 +375,16 @@ class  virtual bored () =
     let bored = 
       Resource.get Widget.default_toplevel "bored" "bored" = "yes"
     || begin try
-      	ignore (
+       ignore (
          Str.search_forward (Str.regexp_case_fold "sandra") self#mach#base 0);
-      	Resource.add "*bored" "yes" Interactive;
-      	true
+       Resource.add "*bored" "yes" Interactive;
+       true
     with Not_found -> false
     end in
     if bored then begin
       let b = Button.create hgbas [
-      	Text "\182"; BorderWidth (Pixels 0);
-      	Command (fun () ->
+       Text "\182"; BorderWidth (Pixels 0);
+       Command (fun () ->
       self#ctx#goto {
       h_uri = "http://www.columbiatristar.co.uk/the_net/contents.html";
       h_context = None;
@@ -465,11 +465,11 @@ class display_html ((top : Widget.widget),
       Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
     else
       try
-      	dh <- Decoders.insert (Cache.renew_handle dh);
-      	List.iter destroy (Winfo.children frame);
-      	self#init init_mode
+       dh <- Decoders.insert (Cache.renew_handle dh);
+       List.iter destroy (Winfo.children frame);
+       self#init init_mode
       with
-      	Not_found ->
+       Not_found ->
       Error.default#f (I18n.sprintf "Document not in cache anymore")
 
   (* The source is attached to this frame so we can destroy the interior
@@ -500,7 +500,7 @@ class display_html ((top : Widget.widget),
        no rely on the existence of _self for embed display machinery *)
     mach#add_embedded {
     embed_hlink = { h_uri = frdesc.frame_src;
-               	h_context = Some (Url.string_of ctx#base.document_url);
+                h_context = Some (Url.string_of ctx#base.document_url);
             h_method = GET;
             h_params = []};
     embed_frame = w;
@@ -525,26 +525,26 @@ class display_html ((top : Widget.widget),
     (* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
     if not !ignore_meta_charset then begin 
       mach#add_tag "meta"
-  	(fun fo tag ->
-  	  try 
-  	    let h = get_attribute tag "http-equiv"
-  	    and v = get_attribute tag "content"
-  	    in
-  	    match String.lowercase h with
-  	      "content-type" ->
-  		begin try
-  		  let (t,h), l = Lexheaders.media_type v in
-  		  if String.lowercase t <> "text" ||
-  		     String.lowercase h <> "html" then begin
-  		       Log.f ("Unknown meta content-type = "^t^"/"^h);
-  		       raise Exit
-  		     end;
-  		  try 
-  		    List.iter (fun (h,v) ->
-  		      if String.lowercase h = "charset" then begin
-  			let v = String.lowercase v in
-  			Log.f ("MetaCharset detect : " ^ v);
-  			begin try
+   (fun fo tag ->
+     try 
+       let h = get_attribute tag "http-equiv"
+       and v = get_attribute tag "content"
+       in
+       match String.lowercase h with
+         "content-type" ->
+    begin try
+      let (t,h), l = Lexheaders.media_type v in
+      if String.lowercase t <> "text" ||
+         String.lowercase h <> "html" then begin
+           Log.f ("Unknown meta content-type = "^t^"/"^h);
+           raise Exit
+         end;
+      try 
+        List.iter (fun (h,v) ->
+          if String.lowercase h = "charset" then begin
+     let v = String.lowercase v in
+     Log.f ("MetaCharset detect : " ^ v);
+     begin try
               let code = 
                 let code = ref Japan.Unknown in
                 try List.iter (fun (x,c) -> 
@@ -556,22 +556,22 @@ class display_html ((top : Widget.widget),
                 with
                   Exit -> !code
               in
-  			  (* feed_read#set_code code; this does not work... *)
+       (* feed_read#set_code code; this does not work... *)
               meta_charset := Some code
-  			with
-  			  Not_found ->
-  			    Log.f (v ^ ": I don't know this charset")
-  			end;
-  			raise Exit
-  		      end) l;
-  		  with
-  		    Exit -> ()
-  		with
-  		  _ -> () (* if failed to parse, ignore it *)
-  		end
-  	    | _ -> ()
-  	  with Not_found -> ())
-  	ignore_close
+     with
+       Not_found ->
+         Log.f (v ^ ": I don't know this charset")
+     end;
+     raise Exit
+          end) l;
+      with
+        Exit -> ()
+    with
+      _ -> () (* if failed to parse, ignore it *)
+    end
+       | _ -> ()
+     with Not_found -> ())
+   ignore_close
     end;
 
     (* We have full display, so put up progress report and head UI *)
@@ -609,14 +609,14 @@ class display_html ((top : Widget.widget),
     let eof = ref 0 in
     dh.document_feed.feed_schedule (fun () ->
       try 
-      	let warnings, correct, tokens, loc = lexer self#lexbuf in
-      	List.iter (fun (reason, pos) -> 
+       let warnings, correct, tokens, loc = lexer self#lexbuf in
+       List.iter (fun (reason, pos) -> 
       self#record_error (Loc(pos,succ pos)) reason)
       warnings;
-      	begin match correct with
-      	| Legal -> ()
-      	| Illegal reason -> self#record_error loc reason
-      	end;
+       begin match correct with
+       | Legal -> ()
+       | Illegal reason -> self#record_error loc reason
+       end;
     (* We annotate only the last token, which is normally the one
        from the original token stream *)
     let rec annot_last = function
@@ -625,7 +625,7 @@ class display_html ((top : Widget.widget),
       | x::l -> annot_last l
     in
     annot_last tokens;
-      	List.iter 
+       List.iter 
       (function token -> 
         begin try mach#send token
         with Invalid_Html s -> self#record_error loc s
@@ -637,7 +637,7 @@ class display_html ((top : Widget.widget),
         end)
       tokens
       with 
-      	End_of_file ->
+       End_of_file ->
       (* I don't know why but in some cases we have more than 1 EOF *)
       if !Lang.japan && full && !eof = 0 then begin
         (* We should bind for each frames... *)
@@ -698,7 +698,7 @@ class display_html ((top : Widget.widget),
              Not_found -> "???")])
       end;
       self#set_progress (Some red) red;
-      	  self#finish false;
+         self#finish false;
       mach#see_frag dh.document_fragment;
       if !Lang.japan && !meta_charset <> None then begin
         match !meta_charset with
