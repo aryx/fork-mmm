@@ -1,5 +1,7 @@
 # -*- sh -*-
 
+external/ocamltk
+
 # ocaml object files
 
 *.o
