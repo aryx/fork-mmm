@@ -1172,7 +1172,7 @@ fi
 if test "$CYGWIN"; then
  WITH_X=""
 else
- WITH_X="-L/opt/local/lib $X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+ WITH_X="-L/opt/local/lib -L/opt/X11/lib $X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
 fi
 
 # Extract the first word of "ranlib", so it can be a program name with args.

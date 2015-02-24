@@ -31,7 +31,7 @@ OBJS= misc.cmo \
       main_sboard.cmo
 
 surfboard: $(OBJS)
-	$(CAMLC) -custom -ccopt "-L/opt/local/lib" -o surfboard \
+	$(CAMLC) -custom -ccopt "-L/opt/X11/lib" -o surfboard \
 		unix.cma str.cma $(WITH_TK) $(WITH_JTK) $(WITH_FRX) \
 		$(LIBS) $(JAPAN) \
 		$(TOP)/www/uri.cmo $(HTML) $(OBJS)

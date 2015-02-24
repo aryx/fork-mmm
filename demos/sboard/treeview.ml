@@ -345,6 +345,7 @@ class treeview (top, (tree : Tree.tree)) = object (self)
     in
     sub i
 
+(*
   method line_of_item i =
     let c = ref 1 in
     let rec sub ci =
@@ -360,6 +361,7 @@ class treeview (top, (tree : Tree.tree)) = object (self)
       sub (topdir :> item); raise Not_found
     with
       FoundAt l -> l
+*)
 
   method line_of_item i =
     let rec sub i =

@@ -90,7 +90,7 @@ depend::
 SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
 CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
-	$(OCAMLC) -custom -ccopt "-L/opt/local/lib" -o $@ $(LINKFLAGS) \
+	$(OCAMLC) -custom -ccopt "-L/opt/X11/lib" -o $@ $(LINKFLAGS) \
          $(SYSLIBS) $(TKLIBS) $^
 
 # The native version does not support applets !

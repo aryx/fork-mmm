@@ -1427,6 +1427,8 @@ module type S =
            the set is empty. Which element is chosen is unspecified,
            but equal elements will be chosen for equal sets. *)
     val split: elt -> t -> t * bool * t
+    (* @since 4.01.0 *)
+    val find: elt -> t -> elt
   end
 
 module Make(Ord : OrderedType) : (S with type elt = Ord.t)
