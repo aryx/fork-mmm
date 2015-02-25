@@ -6,7 +6,6 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-#document.ml depends on Tk. todo? move elsewhere ?
 SRC= url.ml uri.ml urlenc.ml lexurl.ml hyper.ml \
      www.ml document.ml maps.ml
 
@@ -14,7 +13,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS=$(TOP)/commons
-SYSINCLUDES=$(TKCOMPFLAGS)
+SYSINCLUDES=
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -45,7 +44,3 @@ lexurl.ml : lexurl.mll
 clean::
 	rm -f lexurl.ml
 beforedepend:: lexurl.ml
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

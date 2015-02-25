@@ -43,6 +43,8 @@ val parse_coords : string -> int list
 (*s: signature Maps.get *)
 val get : string -> map_status
 (*e: signature Maps.get *)
+
+val broadcast_backend: (string -> unit) ref
 (*s: signature Maps.add *)
 val add : string -> map -> unit
 (*e: signature Maps.add *)

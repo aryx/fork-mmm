@@ -18,7 +18,13 @@ val new_stamp : unit -> int
 (*e: signature Document.new_stamp *)
 
 (*s: signature type logger *)
-type logger
+type logger = {
+  logger_destroy : bool -> unit;
+  logger_progress : int -> unit;
+  logger_msg : string -> unit;
+  logger_end : string -> unit
+}
+(* pad: exported for tk_document, but normally should be abstract *)
 (*e: signature type logger *)
 (*s: signature Document.tty_logger *)
 val tty_logger : logger
@@ -79,6 +85,8 @@ module DocumentIDSet : Set.S with type elt = document_id
 val dclose : bool -> handle -> unit
   (* [dclose remactive dh] closes a living dh *)
 (*e: signature Document.dclose *)
+
+val add_log_backend: (handle -> string -> (unit -> unit) -> unit) ref
 
 (*s: signature Document.add_log *)
 val add_log: handle -> string -> (unit -> unit) -> unit

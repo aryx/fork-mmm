@@ -64,12 +64,14 @@ let table = (Hashtbl.create 37 : (string, map_status) Hashtbl.t)
         or comma with possible surrounding whitespace
  *)
 (* let coord_sep = Str.regexp "," *)
-let coord_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
+let coord_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
 (*e: constant Maps.coord_sep *)
 (*s: function Maps.parse_coords *)
 let parse_coords s =
   List.map int_of_string (Str.split coord_sep s)
 (*e: function Maps.parse_coords *)
+
+let broadcast_backend = ref (fun _ev -> failwith "no broadcast defined")
 
 (*s: function Maps.add *)
 let add name map =
@@ -80,7 +82,7 @@ let add name map =
     | RequestedMap event ->
        Hashtbl.remove table name; (* remove it *)
        Hashtbl.add table name (KnownMap map); (* add its value *)
-       Frx_synth.broadcast event (* trigger all waiting people *)
+       !broadcast_backend event (* trigger all waiting people *)
   with
     Not_found -> (* nobody requested it *)
       Hashtbl.add table name (KnownMap map)

@@ -53,6 +53,8 @@ let main () =
   File_event.remove_fileinput_ref := Fileevent.remove_fileinput;
   File_event.add_fileoutput_ref := Fileevent.add_fileoutput;
   File_event.remove_fileoutput_ref := Fileevent.remove_fileoutput;
+  Document.add_log_backend := Tk_document.add_log;
+  Maps.broadcast_backend := Frx_synth.broadcast;
 
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")
