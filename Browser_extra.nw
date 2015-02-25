@@ -6471,65 +6471,6 @@ open Feed
 
 \subsection*{[[./viewers/viewers.mli]]}
 
-<<type Viewers.vparams>>=
-(* hyper functions are: "goto", "save", "gotonew" *)
-type vparams = (string * string) list
-@
-
-<<type Viewers.frame_targets>>=
-type frame_targets = (string * Widget.widget) list
-@
-
-<<signature Viewers.frame_adopt>>=
-val frame_adopt : Widget.widget -> frame_targets -> frame_targets
-    (* remap _self and _parent *)
-@
-
-<<signature Viewers.frame_fugue>>=
-val frame_fugue : frame_targets -> frame_targets
-    (* forget about _self and _parents *)
-@
-
-<<type Viewers.hyper_func>>=
-type hyper_func = {
-  hyper_visible : bool;
-  hyper_title : string;
-  hyper_func : frame_targets -> Hyper.link -> unit
-  }
-@
-
-<<signature Viewers.di_compare>>=
-val di_compare : display_info -> display_info -> bool
-@
-
-<<type Viewers.t>>=
-(* Definition of an internal viewer *)
-type t = 
-    media_parameter list -> Widget.widget -> context -> handle 
-          -> display_info option
-@
-
-<<signature Viewers.add_viewer>>=
-val add_viewer : media_type -> t -> unit
-    (* [add_viewer type viewer] *)
-@
-
-<<signature Viewers.add_builtin>>=
-val add_builtin : media_type -> t -> unit
-    (* [add_builtin type viewer] makes viewer a builtin for type *)
-@
-
-<<signature Viewers.rem_viewer>>=
-val rem_viewer : media_type -> unit
-@
-
-<<signature Viewers.view>>=
-val view : Widget.widget -> context -> handle -> display_info option
-@
-
-<<signature Viewers.reset>>=
-val reset : unit -> unit
-@
 
 
 %-------------------------------------------------------------
@@ -6894,7 +6835,8 @@ end
 (* That's for internal viewers only *)
 let add_viewer ctype viewer =
   Hashtbl.add viewers ctype (Internal viewer)
-and rem_viewer ctype =
+
+let rem_viewer ctype =
   Hashtbl.remove viewers ctype
 
 let rec unknown frame ctx dh =

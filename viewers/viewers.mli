@@ -90,8 +90,8 @@ val di_compare : display_info -> display_info -> bool
 (*s: type Viewers.t *)
 (* Definition of an internal viewer *)
 type t = 
-    media_parameter list -> Widget.widget -> context -> handle 
-          -> display_info option
+    Http_headers.media_parameter list -> Widget.widget -> 
+    context -> handle -> display_info option
 (*e: type Viewers.t *)
 
 (*s: signature Viewers.add_viewer *)

@@ -1,13 +1,10 @@
 (*s: ./www/url.mli *)
 (*s: type Url.protocol *)
-(* URLs as defined by RFC 1738 *)
-
 type protocol =
  | HTTP 
  | FILE | MAILTO | FTP | NNTP
  | TELNET 
- | GOPHER | NEWS | WAIS
- | PROSPERO
+ | GOPHER | NEWS | WAIS | PROSPERO
  | OtherProtocol of string
 (*e: type Url.protocol *)
 
@@ -17,6 +14,8 @@ val string_of_protocol: protocol -> string
 (*e: signature Url.string_of_protocol *)
 
 (*s: type Url.t *)
+(* URLs as defined by RFC 1738 *)
+
 (* Relative adressing in anchors, fragments are NOT URLs, but URI *)
 (* Not all components are used for all protocols. See RFC. *)
 type t = 

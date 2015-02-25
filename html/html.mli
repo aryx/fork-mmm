@@ -21,8 +21,10 @@ type tag = {
 type token =
    PCData of string
  | CData of string
+
  | OpenTag of tag
  | CloseTag of string
+
  | Comment of string
  | Doctype of string
  | EOF

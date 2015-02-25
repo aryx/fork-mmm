@@ -10,6 +10,7 @@ type t = {
   dtd_name : string;
   contents : (string, Elements.t) Hashtbl.t;
     (* for each element, give the set of included elements *)
+
   mutable open_omitted : Elements.t;
     (* set of elements for which opening tag may be omitted *)
   mutable close_omitted : Elements.t
@@ -18,7 +19,8 @@ type t = {
 (*e: type Dtd.t *)
 
 (*s: function Dtd.name *)
-let name t = t.dtd_name
+let name t = 
+  t.dtd_name
 (*e: function Dtd.name *)
 
 
@@ -412,10 +414,12 @@ let table = Hashtbl.create 11
 (*e: constant Dtd.table *)
 
 (*s: function Dtd.add *)
-let add t = Hashtbl.add table t.dtd_name t
+let add t = 
+  Hashtbl.add table t.dtd_name t
 (*e: function Dtd.add *)
 (*s: constant Dtd.get *)
-let get = Hashtbl.find table
+let get = 
+  Hashtbl.find table
 (*e: constant Dtd.get *)
 
 (*s: function Dtd.names *)

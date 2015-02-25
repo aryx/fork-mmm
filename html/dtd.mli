@@ -8,6 +8,7 @@ type t = {
   dtd_name : string;
   contents : (string, Elements.t) Hashtbl.t;
     (* for each element, give the set of included elements *)
+
   mutable open_omitted : Elements.t;
     (* set of elements for which opening tag may be omitted *)
   mutable close_omitted : Elements.t

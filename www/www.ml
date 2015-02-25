@@ -14,6 +14,7 @@ type request =  {
 
     mutable www_auth : (string * string) list;  (* basic auth *)
     mutable www_headers : string list;		  (* additional headers *)
+
     mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t
   }

@@ -229,19 +229,6 @@ the main author of MMM.
 \section{[[mmm]] services}
 
 
-<<signature Version.number>>=
-(* Version and other builtin strings *)
-val number : int
-@
-<<constant Version.number>>=
-(* Version *)
-let number = 418
-@
-
-<<constant Version.version_number>>=
-let version_number = 
-  string_of_int number;;
-@
 
 
 <<signature Version.about>>=
@@ -295,6 +282,22 @@ val http : string              (* the version in User-Agent field *)
 <<constant Version.http>>=
 (* User-Agent field *)
 let http = "MMM/0." ^ string_of_int number
+@
+
+
+
+<<signature Version.number>>=
+(* Version and other builtin strings *)
+val number : int
+@
+<<constant Version.number>>=
+(* Version *)
+let number = 418
+@
+
+<<constant Version.version_number>>=
+let version_number = 
+  string_of_int number;;
 @
 
 
@@ -395,14 +398,23 @@ get an updated copy.
 
 % commons/: utilities
 % globals/: config
-% www/ http/ html/: main formats, parsing
-% protocols/ retrieve/ viewers/: fetching stuff
-% display/: display engine
+% www/: url
+% html/: html format
+% http/: protocol
+% protocols/: more protocols
+% retrieve/: fetching stuff
+% viewers/: viewing embedded stuff
+% display/: html display engine
 % gui/: interface
 
-% skipped for now: i18n/japan/ applets/ sandbox/ crcs/ demos/ extensions/
+% skipped for now: 
+% i18n/japan/ 
+% applets/ sandbox/ crcs/ 
+% extensions/
+% demos/ 
 
 \section{Software architecture}
+
 
 \section{Trace of a mouse click}
 
@@ -427,6 +439,8 @@ type abs_uri = {
    uri_frag : string option
  }
 @
+% frag?
+% arg, uri_url, hmmm should be uri_path no?
 
 <<signature Uri.is_absolute>>=
 val is_absolute : string -> bool
@@ -451,20 +465,9 @@ let is_absolute uri =
 \subsection{URLs and protocols}
 % =~ protocol://host@user:port/paths?search
 
-<<type Url.protocol>>=
+<<type Url.t>>=
 (* URLs as defined by RFC 1738 *)
 
-type protocol =
- | HTTP 
- | FILE | MAILTO | FTP | NNTP
- | TELNET 
- | GOPHER | NEWS | WAIS
- | PROSPERO
- | OtherProtocol of string
-@
-%PROSPERO??
-
-<<type Url.t>>=
 (* Relative adressing in anchors, fragments are NOT URLs, but URI *)
 (* Not all components are used for all protocols. See RFC. *)
 type t = 
@@ -480,6 +483,16 @@ type t =
 
     mutable search: string option
   }
+@
+% search?
+
+<<type Url.protocol>>=
+type protocol =
+ | HTTP 
+ | FILE | MAILTO | FTP | NNTP
+ | TELNET 
+ | GOPHER | NEWS | WAIS | PROSPERO
+ | OtherProtocol of string
 @
 
 
@@ -511,6 +524,8 @@ type link = {
   h_params : (string * string) list
   }
 @
+% context?
+% why not parse h_uri? and make it a Url.t?
 
 <<type Hyper.link_method>>=
 (* This is currently for HTTP and derived, but ... *)
@@ -536,10 +551,13 @@ type request =  {
 
     mutable www_auth : (string * string) list;  (* basic auth *)
     mutable www_headers : string list;		  (* additional headers *)
+
     mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t
   }
 @
+%less: merge www_url in link?
+%less: fragment??
 
 <<signature Www.make>>=
 val make : Hyper.link -> request
@@ -776,22 +794,16 @@ let protos = Hashtbl.create 11
 let get = Hashtbl.find protos
 @
 
+%will see code like:
+%<<toplevel Protos._2>>=
+%let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
+%@
 
-<<toplevel Protos._2>>=
-let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
-@
 
 
 \section{HTTP}
 % 1.0.
 % 2.0 just got published recently
-
-<<function Http.req>>=
-let req wr cont =
-  let cnx = request wr cont in
-    (fun () -> cnx#abort)
-@
-
 
 
 <<type Messages.request>>=
@@ -1345,8 +1357,10 @@ val normalize : string -> string
 type token =
    PCData of string
  | CData of string
+
  | OpenTag of tag
  | CloseTag of string
+
  | Comment of string
  | Doctype of string
  | EOF
@@ -1412,6 +1426,7 @@ type t = {
   dtd_name : string;
   contents : (string, Elements.t) Hashtbl.t;
     (* for each element, give the set of included elements *)
+
   mutable open_omitted : Elements.t;
     (* set of elements for which opening tag may be omitted *)
   mutable close_omitted : Elements.t
@@ -1423,32 +1438,14 @@ type t = {
 val dtd32 : t
 @
 
-
-<<signature Dtd.get>>=
-(* A table of DTDs for preferences *)
-val get : string -> t
-@
-
-<<signature Dtd.add>>=
-val add : t -> unit
-@
-
 <<signature Dtd.name>>=
 val name : t -> string
 @
-
-<<signature Dtd.names>>=
-val names : unit -> string list
-@
-
-<<signature Dtd.current>>=
-val current : t ref 
-@
-
-
 <<function Dtd.name>>=
-let name t = t.dtd_name
+let name t = 
+  t.dtd_name
 @
+
 
 <<function Dtd.sol>>=
 (* Utils *)
@@ -1623,21 +1620,42 @@ let dtd32 =
   dtd
 @
 
-<<constant Dtd.current>>=
-let current = ref dtd32
-@
 
 
 <<constant Dtd.table>>=
 let table = Hashtbl.create 11
 @
 
+<<signature Dtd.add>>=
+val add : t -> unit
+@
+
+<<signature Dtd.get>>=
+(* A table of DTDs for preferences *)
+val get : string -> t
+@
+
+<<signature Dtd.names>>=
+val names : unit -> string list
+@
+
+<<signature Dtd.current>>=
+val current : t ref 
+@
+<<constant Dtd.current>>=
+let current = ref dtd32
+@
+
+
+
 <<function Dtd.add>>=
-let add t = Hashtbl.add table t.dtd_name t
+let add t = 
+  Hashtbl.add table t.dtd_name t
 @
 
 <<constant Dtd.get>>=
-let get = Hashtbl.find table
+let get = 
+  Hashtbl.find table
 @
 
 <<function Dtd.names>>=
@@ -1647,9 +1665,6 @@ let names () =
    !names
 @
 
-<<toplevel Dtd._1>>=
-let _ = add dtd20; add dtd32
-@
 
 
 <<constant Dtd.dtd32f>>=
@@ -1685,6 +1700,10 @@ let dtd32f =
   add_elem "html" (Elements.add "frameset" 
              (Elements.add "noframes" html_contents));
   dtd
+@
+
+<<toplevel Dtd._1>>=
+let _ = add dtd20; add dtd32
 @
 
 <<toplevel Dtd._2>>=
@@ -2273,13 +2292,7 @@ let html_indent name level =
 
 \section{HTTP}
 
-<<signature Http_headers.parse_status>>=
-val parse_status : string -> status
-  (* Parses a Status-Line
-     Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-     Raises [Invalid_HTTP_header "Status-Line"] 
-     or [Not_found] if the string is not a Status-Line at all *)
-@
+\subsection{Request}
 
 <<signature Http_headers.parse_request>>=
 val parse_request : string -> request
@@ -2289,29 +2302,6 @@ val parse_request : string -> request
 @
 
 
-
-<<function Http_headers.parse_status>>=
-(* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
-let parse_status s =
- if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
- try
-  match Str.bounded_split (regexp "[ ]") s 3 with
-    [v;c;m] ->
-         { status_version = v;
-           status_code = int_of_string c;
-           status_message = m }
-  (* it happened once with Server: Netscape-Commerce/1.1 *)
-  (* where the Status Line was: HTTP/1.0 302 *)
-  | [v;c] ->
-         { status_version = v;
-           status_code = int_of_string c;
-           status_message = "empty" }
-  | _ -> raise (Invalid_HTTP_header "Status-Line")
- with
-   Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
- else (* 0.9, dammit *)
-   raise Not_found
-@
 
 
 
@@ -2335,6 +2325,40 @@ let parse_request s =
   | _ -> raise (Invalid_HTTP_header "Request-Line")
  with
    Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
+@
+
+
+\subsection{Status}
+
+<<signature Http_headers.parse_status>>=
+val parse_status : string -> status
+  (* Parses a Status-Line
+     Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+     Raises [Invalid_HTTP_header "Status-Line"] 
+     or [Not_found] if the string is not a Status-Line at all *)
+@
+
+<<function Http_headers.parse_status>>=
+(* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
+let parse_status s =
+ if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
+ try
+  match Str.bounded_split (regexp "[ ]") s 3 with
+    [v;c;m] ->
+         { status_version = v;
+           status_code = int_of_string c;
+           status_message = m }
+  (* it happened once with Server: Netscape-Commerce/1.1 *)
+  (* where the Status Line was: HTTP/1.0 302 *)
+  | [v;c] ->
+         { status_version = v;
+           status_code = int_of_string c;
+           status_message = "empty" }
+  | _ -> raise (Invalid_HTTP_header "Status-Line")
+ with
+   Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
+ else (* 0.9, dammit *)
+   raise Not_found
 @
 
 
@@ -2390,15 +2414,13 @@ let get_multi_header field_name =
   search
 @
 
-\subsection{Lexing}
+\subsection{Media}
 
 <<signature Lexheaders.media_type>>=
-val media_type : string -> media_type * media_parameter list
+val media_type : 
+  string -> media_type * Http_headers.media_parameter list
 @
 
-<<signature Lexheaders.challenge>>=
-val challenge : Lexing.lexbuf -> authChallenge
-@
 
 
 \chapter{HTML}
@@ -2409,6 +2431,8 @@ val challenge : Lexing.lexbuf -> authChallenge
 \section{Forms}
 
 \section{Maps}
+
+% important for imgs?
 
 %(* Client-side image maps:
 %     the "only" difficulty in implementing client-side image maps is that
@@ -2528,6 +2552,17 @@ let get name =
 
 % will see http://, main protocol, see also file://, mailto://
 % in extra protocol chapter
+
+<<toplevel Protos._2>>=
+let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
+@
+
+<<function Http.req>>=
+let req wr cont =
+  let cnx = request wr cont in
+    (fun () -> cnx#abort)
+@
+
 
 \section{Headers}
 
@@ -2660,25 +2695,30 @@ val contentencoding : header list -> string
 let _ = List.iter (function (code, msg) ->
                      Hashtbl.add status_messages code msg)
   [ 200, "OK";
+
     201, "Created";
     202, "Accepted";
     204, "No Content";
+
     301, "Moved Permanently";
     302, "Moved Temporarily";
     304, "Not Modified";
+
     400, "Bad Request";
     401, "Unauthorized";
     403, "Forbidden";
     404, "Not Found";
+
     500, "Internal Server Error";
     501, "Not Implemented";
     502, "Bad Gateway";
     503, "Service Unavailable";
+
     (* These are proposed for HTTP1.1 *)
     407, "Proxy Authentication Required"
   ]
 @
-
+%404!!
 
 <<function Http_headers.http_status>>=
 (* A typical status line *)
@@ -2701,306 +2741,6 @@ let status_message code =
   try Hashtbl.find status_messages code
   with Not_found -> " "
 @
-
-\section{Auth}
-
-
-<<signature Http_headers.challenge>>=
-val challenge : header list -> string
-  (* WWW-Authenticate *)
-@
-
-<<signature Http_headers.proxy_challenge>>=
-val proxy_challenge : header list -> string
-  (* Proxy-Authenticate *)
-@
-
-<<signature Http_headers.expires>>=
-val expires : header list -> Http_date.http_time option
-  (* Expires *)
-@
-
-<<type Http_headers.authScheme>>=
-(* Authorisation headers *)
-type authScheme =
-    AuthBasic
-  | AuthExtend of string
-@
-
-<<type Http_headers.authChallenge>>=
-type authChallenge =
-    { challenge_scheme : authScheme;
-      challenge_realm : string;
-      challenge_params: (string * string) list
-    }
-@
-
-
-
-<<type Auth.authSpace>>=
-(* Authorizations are remembered on the base of the directory url and realm
- * They are kept during the whole MMM session, with expiration
- *)
-type authSpace = {
-   auth_proxy: bool;
-   auth_host : string;
-   auth_port : int;
-   auth_dir : string;
-   auth_realm : string
-  }
-@
-
-
-
-
-<<signature Auth.lifetime>>=
-val lifetime : int ref
-@
-
-<<signature Auth.auth_file>>=
-val auth_file : string ref
-@
-
-<<signature Auth.edit>>=
-val edit : unit -> unit
-@
-
-<<signature Auth.load>>=
-val load : unit -> unit
-@
-
-<<signature Auth.save>>=
-val save : unit -> unit
-@
-
-<<signature Auth.add>>=
-val add : authSpace -> string -> unit
-@
-
-<<signature Auth.get>>=
-val get : authSpace -> string
-@
-
-<<signature Auth.init>>=
-val init : unit -> unit
-@
-
-<<signature Auth.check>>=
-val check : Www.request -> authChallenge -> authSpace ->
-                  (string * bool * authSpace) option
-@
-
-
-
-
-<<type Auth.authEntry>>=
-type authEntry = {
-   auth_cookie : string;
-   mutable auth_lastused : float
-   }
-@
-
-<<constant Auth.authorizations>>=
-let authorizations = Hashtbl.create 37
-@
-
-<<function Auth.get>>=
-let get space = 
-  let entry = Hashtbl.find authorizations space in
-    entry.auth_lastused <- Unix.time();
-    entry.auth_cookie
-@
-
-<<constant Auth.lifetime>>=
-(* Lifetime, in minutes. Default is one hour *)
-let lifetime = ref 60
-@
-
-<<function Auth.lookup>>=
-let rec lookup space = 
-  (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
-  try
-    Hashtbl.find authorizations space
-  with
-    Not_found ->
-     if space.auth_dir = "/" or space.auth_dir = "." 
-     then raise Not_found 
-     else
-      let newdir = Filename.dirname space.auth_dir in
-       lookup {auth_proxy = space.auth_proxy;
-               auth_host = space.auth_host;
-            auth_port = space.auth_port;
-        auth_dir = newdir;
-        auth_realm = space.auth_realm}
-@
-
-<<function Auth.ask_cookie>>=
-let ask_cookie forwhere =
-  try
-    let u,p = Frx_req.open_passwd forwhere in
-      Base64.encode (u^":"^p)
-  with
-    Failure "cancelled" -> failwith "cancelled"
-  | _ -> Error.default#f (I18n.sprintf "Error in base 64 encoding");
-        failwith "cancelled"
-@
-
-<<function Auth.replace>>=
-let replace kind cookie l =
-  let rec repl acc = function
-    [] -> (kind,cookie)::acc
-  | (k,_)::l when k = kind -> repl (acc) l
-  | p::l -> repl (p::acc) l in
-  repl [] l
-@
-
-<<function Auth.add>>=
-let add space cookie =
-  Log.debug "adding cookie";
-  Hashtbl.add authorizations 
-      space 
-      {auth_cookie = cookie; auth_lastused = Unix.time()}
-@
-
-<<function Auth.check>>=
-(* Kind is either: realm or proxy *)
-let check wwwr challenge authspace =
-  let kind = if authspace.auth_proxy then "proxy" else "realm" in
-  match challenge.challenge_scheme with
-    AuthExtend _ -> (* we don't know how to do this *) 
-       None
-  | AuthBasic -> (* params are gleefully ignored *)
-     try (* if the passwd request is cancelled *)
-      let cookie, isnew =
-        if List.mem_assoc kind wwwr.www_auth then begin
-           (* we already tried, so the authorization is bad ! *)
-           Hashtbl.remove authorizations authspace; (* in case *)
-           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
-                                             %s:%d/%s" 
-                            kind challenge.challenge_realm 
-                            authspace.auth_host authspace.auth_port 
-                            authspace.auth_dir),
-           true
-           end
-       else (* ah, it is our first try,  get the authorization *)
-         if authspace.auth_proxy then 
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
-                                             %s:%d/%s" 
-                            kind challenge.challenge_realm
-                            authspace.auth_host authspace.auth_port 
-                            authspace.auth_dir),
-            true
-         else
-           try 
-             let entry = lookup authspace in
-              entry.auth_lastused <- Unix.time();
-              entry.auth_cookie, false
-           with Not_found ->
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
-                                             %s:%d/%s" 
-                            kind challenge.challenge_realm
-                            authspace.auth_host authspace.auth_port 
-                            authspace.auth_dir),
-            true
-      in
-      wwwr.www_auth <- replace kind cookie wwwr.www_auth;
-      Some (cookie, isnew, authspace)
-     with
-      Failure "cancelled" -> None
-@
-
-<<function Auth.edit>>=
-(* needs to be refined *)
-let edit () =
-  let top =
-    Toplevel.create Widget.default_toplevel 
-         [Class "MMMAuthorizations"] in
-    Wm.title_set top (I18n.sprintf "Authorizations");
-    let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
-      Hashtbl.iter (fun space cookie ->
-       Listbox.insert lb End
-      [Printf.sprintf "(%s) http://%s:%d/%s" 
-         space.auth_realm space.auth_host space.auth_port space.auth_dir])
-       authorizations;
-    let buts = Frame.create top [] in
-    let clearb = Button.create_named buts "clear"
-       [Text (I18n.sprintf "Clear"); 
-       Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
-    and dismissb = Button.create_named buts "dismiss"
-       [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] in
-      pack [clearb] [Side Side_Left; Expand true];
-      pack [dismissb] [Side Side_Right; Expand true];
-      pack [buts][Side Side_Bottom; Fill Fill_X];
-      pack [f][Side Side_Top; Fill Fill_Both; Expand true]
-@
-
-<<constant Auth.auth_file>>=
-(* Saving authorizations to file *)
-let auth_file = ref ""
-@
-
-<<function Auth.save>>=
-let save () =
- if !auth_file <> "" then
-  let auth_file = Msys.tilde_subst !auth_file in
-  try
-    let o = openfile auth_file [O_WRONLY; O_CREAT] 0o600 in
-    let oc = out_channel_of_descr o in
-      output_value oc authorizations;
-      flush oc;
-      close o
-  with
-    Unix_error(e,_,_) ->
-      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
-                 (Unix.error_message e))
-  | Sys_error s ->
-      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
-
- else 
-   Error.default#f (I18n.sprintf "No authorisation file defined")
-@
-
-<<function Auth.load>>=
-let load () =
-  if !auth_file <> "" then
-    let auth_file = Msys.tilde_subst !auth_file in
-    try
-      let ic = open_in auth_file in
-      let table = input_value ic
-      and time = Unix.time() in
-       Hashtbl.iter
-          (fun spacerealm entry ->
-           entry.auth_lastused <- time;
-           Hashtbl.add authorizations spacerealm entry)
-          table;
-    close_in ic
-    with
-      Sys_error s ->
-       Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
- else 
-   Error.default#f (I18n.sprintf "No authorisation file defined")
-@
-
-<<function Auth.init>>=
-let init () =
-  let check () =
-    let remove = ref []
-    and lifetime = float (60 * !lifetime)
-    and time = Unix.time () in
-    Hashtbl.iter 
-      (fun space entry ->
-       let expiration_time = entry.auth_lastused +. lifetime in
-    if time > expiration_time then remove := space :: !remove)
-      authorizations;
-    List.iter (Hashtbl.remove authorizations) !remove
-  in
-  let rec tim () =
-    Timer.set (!lifetime * 30000) (fun () -> check(); tim ())
-  in
-  tim ()
-@
-
-
 
 
 \section{Time}
@@ -3854,9 +3594,40 @@ type progress_func = int option -> int -> unit
 % viewers/
 
 
+<<type Viewers.t>>=
+(* Definition of an internal viewer *)
+type t = 
+    Http_headers.media_parameter list -> Widget.widget -> 
+    context -> handle -> display_info option
+@
+
 <<constant Viewers.viewers>>=
 let viewers = Hashtbl.create 17
 @
+
+<<signature Viewers.add_viewer>>=
+val add_viewer : media_type -> t -> unit
+    (* [add_viewer type viewer] *)
+@
+<<signature Viewers.rem_viewer>>=
+val rem_viewer : media_type -> unit
+@
+
+<<signature Viewers.add_builtin>>=
+val add_builtin : media_type -> t -> unit
+    (* [add_builtin type viewer] makes viewer a builtin for type *)
+@
+
+
+<<signature Viewers.view>>=
+val view : Widget.widget -> context -> handle -> display_info option
+@
+
+<<signature Viewers.reset>>=
+val reset : unit -> unit
+@
+
+
 
 <<type Viewers.spec>>=
 type spec =
@@ -3902,6 +3673,41 @@ let reset () =
     Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
     l
 @
+
+
+
+\section{XXX}
+
+<<type Viewers.vparams>>=
+(* hyper functions are: "goto", "save", "gotonew" *)
+type vparams = (string * string) list
+@
+
+<<type Viewers.frame_targets>>=
+type frame_targets = (string * Widget.widget) list
+@
+
+<<signature Viewers.frame_adopt>>=
+val frame_adopt : Widget.widget -> frame_targets -> frame_targets
+    (* remap _self and _parent *)
+@
+<<signature Viewers.frame_fugue>>=
+val frame_fugue : frame_targets -> frame_targets
+    (* forget about _self and _parents *)
+@
+
+<<type Viewers.hyper_func>>=
+type hyper_func = {
+  hyper_visible : bool;
+  hyper_title : string;
+  hyper_func : frame_targets -> Hyper.link -> unit
+  }
+@
+
+<<signature Viewers.di_compare>>=
+val di_compare : display_info -> display_info -> bool
+@
+
 
 \section{Mime}
 
@@ -4043,6 +3849,317 @@ let _ =
 % could also have an parallel chapter?
 
 \section{Caches}
+
+\chapter{Security}
+
+
+\section{Parsing}
+
+<<signature Lexheaders.challenge>>=
+val challenge : Lexing.lexbuf -> authChallenge
+@
+
+\section{Security challgenge}
+% auth
+% mv in later chapter? Security?
+
+
+<<signature Http_headers.challenge>>=
+val challenge : header list -> string
+  (* WWW-Authenticate *)
+@
+
+<<signature Http_headers.proxy_challenge>>=
+val proxy_challenge : header list -> string
+  (* Proxy-Authenticate *)
+@
+
+<<signature Http_headers.expires>>=
+val expires : header list -> Http_date.http_time option
+  (* Expires *)
+@
+
+<<type Http_headers.authScheme>>=
+(* Authorisation headers *)
+type authScheme =
+    AuthBasic
+  | AuthExtend of string
+@
+
+<<type Http_headers.authChallenge>>=
+type authChallenge =
+    { challenge_scheme : authScheme;
+      challenge_realm : string;
+      challenge_params: (string * string) list
+    }
+@
+
+
+
+<<type Auth.authSpace>>=
+(* Authorizations are remembered on the base of the directory url and realm
+ * They are kept during the whole MMM session, with expiration
+ *)
+type authSpace = {
+   auth_proxy: bool;
+   auth_host : string;
+   auth_port : int;
+   auth_dir : string;
+   auth_realm : string
+  }
+@
+
+
+
+
+<<signature Auth.lifetime>>=
+val lifetime : int ref
+@
+
+<<signature Auth.auth_file>>=
+val auth_file : string ref
+@
+
+<<signature Auth.edit>>=
+val edit : unit -> unit
+@
+
+<<signature Auth.load>>=
+val load : unit -> unit
+@
+
+<<signature Auth.save>>=
+val save : unit -> unit
+@
+
+<<signature Auth.add>>=
+val add : authSpace -> string -> unit
+@
+
+<<signature Auth.get>>=
+val get : authSpace -> string
+@
+
+<<signature Auth.init>>=
+val init : unit -> unit
+@
+
+<<signature Auth.check>>=
+val check : Www.request -> authChallenge -> authSpace ->
+                  (string * bool * authSpace) option
+@
+
+
+
+
+<<type Auth.authEntry>>=
+type authEntry = {
+   auth_cookie : string;
+   mutable auth_lastused : float
+   }
+@
+
+<<constant Auth.authorizations>>=
+let authorizations = Hashtbl.create 37
+@
+
+<<function Auth.get>>=
+let get space = 
+  let entry = Hashtbl.find authorizations space in
+    entry.auth_lastused <- Unix.time();
+    entry.auth_cookie
+@
+
+<<constant Auth.lifetime>>=
+(* Lifetime, in minutes. Default is one hour *)
+let lifetime = ref 60
+@
+
+<<function Auth.lookup>>=
+let rec lookup space = 
+  (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
+  try
+    Hashtbl.find authorizations space
+  with
+    Not_found ->
+     if space.auth_dir = "/" or space.auth_dir = "." 
+     then raise Not_found 
+     else
+      let newdir = Filename.dirname space.auth_dir in
+       lookup {auth_proxy = space.auth_proxy;
+               auth_host = space.auth_host;
+            auth_port = space.auth_port;
+        auth_dir = newdir;
+        auth_realm = space.auth_realm}
+@
+
+<<function Auth.ask_cookie>>=
+let ask_cookie forwhere =
+  try
+    let u,p = Frx_req.open_passwd forwhere in
+      Base64.encode (u^":"^p)
+  with
+    Failure "cancelled" -> failwith "cancelled"
+  | _ -> Error.default#f (I18n.sprintf "Error in base 64 encoding");
+        failwith "cancelled"
+@
+
+<<function Auth.replace>>=
+let replace kind cookie l =
+  let rec repl acc = function
+    [] -> (kind,cookie)::acc
+  | (k,_)::l when k = kind -> repl (acc) l
+  | p::l -> repl (p::acc) l in
+  repl [] l
+@
+
+<<function Auth.add>>=
+let add space cookie =
+  Log.debug "adding cookie";
+  Hashtbl.add authorizations 
+      space 
+      {auth_cookie = cookie; auth_lastused = Unix.time()}
+@
+
+<<function Auth.check>>=
+(* Kind is either: realm or proxy *)
+let check wwwr challenge authspace =
+  let kind = if authspace.auth_proxy then "proxy" else "realm" in
+  match challenge.challenge_scheme with
+    AuthExtend _ -> (* we don't know how to do this *) 
+       None
+  | AuthBasic -> (* params are gleefully ignored *)
+     try (* if the passwd request is cancelled *)
+      let cookie, isnew =
+        if List.mem_assoc kind wwwr.www_auth then begin
+           (* we already tried, so the authorization is bad ! *)
+           Hashtbl.remove authorizations authspace; (* in case *)
+           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm 
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+           true
+           end
+       else (* ah, it is our first try,  get the authorization *)
+         if authspace.auth_proxy then 
+            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+            true
+         else
+           try 
+             let entry = lookup authspace in
+              entry.auth_lastused <- Unix.time();
+              entry.auth_cookie, false
+           with Not_found ->
+            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+            true
+      in
+      wwwr.www_auth <- replace kind cookie wwwr.www_auth;
+      Some (cookie, isnew, authspace)
+     with
+      Failure "cancelled" -> None
+@
+
+<<function Auth.edit>>=
+(* needs to be refined *)
+let edit () =
+  let top =
+    Toplevel.create Widget.default_toplevel 
+         [Class "MMMAuthorizations"] in
+    Wm.title_set top (I18n.sprintf "Authorizations");
+    let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
+      Hashtbl.iter (fun space cookie ->
+       Listbox.insert lb End
+      [Printf.sprintf "(%s) http://%s:%d/%s" 
+         space.auth_realm space.auth_host space.auth_port space.auth_dir])
+       authorizations;
+    let buts = Frame.create top [] in
+    let clearb = Button.create_named buts "clear"
+       [Text (I18n.sprintf "Clear"); 
+       Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
+    and dismissb = Button.create_named buts "dismiss"
+       [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] in
+      pack [clearb] [Side Side_Left; Expand true];
+      pack [dismissb] [Side Side_Right; Expand true];
+      pack [buts][Side Side_Bottom; Fill Fill_X];
+      pack [f][Side Side_Top; Fill Fill_Both; Expand true]
+@
+
+<<constant Auth.auth_file>>=
+(* Saving authorizations to file *)
+let auth_file = ref ""
+@
+
+<<function Auth.save>>=
+let save () =
+ if !auth_file <> "" then
+  let auth_file = Msys.tilde_subst !auth_file in
+  try
+    let o = openfile auth_file [O_WRONLY; O_CREAT] 0o600 in
+    let oc = out_channel_of_descr o in
+      output_value oc authorizations;
+      flush oc;
+      close o
+  with
+    Unix_error(e,_,_) ->
+      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
+                 (Unix.error_message e))
+  | Sys_error s ->
+      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
+
+ else 
+   Error.default#f (I18n.sprintf "No authorisation file defined")
+@
+
+<<function Auth.load>>=
+let load () =
+  if !auth_file <> "" then
+    let auth_file = Msys.tilde_subst !auth_file in
+    try
+      let ic = open_in auth_file in
+      let table = input_value ic
+      and time = Unix.time() in
+       Hashtbl.iter
+          (fun spacerealm entry ->
+           entry.auth_lastused <- time;
+           Hashtbl.add authorizations spacerealm entry)
+          table;
+    close_in ic
+    with
+      Sys_error s ->
+       Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+ else 
+   Error.default#f (I18n.sprintf "No authorisation file defined")
+@
+
+<<function Auth.init>>=
+let init () =
+  let check () =
+    let remove = ref []
+    and lifetime = float (60 * !lifetime)
+    and time = Unix.time () in
+    Hashtbl.iter 
+      (fun space entry ->
+       let expiration_time = entry.auth_lastused +. lifetime in
+    if time > expiration_time then remove := space :: !remove)
+      authorizations;
+    List.iter (Hashtbl.remove authorizations) !remove
+  in
+  let rec tim () =
+    Timer.set (!lifetime * 30000) (fun () -> check(); tim ())
+  in
+  tim ()
+@
+
+
 
 \chapter{Extra Protocols}
 

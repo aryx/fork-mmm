@@ -256,8 +256,8 @@ let extern dh ctype =
 (*s: type Viewers.t *)
 (* Definition of an internal viewer *)
 type t = 
-    media_parameter list -> Widget.widget -> context -> handle 
-          -> display_info option
+    Http_headers.media_parameter list -> Widget.widget -> 
+    context -> handle -> display_info option
 (*e: type Viewers.t *)
 
 (*s: type Viewers.spec *)
@@ -275,7 +275,7 @@ let viewers = Hashtbl.create 17
 (* That's for internal viewers only *)
 let add_viewer ctype viewer =
   Hashtbl.add viewers ctype (Internal viewer)
-and rem_viewer ctype =
+let rem_viewer ctype =
   Hashtbl.remove viewers ctype
 
 let rec unknown frame ctx dh =
