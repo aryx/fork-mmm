@@ -5,11 +5,11 @@
 ##############################################################################
 
 # for lpization
-dir: sandbox
-dir: applets
-dir: demos
-file: commons/tkresource.ml
-dir: external
+#dir: sandbox
+#dir: applets
+#dir: demos
+#file: commons/tkresource.ml
+#dir: external
 
 
 # -------------------------------------------------------------------------

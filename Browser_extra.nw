@@ -43,6 +43,15 @@ val free : t -> unit
 <<./commons/condition.mli>>=
 type t
 
+type condition_backend = {
+  create: t -> unit;
+  set: t -> unit;
+  wait: t -> unit;
+  free: t -> unit;
+}
+
+val backend: condition_backend ref
+
 <<signature Condition.create>>
 <<signature Condition.set>>
 <<signature Condition.wait>>
@@ -1092,6 +1101,10 @@ end
 
 <<signature Low.init>>
 
+
+val timer_add_backend: (int -> (unit -> unit) -> unit) ref
+val update_idletasks_backend: (unit -> unit) ref
+
 <<signature Low.update_idletasks>>
 @
 
@@ -1182,9 +1195,7 @@ let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
-(*  let _ = Timer.add tick_duration refresh in () *)
-  pr2 "TODO: Timer.add"
-
+  !timer_add_backend tick_duration refresh
 @
 
 <<function Low.add_task>>=
@@ -1204,8 +1215,7 @@ let last_update = ref !global_time
 <<function Low.update_idletasks>>=
 let update_idletasks () =
   if !global_time <> !last_update then begin
-    (* update_idletasks();  *)
-    pr2 "TODO: Tk.update_idletasks?";
+    !update_idletasks_backend ();
     last_update := !global_time
   end
 @
@@ -1269,11 +1279,18 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 
 <<constant Low.tasks>>
 
+let timer_add_backend = 
+  ref (fun _ _ -> failwith "no time_add defined")
+
 <<function Low.refresh>>
 
 <<function Low.add_task>>
 
 <<function Low.init>>
+
+let update_idletasks_backend = 
+  ref (fun _ -> failwith "no update_idletasks defined")
+
 
 <<constant Low.last_update>>
 <<function Low.update_idletasks>>
@@ -1445,6 +1462,8 @@ open Unix
 
 <<signature I18n.menu_option>>
 <<signature I18n.menu_pattern>>
+
+val translate: string -> string
 @
 
 
@@ -4503,10 +4522,10 @@ let error body =
     let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
      output_string oc body;
      close_out oc;
-     Error.default#f (I18n.sprintf "Can't send mail (saved in $HOME/dead.letter)")
+     !Error.default#f (I18n.sprintf "Can't send mail (saved in $HOME/dead.letter)")
   with
      _ -> 
-      Error.default#f (I18n.sprintf "Can't send mail, can't save dead.letter")
+      !Error.default#f (I18n.sprintf "Can't send mail, can't save dead.letter")
 @
 %$
 
@@ -4523,7 +4542,7 @@ let sendmail msg =
      Munix.write_string fd_out msg.body;
      close fd_out;
      begin match waitpid [] n with
-       _, WEXITED 0 -> Error.default#ok (I18n.sprintf "Mail sent")
+       _, WEXITED 0 -> !Error.default#ok (I18n.sprintf "Mail sent")
      | _, _ -> error msg.body
      end
  with
@@ -6141,7 +6160,7 @@ module EmbeddedData =
       |	_ -> failwith "load"
 
     let error url jobs = 
-      Error.default#f (I18n.sprintf "Can't find embedded document %s" 
+      !Error.default#f (I18n.sprintf "Can't find embedded document %s" 
                         (Url.string_of url))
 
     let error_msg (_,_) = ()
@@ -6245,7 +6264,7 @@ let f cont dh fname endmsg =
       close_out oc;
       Document.destroy_log dh false;
       Msys.rm fname;
-      Error.default#f (I18n.sprintf
+      !Error.default#f (I18n.sprintf
                  "Error during retrieval of %s" 
                  (Url.string_of dh.document_id.document_url))
         )
@@ -6259,7 +6278,7 @@ let tofile cont dh fname endmsg =
   with Sys_error msg -> 
     dclose true dh;
     Document.destroy_log dh false;
-    Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg)
+    !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg)
 @
 
 <<function Save.interactive>>=
@@ -6283,7 +6302,7 @@ let rec interactive cont dh =
           (* channel is not closed ! *)
               (fun () -> Msys.rm fname)
       with Sys_error msg -> 
-        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
+        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
         interactive cont dh
       end
       | l -> raise (Failure "multiple selection"))
@@ -6319,7 +6338,7 @@ let transfer wr dh dest =
      Unix_error(_,_,_) | Sys_error _ ->
        dclose true dh;
        close fd;
-       Error.default#f (I18n.sprintf
+       !Error.default#f (I18n.sprintf
            "Error during retrieval of %s" 
           (Url.string_of dh.document_id.document_url))
        )
@@ -6331,16 +6350,16 @@ let save_from_string url s f =
    let oc = open_out_bin f in
      begin try
       output_string oc s;
-      Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+      !Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
                          (Url.string_of url) f)
      with
        Sys_error e ->
-        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
      end;
      close_out oc
   with
     Sys_error e ->
-        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
 @
 
 <<function Save.copy_file>>=
@@ -6355,17 +6374,17 @@ let copy_file url src dst =
     in
     begin try 
      copy();
-     Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+     !Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
                         (Url.string_of url) dst)
     with 
      Sys_error e ->
-      Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+      !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
     end;
     close_in ic; 
     close_out oc
   with
     Sys_error e ->
-      Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+      !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
 @
 
 <<function Save.pipe_from_string>>=
@@ -6394,14 +6413,14 @@ let pipe_from_string url data cmd =
           Unix_error (_,_,_) -> (* can't write *)
         Fileevent.remove_fileoutput fd_out;
         close fd_out;
-        Error.default#f (I18n.sprintf "Error during |%s in %s" cmd urls)
+        !Error.default#f (I18n.sprintf "Error during |%s in %s" cmd urls)
       end else begin (* we're done *)
         Fileevent.remove_fileoutput fd_out;
         close fd_out
       end)
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+      !Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
 @
 
 <<function Save.pipe_from_file>>=
@@ -6419,7 +6438,7 @@ let pipe_from_file url f cmd =
     ()
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+      !Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
 @
 
 <<function Save.document>>=
@@ -6459,7 +6478,7 @@ let document did arg =
           copy_file did.document_url f s)
   with
     Not_found ->
-      Error.default#f ("Document is not in cache.")
+      !Error.default#f ("Document is not in cache.")
 @
 
 <<constant Save.print_command>>=
@@ -6697,7 +6716,7 @@ let extern dh ctype =
          kill();
          close pout;
          Document.destroy_log dh false;
-         Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
+         !Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
        )
 @
 
@@ -6764,7 +6783,7 @@ class  virtual context ((did : Document.document_id),
   (* apply this on a copy ! *)
   method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
     (* for debug *)
-    let oldtargets = targets in
+    let _oldtargetsTODO = targets in
     let res = 
       match newtargets with 
       | [] -> 
@@ -8727,7 +8746,7 @@ class  virtual active () =
   (* Install all navigation bindings *)
   List.iter (fun hyname ->
     try 
-      let hyperf = List.assoc hyname ctx#hyper_funs in
+      let _hyperfTODO = List.assoc hyname ctx#hyper_funs in
       self#binder (Glevents.get hyname)
     (BindSet ([Ev_MouseX; Ev_MouseY],
           (fun ei -> 
@@ -9061,7 +9080,7 @@ let view attach did redisplay errors annotations coding =
     let rec f = function
         [] -> raise Not_found
       | (s,e,msg)::l ->
-        if Text.compare t s LE idx & Text.compare t idx LE e then msg
+        if Text.compare t s LE idx && Text.compare t idx LE e then msg
      else f l in
     f !error_idx in
   let show_error = Text.yview_index t in
@@ -9155,7 +9174,7 @@ let view attach did redisplay errors annotations coding =
 
   with
     Not_found ->
-     Error.default#f "document not in cache"
+     !Error.default#f "document not in cache"
 @
 
 
@@ -10819,7 +10838,7 @@ class display_html ((top : Widget.widget),
      that we don't use the initial feed, but rather the cache *)
   method redisplay =
     if pending then 
-      Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
+      !Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
     else
       try
        dh <- Decoders.insert (Cache.renew_handle dh);
@@ -10827,13 +10846,13 @@ class display_html ((top : Widget.widget),
        self#init init_mode
       with
        Not_found ->
-      Error.default#f (I18n.sprintf "Document not in cache anymore")
+      !Error.default#f (I18n.sprintf "Document not in cache anymore")
 
   (* The source is attached to this frame so we can destroy the interior
      widgets *)
   method source =
     if pending then
-      Error.default#f (I18n.sprintf "Cannot view document source (pending)")
+      !Error.default#f (I18n.sprintf "Cannot view document source (pending)")
     else Source.view frame did (fun () -> self#redisplay) errors annotations
            feed_read#get_code
 
@@ -17548,7 +17567,7 @@ let undisplay di =
 and display di = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
-  else Error.default#f "fatal error: window was destroyed";
+  else !Error.default#f "fatal error: window was destroyed";
   let tl = Winfo.toplevel di#di_widget
   and title = I18n.sprintf "MMM Browser@%s" di#di_title in
   if Widget.known_class tl = "toplevel" then
@@ -17605,7 +17624,7 @@ let rec navigator has_tachy initial_url =
     History.add hist did frag;
     !update_vhistory ()
 
-  and error = new Error.t top
+  and error = new Tk_error.t top
 
   and loggingv = Textvariable.create_temporary top
 
@@ -17621,7 +17640,7 @@ let rec navigator has_tachy initial_url =
       nav_new = (fun link ->
            try
              let wwwr = Plink.make link in
-               navigator false wwwr.www_url; ()
+               navigator false wwwr.www_url |> ignore; ()
            with
               Invalid_link msg -> 
                 error#f (I18n.sprintf "Invalid link"));
@@ -17669,9 +17688,9 @@ let rec navigator has_tachy initial_url =
 
    (* A bunch of other functions *)
   and new_window () =
-       navigator false hist.h_current.h_did.document_url; ()
+       navigator false hist.h_current.h_did.document_url |> ignore
   and new_window_initial () =
-       navigator false initial_url; ()
+       navigator false initial_url |> ignore
   and new_window_sel () =
     try 
      let url = Selection.get [] in
@@ -18047,7 +18066,7 @@ let rec navigator has_tachy initial_url =
   Some nav
   with
       e -> 
-    Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
+    !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
                       (Url.string_of initial_url)
                   (Printexc.to_string e));
     if !navigators = 1 then begin
@@ -18163,7 +18182,7 @@ let init () =
     at_exit (fun () -> Msys.rm file)
  with
    e ->
-     Error.default#f (I18n.sprintf "Can't initialize %s\n%s"
+     !Error.default#f (I18n.sprintf "Can't initialize %s\n%s"
                        file (Printexc.to_string e))
 @
 

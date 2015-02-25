@@ -305,8 +305,8 @@ SRC_VIEWS= \
   \
   commons/feed.mli\
   commons/feed.ml\
-  commons/glevents.mli\
-  commons/glevents.ml\
+  tk/glevents.mli\
+  tk/glevents.ml\
   commons/hotlist.ml\
   \
   globals/version.mli\
