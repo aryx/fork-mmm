@@ -49,6 +49,10 @@ let main () =
   Condition.backend := Tk_condition.backend ();
   Low.timer_add_backend := (fun a b -> Timer.add a b |> ignore);
   Low.update_idletasks_backend := Tk.update_idletasks;
+  File_event.add_fileinput_ref := Fileevent.add_fileinput;
+  File_event.remove_fileinput_ref := Fileevent.remove_fileinput;
+  File_event.add_fileoutput_ref := Fileevent.add_fileoutput;
+  File_event.remove_fileoutput_ref := Fileevent.remove_fileoutput;
 
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")
