@@ -6,23 +6,15 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= about.cmo gcache.cmo \
-     fontprefs.cmo prefs.cmo mmmprefs.cmo \
-     history.cmo plink.cmo nav.cmo \
-     mmm.cmo cci.cmo \
-     debug.cmo 
+SRC= tkresource.ml\
+  tk_condition.ml\
+  tk_error.ml\
+  tk_i18n.ml\
+  glevents.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
-
-INCLUDEDIRS=$(TOP)/commons $(TOP)/globals $(TOP)/i18n/japan \
- $(TOP)/www $(TOP)/http \
- $(TOP)/html $(TOP)/protocols \
- $(TOP)/retrieve \
- $(TOP)/tk \
- $(TOP)/viewers \
- $(TOP)/display \
-
+INCLUDEDIRS=$(TOP)/commons
 SYSINCLUDES=$(TKCOMPFLAGS)
 
 ##############################################################################
@@ -49,6 +41,12 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+
+# for tk ressource and its use of the parser extension
+PP=-pp camlp4o
+
+tkresource.cmo: tkresource.cmi
+	$(OCAMLC) $(PP) -c tkresource.ml
+
+tkresource.cmx: tkresource.cmi
+	$(OCAMLOPT) $(PP) -c tkresource.ml

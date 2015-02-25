@@ -55,12 +55,12 @@ module Error : sig
     (* [ari msg] displays [msg] in a dialog box, and waits for the user
        to click on Abort/Retry/Ignore. Returns 0/1/2 respectively *)
 
-  class t : (Widget.widget) -> object
-   method f : string -> unit
-   method ok : string -> unit
-   method choose : string -> bool
-   method ari : string -> int
-  end
+   class virtual t : object
+    method virtual f : string -> unit
+    method virtual ok : string -> unit
+    method virtual choose : string -> bool
+    method virtual ari : string -> int
+   end
 
   end
 

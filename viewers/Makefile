@@ -13,7 +13,8 @@ LIBS=
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
   $(TOP)/www $(TOP)/http $(TOP)/protocols \
-  $(TOP)/retrieve
+  $(TOP)/retrieve \
+  $(TOP)/tk
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 

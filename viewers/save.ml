@@ -38,7 +38,7 @@ let f cont dh fname endmsg =
       close_out oc;
       Document.destroy_log dh false;
       Msys.rm fname;
-      Error.default#f (I18n.sprintf
+      !Error.default#f (I18n.sprintf
                  "Error during retrieval of %s" 
                  (Url.string_of dh.document_id.document_url))
         )
@@ -52,7 +52,7 @@ let tofile cont dh fname endmsg =
   with Sys_error msg -> 
     dclose true dh;
     Document.destroy_log dh false;
-    Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg)
+    !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg)
 (*e: function Save.tofile *)
 
 (*s: function Save.interactive *)
@@ -76,7 +76,7 @@ let rec interactive cont dh =
           (* channel is not closed ! *)
               (fun () -> Msys.rm fname)
       with Sys_error msg -> 
-        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
+        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
         interactive cont dh
       end
       | l -> raise (Failure "multiple selection"))
@@ -113,7 +113,7 @@ let transfer wr dh dest =
      Unix_error(_,_,_) | Sys_error _ ->
        dclose true dh;
        close fd;
-       Error.default#f (I18n.sprintf
+       !Error.default#f (I18n.sprintf
            "Error during retrieval of %s" 
           (Url.string_of dh.document_id.document_url))
        )
@@ -125,16 +125,16 @@ let save_from_string url s f =
    let oc = open_out_bin f in
      begin try
       output_string oc s;
-      Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+      !Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
                          (Url.string_of url) f)
      with
        Sys_error e ->
-        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
      end;
      close_out oc
   with
     Sys_error e ->
-        Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
 (*e: function Save.save_from_string *)
 
 (*s: function Save.copy_file *)
@@ -149,17 +149,17 @@ let copy_file url src dst =
     in
     begin try 
      copy();
-     Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+     !Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
                         (Url.string_of url) dst)
     with 
      Sys_error e ->
-      Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+      !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
     end;
     close_in ic; 
     close_out oc
   with
     Sys_error e ->
-      Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+      !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
 (*e: function Save.copy_file *)
 
 
@@ -189,14 +189,14 @@ let pipe_from_string url data cmd =
           Unix_error (_,_,_) -> (* can't write *)
         Fileevent.remove_fileoutput fd_out;
         close fd_out;
-        Error.default#f (I18n.sprintf "Error during |%s in %s" cmd urls)
+        !Error.default#f (I18n.sprintf "Error during |%s in %s" cmd urls)
       end else begin (* we're done *)
         Fileevent.remove_fileoutput fd_out;
         close fd_out
       end)
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+      !Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
 (*e: function Save.pipe_from_string *)
 
 
@@ -215,7 +215,7 @@ let pipe_from_file url f cmd =
     ()
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+      !Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
 (*e: function Save.pipe_from_file *)
 
 (*s: function Save.document *)
@@ -255,7 +255,7 @@ let document did arg =
           copy_file did.document_url f s)
   with
     Not_found ->
-      Error.default#f ("Document is not in cache.")
+      !Error.default#f ("Document is not in cache.")
 (*e: function Save.document *)
     
 (*s: constant Save.print_command *)

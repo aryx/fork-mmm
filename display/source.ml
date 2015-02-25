@@ -151,7 +151,7 @@ let view attach did redisplay errors annotations coding =
     let rec f = function
         [] -> raise Not_found
       | (s,e,msg)::l ->
-        if Text.compare t s LE idx & Text.compare t idx LE e then msg
+        if Text.compare t s LE idx && Text.compare t idx LE e then msg
      else f l in
     f !error_idx in
   let show_error = Text.yview_index t in
@@ -245,7 +245,7 @@ let view attach did redisplay errors annotations coding =
 
   with
     Not_found ->
-     Error.default#f "document not in cache"
+     !Error.default#f "document not in cache"
 (*e: function Source.view *)
 
 (*e: ./display/source.ml *)

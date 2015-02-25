@@ -45,7 +45,7 @@ let make hlink =
       www_auth = [];
       www_headers = [];
       www_logging = (fun _ -> ());
-      www_error = Error.default
+      www_error = !Error.default
     }
 (*e: function Www.make *)
  

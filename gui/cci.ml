@@ -86,7 +86,7 @@ let init () =
     at_exit (fun () -> Msys.rm file)
  with
    e ->
-     Error.default#f (I18n.sprintf "Can't initialize %s\n%s"
+     !Error.default#f (I18n.sprintf "Can't initialize %s\n%s"
                        file (Printexc.to_string e))
 (*e: function Cci.init *)
 

@@ -26,6 +26,7 @@ LIBS=
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals $(TOP)/i18n/japan \
  $(TOP)/www $(TOP)/http $(TOP)/html \
  $(TOP)/viewers $(TOP)/retrieve $(TOP)/protocols \
+ $(TOP)/tk
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 

@@ -462,7 +462,7 @@ class display_html ((top : Widget.widget),
      that we don't use the initial feed, but rather the cache *)
   method redisplay =
     if pending then 
-      Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
+      !Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
     else
       try
        dh <- Decoders.insert (Cache.renew_handle dh);
@@ -470,13 +470,13 @@ class display_html ((top : Widget.widget),
        self#init init_mode
       with
        Not_found ->
-      Error.default#f (I18n.sprintf "Document not in cache anymore")
+      !Error.default#f (I18n.sprintf "Document not in cache anymore")
 
   (* The source is attached to this frame so we can destroy the interior
      widgets *)
   method source =
     if pending then
-      Error.default#f (I18n.sprintf "Cannot view document source (pending)")
+      !Error.default#f (I18n.sprintf "Cannot view document source (pending)")
     else Source.view frame did (fun () -> self#redisplay) errors annotations
            feed_read#get_code
 

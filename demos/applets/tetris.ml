@@ -380,7 +380,7 @@ let cell_set (c, cf) x y col =
   let t1,t2,t3 = cur.tag in 
     if cur.color = col then () 
     else
-    if cur.color <> 0 & col = 0 then
+    if cur.color <> 0 && col = 0 then
       begin
       Canvas.move c t1
                        (Pixels (- block_size * (x + 1) -10 - cell_border * 2))
@@ -403,7 +403,7 @@ let cell_set (c, cf) x y col =
       	Canvas.configure_rectangle c t3
               [FillColor (NamedColor "light gray");
       	       Outline (NamedColor "light gray")];
-      	if cur.color = 0 & col <> 0 then
+      	if cur.color = 0 && col <> 0 then
       	  begin
       	    Canvas.move c t1
       	      (Pixels (block_size * (x+1)+10+ cell_border*2))
@@ -507,7 +507,7 @@ let f fw ctx =
     and clear fb =
       let l = ref 0 in
       for i = 0 to 3 do
-    	if i + fb.y >= 3 & i + fb.y <= 22 then 
+    	if i + fb.y >= 3 && i + fb.y <= 22 then 
     	  if Array.get field (i + fb.y) = line_full then
     	    begin
 	      incr l;

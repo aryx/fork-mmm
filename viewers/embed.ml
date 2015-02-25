@@ -58,7 +58,7 @@ module EmbeddedData =
       |	_ -> failwith "load"
 
     let error url jobs = 
-      Error.default#f (I18n.sprintf "Can't find embedded document %s" 
+      !Error.default#f (I18n.sprintf "Can't find embedded document %s" 
                         (Url.string_of url))
 
     let error_msg (_,_) = ()

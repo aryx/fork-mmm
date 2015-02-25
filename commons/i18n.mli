@@ -14,4 +14,6 @@ val sprintf: ('a, unit, string) format -> 'a
 (*e: signature I18n.menu_option *)
 (*s: signature I18n.menu_pattern *)
 (*e: signature I18n.menu_pattern *)
+
+val translate: string -> string
 (*e: ./commons/i18n.mli *)

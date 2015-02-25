@@ -45,6 +45,10 @@ let localize file =
 (*s: function Main.main *)
 let main () =
 
+  Error.default := new Tk_error.t Widget.default_toplevel;
+  Condition.backend := Tk_condition.backend ();
+
+
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")
   and display = ref (try Sys.getenv("DISPLAY") with Not_found -> "")

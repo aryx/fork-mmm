@@ -19,7 +19,9 @@ SRC=main.ml
 MAINDIRS= \
   commons i18n/japan globals \
   www http html \
-  protocols retrieve viewers \
+  protocols retrieve \
+  tk \
+  viewers \
   display \
   gui \
   applets \

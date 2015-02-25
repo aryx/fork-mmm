@@ -80,7 +80,7 @@ class  virtual context ((did : Document.document_id),
   (* apply this on a copy ! *)
   method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
     (* for debug *)
-    let oldtargets = targets in
+    let _oldtargetsTODO = targets in
     let res = 
       match newtargets with 
       | [] -> 
@@ -236,7 +236,7 @@ let extern dh ctype =
          kill();
          close pout;
          Document.destroy_log dh false;
-         Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
+         !Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
        )
 (*e: function Viewers.extern *)
 
@@ -400,7 +400,7 @@ let reset () =
       Hashtbl.add viewers (typ,sub) External
     with
       Invalid_HTTP_header e ->
-    Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
+    !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
     l;
   let l = Tkresource.stringlist "savedTypes" [] in
   List.iter (fun ctype -> 
@@ -409,7 +409,7 @@ let reset () =
       Hashtbl.add viewers (typ,sub) Save
     with
       Invalid_HTTP_header e ->
-    Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
+    !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
     l
 (*e: function Viewers.reset *)
     

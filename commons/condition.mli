@@ -1,6 +1,15 @@
 (*s: ./commons/condition.mli *)
 type t
 
+type condition_backend = {
+  create: t -> unit;
+  set: t -> unit;
+  wait: t -> unit;
+  free: t -> unit;
+}
+
+val backend: condition_backend ref
+
 (*s: signature Condition.create *)
 val create : unit -> t
 (*e: signature Condition.create *)

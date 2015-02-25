@@ -53,4 +53,4 @@ let init_external tree =
  with
    Exit -> ()
  | _ ->
-     Error.default#f (Printf.sprintf "Can't initialize %s" file)
+     !Error.default#f (Printf.sprintf "Can't initialize %s" file)

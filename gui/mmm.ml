@@ -89,7 +89,7 @@ let undisplay di =
 and display di = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
-  else Error.default#f "fatal error: window was destroyed";
+  else !Error.default#f "fatal error: window was destroyed";
   let tl = Winfo.toplevel di#di_widget
   and title = I18n.sprintf "MMM Browser@%s" di#di_title in
   if Widget.known_class tl = "toplevel" then
@@ -169,7 +169,7 @@ let rec navigator has_tachy initial_url =
     History.add hist did frag;
     !update_vhistory ()
 
-  and error = new Error.t top
+  and error = new Tk_error.t top
 
   and loggingv = Textvariable.create_temporary top
 
@@ -185,7 +185,7 @@ let rec navigator has_tachy initial_url =
       nav_new = (fun link ->
            try
              let wwwr = Plink.make link in
-               navigator false wwwr.www_url; ()
+               navigator false wwwr.www_url |> ignore; ()
            with
               Invalid_link msg -> 
                 error#f (I18n.sprintf "Invalid link"));
@@ -233,9 +233,9 @@ let rec navigator has_tachy initial_url =
 
    (* A bunch of other functions *)
   and new_window () =
-       navigator false hist.h_current.h_did.document_url; ()
+       navigator false hist.h_current.h_did.document_url |> ignore
   and new_window_initial () =
-       navigator false initial_url; ()
+       navigator false initial_url |> ignore
   and new_window_sel () =
     try 
      let url = Selection.get [] in
@@ -611,7 +611,7 @@ let rec navigator has_tachy initial_url =
   Some nav
   with
       e -> 
-    Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
+    !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
                       (Url.string_of initial_url)
                   (Printexc.to_string e));
     if !navigators = 1 then begin

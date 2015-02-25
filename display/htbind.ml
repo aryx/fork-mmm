@@ -27,7 +27,7 @@ class  virtual active () =
   (* Install all navigation bindings *)
   List.iter (fun hyname ->
     try 
-      let hyperf = List.assoc hyname ctx#hyper_funs in
+      let _hyperfTODO = List.assoc hyname ctx#hyper_funs in
       self#binder (Glevents.get hyname)
     (BindSet ([Ev_MouseX; Ev_MouseY],
           (fun ei -> 

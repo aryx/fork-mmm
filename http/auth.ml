@@ -71,7 +71,7 @@ let ask_cookie forwhere =
       Base64.encode (u^":"^p)
   with
     Failure "cancelled" -> failwith "cancelled"
-  | _ -> Error.default#f (I18n.sprintf "Error in base 64 encoding");
+  | _ -> (!Error.default)#f (I18n.sprintf "Error in base 64 encoding");
         failwith "cancelled"
 (*e: function Auth.ask_cookie *)
 
@@ -184,13 +184,13 @@ let save () =
       close o
   with
     Unix_error(e,_,_) ->
-      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
+      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
                  (Unix.error_message e))
   | Sys_error s ->
-      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
+      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
 
  else 
-   Error.default#f (I18n.sprintf "No authorisation file defined")
+   !Error.default#f (I18n.sprintf "No authorisation file defined")
 (*e: function Auth.save *)
 
 (*s: function Auth.load *)
@@ -209,9 +209,9 @@ let load () =
     close_in ic
     with
       Sys_error s ->
-       Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+       !Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
  else 
-   Error.default#f (I18n.sprintf "No authorisation file defined")
+   !Error.default#f (I18n.sprintf "No authorisation file defined")
 (*e: function Auth.load *)
 
 
