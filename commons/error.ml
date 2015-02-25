@@ -3,6 +3,7 @@ open Tk
 open Widget
 open Mstring
 
+(*s: class Error.t *)
 class t (top) =
  object
  (* val top = top *)
@@ -38,6 +39,7 @@ method ari msg =
     [I18n.sprintf "A)bort"; I18n.sprintf "R)etry"; I18n.sprintf "I)gnore"]
 
 end
+(*e: class Error.t *)
 
 (*s: constant Error.default *)
 let default = new t default_toplevel

@@ -44,7 +44,7 @@ let figure_geom l =
 (*e: function Htframe.figure_geom *)
 
 (* We build this data structure when parsing FRAMESET *)
-(*s: enum Htframe.frame *)
+(*s: type Htframe.frame *)
 type frame = {
     frame_src : string;
     frame_name : string;
@@ -52,26 +52,26 @@ type frame = {
     frame_opts : Tk.options list;
     frame_params : (string * string) list;
   } 
-(*e: enum Htframe.frame *)
+(*e: type Htframe.frame *)
 
-(*s: enum Htframe.frameset *)
+(*s: type Htframe.frameset *)
 and frameset =
     int ref * int ref * celldesc array array
-(*e: enum Htframe.frameset *)
+(*e: type Htframe.frameset *)
 
-(*s: enum Htframe.cell_contents *)
+(*s: type Htframe.cell_contents *)
 and cell_contents = 
   | Frame of frame
   | Frameset of frameset
-(*e: enum Htframe.cell_contents *)
+(*e: type Htframe.cell_contents *)
 
-(*s: enum Htframe.celldesc *)
+(*s: type Htframe.celldesc *)
 and celldesc = {
     cell_width : Html.length list;
     cell_height : Html.length list;
     mutable cell_contents : cell_contents option
   } 
-(*e: enum Htframe.celldesc *)
+(*e: type Htframe.celldesc *)
 
 (*s: function Htframe.ignore_fo *)
 (* This is morally for the <noframes> section *)

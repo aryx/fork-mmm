@@ -14,12 +14,12 @@ open Printf
 
  *)
 
-(*s: enum Maps.area_kind (./www/maps.ml) *)
+(*s: type Maps.area_kind *)
 (* The active areas *)
 type area_kind = Rect | Circle | Poly | Default
-(*e: enum Maps.area_kind (./www/maps.ml) *)
+(*e: type Maps.area_kind *)
 
-(*s: enum Maps.area (./www/maps.ml) *)
+(*s: type Maps.area *)
 (* The area *)
 type area = {
   area_kind : area_kind;
@@ -27,13 +27,13 @@ type area = {
   area_link : Hyper.link;
   area_alt  : string
  }
-(*e: enum Maps.area (./www/maps.ml) *)
+(*e: type Maps.area *)
 
-(*s: enum Maps.map (./www/maps.ml) *)
+(*s: type Maps.map *)
 type map = area list
-(*e: enum Maps.map (./www/maps.ml) *)
+(*e: type Maps.map *)
 
-(*s: enum Maps.t (./www/maps.ml) *)
+(*s: type Maps.t *)
 (* We merge any kind of map, for we actually are going to support
    maps for arbitrary embedded objects
  *)
@@ -43,26 +43,26 @@ type t =
   | Direct of Hyper.link			(* inside an anchor *)
   | NoMap				(* no additionnal navigation *)
   | FormMap of (int * int -> Hyper.link)
-(*e: enum Maps.t (./www/maps.ml) *)
+(*e: type Maps.t *)
 
 
-(*s: enum Maps.map_status (./www/maps.ml) *)
+(*s: type Maps.map_status *)
 (* The table of client-side image maps *)
 type map_status =
    KnownMap of map
  | RequestedMap of string
-(*e: enum Maps.map_status (./www/maps.ml) *)
+(*e: type Maps.map_status *)
 
 (*s: constant Maps.table *)
 let table = (Hashtbl.create 37 : (string, map_status) Hashtbl.t)
 (*e: constant Maps.table *)
 
+(*s: constant Maps.coord_sep *)
 (* Tolerance: official syntax is "," separated.
    We use instead "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
    that is non empty sequence of whitespace
         or comma with possible surrounding whitespace
  *)
-(*s: constant Maps.coord_sep *)
 (* let coord_sep = Str.regexp "," *)
 let coord_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
 (*e: constant Maps.coord_sep *)

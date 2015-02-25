@@ -5,10 +5,14 @@
 val debug : bool ref
 (*e: signature Html_eval.debug *)
 
-(*s: enum Html_eval.minimization *)
+(*s: type Html_eval.minimization *)
+(* Wrapped up lexer to insert open/close tags in the stream of "normal"
+   tokens, according to some DTD, in order to always get fully parenthesized
+   streams *)
+
 type minimization =
   Legal | Illegal of string
-(*e: enum Html_eval.minimization *)
+(*e: type Html_eval.minimization *)
 
 (*s: signature Html_eval.add_html_filter *)
 (* test suit *)

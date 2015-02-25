@@ -13,9 +13,9 @@
 val debug : bool ref
 (*e: signature Scheduler.debug *)
 
-(*s: enum Scheduler.progress_func *)
+(*s: type Scheduler.progress_func *)
 type progress_func = int option -> int -> unit
-(*e: enum Scheduler.progress_func *)
+(*e: type Scheduler.progress_func *)
 
 module type Data =
   sig

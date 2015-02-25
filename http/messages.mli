@@ -1,4 +1,5 @@
 (*s: ./http/messages.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,33 +10,32 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: messages.mli,v 1.1 1996/10/22 13:12:36 rouaix Exp $ *)
+(*e: copyright header v6 *)
 
 (* HTTP Messages *)
 
-(*s: enum Messages.request *)
+(*s: type Messages.request *)
 (* Request-Line of a Request *)
 type request = {
   request_version: string;	(* HTTP/1.0 *)
   request_method : string;	(* GET, POST, etc... *)
   request_uri : string		(* the uri *)
   }
-(*e: enum Messages.request *)
+(*e: type Messages.request *)
 
-(*s: enum Messages.status *)
+(*s: type Messages.status *)
 (* Status-Line of a Response *)
 type status =  { 
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
  }
-(*e: enum Messages.status *)
+(*e: type Messages.status *)
 
-(*s: enum Messages.header *)
+(*s: type Messages.header *)
 (* Other headers *)
 type header = string
-(*e: enum Messages.header *)
+(*e: type Messages.header *)
 
 
 (* HTTP messages: requests and responses
@@ -43,7 +43,7 @@ type header = string
  *  What a server answers is called a response
  *)
 
-(*s: enum Messages.request_message *)
+(*s: type Messages.request_message *)
 (* HTTP-Message *)
 type request_message = {
   request : request;
@@ -52,14 +52,14 @@ type request_message = {
   request_auth : (string * string) option 
            (* have we authentified the emitter (authtype, authuser) *)
   }
-(*e: enum Messages.request_message *)
+(*e: type Messages.request_message *)
 
-(*s: enum Messages.response_message *)
+(*s: type Messages.response_message *)
 type response_message = {
   status : status;
   response_headers : header list;
   response_body : string        (* responde body is *not* the document body *)
   }
-(*e: enum Messages.response_message *)
+(*e: type Messages.response_message *)
 
 (*e: ./http/messages.mli *)

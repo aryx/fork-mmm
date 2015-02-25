@@ -12,13 +12,13 @@ open Url
 let mailer = ref ""
 (*e: constant Mailto.mailer *)
 
-(*s: enum Mailto.msg *)
+(*s: type Mailto.msg *)
 type msg = {
   dest : string;
   subject : string;
   body : string 
   }
-(*e: enum Mailto.msg *)
+(*e: type Mailto.msg *)
 
 (*s: function Mailto.error *)
 let error body =

@@ -18,19 +18,19 @@ module Mmm = Get(Provide)
 
 open Html
 
-(*s: enum Remove_simple_table.table_token *)
+(*s: type Remove_simple_table.table_token *)
 type table_token =
     ChildTable of Html.token list
   | Token of Html.token 
-(*e: enum Remove_simple_table.table_token *)
+(*e: type Remove_simple_table.table_token *)
 
-(*s: enum Remove_simple_table.rst_env *)
+(*s: type Remove_simple_table.rst_env *)
 type rst_env = {
     mutable tokens : table_token list;
     mutable trs : int;
     mutable tds : int 
   } 
-(*e: enum Remove_simple_table.rst_env *)
+(*e: type Remove_simple_table.rst_env *)
 
 (*s: function Remove_simple_table.remove_simple_table *)
 let remove_simple_table parentf = 

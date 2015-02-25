@@ -33,11 +33,11 @@ let strict_32 = ref true
        *)
 (*e: constant Table.strict_32 *)
 
-(*s: enum Table.cell_type (./display/table.ml) *)
+(*s: type Table.cell_type (./display/table.ml) *)
 (* a manager for a single TABLE *)
 type cell_type = HeaderCell | DataCell
-(*e: enum Table.cell_type (./display/table.ml) *)
-(*s: enum Table.t (./display/table.ml) *)
+(*e: type Table.cell_type (./display/table.ml) *)
+(*s: type Table.t (./display/table.ml) *)
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -47,9 +47,9 @@ type t = {
   new_cell : cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
   bound : unit -> bool
   }
-(*e: enum Table.t (./display/table.ml) *)
+(*e: type Table.t (./display/table.ml) *)
 
-(*s: enum Table.table *)
+(*s: type Table.table *)
 (* Internal structure of tables *)
 type table = {
   master_widget : Widget.widget;
@@ -63,7 +63,7 @@ type table = {
   cellpadding : int;
   cellspacing : int
   }
-(*e: enum Table.table *)
+(*e: type Table.table *)
 
 (*s: function Table.topwidth *)
 (* Get up to the widget that has HFrame class, or to toplevel *)

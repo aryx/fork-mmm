@@ -1,11 +1,17 @@
 (*s: ./www/url.ml *)
 open Printf
 
-(*s: enum Url.protocol (./www/url.ml) *)
+(*s: type Url.protocol *)
+(* URLs as defined by RFC 1738 *)
+
 type protocol =
-   FTP | HTTP | GOPHER | MAILTO | NEWS | NNTP | TELNET | WAIS | FILE | PROSPERO
+ | HTTP 
+ | FILE | MAILTO | FTP
+ | GOPHER | NEWS | NNTP | WAIS
+ | TELNET 
+ | PROSPERO
  | OtherProtocol of string
-(*e: enum Url.protocol (./www/url.ml) *)
+(*e: type Url.protocol *)
 
 (*s: function Url.string_of_protocol *)
 let string_of_protocol = function
@@ -23,22 +29,26 @@ let string_of_protocol = function
 (*e: function Url.string_of_protocol *)
 
 
-(*s: enum Url.t (./www/url.ml) *)
-(* Not all components are used for all protocols *)
+(*s: type Url.t *)
+(* Relative adressing in anchors, fragments are NOT URLs, but URI *)
 type t = 
   { mutable protocol : protocol;
+
     mutable user : string option;
     mutable password: string option;
+
     mutable host : string option;
     mutable port : int option;
+
     mutable path : string option;
+
     mutable search: string option
   }
-(*e: enum Url.t (./www/url.ml) *)
+(*e: type Url.t *)
 
-(*s: exception Url.Url_Lexing (./www/url.ml) *)
+(*s: exception Url.Url_Lexing *)
 exception Url_Lexing of string * int
-(*e: exception Url.Url_Lexing (./www/url.ml) *)
+(*e: exception Url.Url_Lexing *)
 (*s: exception Url.Invalid_url *)
 exception Invalid_url of t * string
 (*e: exception Url.Invalid_url *)
@@ -110,7 +120,6 @@ let string_of p =
   end;
   Ebuffer.get buf
 (*e: function Url.string_of *)
-
 
 (*s: function Url.distant_path *)
 (* For http only *)

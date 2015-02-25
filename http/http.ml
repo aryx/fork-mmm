@@ -29,13 +29,13 @@ let verbose = ref false
 exception HTTP_error of string
 (*e: exception Http.HTTP_error *)
 
-(*s: enum Http.status *)
+(*s: type Http.status *)
 (* Support for aborting requests while in connect/write/headers mode.
    When we start applying the document continuation, it is not our job
    anymore to abort the connection.
  *)
 type status = Writing | Reading of handle | Discharged
-(*e: enum Http.status *)
+(*e: type Http.status *)
 
 class cnx (sock,finish) =
  object (self)

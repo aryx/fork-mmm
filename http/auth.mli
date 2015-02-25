@@ -1,7 +1,7 @@
 (*s: ./http/auth.mli *)
 open Http_headers
 
-(*s: enum Auth.authSpace *)
+(*s: type Auth.authSpace *)
 type authSpace = {
    auth_proxy: bool;
    auth_host : string;
@@ -9,7 +9,7 @@ type authSpace = {
    auth_dir : string;
    auth_realm : string
   }
-(*e: enum Auth.authSpace *)
+(*e: type Auth.authSpace *)
 
 
 (*s: signature Auth.lifetime *)

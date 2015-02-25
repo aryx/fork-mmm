@@ -1,36 +1,41 @@
 (*s: ./www/maps.mli *)
-(*s: enum Maps.area_kind *)
+(*s: type Maps.area_kind *)
+(* The active areas *)
 type area_kind = Rect | Circle | Poly | Default
-(*e: enum Maps.area_kind *)
+(*e: type Maps.area_kind *)
 
-(*s: enum Maps.area *)
+(*s: type Maps.area *)
+(* The area *)
 type area = {
   area_kind : area_kind;
   area_coords : int list;
   area_link : Hyper.link;
   area_alt  : string
  }
-(*e: enum Maps.area *)
+(*e: type Maps.area *)
 
-(*s: enum Maps.map *)
+(*s: type Maps.map *)
 type map = area list
-(*e: enum Maps.map *)
+(*e: type Maps.map *)
 
-(*s: enum Maps.t *)
+(*s: type Maps.t *)
+(* We merge any kind of map, for we actually are going to support
+   maps for arbitrary embedded objects
+ *)
 type t = 
     ClientSide of Hyper.link		(* usemap link *)
   | ServerSide of Hyper.link		(* ismap *)
   | Direct of Hyper.link			(* inside an anchor *)
   | NoMap				(* no additionnal navigation *)
   | FormMap of (int * int -> Hyper.link)
-(*e: enum Maps.t *)
+(*e: type Maps.t *)
 
-(*s: enum Maps.map_status *)
+(*s: type Maps.map_status *)
 (* The table of client-side image maps *)
 type map_status =
    KnownMap of map
  | RequestedMap of string
-(*e: enum Maps.map_status *)
+(*e: type Maps.map_status *)
 
 (*s: signature Maps.parse_coords *)
 val parse_coords : string -> int list

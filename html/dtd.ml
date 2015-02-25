@@ -3,7 +3,7 @@ open Printf
 
 module Elements = Set.Make(struct type t = string let compare = compare end)
 
-(*s: enum Dtd.t (./html/dtd.ml) *)
+(*s: type Dtd.t *)
 type t = {
   dtd_name : string;
   contents : (string, Elements.t) Hashtbl.t;
@@ -13,7 +13,7 @@ type t = {
   mutable close_omitted : Elements.t
     (* set of elements for which closing tag may be omitted *)
  } 
-(*e: enum Dtd.t (./html/dtd.ml) *)
+(*e: type Dtd.t *)
 
 (*s: function Dtd.name *)
 let name t = t.dtd_name

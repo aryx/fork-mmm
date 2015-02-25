@@ -1,11 +1,11 @@
 (*s: ./commons/feed.mli *)
-(*s: enum Feed.internal *)
+(*s: type Feed.internal *)
 (* An abstract notion of connection *)
 
 type internal = Unix.file_descr
-(*e: enum Feed.internal *)
+(*e: type Feed.internal *)
 
-(*s: enum Feed.t *)
+(*s: type Feed.t *)
 type t = {
   feed_read : string -> int -> int -> int;
   feed_schedule : (unit -> unit) -> unit;
@@ -13,7 +13,7 @@ type t = {
   feed_close : unit -> unit;
   feed_internal : internal  
   }
-(*e: enum Feed.t *)
+(*e: type Feed.t *)
 
 (*s: signature Feed.of_fd *)
 val of_fd : Unix.file_descr -> t

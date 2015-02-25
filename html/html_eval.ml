@@ -3,14 +3,14 @@ open Printf
 open Html
 open Dtd
 
-(*s: enum Html_eval.minimization (./html/html_eval.ml) *)
+(*s: type Html_eval.minimization *)
 (* Wrapped up lexer to insert open/close tags in the stream of "normal"
    tokens, according to some DTD, in order to always get fully parenthesized
    streams *)
 
 type minimization =
   Legal | Illegal of string
-(*e: enum Html_eval.minimization (./html/html_eval.ml) *)
+(*e: type Html_eval.minimization *)
 
 (*s: constant Html_eval.debug *)
 let debug = ref false

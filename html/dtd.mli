@@ -1,7 +1,7 @@
 (*s: ./html/dtd.mli *)
 module Elements : Set.S with type elt = string
 
-(*s: enum Dtd.t *)
+(*s: type Dtd.t *)
 type t = {
   dtd_name : string;
   contents : (string, Elements.t) Hashtbl.t;
@@ -11,7 +11,7 @@ type t = {
   mutable close_omitted : Elements.t
     (* set of elements for which closing tag may be omitted *)
  } 
-(*e: enum Dtd.t *)
+(*e: type Dtd.t *)
 
 (*s: signature Dtd.dtd20 *)
 val dtd20 : t

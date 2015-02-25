@@ -3,12 +3,12 @@ open Www
 open Document
 open Http_headers
 
-(*s: enum Viewers.vparams *)
+(*s: type Viewers.vparams *)
 type vparams = (string * string) list
-(*e: enum Viewers.vparams *)
-(*s: enum Viewers.frame_targets *)
+(*e: type Viewers.vparams *)
+(*s: type Viewers.frame_targets *)
 type frame_targets = (string * Widget.widget) list
-(*e: enum Viewers.frame_targets *)
+(*e: type Viewers.frame_targets *)
 
 (*s: signature Viewers.frame_adopt *)
 val frame_adopt : Widget.widget -> frame_targets -> frame_targets
@@ -19,13 +19,13 @@ val frame_fugue : frame_targets -> frame_targets
     (* forget about _self and _parents *)
 (*e: signature Viewers.frame_fugue *)
 
-(*s: enum Viewers.hyper_func *)
+(*s: type Viewers.hyper_func *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
   hyper_func : frame_targets -> Hyper.link -> unit
   }
-(*e: enum Viewers.hyper_func *)
+(*e: type Viewers.hyper_func *)
 
 (* list of additionnal parameters for the viewer, according to its
    activation point *)
@@ -86,11 +86,11 @@ end
 val di_compare : display_info -> display_info -> bool
 (*e: signature Viewers.di_compare *)
 
-(*s: enum Viewers.t *)
+(*s: type Viewers.t *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
-(*e: enum Viewers.t *)
+(*e: type Viewers.t *)
 
 (*s: signature Viewers.add_viewer *)
 val add_viewer : media_type -> t -> unit

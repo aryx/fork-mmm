@@ -1,4 +1,5 @@
 (*s: ./commons/msys.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,10 +10,9 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header v6 *)
 
 (*s: signature Msys.tilde_subst *)
-(* $Id: msys.mli,v 1.1 1996/10/22 13:12:52 rouaix Exp $ *)
-
 val tilde_subst : string -> string
     (* substitute ~ at beginning of file path *)
 (*e: signature Msys.tilde_subst *)

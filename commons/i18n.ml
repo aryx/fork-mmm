@@ -64,12 +64,12 @@ let read_transl_file msgfile =
   transl_tbl
 (*e: function I18n.read_transl_file *)
 
-(*s: enum I18n.translation_table *)
+(*s: type I18n.translation_table *)
 type translation_table =
     Unknown
   | NoTranslation
   | Transl of (string, string) Hashtbl.t
-(*e: enum I18n.translation_table *)
+(*e: type I18n.translation_table *)
 
 (*s: constant I18n.transl_table *)
 let transl_table = ref Unknown
@@ -100,16 +100,17 @@ let rec translate msg =
 (*s: function I18n.fprintf (./commons/i18n.ml) *)
 let fprintf oc (fmt : ('a, out_channel, unit) format) =
   fprintf oc
-(*e: function I18n.fprintf (./commons/i18n.ml) *)
     (Obj.magic(translate(Obj.magic fmt : string)) :
                                 ('a, out_channel, unit) format)
+(*e: function I18n.fprintf (./commons/i18n.ml) *)
 
 (*s: function I18n.sprintf (./commons/i18n.ml) *)
 let sprintf (fmt : ('a, unit, string) format) =
   sprintf
-(*e: function I18n.sprintf (./commons/i18n.ml) *)
     (Obj.magic(translate(Obj.magic fmt : string)) :
                                 ('a, unit, string) format)
+
+(*e: function I18n.sprintf (./commons/i18n.ml) *)
 
 let printf fmt = fprintf stdout fmt
 and eprintf fmt = fprintf stderr fmt

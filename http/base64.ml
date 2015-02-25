@@ -1,4 +1,5 @@
 (*s: ./http/base64.ml *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: base64.ml,v 1.2 1997/06/25 14:05:06 rouaix Exp $ *)
+(*e: copyright header v6 *)
 
 (* For basic credentials only *)
 (* Encoding is [A-Z][a-z][0-9]+/= *)

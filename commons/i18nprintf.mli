@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: i18nprintf.mli,v 1.1 1997/12/03 14:35:10 furuse Exp $ *)
-
 (*s: signature I18nprintf.fprintf *)
 (* Module [Printf]: formatting printing functions *)
 

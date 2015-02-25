@@ -2,14 +2,6 @@
 
 \subsection*{[[./commons/common.ml]]}
 
-<<constant Common.spf>>=
-let spf = Printf.sprintf
-@
-
-<<function Common.TODOOPERATOR>>=
-let (+>) o f = f o
-@
-
 
 %-------------------------------------------------------------
 
@@ -24,6 +16,8 @@ module StringSet = Set.Make(struct type t = string let compare = compare end)
 
 
 \subsection*{[[./commons/condition.mli]]}
+
+%todo: replaced with the one in ocaml?
 
 <<signature Condition.create>>=
 val create : unit -> t
@@ -56,7 +50,7 @@ type t
 
 \subsection*{[[./commons/condition.ml]]}
 
-<<enum Condition.t>>=
+<<type Condition.t>>=
 type t = Textvariable.textVariable * int ref
 @
 
@@ -72,7 +66,7 @@ type t = Textvariable.textVariable * int ref
 
 open Printf
 
-<<enum Condition.t>>
+<<type Condition.t>>
 
 let create () =
   Textvariable.create(), ref 0
@@ -88,55 +82,10 @@ and free (v, _) = Textvariable.free v
 
 \subsection*{[[./commons/date.mli]]}
 
-<<signature Date.asc_wkday>>=
-(* $Id: date.mli,v 1.3 1998/12/08 15:28:07 furuse Exp $ *)
-
-val asc_wkday : int -> string
-    (* [asc_wkday n] maps 0..6 to Sun..Sat *)
-@
-
-<<signature Date.asc_month>>=
-val asc_month : int -> string
-    (* [asc_month n] maps 0..11 to Jan..Dec *)
-@
-
-<<signature Date.asc>>=
-val asc : float -> string
-    (* [asc uxtime] RFC822 of unix time *)
-@
-
-<<signature Date.asc_now>>=
-val asc_now : unit -> string
-    (* [asc_now ()] RFC822 of now *)
-@
-
-<<signature Date.commonlog>>=
-val commonlog : float -> string
-  (* Text version (Common log format) of an Unix time value *)
-@
-
-<<signature Date.compare_time>>=
-val compare_time : int list * int list -> int
-    (* [compare_time l1 l2] compare lists encodings of timestamps
-       Encoding must be:
-        [year; month; mday; hour; min; sec]
-     *)
-@
-
-
 %-------------------------------------------------------------
 
 <<./commons/date.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header v6>>
 
 <<signature Date.asc_wkday>>
 
@@ -155,91 +104,12 @@ val compare_time : int list * int list -> int
 
 \subsection*{[[./commons/date.ml]]}
 
-<<function Date.asc_wkday>>=
-let asc_wkday = function
-   0 -> "Sun"
- | 1 -> "Mon"
- | 2 -> "Tue"
- | 3 -> "Wed"
- | 4 -> "Thu"
- | 5 -> "Fri"
- | 6 -> "Sat"
- | _ -> assert false
-@
-
-<<function Date.asc_month>>=
-let asc_month = function
-   0 -> "Jan"
- | 1 -> "Feb"
- | 2 -> "Mar"
- | 3 -> "Apr"
- | 4 -> "May"
- | 5 -> "Jun"
- | 6 -> "Jul"
- | 7 -> "Aug"
- | 8 -> "Sep"
- | 9 -> "Oct"
- | 10 -> "Nov"
- | 11 -> "Dec"
- | _ -> assert false
-@
-
-<<function Date.asc>>=
-(* Produces RFC822 style *)
-let asc ut =
-  let tm = gmtime ut in
-    sprintf "%s, %02d %s %d %02d:%02d:%02d GMT"
-        (asc_wkday tm.tm_wday)
-    tm.tm_mday
-    (asc_month tm.tm_mon)
-    (tm.tm_year + 1900)
-    tm.tm_hour
-    tm.tm_min
-    tm.tm_sec
-@
-
-<<function Date.asc_now>>=
-let asc_now () = asc (time())
-@
-
-<<function Date.commonlog>>=
-(* Timezone ??? *)
-let commonlog int =
-  let tm = localtime int in
-  sprintf "%02d/%s/%d:%02d:%02d:%02d"
-      tm.tm_mday
-      (asc_month tm.tm_mon)
-      (tm.tm_year + 1900)
-      tm.tm_hour
-      tm.tm_min
-      tm.tm_sec
-@
-
-<<function Date.compare_time>>=
-let rec compare_time = function
-   [], [] -> 0
- | (x::xx), (y::yy) when x = y -> compare_time (xx, yy)
- | (x::_), (y::_) when x < y -> -1
- | (x::_), (y::_) when x > y -> 1
- |  _, _ -> assert false
-@
-
 
 %-------------------------------------------------------------
 
 <<./commons/date.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header v6>>
 
-(* $Id: date.ml,v 1.2 1997/06/25 14:06:02 rouaix Exp $ *)
 open Printf
 open Unix
 
@@ -260,6 +130,8 @@ open Unix
 
 
 \subsection*{[[./commons/ebuffer.mli]]}
+
+%todo: replaced with the one in ocaml? buffer.mli
 
 <<signature Ebuffer.create>>=
 val create : int -> t
@@ -303,18 +175,7 @@ val reset : t -> unit
 %-------------------------------------------------------------
 
 <<./commons/ebuffer.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: ebuffer.mli,v 1.1 1996/10/22 13:12:42 rouaix Exp $ *)
+<<copyright header v6>>
 
 (* Extensible buffers *)
 
@@ -335,7 +196,7 @@ type t
 
 \subsection*{[[./commons/ebuffer.ml]]}
 
-<<enum Ebuffer.t>>=
+<<type Ebuffer.t>>=
 (* Extensible buffers *)
 type t = {
     mutable buffer : string;
@@ -416,20 +277,9 @@ let used buf =
 %-------------------------------------------------------------
 
 <<./commons/ebuffer.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header v6>>
 
-(* $Id: ebuffer.ml,v 1.1 1996/10/22 13:12:41 rouaix Exp $ *)
-
-<<enum Ebuffer.t>>
+<<type Ebuffer.t>>
 
 <<function Ebuffer.create>>
 
@@ -451,36 +301,13 @@ let used buf =
 
 \subsection*{[[./commons/error.mli]]}
 
-<<signature Error.default>>=
-val default : t
-@
-
-<<signature Error.f>>=
-val f : string -> unit
-@
-
-<<signature Error.ok>>=
-val ok : string -> unit
-@
-
-<<signature Error.choose>>=
-val choose : string -> bool
-@
-
-<<signature Error.ari>>=
-val ari : string -> int
-@
 
 
 %-------------------------------------------------------------
 
 <<./commons/error.mli>>=
-class t : (Widget.widget) -> object
- method f : string -> unit
- method ok : string -> unit
- method choose : string -> bool
- method ari : string -> int
-end
+
+<<signature class Error.t>>
 
 <<signature Error.default>>
 
@@ -494,10 +321,6 @@ end
 
 \subsection*{[[./commons/error.ml]]}
 
-<<constant Error.default>>=
-let default = new t default_toplevel
-@
-
 
 %-------------------------------------------------------------
 
@@ -506,41 +329,7 @@ open Tk
 open Widget
 open Mstring
 
-class t (top) =
- object
- (* val top = top *)
-
-method f msg =
-  let _ =
-   Frx_dialog.f top (gensym "error")
-     (I18n.sprintf "MMM Error")
-     msg
-     (Predefined "error") 0 ["Ok"] in
-  ()
-
-
-method ok msg = 
-  ignore (
-   Frx_dialog.f  top (gensym "error")
-     (I18n.sprintf "MMM Notify")
-     msg
-     (Predefined "info") 0 ["Ok"])
-
-method choose msg =
- 0 =
-  Frx_dialog.f top (gensym "error")
-    (I18n.sprintf "MMM Choice")
-    msg
-    (Predefined "question") 1 ["Yes"; "No"]
-
-method ari msg =
-  Frx_dialog.f top (gensym "error")
-    (I18n.sprintf "MMM Error")
-    msg
-    (Predefined "question") 1 
-    [I18n.sprintf "A)bort"; I18n.sprintf "R)etry"; I18n.sprintf "I)gnore"]
-
-end
+<<class Error.t>>
 
 <<constant Error.default>>
 
@@ -553,6 +342,8 @@ and ari msg = default#ari msg
 
 
 \subsection*{[[./commons/i18nprintf.mli]]}
+
+%todo: remove?
 
 <<signature I18nprintf.fprintf>>=
 (* Module [Printf]: formatting printing functions *)
@@ -630,8 +421,6 @@ val sprintf: ('a, unit, string) format -> 'a
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: i18nprintf.mli,v 1.1 1997/12/03 14:35:10 furuse Exp $ *)
 
 <<signature I18nprintf.fprintf>>
 
@@ -828,8 +617,6 @@ let sprintf format =
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: i18nprintf.ml,v 1.1 1997/12/03 14:35:10 furuse Exp $ *)
-
 external format_int: string -> int -> string = "caml_format_int"
 external format_float: string -> float -> string = "caml_format_float"
 
@@ -844,6 +631,7 @@ and eprintf fmt = fprintf stderr fmt
 
 \subsection*{[[./commons/ibtree.mli]]}
 
+%todo: replace with Map?
 
 %-------------------------------------------------------------
 
@@ -1062,12 +850,10 @@ end
 
 \subsection*{[[./commons/lang.mli]]}
 
+%todo: remove?
+
 <<signature Lang.japan>>=
 val japan : bool ref
-@
-
-<<signature Lang.lang>>=
-val lang : unit -> string
 @
 
 <<signature Lang.is_japanese>>=
@@ -1093,11 +879,6 @@ val is_japanese : unit -> bool
 let japan = ref false
 @
 
-<<function Lang.lang>>=
-let lang () =
-  if !japan then "ja"
-  else "iso8859"
-@
 
 <<function Lang.is_japanese>>=
 (* mmm uses this function and Jtk.is_japanse_mode also. *)
@@ -1122,46 +903,11 @@ let is_japanese () =
 
 \subsection*{[[./commons/lexpath.mli]]}
 
-<<signature Lexpath.path_components>>=
-(* Path lexer
-   Deals with "./" and "../"
- *)
-
-val path_components : Lexing.lexbuf -> string list
-  (* in normal order: /a/b/c/ -> [a;b;c] *)
-@
-
-<<signature Lexpath.rev_path_components>>=
-val rev_path_components : Lexing.lexbuf -> string list
-  (* in reverse order: /a/b/c/ -> [c;b;a] *)
-@
-
-<<signature Lexpath.build>>=
-val build : string -> string list -> string
-  (* [build root [a;b;d]] returns path/a/b/c *)
-@
-
-<<signature Lexpath.remove_dots>>=
-val remove_dots : string -> string
-  (* takes path and removes . and .. *)
-@
-
 
 %-------------------------------------------------------------
 
 <<./commons/lexpath.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: lexpath.mli,v 1.1 1996/10/22 13:12:46 rouaix Exp $ *)
+<<copyright header v6>>
 
 <<signature Lexpath.path_components>>
 
@@ -1175,18 +921,6 @@ val remove_dots : string -> string
 
 \subsection*{[[./commons/log.mli]]}
 
-<<signature Log.debug_mode>>=
-val debug_mode : bool ref
-@
-
-<<signature Log.f>>=
-val f : string -> unit
-@
-
-<<signature Log.debug>>=
-val debug : string -> unit
-@
-
 
 %-------------------------------------------------------------
 
@@ -1199,19 +933,6 @@ val debug : string -> unit
 
 
 \subsection*{[[./commons/log.ml]]}
-
-<<constant Log.debug_mode>>=
-let debug_mode = ref false
-@
-
-<<function Log.f>>=
-(* flushes ! *)
-let f s = try prerr_endline s with _ -> ()
-@
-
-<<function Log.debug>>=
-let debug s = if !debug_mode then f s 
-@
 
 
 %-------------------------------------------------------------
@@ -1229,6 +950,8 @@ open Printf
 
 
 \subsection*{[[./commons/low.mli]]}
+
+%todo: replace with unix?
 
 <<signature Low.read>>=
 val read : file_descr -> string -> int -> int -> int
@@ -1498,33 +1221,6 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 
 \subsection*{[[./commons/mlist.mli]]}
 
-<<signature Mlist.hdn>>=
-(* List utilities *)
-val hdn : 'a list -> int -> 'a list
-   (* [hdn [a1;a2;...;an;...; ak] returns [a1;a2;...;an] *)
-@
-
-<<signature Mlist.tln>>=
-val tln : 'a list -> int -> 'a list
-   (* [tln [a1;a2;...;an;...; ak] returns [an+1;...; ak] *)
-@
-
-<<signature Mlist.except_assoc>>=
-val except_assoc: 'a -> ('a * 'b) list -> ('a * 'b) list
-@
-
-<<signature Mlist.exceptq>>=
-val exceptq: 'a -> 'a list -> 'a list
-@
-
-<<signature Mlist.rev_do_list>>=
-val rev_do_list : ('a -> unit) -> 'a list -> unit
-@
-
-<<signature Mlist.do_listi>>=
-val do_listi : (int -> 'a -> unit) -> int -> 'a list -> unit
-@
-
 
 %-------------------------------------------------------------
 
@@ -1541,57 +1237,6 @@ val do_listi : (int -> 'a -> unit) -> int -> 'a list -> unit
 
 
 \subsection*{[[./commons/mlist.ml]]}
-
-<<function Mlist.tln>>=
-(* tln l n *)
-let rec tln l = function
-   0 -> l
- | n -> if l = [] then [] else tln (List.tl l) (pred n)
-@
-
-<<function Mlist.hdn>>=
-let hdn l =
-  let rec h l acc = function
-    0 -> List.rev acc
-  | n -> if l = [] then List.rev acc 
-        else h (List.tl l) (List.hd l :: acc) (pred n) in
-  h l []
-@
-
-<<function Mlist.except_assoc>>=
-let except_assoc x =
-  let rec ex acc = function 
-      [] -> acc
-    | (y,v)::l when x = y -> ex acc l
-    | z :: l -> ex (z::acc) l
-  in
-  ex []
-@
-
-<<function Mlist.exceptq>>=
-let exceptq x =
-  let rec ex acc = function
-     [] -> acc
-   | y::l when y == x -> ex acc l
-   | y::l -> ex (y::acc) l
-  in
-  ex []
-@
-
-<<function Mlist.rev_do_list>>=
-(* List.iter from right to left *)
-let rev_do_list f = 
- let rec do_list_f = function
-     [] -> () | x::l -> do_list_f l; f x in
-  do_list_f
-@
-
-<<function Mlist.do_listi>>=
-let rec do_listi f n l =
-  match l with
-    [] -> ()
-  | (x::l) -> f n x; do_listi f (succ n) l
-@
 
 
 %-------------------------------------------------------------
@@ -1620,50 +1265,6 @@ let rec do_listi f n l =
 
 \subsection*{[[./commons/mstring.mli]]}
 
-<<signature Mstring.split_str>>=
-(* String utilities *)
-val split_str : (char -> bool) -> string -> string list
-@
-
-<<signature Mstring.get_suffix>>=
-val get_suffix : string -> string
-@
-
-<<signature Mstring.hex_to_dec>>=
-val hex_to_dec : char -> int
-@
-
-<<signature Mstring.dec_to_hex>>=
-val dec_to_hex : int -> char
-@
-
-<<signature Mstring.hex_to_string>>=
-val hex_to_string : string -> string
-@
-
-<<signature Mstring.gensym>>=
-val gensym : string -> string
-@
-
-<<signature Mstring.egensym>>=
-val egensym : string -> unit -> string
-@
-
-<<signature Mstring.rem_trailing_sp>>=
-val rem_trailing_sp : string -> string
-@
-
-<<signature Mstring.catenate_sep>>=
-val catenate_sep : string -> string list -> string
-@
-
-<<signature Mstring.norm_crlf>>=
-val norm_crlf : bool -> string -> int -> int -> string * bool
-    (* [norm_crlf last_was_cr buf offs len] returns
-       buf with CRLF/CR/LF converted to LF, and a flag indicating
-       whether last char was CR *)
-@
-
 
 %-------------------------------------------------------------
 
@@ -1688,139 +1289,6 @@ val norm_crlf : bool -> string -> int -> int -> string * bool
 
 
 \subsection*{[[./commons/mstring.ml]]}
-
-<<function Mstring.split_str>>=
-(* split a string according to char_sep predicate *)
-let split_str char_sep str =
-  let len = String.length str in
-  if len = 0 then [] else
-    let rec skip_sep cur =
-      if cur >= len then cur
-      else if char_sep str.[cur] then skip_sep (succ cur)
-      else cur  in
-    let rec split beg cur =
-      if cur >= len then 
-    if beg = cur then []
-    else [String.sub str beg (len - beg)]
-      else if char_sep str.[cur] 
-       then 
-         let nextw = skip_sep cur in
-          (String.sub str beg (cur - beg))
-        ::(split nextw nextw)
-       else split beg (succ cur) in
-    let wstart = skip_sep 0 in
-    split wstart wstart
-@
-
-<<function Mstring.get_suffix>>=
-(* extract the . suffix (dot excluded) of a string *)
-let get_suffix s =
-  try
-    let dotpos = succ (String.rindex s '.') in
-      String.sub s dotpos (String.length s - dotpos)
-  with
-    Not_found -> ""
-@
-
-<<function Mstring.hex_to_dec>>=
-(* HEX/DEC conversions *)
-let hex_to_dec c = match c with
-    '0'..'9' -> Char.code c - 48
-  | 'a'..'f' -> Char.code c - 87 (* 87 = Char.code 'a' - 10 *)
-  | 'A'..'F' -> Char.code c - 55 (* 55 = Char.code 'A' - 10 *)
-  | _ -> failwith "hex_to_dec"
-@
-
-<<function Mstring.dec_to_hex>>=
-let dec_to_hex i =
-  if i < 10 then Char.chr (i + 48)  (* 48 = Char.code '0' *)
-  else Char.chr (i + 55)            (* 55 = Char.code 'A' - 10 *)
-@
-
-<<function Mstring.hex_to_string>>=
-(* Converting a hex stored string *)
-let hex_to_string s =
-  let len = String.length s / 2 in
-  let res = String.create len in
-    for i = 0 to len - 1 do
-      res.[i] <- Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1])
-      done;
-    res
-@
-
-<<constant Mstring.gensym>>=
-let gensym =
-  let cnter = ref 0 in
-  (fun n ->
-    incr cnter;
-    n ^ string_of_int !cnter)
-@
-
-<<function Mstring.egensym>>=
-let egensym s =
-  let cnter = ref 0 in
-  (fun () ->
-    incr cnter;
-    s ^ string_of_int !cnter)
-@
-
-<<function Mstring.rem_trailing_sp>>=
-let rem_trailing_sp s =
-  let l = String.length s in
-  let pos = ref (l - 1) in
-  while !pos >= 0 && List.mem s.[!pos] [' '; '\t'] do decr pos done;
-  if !pos = l - 1 then s
-  else String.sub s 0 (succ !pos)
-@
-
-<<function Mstring.catenate_sep>>=
-let catenate_sep sep =
-  function 
-      [] -> ""
-    | x::l -> List.fold_left (fun s s' -> s^sep^s') x l
-@
-
-<<function Mstring.norm_crlf>>=
-(* Filters CRLF:
- *  CR -> LF
- *  CRLF -> LF
- *  LF -> LF
- * We do this on successive chunks of a stream, so we need to consider
- * the case when the chunk finishes on CR.
- * Assume len > 0
- *)
-
-let norm_crlf lastwascr buf offs len =
-  let rpos = ref offs
-  and wpos = ref 0
-  and dest = String.create (len + 1) (* we need one more char *)
-  and limit = offs + len - 1  
-  and lastiscr = ref false in
-  if lastwascr then
-    if buf.[!rpos] = '\n' then begin
-      dest.[!wpos] <- '\n';
-      incr rpos; incr wpos
-    end
-    else begin
-      dest.[!wpos] <- '\n'; incr wpos
-    end;
-
-  while !rpos < limit do
-    match buf.[!rpos] with
-      '\n' -> dest.[!wpos] <- '\n'; incr rpos; incr wpos
-    | '\r' -> 
-    if buf.[!rpos + 1] = '\n'
-    then begin dest.[!wpos] <- '\n'; rpos := !rpos + 2; incr wpos end
-    else begin dest.[!wpos] <- '\n'; incr rpos; incr wpos end
-    | c -> dest.[!wpos] <- c; incr rpos; incr wpos 
-  done;
-  begin match buf.[offs+len-1] with
-    '\n' -> dest.[!wpos] <- '\n'; incr wpos
-  | '\r' -> lastiscr := true
-  | c -> dest.[!wpos] <- c; incr wpos
-  end;
-  String.sub dest 0 !wpos, !lastiscr
-@
 
 
 %-------------------------------------------------------------
@@ -1857,41 +1325,12 @@ let norm_crlf lastwascr buf offs len =
 
 \subsection*{[[./commons/msys.mli]]}
 
-<<signature Msys.tilde_subst>>=
-(* $Id: msys.mli,v 1.1 1996/10/22 13:12:52 rouaix Exp $ *)
-
-val tilde_subst : string -> string
-    (* substitute ~ at beginning of file path *)
-@
-
-<<signature Msys.rm>>=
-val rm: string -> unit
-    (* quiet unlink *)
-@
-
-<<signature Msys.fsize>>=
-val fsize: string -> int
-    (* file size *)
-@
-
-<<signature Msys.mktemp>>=
-val mktemp : string -> string
-@
 
 
 %-------------------------------------------------------------
 
 <<./commons/msys.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header v6>>
 
 <<signature Msys.tilde_subst>>
 
@@ -1905,119 +1344,14 @@ val mktemp : string -> string
 
 \subsection*{[[./commons/msys.ml]]}
 
-<<function Msys.next_slash>>=
-(* skip to next / *)
-let rec next_slash s n =
-  if  n >= String.length s or s.[n] = '/' 
-  then n
-  else next_slash s (succ n)
-@
-
-<<function Msys.tilde_subst>>=
-let tilde_subst s =
- try
-  if s = "" or s.[0] <> '~' then s 
-  else
-    let len = String.length s in
-    if len = 1 then Sys.getenv "HOME"
-    else match s.[1] with
-      '/' -> 
-        Filename.concat (Sys.getenv "HOME") (String.sub s 2 (len - 2))
-     | _ ->
-       let final = next_slash s 1 in
-       let user = String.sub s 1 (pred final) in
-       let pwnam = getpwnam user in
-         if succ final >= len then pwnam.pw_dir
-         else
-          Filename.concat pwnam.pw_dir 
-               (String.sub s (succ final) (len - (succ final)))
- with
-    Unix_error(_,_,_) -> s
-  | Sys_error _ -> s
-  | Not_found -> s
-@
-
-<<function Msys.rm>>=
-(* Quiet unlink *)
-let rm s = try unlink s with Unix_error _ -> ()
-@
-
-<<function Msys.rmdir>>=
-let rmdir dir =
-  try
-    let dh = opendir dir 
-    and l = ref [] in
-    try while true do
-      let f = readdir dh in
-      if f <> "." && f <> ".." then l := f :: !l
-    done
-    with
-      End_of_file -> 
-    closedir dh;
-    List.iter (fun f -> rm (Filename.concat dir f)) !l;
-    Unix.rmdir dir
-  with
-    Unix_error _ -> ()
-@
-
-<<function Msys.fsize>>=
-let fsize f =
-  try (Unix.stat f).st_size
-  with Unix_error(_,_,_) -> raise Not_found
-@
-
-<<constant Msys.tmp_dir>>=
-let tmp_dir = ref "/tmp"
-@
-
-<<constant Msys.mktemp>>=
-(* We know use our own private directory in /tmp, cleared at exit-time,
-   so no one can snoop our temporary files *)
-let mktemp =
-  let cnter = ref 0 
-  and pid = Unix.getpid() 
-  and id = ref 0 in
-  let thisdir = 
-    let testdir = ref "" in
-    try while true do
-      testdir := Filename.concat !tmp_dir ("mmm" ^ string_of_int pid
-                         ^ "_" ^ string_of_int !id);
-      if not (Sys.file_exists !testdir) then raise Exit;
-      incr id;
-      if !id >= 16 then 
-    raise (Failure ("Too many MMM temporary directory in " ^ !tmp_dir ^
-            ". Clean them first."))
-    done; "" (* cannot reach *)
-    with
-      Exit -> !testdir
-  in
-  Unix.mkdir thisdir 0o700;
-  at_exit (fun () -> rmdir thisdir);
-  (function prefx -> 
-      incr cnter; 
-      (Filename.concat thisdir (prefx ^ string_of_int !cnter)))
-@
-
 
 %-------------------------------------------------------------
 
 <<./commons/msys.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: msys.ml,v 1.3 1997/10/23 16:06:44 furuse Exp $ *)
+<<copyright header v6>>
 
 open Printf
 open Unix
-
 
 (* Tilde substitution *)
 
@@ -2038,25 +1372,6 @@ open Unix
 
 \subsection*{[[./commons/i18n.mli]]}
 
-<<signature I18n.message_file>>=
-val message_file : string ref
-@
-
-<<signature I18n.language>>=
-val language : string ref
-@
-
-<<signature I18n.sprintf>>=
-val sprintf: ('a, unit, string) format -> 'a
-@
-
-<<signature I18n.menu_option>>=
-val menu_option: Tk.options list -> Tk.options list
-@
-
-<<signature I18n.menu_pattern>>=
-val menu_pattern: Tk.options list -> string
-@
 
 
 %-------------------------------------------------------------
@@ -2074,157 +1389,6 @@ val menu_pattern: Tk.options list -> string
 
 \subsection*{[[./commons/i18n.ml]]}
 
-<<function I18n.fprintf>>=
-(* Internationalization (translation of error messages) *)
-
-let fprintf x = 
-  if !Lang.japan then I18nprintf.fprintf x else Printf.fprintf x
-@
-
-<<function I18n.sprintf>>=
-let sprintf x = 
-  if !Lang.japan then I18nprintf.sprintf x else Printf.sprintf x
-@
-
-<<constant I18n.language>>=
-let language = ref ""
-@
-
-<<constant I18n.message_file>>=
-let message_file = ref ""
-@
-
-<<function I18n.read_transl_file>>=
-let read_transl_file msgfile =
-  let ic = open_in msgfile in
-  let tag_buffer = String.create 16
-  and msg_buffer = String.create 1024 in
-  let rec store_tag c i =
-    if i >= 16 then i else (tag_buffer.[i] <- c; succ i)
-  and store_msg c i =
-    if i >= 1024 then i else (msg_buffer.[i] <- c; succ i)
-  and read_line i =
-    match input_char ic with
-      '\n' -> i
-    | '\\' -> begin match input_char ic with
-                '\\' -> read_line(store_msg '\\' i)
-              | 'n'  -> read_line(store_msg '\n' i)
-              | '\n' -> skip_blanks i
-              | c    -> read_line(store_msg c (store_msg '\\' i))
-              end
-    | c    -> read_line(store_msg c i)
-  and skip_blanks i =
-    match input_char ic with
-      ' '|'\t' -> skip_blanks i
-    | c        -> read_line(store_msg c i)
-  and read_tag i =
-    match input_char ic with
-      ':'           -> (i, skip_blanks 0)
-    | ' '|'\n'|'\t' -> read_tag i
-    | c             -> read_tag(store_tag c i) in
-  let transl_tbl = Hashtbl.create 37 in
-  let currsrc = ref "" in
-  begin try
-    while true do
-      let (tag_len, msg_len) = read_tag 0 in
-      if String.sub tag_buffer 0 tag_len = "src" then
-        currsrc := String.sub msg_buffer 0 msg_len
-      else if String.sub tag_buffer 0 tag_len = !language then
-        Hashtbl.add transl_tbl !currsrc (String.sub msg_buffer 0 msg_len)
-      else ()
-    done
-  with End_of_file ->
-    close_in ic
-  end;
-  transl_tbl
-@
-
-<<enum I18n.translation_table>>=
-type translation_table =
-    Unknown
-  | NoTranslation
-  | Transl of (string, string) Hashtbl.t
-@
-
-<<constant I18n.transl_table>>=
-let transl_table = ref Unknown
-@
-
-<<function I18n.translate>>=
-let rec translate msg =
-  match !transl_table with
-    NoTranslation ->
-      msg
-  | Transl tbl ->
-      begin try Hashtbl.find tbl msg with Not_found -> msg end
-  | Unknown ->
-      transl_table :=
-        if String.length !language == 0 then
-          NoTranslation
-        else begin
-          try
-            if Sys.file_exists !message_file then	   
-              Transl(read_transl_file !message_file)
-            else NoTranslation
-          with Sys_error _ | Sys.Break ->
-            NoTranslation
-        end;
-      translate msg
-@
-
-<<function I18n.fprintf (./commons/i18n.ml)>>=
-let fprintf oc (fmt : ('a, out_channel, unit) format) =
-  fprintf oc
-@
-
-<<function I18n.sprintf (./commons/i18n.ml)>>=
-let sprintf (fmt : ('a, unit, string) format) =
-  sprintf
-@
-
-<<function I18n.menu_option>>=
-let menu_option l =
-  let under_pos = ref (-1) 
-  and text = ref ""
-  in
-    List.iter (function 
-    UnderlinedChar x -> under_pos := x
-      | Text x  -> text := x
-      | Label x -> text := x
-      |	_ -> () ) l;
-    let trans = translate !text in
-      let new_text, new_under_pos =
-    if !text = trans then !text, !under_pos
-    else
-      if !under_pos = 0 & 
-        String.get !text 0 = String.get trans 0 then trans, 0
-      else
-        (String.make 1 (String.get !text !under_pos)) ^ ":" ^ trans, 0 
-      in
-        List.map (function
-        UnderlinedChar _ -> UnderlinedChar new_under_pos
-      | Text x -> Text new_text
-      | Label x -> Label new_text
-      | x -> x ) l
-@
-
-<<exception I18n.Found>>=
-exception Found of string
-@
-
-<<function I18n.menu_pattern>>=
-let menu_pattern l =
-  let l' = menu_option l in
-  try
-    List.iter (function
-      | Text x -> raise (Found x)
-      | Label x -> raise (Found x)
-      | _ -> ()) l';
-    raise (Failure "I18n.menu_pattern : the option list contains no text")
-  with
-    Found x -> x
-@
-
 
 %-------------------------------------------------------------
 
@@ -2239,19 +1403,15 @@ open Tk
 
 <<function I18n.read_transl_file>>
 
-<<enum I18n.translation_table>>
+<<type I18n.translation_table>>
 
 <<constant I18n.transl_table>>
 
 <<function I18n.translate>>
 
 <<function I18n.fprintf (./commons/i18n.ml)>>
-    (Obj.magic(translate(Obj.magic fmt : string)) :
-                                ('a, out_channel, unit) format)
 
 <<function I18n.sprintf (./commons/i18n.ml)>>
-    (Obj.magic(translate(Obj.magic fmt : string)) :
-                                ('a, unit, string) format)
 
 let printf fmt = fprintf stdout fmt
 and eprintf fmt = fprintf stderr fmt
@@ -2457,13 +1617,13 @@ open Unix
 
 \subsection*{[[./commons/feed.mli]]}
 
-<<enum Feed.internal>>=
+<<type Feed.internal>>=
 (* An abstract notion of connection *)
 
 type internal = Unix.file_descr
 @
 
-<<enum Feed.t>>=
+<<type Feed.t>>=
 type t = {
   feed_read : string -> int -> int -> int;
   feed_schedule : (unit -> unit) -> unit;
@@ -2485,9 +1645,9 @@ val internal : t -> internal
 %-------------------------------------------------------------
 
 <<./commons/feed.mli>>=
-<<enum Feed.internal>>
+<<type Feed.internal>>
 
-<<enum Feed.t>>
+<<type Feed.t>>
 
 <<signature Feed.of_fd>>
 <<signature Feed.internal>>
@@ -2496,12 +1656,12 @@ val internal : t -> internal
 
 \subsection*{[[./commons/feed.ml]]}
 
-<<enum Feed.internal (./commons/feed.ml)>>=
+<<type Feed.internal (./commons/feed.ml)>>=
 (* An abstract notion of connection *)
 type internal = Unix.file_descr
 @
 
-<<enum Feed.t (./commons/feed.ml)>>=
+<<type Feed.t (./commons/feed.ml)>>=
 type t = {
   feed_read : string -> int -> int -> int;
   feed_schedule : (unit -> unit) -> unit;
@@ -2600,9 +1760,9 @@ let internal {feed_internal = fd} = fd
 %-------------------------------------------------------------
 
 <<./commons/feed.ml>>=
-<<enum Feed.internal (./commons/feed.ml)>>
+<<type Feed.internal (./commons/feed.ml)>>
 
-<<enum Feed.t (./commons/feed.ml)>>
+<<type Feed.t (./commons/feed.ml)>>
 
 <<function Feed.of_fd>>
  
@@ -2613,13 +1773,6 @@ let internal {feed_internal = fd} = fd
 
 \subsection*{[[./commons/glevents.mli]]}
 
-<<signature Glevents.get>>=
-val get : string -> (modifier list * xEvent) list 
-@
-
-<<signature Glevents.reset>>=
-val reset : unit -> unit
-@
 
 
 %-------------------------------------------------------------
@@ -2633,53 +1786,6 @@ open Tk
 
 
 \subsection*{[[./commons/glevents.ml]]}
-
-<<constant Glevents.events>>=
-(* A global table for describing events
- * TODO: use virtual events because here we don't change bindings in 
- * place after a preference reload
- *)
-
-let events = Hashtbl.create 37
-@
-
-<<constant Glevents.builtin_defaults>>=
-let builtin_defaults = [
-  (* tachymeter bindings *)
-  "tachy_about", [[], ButtonPressDetail 3];
-  "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
-  "tachy_new", [[], ButtonPressDetail 1];
-  "tachy_sel", [[], ButtonPressDetail 2];
-  (* bindings on inlined images *)
-  "loadimage", [[Control], ButtonPressDetail 1];
-  "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
-  "stopanim",  [[], ButtonPressDetail 2];
-  "restartanim", [[Shift], ButtonPressDetail 2];
-  "copyimgurl", [[], ButtonPressDetail 2];
-  "updateimage", [[Shift], ButtonPressDetail 2];
-  (* anchor bindings *)
-  "goto", [[], ButtonPressDetail 1];
-  "save", [[Shift], ButtonPressDetail 1];
-  "gotonew", [[], ButtonPressDetail 3];
-  "hypermenu", [[Control], ButtonPressDetail 1];
-]
-@
-
-<<constant Glevents.get>>=
-let get = Hashtbl.find events
-@
-
-<<function Glevents.reset>>=
-(* This is for preferences *)
-let reset () =
-  Hashtbl.clear events;
-  (* Now: for all names defined in defaults, check a possible overriding value
-     in resources *)
-  List.iter (fun (name,default) ->
-    Hashtbl.add events 
-      name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
-    builtin_defaults
-@
 
 
 %-------------------------------------------------------------
@@ -2725,6 +1831,7 @@ let f url title =
 
 <<function Hotlist.f>>
 @
+
 
 
 \section{[[./globals/]]}
@@ -2782,10 +1889,6 @@ val applet_init : (bool -> unit) ref
 
 \subsection*{[[./globals/version.ml]]}
 
-<<constant Version.number>>=
-(* Version *)
-let number = 418
-@
 
 <<constant Version.version_number>>=
 let version_number = string_of_int number;;
@@ -2796,46 +1899,6 @@ let version_number = string_of_int number;;
 let http = "MMM/0." ^ string_of_int number
 @
 
-<<function Version.about>>=
-(* dialog uses an gigantic font ! *)
-let about = function
-  | "iso8859" ->
-"MMM Version 0." ^ version_number ^
-"\nWritten by Fran\231ois Rouaix
-Contributions by Jun P. Furuse and Jacques Garrigue
-Ported to O'Caml 3 by Jun P. Furuse and Pierre Weis
-\169 Copyright INRIA
-
-Projet Cristal
-INRIA Rocquencourt
-Domaine de Voluceau
-78153 Le Chesnay Cedex
-France
-
-Francois.Rouaix@inria.fr
-http://pauillac.inria.fr/~rouaix/
-"
-  | "ja" -> "\027$B$b!A\027(B Version 0." ^ version_number ^
-"\n\027$B:n<T\027(B: Fran\231ois Rouaix
-\027$BF|K\\8l2=<T\027(B: \027$B8E@%\027(B \027$B=_\027(B
-\027$B4sM?\027(B: \027$B2mMx2l\027(B \027$B<f6j\027(B
-O'Caml 3 \027$B$X$N0\\?\"\027(B: \027$B8E@%\027(B \027$B=_!\"\027(B Pierre Weis
-\169 Copyright INRIA
-
-Projet Cristal
-INRIA Rocquencourt
-Domaine de Voluceau
-78153 Le Chesnay Cedex
-France
-
-Francois.Rouaix@inria.fr
-http://pauillac.inria.fr/~rouaix/
-
-Jun.Furuse@inria.fr
-http://pauillac.inria.fr/~furuse/
-"
-  | _ -> assert false
-@
 
 <<function Version.home>>=
 let home = function 
@@ -2865,87 +1928,7 @@ let helpurl = function
   | _ -> assert false
 @
 
-<<function Version.html>>=
-let html = function
-  | "iso8859" ->
-"<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
-<BODY>
-<H1> The MMM navigator Version 0." ^ version_number ^ "</H1>
-<H2 ALIGN=CENTER> Written by Fran\231ois Rouaix </H2>
-<H2 ALIGN=CENTER> Contributions by Jun P. Furuse and Jacques Garrigue</H2>
-<H3 ALIGN=CENTER> Port to O'Caml V3.0 by Jun P. Furuse and Pierre Weis</H3>
-<H2 ALIGN=CENTER> \169 Copyright INRIA </H2>
 
-<H4 ALIGN=CENTER> Using Objective Caml \169 Copyright INRIA </H4>
-<H4 ALIGN=CENTER> And Tcl8.0/Tk8.0 (John Ousterhout and al.)<BR>
- \169 Copyright The Regents of the University of California<BR>
- and Sun Microsystems, Inc </H4>
-<BLOCKQUOTE>
-Please note that the software is a product currently being developed.
-INRIA shall not be responsible in any way concerning conformity, and in
-particular shall not be liable should the software not comply with the
-requirements of the user, INRIA not being obliged to repair any
-possible direct or indirect damage.
-</BLOCKQUOTE>
-<P>
-The MMM home page is 
-<A HREF=\"http://pauillac.inria.fr/mmm/\">here</A>,
-and there is also some
-<A HREF=\"http://pauillac.inria.fr/mmm/doc.html\">documentation</A>
-and
-<A HREF=\"http://pauillac.inria.fr/mmm/releases.html\">release notes</A>.
-<BR>
-Join the author by clicking
-<A HREF=\"mailto:Francois.Rouaix@inria.fr\">here.</A>
-<P>
-<BLOCKQUOTE>
-This document is included in your browser. Click on <TT>Reload</TT> to
-get an updated copy.
-</BLOCKQUOTE>
-</BODY>
-</HTML>
-"
-| "ja" -> "<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
-<BODY>
-<H1> \027$B%J%S%2!<%?\027(B \027$B$b!A\027(B Version 0." ^ version_number ^ "</H1>
-<H2> \027$B:n<T\027(B \027$B!'\027(B Fran&ccedil;ois Rouaix </H2>
-<H2> \027$BF|K\\8l2=<T\027(B \027$B!'\027(B \027$B8E@%\027(B \027$B=_\027(B </H2>
-<H2> \027$B4sM?\027(B \027$B!'\027(B \027$B2mMx2l\027(B \027$B<f6j\027(B </H2>
-<H2> O'Caml 3 \027$B$X$N0\\?\"\027(B: \027$B8E@%\027(B \027$B=_!\"\027(B Pierre Weis </H2>
-<H2> &copy; Copyright INRIA (\027$BJ)9q9qN)>pJs<+F02=8&5f=j\027(B) </H2>
-
-<H3> \027$B;HMQ%=%U%H%&%'%\"\027(B </H3>
-<H3> Objective Caml &copy; Copyright INRIA </H3>
-<H3> Tcl8.0/Tk8.0 (John Ousterhout and al.) &copy; Copyright The Regents of the University of California and Sun Microsystems, Inc </H3>
-<BLOCKQUOTE>
-\027$B$3$N%=%U%H%&%'%\"$K4X$7$F\027(BINRIA \027$B$O$$$+$J$k7A<0$N@UG$$bIi$$$^$;$s!#\027(B
-\027$BFC$K!\"$3$N%=%U%H%&%'%\"$r%f!<%6!<$NI,MW$KJ;$;$k5AL3!\"\027(B
-\027$B$^$?;HMQ$7$F@8$8$?$$$+$J$kD>@\\E*$^$?$O4V@\\E*Ho32$N@UG$$bIi$$$+$M$^$9!#\027(B
-</BLOCKQUOTE>
-<P>
-\027$B$b!A$N%[!<%`%Z!<%8$O\027(B
-<A HREF=\"http://pauillac.inria.fr/mmm/jmmm/\">\027$B$3$3\027(B</A>\027$B!\"\027(B
-\027$B$b!A$N1Q8l$G=q$+$l$?%*%j%8%J%k$N%[!<%`%Z!<%8$O\027(B
-<A HREF=\"http://pauillac.inria.fr/mmm/\">\027$B$3$3\027(B</A>\027$B$G$9!#\027(B
-<BR>
-\027$B6=L#$,$\"$kJ}$O\027(B
-<A HREF=\"mailto:Jun.Furuse@inria.fr\">\027$B$3$3\027(B</A>
-\027$B$r2!$7$F3+H/$K;22C$7$F2<$5$$!#\027(B
-<P>
-<BLOCKQUOTE>
-\027$B$3$NJ8=q$O%V%i%&%6$KFbB\"$5$l$F$$$^$9!#\027(B<TT>\027$B:FFI\027(B</TT> \027$B$r2!$7$F0lHV?7$7$$J*$r<hF@$7$F2<$5$$!#\027(B
-</BLOCKQUOTE>
-</BODY>
-</HTML>
-"
-  |  _ -> assert false
-@
-%$
-
-<<constant Version.applet_init>>=
-(* Make it easier to compile both bytecode and native versions *)
-let applet_init = ref (fun _ -> ())
-@
 
 
 %-------------------------------------------------------------
@@ -2978,26 +1961,12 @@ let applet_init = ref (fun _ -> ())
 
 \subsection*{[[./www/uri.mli]]}
 
-<<enum Uri.abs_uri>>=
-(* URI utilities. RFC 1630 *)
-
-type abs_uri = {
-   uri_url : string;
-   uri_frag : string option
- }
-@
-
-<<signature Uri.is_absolute>>=
-val is_absolute : string -> bool
-   (* [is_absolute uri] determines if [uri] is absolute according to
-      rules of RFC 1630 *)
-@
 
 
 %-------------------------------------------------------------
 
 <<./www/uri.mli>>=
-<<enum Uri.abs_uri>>
+<<type Uri.abs_uri>>
 
 <<signature Uri.is_absolute>>
 
@@ -3008,27 +1977,6 @@ val is_absolute : string -> bool
 
 \subsection*{[[./www/uri.ml]]}
 
-<<enum Uri.abs_uri (./www/uri.ml)>>=
-type abs_uri = {
-   uri_url : string;
-   uri_frag : string option
- }
-@
-
-<<function Uri.is_absolute>>=
-(* RFC 1630, partial forms *)
-let is_absolute uri =
-  try
-    let colonpos = String.index uri ':' in
-    try 
-      let slashpos = String.index uri '/' in
-       colonpos < slashpos (* colon must occur before slash *)
-    with
-      Not_found -> true (* colon occurs before slash *)
-  with
-    Not_found -> false (* absolute must have a : *)
-@
-
 
 %-------------------------------------------------------------
 
@@ -3036,7 +1984,7 @@ let is_absolute uri =
 open Printf
 open Mstring
 
-<<enum Uri.abs_uri (./www/uri.ml)>>
+<<type Uri.abs_uri>>
 
 <<function Uri.is_absolute>>
 @
@@ -3044,57 +1992,16 @@ open Mstring
 
 \subsection*{[[./www/url.mli]]}
 
-<<enum Url.protocol>>=
-(* URLs as defined by RFC 1738 *)
-
-type protocol =
-   FTP | HTTP | GOPHER | MAILTO | NEWS | NNTP | TELNET | WAIS
- | FILE | PROSPERO
- | OtherProtocol of string
-@
-
-<<signature Url.string_of_protocol>>=
-val string_of_protocol: protocol -> string
-  (* maps FTP to "ftp", etc... *)
-@
-
-<<enum Url.t>>=
-(* Relative adressing in anchors, fragments are NOT URLs, but URI *)
-type t = 
-  { mutable protocol : protocol;
-    mutable user : string option;
-    mutable password: string option;
-    mutable host : string option;
-    mutable port : int option;
-    mutable path : string option;
-    mutable search: string option
-  }
-@
-
-<<signature Url.string_of>>=
-(* These are used to get "normalized urls" *)
-val string_of: t -> string
-@
-
-<<signature Url.distant_path>>=
-(* For http. The thing we have to send in the request *)
-val distant_path : t -> string
-@
-
-<<exception Url.Url_Lexing>>=
-exception Url_Lexing of string * int
-@
-
 
 %-------------------------------------------------------------
 
 <<./www/url.mli>>=
-<<enum Url.protocol>>
+<<type Url.protocol>>
 
 <<signature Url.string_of_protocol>>
 
 (* Not all components are used for all protocols. See RFC. *)
-<<enum Url.t>>
+<<type Url.t>>
 
 <<signature Url.string_of>>
 
@@ -3108,124 +2015,8 @@ exception Url_Lexing of string * int
 
 \subsection*{[[./www/url.ml]]}
 
-<<enum Url.protocol (./www/url.ml)>>=
-type protocol =
-   FTP | HTTP | GOPHER | MAILTO | NEWS | NNTP | TELNET | WAIS | FILE | PROSPERO
- | OtherProtocol of string
-@
-
-<<function Url.string_of_protocol>>=
-let string_of_protocol = function
-   FTP -> "ftp"
- | HTTP -> "http"
- | GOPHER -> "gopher"
- | MAILTO -> "mailto"
- | NEWS -> "news"
- | NNTP -> "nntp"
- | TELNET -> "telnet"
- | WAIS -> "wait"
- | FILE -> "file"
- | PROSPERO -> "prospero"
- | OtherProtocol s -> s
-@
-
-<<enum Url.t (./www/url.ml)>>=
-(* Not all components are used for all protocols *)
-type t = 
-  { mutable protocol : protocol;
-    mutable user : string option;
-    mutable password: string option;
-    mutable host : string option;
-    mutable port : int option;
-    mutable path : string option;
-    mutable search: string option
-  }
-@
-
-<<exception Url.Url_Lexing (./www/url.ml)>>=
-exception Url_Lexing of string * int
-@
-
 <<exception Url.Invalid_url>>=
 exception Invalid_url of t * string
-@
-
-<<function Url.string_of>>=
-let string_of p =
-  let buf = Ebuffer.create 128 in
-  let ws = Ebuffer.output_string buf
-  and wc = Ebuffer.output_char buf in
-  let write_userpass () =
-      match p.user, p.password with
-        None, None -> ()
-       | Some u, Some p -> ws u; wc ':'; ws p; wc '@'
-       | Some u, None ->   ws u; wc ':'; wc '@'
-       | None, Some _ -> failwith "url_of_parsed"
-  (* hostname is always put in lowercase *)
-  and write_hostport def =
-      match p.host, p.port with
-        None, None -> ()
-       | Some h, None -> ws (String.lowercase h)
-       | Some h, Some p when p = def -> ws (String.lowercase h)
-       | Some h, Some p -> 
-      ws (String.lowercase h); wc ':'; ws (string_of_int p)
-       | None, Some _ -> failwith "url_of_parsed"	    
-
-  and write_pathsearch () =
-      match p.path, p.search with
-       None, None -> wc '/'
-      | Some p, Some s -> wc '/'; ws p; wc '?'; ws s
-      | Some p, None -> wc '/'; ws p
-      | None, Some _ -> failwith "url_of_parsed"	    
-
-  and write_slashpath () =
-      match p.path with
-       None -> ()
-      | Some p -> wc '/'; ws p
-  and write_path () =
-      match p.path with
-       None -> ()
-      | Some p -> ws p
-  and write_fhost () =
-      match p.host with
-       None -> ws "localhost"
-      | Some h -> ws (String.lowercase h)
-  in
-  begin match p.protocol with
-    FTP ->
-      ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
-  | HTTP ->
-      ws "http://"; write_hostport 80; write_pathsearch ()
-  | GOPHER ->
-      ws "gopher://"; write_hostport 70; write_slashpath ()
-  | MAILTO -> ws "mailto:"; write_path()
-  | NEWS -> ws "news:"; write_path()
-  | NNTP -> ws "nntp:"; write_hostport 119; write_path()
-  | TELNET -> ws "telnet://"; write_userpass(); write_hostport 23
-  | WAIS -> ws "wais://"; write_hostport 210; write_pathsearch()
-  | FILE ->
-    (* for file: we have to transform to ftp: if host is not localhost *)
-    begin match p.host with
-      None | Some "localhost" ->
-        ws "file://"; write_fhost(); write_slashpath()
-    | Some h ->
-       p.protocol <- FTP;
-        ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
-    end
-  | PROSPERO -> ws "prospero://"; write_hostport 1525; write_slashpath()
-  | OtherProtocol s -> ws s; ws ":"; write_path()
-  end;
-  Ebuffer.get buf
-@
-
-<<function Url.distant_path>>=
-(* For http only *)
-let distant_path urlp =
-  match urlp.path, urlp.search with
-     None, None -> "/"
-   | Some p, None -> "/"^p
-   | Some p, Some s -> "/"^p^"?"^s
-   | None, Some s -> "/?" ^ s (* ??? *)
 @
 
 
@@ -3234,18 +2025,17 @@ let distant_path urlp =
 <<./www/url.ml>>=
 open Printf
 
-<<enum Url.protocol (./www/url.ml)>>
+<<type Url.protocol>>
 
 <<function Url.string_of_protocol>>
 
 
-<<enum Url.t (./www/url.ml)>>
+<<type Url.t>>
 
-<<exception Url.Url_Lexing (./www/url.ml)>>
+<<exception Url.Url_Lexing>>
 <<exception Url.Invalid_url>>
 
 <<function Url.string_of>>
-
 
 <<function Url.distant_path>>
 
@@ -3254,54 +2044,11 @@ open Printf
 
 \subsection*{[[./www/urlenc.mli]]}
 
-<<signature Urlenc.decode>>=
-(* URL encoding *)
-
-val decode : string -> string
-@
-
-<<signature Urlenc.encode>>=
-val encode : string -> string
-    (* encoding and decoding for an arbitrary string *)
-@
-
-<<signature Urlenc.strict_form_standard>>=
-val strict_form_standard : bool ref
-    (* if true, we take RFC1866 8.2.1 case 1 strictly, and encode any 
-       non-alphanumeric character in the field name
-       else, we encode only values, but not field names *)
-@
-
-<<signature Urlenc.form_encode>>=
-val form_encode : (string * string) list -> string
-@
-
-<<signature Urlenc.form_decode>>=
-val form_decode : string -> (string * string) list
-    (* application/x-www-form-urlencoded encoding *)
-@
-
-<<signature Urlenc.unquote>>=
-(*-*)
-val unquote : string -> string
-@
-
 
 %-------------------------------------------------------------
 
 <<./www/urlenc.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: urlenc.mli,v 1.3 1997/10/15 13:45:07 rouaix Exp $ *)
+<<copyright header v6>>
 
 <<signature Urlenc.decode>>
 <<signature Urlenc.encode>>
@@ -3316,153 +2063,12 @@ val unquote : string -> string
 
 \subsection*{[[./www/urlenc.ml]]}
 
-<<function Urlenc.hexchar>>=
-let hexchar c = 
-  let s = String.make 3 '%'
-  and i = Char.code c in
-  s.[1] <- dec_to_hex (i/16);
-  s.[2] <- dec_to_hex (i mod 16);
-  s
-@
-
-<<function Urlenc.decode>>=
-(* Note: beware of order of splitting wrt '&' and decoding *)
-let decode s =
-  let l = String.length s in
-  let target = Ebuffer.create l in
-  let pos = ref 0 in
-  while !pos < l do
-    if s.[!pos] = '%' & !pos + 2 < l  then begin
-      let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
-       Ebuffer.output_char target (Char.chr c);
-    pos := !pos + 3
-    end
-    else if s.[!pos] = '+' then begin
-      Ebuffer.output_char target ' ';
-      incr pos
-      end
-    else begin
-      Ebuffer.output_char target s.[!pos];
-      incr pos
-      end
-  done;
-  Ebuffer.get target
-@
-
-<<constant Urlenc.keep_quoted>>=
-(* Unquote an url path:
-   We decode all % except those corresponding to significative
-   characters for parsing: /, ?, #, sp, :
- *)
-let keep_quoted = 
-  ['/'; '?'; '#'; ' '; '\t'; '\r'; '\n'; ':'; '%'; '&'; '='; '+']
-@
-
-<<function Urlenc.unquote>>=
-let unquote s =
-  try
-    (* optim *)
-    let _ = String.index s '%' in
-    let l = String.length s in
-    let target = Ebuffer.create l in
-    let pos = ref 0 in
-    try
-      while !pos < l do
-    let perpos = String.index_from s !pos '%' in
-    if perpos > !pos then Ebuffer.output target s !pos (perpos - !pos);
-    pos := perpos;
-       if s.[!pos] = '%' & !pos + 2 < l  then begin
-         let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
-      let substc = Char.chr c in
-      if List.mem substc keep_quoted then
-        for i = 0 to 2 do
-             Ebuffer.output_char target s.[!pos];
-             incr pos
-          done
-          else begin
-             Ebuffer.output_char target (Char.chr c);
-          pos := !pos + 3
-       end
-     end
-     else begin
-        Ebuffer.output_char target s.[!pos];
-        incr pos
-     end
-      done;
-      Ebuffer.get target
-    with
-      Not_found -> (* no more substitutions *)
-    Ebuffer.output target s !pos (l - !pos);
-    Ebuffer.get target
-  with
-    Not_found -> s
-@
-
-<<function Urlenc.encode>>=
-let encode s =
-  let target = Ebuffer.create (String.length s) in
-  for pos = 0 to String.length s - 1 do
-    match s.[pos] with
-      ' ' -> Ebuffer.output_char target '+'
-    | '0'..'9' | 'a'..'z' | 'A'..'Z' as c -> Ebuffer.output_char target c
-    | '\n' -> Ebuffer.output_string target "%0D%0A"
-    | c -> Ebuffer.output_string target (hexchar c)
-    done;
-  Ebuffer.get target
-@
-
-<<constant Urlenc.strict_form_standard>>=
-let strict_form_standard = ref true
-@
-
-<<function Urlenc.form_encode>>=
-let form_encode = function 
-  [] -> ""
- | (e,v)::l ->
-  let b = Ebuffer.create 512 in
-    Ebuffer.reset b;
-    Ebuffer.output_string b (encode e);
-    Ebuffer.output_char b '=';
-    Ebuffer.output_string b (encode v);
-    List.iter (fun (e,v) ->
-         Ebuffer.output_char b '&';
-         Ebuffer.output_string b (
-                   if !strict_form_standard then encode e
-           else e);
-         Ebuffer.output_char b '=';
-         Ebuffer.output_string b (encode v))
-             l;
-    Ebuffer.get b
-@
-
-<<constant Urlenc.form_decode>>=
-let form_decode =
-  let ampersand c = c = '&' and equals c = c = '=' in
-  (function  s ->
-     List.map (fun encp ->
-       match split_str equals encp with
-       [x;y] -> (decode x, decode y)
-     | [x] -> (decode x, "")
-     | _ -> invalid_arg "form_decode")
-       (split_str ampersand s))
-@
-
 
 %-------------------------------------------------------------
 
 <<./www/urlenc.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header v6>>
 
-(* $Id: urlenc.ml,v 1.7 1998/03/31 12:34:39 rouaix Exp $ *)
 open Mstring
 
 <<function Urlenc.hexchar>>
@@ -3487,28 +2093,6 @@ open Mstring
 
 \subsection*{[[./www/lexurl.mli]]}
 
-<<signature Lexurl.f>>=
-val f : Lexing.lexbuf -> Url.t
-@
-
-<<signature Lexurl.make>>=
-val make : string -> Url.t
-   (* raise Url_Lexing(msg,pos) *)
-@
-
-<<signature Lexurl.maken>>=
-val maken : string -> Url.t
-   (* raise Url_Lexing(msg,pos) *)
-@
-
-<<signature Lexurl.remove_dots>>=
-val remove_dots : string -> string
-@
-
-<<signature Lexurl.normalize>>=
-val normalize : string -> string
-@
-
 
 %-------------------------------------------------------------
 
@@ -3524,55 +2108,6 @@ val normalize : string -> string
 
 \subsection*{[[./www/hyper.mli]]}
 
-<<enum Hyper.link_method>>=
-(* Contains only the one we support *)
-type link_method =
-   GET 
- | HEAD
- | POST of string
-@
-
-<<signature Hyper.parse_method>>=
-val parse_method : string -> link_method
-@
-
-<<enum Hyper.link>>=
-type link = {
-  h_uri : string;
-  h_context: string option;
-  h_method : link_method;		(* default is GET *)
-  h_params : (string * string) list
-  }
-@
-
-<<enum Hyper.link_error>>=
-type link_error =
-    LinkResolve of string
-  | UrlLexing of string * int
-@
-
-<<exception Hyper.Invalid_link>>=
-exception Invalid_link of link_error
-@
-
-<<signature Hyper.urlconcat>>=
-val urlconcat: Url.t -> string -> string
-   (* [urlconcat url relurl] resolves the relative URL [relurl] in the
-       context of the URL [url]
-      Doesn't handle fragments
-    *)
-@
-
-<<signature Hyper.resolve>>=
-val resolve : link -> Uri.abs_uri
-  (* raises Invalid_link(msg) *)
-@
-
-<<signature Hyper.string_of>>=
-val string_of : link -> string
-  (* make an absolute URI (including fragment) from link 
-     raises Invalid_link(msg) *)
-@
 
 
 %-------------------------------------------------------------
@@ -3581,13 +2116,13 @@ val string_of : link -> string
 (* An hypertext(media) link on the Web *)
 
 (* This is currently for HTTP and derived, but ... *)
-<<enum Hyper.link_method>>
+<<type Hyper.link_method>>
 
 <<signature Hyper.parse_method>>
 
-<<enum Hyper.link>>
+<<type Hyper.link>>
 
-<<enum Hyper.link_error>>
+<<type Hyper.link_error>>
 
 <<exception Hyper.Invalid_link>>
 
@@ -3602,152 +2137,6 @@ val string_of : link -> string
 
 \subsection*{[[./www/hyper.ml]]}
 
-<<enum Hyper.link_method (./www/hyper.ml)>>=
-(* Contains only the one we support *)
-type link_method =
-   GET 
- | HEAD
- | POST of string
-@
-
-<<function Hyper.parse_method>>=
-let parse_method = function
-   "GET" -> GET
- | "HEAD" -> HEAD
- | "POST" -> POST ""
- | _ -> raise Not_found (* other cases should be caught by caller ! *)
-@
-
-<<enum Hyper.link (./www/hyper.ml)>>=
-type link = {
-  h_uri : string;
-  h_context: string option;
-  h_method : link_method;		(* default is GET *)
-  h_params : (string * string) list
-  }
-@
-
-<<enum Hyper.link_error (./www/hyper.ml)>>=
-type link_error =
-    LinkResolve of string
-  | UrlLexing of string * int
-@
-
-<<exception Hyper.Invalid_link (./www/hyper.ml)>>=
-exception Invalid_link of link_error
-@
-
-<<function Hyper.urlconcat>>=
-(* NO FRAGMENT HANDLING *)
-
-let urlconcat contextp newuri =
-  let l = String.length newuri in 
-    if l = 0 then string_of contextp 
-    else if l > 2 & newuri.[0] = '/' & newuri.[1] = '/' then
-      (* this is probably a gopher relative uri *)
-      sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
-    else if newuri.[0] = '/' then (* start from root *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = Some (Urlenc.unquote 
-                (String.sub newuri 1 (String.length newuri - 1)));
-     search = None }
-    else if newuri.[0] = '?' then (* change only search part *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = contextp.path;
-     search = Some (String.sub newuri 1 (String.length newuri - 1))}
-    else 
-      let pathpart,searchpart =
-    try
-      let n = String.index newuri '?' in
-      String.sub newuri 0 n,
-      Some (String.sub newuri (n+1) (l - n - 1))
-    with
-      Not_found -> newuri, None
-      in
-      match contextp.path with
-      None | Some "" -> 
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote (Lexurl.remove_dots pathpart));
-        search = searchpart}
-    | Some old ->
-        (* only the "dirname" part of the context path is important *)
-        (* e.g  .../d/e/f becomes /d/e/ *)
-       let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
-        (* we then have to remove dots *)
-    let reduced = Lexurl.remove_dots path in
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote reduced);
-        search = searchpart}
-@
-
-<<function Hyper.resolve>>=
-(* Produces an URL *)
-let resolve link =
-  (* First remove the possible fragment of the uri *)
-  let newuri, frag =
-    try
-      let pos = String.index link.h_uri '#' in
-       String.sub link.h_uri 0 pos, 
-        Some (String.sub link.h_uri (succ pos) 
-                    (String.length link.h_uri - pos - 1))
-    with
-        Not_found -> link.h_uri, None 
-  in
-  if Uri.is_absolute newuri then
-    try
-     {uri_url = Lexurl.normalize newuri;
-      uri_frag = frag}
-    with
-      Url_Lexing _ ->
-    raise (Invalid_link
-              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
-
-  else begin (* It is a relative uri *)
-    let context =
-      match link.h_context with 
-     None -> 
-      raise (Invalid_link (LinkResolve (I18n.sprintf 
-                  "no context and not an absolute url")))
-       | Some c -> c in
-
-    let contextp = 
-       try Lexurl.maken context
-       with
-    Url_Lexing (err,pos) ->
-     raise (Invalid_link (UrlLexing (err,pos)))
-       in
-    {uri_url = urlconcat contextp newuri;
-     uri_frag = frag}
-     end
-@
-
-<<function Hyper.string_of>>=
-let string_of link =
-  let uri = resolve link in
-   match uri.uri_frag with 
-      None -> uri.uri_url
-    | Some f -> Printf.sprintf "%s#%s" uri.uri_url f
-@
 
 
 %-------------------------------------------------------------
@@ -3761,16 +2150,16 @@ open Url
 (* An hypertext(media) link on the Web *)
 
 (* This is currently for HTTP and derived, but ... *)
-<<enum Hyper.link_method (./www/hyper.ml)>>
+<<type Hyper.link_method>>
 
 <<function Hyper.parse_method>>
 
 
-<<enum Hyper.link (./www/hyper.ml)>>
+<<type Hyper.link>>
 
-<<enum Hyper.link_error (./www/hyper.ml)>>
+<<type Hyper.link_error>>
 
-<<exception Hyper.Invalid_link (./www/hyper.ml)>>
+<<exception Hyper.Invalid_link>>
 
 (* parsed Absolute URL + URL -> Absolute URL *)
 <<function Hyper.urlconcat>>
@@ -3783,64 +2172,19 @@ open Url
 
 \subsection*{[[./www/maps.mli]]}
 
-<<enum Maps.area_kind>>=
-type area_kind = Rect | Circle | Poly | Default
-@
-
-<<enum Maps.area>>=
-type area = {
-  area_kind : area_kind;
-  area_coords : int list;
-  area_link : Hyper.link;
-  area_alt  : string
- }
-@
-
-<<enum Maps.map>>=
-type map = area list
-@
-
-<<enum Maps.t>>=
-type t = 
-    ClientSide of Hyper.link		(* usemap link *)
-  | ServerSide of Hyper.link		(* ismap *)
-  | Direct of Hyper.link			(* inside an anchor *)
-  | NoMap				(* no additionnal navigation *)
-  | FormMap of (int * int -> Hyper.link)
-@
-
-<<enum Maps.map_status>>=
-(* The table of client-side image maps *)
-type map_status =
-   KnownMap of map
- | RequestedMap of string
-@
-
-<<signature Maps.parse_coords>>=
-val parse_coords : string -> int list
-@
-
-<<signature Maps.get>>=
-val get : string -> map_status
-@
-
-<<signature Maps.add>>=
-val add : string -> map -> unit
-@
-
 
 %-------------------------------------------------------------
 
 <<./www/maps.mli>>=
-<<enum Maps.area_kind>>
+<<type Maps.area_kind>>
 
-<<enum Maps.area>>
+<<type Maps.area>>
 
-<<enum Maps.map>>
+<<type Maps.map>>
 
-<<enum Maps.t>>
+<<type Maps.t>>
 
-<<enum Maps.map_status>>
+<<type Maps.map_status>>
 
 <<signature Maps.parse_coords>>
 <<signature Maps.get>>
@@ -3850,84 +2194,6 @@ val add : string -> map -> unit
 
 \subsection*{[[./www/maps.ml]]}
 
-<<enum Maps.area_kind (./www/maps.ml)>>=
-(* The active areas *)
-type area_kind = Rect | Circle | Poly | Default
-@
-
-<<enum Maps.area (./www/maps.ml)>>=
-(* The area *)
-type area = {
-  area_kind : area_kind;
-  area_coords : int list;
-  area_link : Hyper.link;
-  area_alt  : string
- }
-@
-
-<<enum Maps.map (./www/maps.ml)>>=
-type map = area list
-@
-
-<<enum Maps.t (./www/maps.ml)>>=
-(* We merge any kind of map, for we actually are going to support
-   maps for arbitrary embedded objects
- *)
-type t = 
-    ClientSide of Hyper.link		(* usemap link *)
-  | ServerSide of Hyper.link		(* ismap *)
-  | Direct of Hyper.link			(* inside an anchor *)
-  | NoMap				(* no additionnal navigation *)
-  | FormMap of (int * int -> Hyper.link)
-@
-
-<<enum Maps.map_status (./www/maps.ml)>>=
-(* The table of client-side image maps *)
-type map_status =
-   KnownMap of map
- | RequestedMap of string
-@
-
-<<constant Maps.table>>=
-let table = (Hashtbl.create 37 : (string, map_status) Hashtbl.t)
-@
-
-<<constant Maps.coord_sep>>=
-(* let coord_sep = Str.regexp "," *)
-let coord_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
-@
-
-<<function Maps.parse_coords>>=
-let parse_coords s =
-  List.map int_of_string (Str.split coord_sep s)
-@
-
-<<function Maps.add>>=
-let add name map =
-  Log.debug (sprintf "Adding map : %s" name);
-  try
-    match Hashtbl.find table name with
-      KnownMap m -> Log.debug "Map already known !"
-    | RequestedMap event ->
-       Hashtbl.remove table name; (* remove it *)
-       Hashtbl.add table name (KnownMap map); (* add its value *)
-       Frx_synth.broadcast event (* trigger all waiting people *)
-  with
-    Not_found -> (* nobody requested it *)
-      Hashtbl.add table name (KnownMap map)
-@
-
-<<function Maps.get>>=
-let get name =
-  Log.debug (sprintf "Asking map : %s" name);
-  try
-    Hashtbl.find table name 
-  with
-    Not_found ->
-       let m = Mstring.gensym "map" in
-         Hashtbl.add table name (RequestedMap m);
-     RequestedMap m
-@
 
 
 %-------------------------------------------------------------
@@ -3948,24 +2214,19 @@ open Printf
 
  *)
 
-<<enum Maps.area_kind (./www/maps.ml)>>
+<<type Maps.area_kind>>
 
-<<enum Maps.area (./www/maps.ml)>>
+<<type Maps.area>>
 
-<<enum Maps.map (./www/maps.ml)>>
+<<type Maps.map>>
 
-<<enum Maps.t (./www/maps.ml)>>
+<<type Maps.t>>
 
 
-<<enum Maps.map_status (./www/maps.ml)>>
+<<type Maps.map_status>>
 
 <<constant Maps.table>>
 
-(* Tolerance: official syntax is "," separated.
-   We use instead "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
-   that is non empty sequence of whitespace
-        or comma with possible surrounding whitespace
- *)
 <<constant Maps.coord_sep>>
 <<function Maps.parse_coords>>
 
@@ -3977,51 +2238,12 @@ open Printf
 
 \subsection*{[[./www/www.mli]]}
 
-<<enum Www.request>>=
-(*
- * Requests
- *)
-
-type request =  { 
-    www_link : Hyper.link;        (* the link that produced this request *)
-    www_url : Url.t;	          (* parsed version *)
-    www_fragment : string option; (* because viewer is passed down *)
-    mutable www_auth : (string * string) list;  (* basic auth *)
-    mutable www_headers : string list;		  (* additional headers *)
-    mutable www_logging : string -> unit;	  (* logging *)
-    mutable www_error : Error.t
-  }
-@
-
-<<exception Www.Invalid_request>>=
-exception Invalid_request of request * string
-@
-
-<<signature Www.make>>=
-val make : Hyper.link -> request
-  (* raises: 
-      Url_Lexing
-      Invalid_link
-   *)
-@
-
-<<signature Www.is_active_cnx>>=
-val is_active_cnx : Url.t -> bool
-@
-
-<<signature Www.add_active_cnx>>=
-val add_active_cnx : Url.t -> unit
-@
-
-<<signature Www.rem_active_cnx>>=
-val rem_active_cnx : Url.t -> unit
-@
 
 
 %-------------------------------------------------------------
 
 <<./www/www.mli>>=
-<<enum Www.request>>
+<<type Www.request>>
 
 <<exception Www.Invalid_request>>
 
@@ -4039,52 +2261,6 @@ module UrlSet : Set.S with type elt = Url.t
 
 \subsection*{[[./www/www.ml]]}
 
-<<enum Www.request (./www/www.ml)>>=
-type request =
-  { 
-    www_link : Hyper.link;	  (* the link that produced this request *)
-    www_url : Url.t;	  (* parsed version *)
-    www_fragment : string option; (* because viewer is passed down *)
-    mutable www_auth : (string * string) list;
-    mutable www_headers : string list;
-    mutable www_logging : string -> unit;
-    mutable www_error : Error.t
-
-  }
-@
-
-<<exception Www.Invalid_request (./www/www.ml)>>=
-exception Invalid_request of request * string
-@
-
-<<constant Www.sp>>=
-let sp = Str.regexp "[ \t\n]"
-@
-
-<<function Www.make>>=
-let make hlink =
-  let absuri = Hyper.resolve hlink in 
-  let url = Lexurl.make absuri.uri_url in
-  try (* search for space in network URI *)
-    if List.mem url.protocol [FILE; MAILTO] then raise Not_found
-    else
-      let n = Str.search_forward sp absuri.uri_url 0 in
-      raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
-  with
-    Not_found -> {
-      www_link = hlink;
-      www_url = url; (* should not fail ? *)
-      www_fragment = absuri.uri_frag;
-      www_auth = [];
-      www_headers = [];
-      www_logging = (fun _ -> ());
-      www_error = Error.default
-    }
-@
-
-<<constant Www.active_connexions>>=
-let active_connexions = ref UrlSet.empty
-@
 
 
 %-------------------------------------------------------------
@@ -4093,9 +2269,9 @@ let active_connexions = ref UrlSet.empty
 open Uri
 open Url
 
-<<enum Www.request (./www/www.ml)>>
+<<type Www.request>>
 
-<<exception Www.Invalid_request (./www/www.ml)>>
+<<exception Www.Invalid_request>>
 
 <<constant Www.sp>>
 
@@ -4118,10 +2294,11 @@ module UrlSet =
   Set.Make(struct type t = Url.t let compare = compare end)
 
 <<constant Www.active_connexions>>
-let is_active_cnx url = UrlSet.mem url !active_connexions
-and add_active_cnx url = 
+let is_active_cnx url = 
+  UrlSet.mem url !active_connexions
+let add_active_cnx url = 
   active_connexions := UrlSet.add url !active_connexions
-and rem_active_cnx url =
+let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 
 @
@@ -4129,113 +2306,12 @@ and rem_active_cnx url =
 
 \subsection*{[[./www/document.mli]]}
 
-<<enum Document.document_id>>=
-(* Document Id is a reference to a document in the browser
-   For some documents, e.g. results of POST queries, the URL is not a
-   sufficient description. Stamp is 0 for unique documents.
-*)
-type document_id = {
-  document_url : Url.t;
-  document_stamp : int
-  }
-@
-
-<<signature Document.no_stamp>>=
-val no_stamp : int
-@
-
-<<signature Document.new_stamp>>=
-val new_stamp : unit -> int
-@
-
-<<signature Document.tty_logger>>=
-val tty_logger : logger
-@
-
-<<enum Document.handle>>=
-(* This is passed around by request continuations. It represents a handle
-   on a connexion for retrieving a document *)
-type handle = {
-  document_id : document_id;
-  document_referer : string option;
-    (* URL of refering document, if any *)
-  mutable document_status : int;
-    (* Status code of response *)
-  mutable document_headers : string list;
-    (* HTTP headers of document, or faked ones *)
-  document_feed : Feed.t;
-    (* where to get the data *)
-  document_fragment : string option;
-    (* fragment (#foo) if any *)
-  mutable document_logger : logger
-    (* how to log information relative to this document processing *)
-}
-@
-
-<<enum Document.document_continuation>>=
-type document_continuation = {
-  document_process : handle -> unit;
-    (* What to do one we have a dh on the real document *)
-  document_finish :  bool -> unit
-    (* What to do if a request does not yield a document *)
-}
-@
-
-<<enum Document.document_data>>=
-(*
- * Information on a document, as could be requested by "other" clients,
- * that is clients not directly on the chain of processes dealing with
- * the handle
- *)
-
-type document_data =
-   MemoryData of Ebuffer.t
- | FileData of string * bool (* flag is true if file is temporary *)
-@
-
-<<enum Document.document>>=
-type document = {
-  document_address : Url.t;
-  mutable document_data : document_data;
-  document_info : string list
-  }
-@
-
-<<signature Document.dclose>>=
-val dclose : bool -> handle -> unit
-  (* [dclose remactive dh] closes a living dh *)
-@
-
-<<signature Document.add_log>>=
-val add_log: handle -> string -> (unit -> unit) -> unit
-@
-
-<<signature Document.put_log>>=
-val put_log : handle -> string -> unit
-@
-
-<<signature Document.progress_log>>=
-val progress_log : handle -> int -> unit
-@
-
-<<signature Document.end_log>>=
-val end_log : handle -> string -> unit
-@
-
-<<signature Document.destroy_log>>=
-val destroy_log : handle -> bool -> unit
-  (* logging functions *)
-@
-
-<<signature Document.document_id>>=
-val document_id : Www.request -> document_id
-@
 
 
 %-------------------------------------------------------------
 
 <<./www/document.mli>>=
-<<enum Document.document_id>>
+<<type Document.document_id>>
 
 <<signature Document.no_stamp>>
 <<signature Document.new_stamp>>
@@ -4243,13 +2319,13 @@ val document_id : Www.request -> document_id
 type logger
 <<signature Document.tty_logger>>
 
-<<enum Document.handle>>
+<<type Document.handle>>
 
-<<enum Document.document_continuation>>
+<<type Document.document_continuation>>
 
-<<enum Document.document_data>>
+<<type Document.document_data>>
 
-<<enum Document.document>>
+<<type Document.document>>
 
 module DocumentIDSet : Set.S with type elt = document_id
 
@@ -4267,166 +2343,6 @@ module DocumentIDSet : Set.S with type elt = document_id
 
 \subsection*{[[./www/document.ml]]}
 
-<<enum Document.logger>>=
-type logger = {
-  logger_destroy : bool -> unit;
-  logger_progress : int -> unit;
-  logger_msg : string -> unit;
-  logger_end : string -> unit
-}
-@
-
-<<enum Document.document_id (./www/document.ml)>>=
-(* Document Id is a reference to a document in the browser
-   For some documents, e.g. results of POST queries, the URL is not a
-   sufficient description. Stamp is 0 for unique documents.
-*)
-type document_id = {
-  document_url : Url.t;
-  document_stamp : int
-  }
-@
-
-<<enum Document.handle (./www/document.ml)>>=
-type handle = {
-  document_id : document_id;
-  document_referer : string option;
-  mutable document_status : int;
-  mutable document_headers : string list;
-  document_feed : Feed.t;
-  document_fragment : string option;
-  mutable document_logger : logger
-}
-@
-
-<<enum Document.document_continuation (./www/document.ml)>>=
-type document_continuation = {
-  document_process : handle -> unit;
-  document_finish : bool -> unit
-}
-@
-
-<<enum Document.document_data (./www/document.ml)>>=
-type document_data =
-   MemoryData of Ebuffer.t
- | FileData of string * bool (* flag is true if file is temporary *)
-@
-
-<<enum Document.document (./www/document.ml)>>=
-type document = {
-  document_address : Url.t;
-  mutable document_data : document_data;
-  document_info : string list
-  }
-@
-
-<<constant Document.stamp_counter>>=
-let stamp_counter = ref 0
-@
-
-<<constant Document.no_stamp>>=
-let no_stamp = 0
-@
-
-<<function Document.new_stamp>>=
-let new_stamp () =
-  incr stamp_counter; !stamp_counter
-@
-
-<<function Document.document_id>>=
-let document_id wwwr =
-  match wwwr.www_link.h_method with
-    POST _  ->
-        { document_url = wwwr.www_url; document_stamp = new_stamp()}
-  | _ -> { document_url = wwwr.www_url; document_stamp = no_stamp}
-@
-
-<<function Document.dclose>>=
-(* Close a connexion. Should be called only by a fileinput callback
-      or by somebody attempting to abort the connexion 
-   We remove the fd of the select before closing it since we don't want
-   a spurious read to happen. This way we are somewhat independant of the
-   Tk implementation 
- *)
-
-let dclose remactive dh =
-  dh.document_feed.feed_unschedule();
-  dh.document_feed.feed_close();
-  if remactive then Www.rem_active_cnx dh.document_id.document_url
-@
-
-<<constant Document.tty_logger>>=
-let tty_logger = 
-  { logger_destroy = (fun _ -> ());
-    logger_progress = (fun _ -> ());
-    logger_msg = Log.f;
-    logger_end = Log.f
-   }
-@
-
-<<function Document.add_log>>=
-let add_log dh initmsg abort =
-  let t = 
-    Toplevel.create Widget.default_toplevel [Class "MMMLog"] in
-  Wm.withdraw t;
-  Wm.title_set t 
-      (I18n.sprintf "Document log %s" 
-         (Url.string_of dh.document_id.document_url)); 
-  let l = Label.create t 
-    [Text initmsg; Justify Justify_Left; WrapLength (Pixels 600)]
-  and fprog, set_progress = Frx_fillbox.new_horizontal t 200 10 
-  and b = Button.create t 
-      [Text (I18n.sprintf "Abort"); 
-       Command (fun () -> dclose true dh; abort(); destroy t)] in
-    pack [l;fprog;b][];
-  let putmsg txt = 
-    Label.configure l [Text txt] in
-  let finished msg =
-    putmsg msg;
-    Button.configure b 
-       [Text (I18n.sprintf "Ok"); 
-         Command (fun () -> if Winfo.exists t then destroy t)] in
-  let iconified = ref true in
-  let logger = {
-    logger_destroy =
-      (fun delayed ->
-    if Winfo.exists t then
-      if !iconified then (* that was fast *)
-        destroy t
-      else if not delayed then destroy t
-      else
-              Timer.set 5000 (fun () -> if Winfo.exists t then destroy t));
-    logger_progress = 
-      (fun n -> if Winfo.exists t then set_progress n);
-    logger_msg =
-      (fun msg -> if Winfo.exists t then putmsg msg);
-    logger_end = 
-      (fun msg -> if Winfo.exists t then finished msg) } in
-
-   dh.document_logger <- logger;
-   (* The logger appears only after a given delay *)
-     Timer.set 3000
-      (fun () -> if Winfo.exists t then (Wm.deiconify t; iconified := false))
-@
-
-<<function Document.end_log>>=
-let end_log dh msg =
-    dh.document_logger.logger_end msg;
-    destroy_log dh true
-@
-
-<<enum Document.display_info>>=
-type display_info = {
-    di_abort : unit -> unit;
-    di_destroy : unit -> unit;
-    di_fragment : string option -> unit;
-    di_redisplay: unit -> unit;
-    di_title : unit -> string;	      (* some title for bookmarks *)
-    di_source : unit -> unit;
-    di_load_images : unit -> unit
-}
-@
-
 
 %-------------------------------------------------------------
 
@@ -4436,20 +2352,20 @@ open Feed
 open Www
 open Hyper
 
-<<enum Document.logger>>
+<<type Document.logger>>
 
-<<enum Document.document_id (./www/document.ml)>>
+<<type Document.document_id>>
 
 module DocumentIDSet =
   Set.Make(struct type t = document_id let compare = compare end)
 
-<<enum Document.handle (./www/document.ml)>>
+<<type Document.handle>>
 
-<<enum Document.document_continuation (./www/document.ml)>>
+<<type Document.document_continuation>>
 
-<<enum Document.document_data (./www/document.ml)>>
+<<type Document.document_data>>
 
-<<enum Document.document (./www/document.ml)>>
+<<type Document.document>>
 
 <<constant Document.stamp_counter>>
 <<constant Document.no_stamp>>
@@ -4465,14 +2381,11 @@ module DocumentIDSet =
 <<constant Document.tty_logger>>
   
 <<function Document.add_log>>
-
-let put_log dh = dh.document_logger.logger_msg
-and destroy_log dh = dh.document_logger.logger_destroy
-and progress_log dh = dh.document_logger.logger_progress
+<<functions Document.xxx_log>>
 <<function Document.end_log>>
 
 
-<<enum Document.display_info>>
+<<type Document.display_info>>
 
 @
 
@@ -4481,54 +2394,14 @@ and progress_log dh = dh.document_logger.logger_progress
 
 \subsection*{[[./html/dtd.mli]]}
 
-<<enum Dtd.t>>=
-type t = {
-  dtd_name : string;
-  contents : (string, Elements.t) Hashtbl.t;
-    (* for each element, give the set of included elements *)
-  mutable open_omitted : Elements.t;
-    (* set of elements for which opening tag may be omitted *)
-  mutable close_omitted : Elements.t
-    (* set of elements for which closing tag may be omitted *)
- } 
-@
-
 <<signature Dtd.dtd20>>=
 val dtd20 : t
-@
-
-<<signature Dtd.dtd32>>=
-val dtd32 : t
 @
 
 <<signature Dtd.dtd32f>>=
 val dtd32f : t
 @
 
-<<signature Dtd.get>>=
-(* A table of DTDs for preferences *)
-val get : string -> t
-@
-
-<<signature Dtd.add>>=
-val add : t -> unit
-@
-
-<<signature Dtd.name>>=
-val name : t -> string
-@
-
-<<signature Dtd.names>>=
-val names : unit -> string list
-@
-
-<<signature Dtd.current>>=
-val current : t ref 
-@
-
-<<signature Dtd.dump>>=
-val dump : t -> unit
-@
 
 
 %-------------------------------------------------------------
@@ -4536,7 +2409,7 @@ val dump : t -> unit
 <<./html/dtd.mli>>=
 module Elements : Set.S with type elt = string
 
-<<enum Dtd.t>>
+<<type Dtd.t>>
 
 <<signature Dtd.dtd20>>
 <<signature Dtd.dtd32>>
@@ -4556,32 +2429,6 @@ module Elements : Set.S with type elt = string
 
 \subsection*{[[./html/dtd.ml]]}
 
-<<enum Dtd.t (./html/dtd.ml)>>=
-type t = {
-  dtd_name : string;
-  contents : (string, Elements.t) Hashtbl.t;
-    (* for each element, give the set of included elements *)
-  mutable open_omitted : Elements.t;
-    (* set of elements for which opening tag may be omitted *)
-  mutable close_omitted : Elements.t
-    (* set of elements for which closing tag may be omitted *)
- } 
-@
-
-<<function Dtd.name>>=
-let name t = t.dtd_name
-@
-
-<<function Dtd.sol>>=
-(* Utils *)
-let sol l =
-  List.fold_right Elements.add l Elements.empty
-@
-
-<<function Dtd.sos>>=
-let sos l =
-  List.fold_right Elements.union l Elements.empty
-@
 
 <<constant Dtd.dtd20>>=
 (* #PCDATA and #CDATA are considered as elements, but they will never
@@ -4784,196 +2631,9 @@ let dtd20 =
   dtd
 @
 
-<<function Dtd.dump>>=
-let dump dtd =
-  Hashtbl.iter (fun s contents -> 
-      printf "Element %s %s %s\n" s 
-             (if Elements.mem s dtd.open_omitted then "O" else "-")
-             (if Elements.mem s dtd.close_omitted then "O" else "-");
-      printf "Contains:";
-      Elements.iter (fun e -> printf " %s" e) contents;
-      printf "\n")
-    dtd.contents
-@
-
-<<constant Dtd.dtd32>>=
-let dtd32 =
-  let dtd = {
-    dtd_name = "HTML 3.2";
-    contents = Hashtbl.create 53;
-    open_omitted = Elements.empty;
-    close_omitted = Elements.empty
-     } in
-  let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
-  in
-
-  let head_misc_E = sol ["script"; "style"; "meta"; "link"]
-  and heading_E = sol ["h1"; "h2"; "h3"; "h4"; "h5"; "h6"]
-  and list_E = sol ["ul"; "ol"; "dir"; "menu"]
-  and preformatted_E = sol ["pre"; "xmp"; "listing"]
-  and font_E =
-     sol ["tt"; "i"; "b"; "u"; "strike"; "big"; "small"; "sub"; "sup"]
-  and phrase_E =
-     sol ["em"; "strong"; "dfn"; "code"; "samp"; "kbd"; "var"; "cite"]
-  and special_E =
-     sol ["a"; "img"; "applet"; "font"; "basefont"; "br"; "script"; "map"]
-  and form_E =
-     sol ["input"; "select"; "textarea"]
-  in
-  (* EMBED is not in the original DTD ! *)
-  let text_E =
-     sos [sol ["#pcdata"; "embed"]; font_E; phrase_E; special_E; form_E]
-  in
-  Elements.iter (fun e -> add_elem e text_E) font_E;
-  Elements.iter (fun e -> add_elem e text_E) phrase_E;
-  add_elem "font" text_E;
-  add_elem "basefont" Elements.empty;
-  omit_close "basefont";
-  add_elem "br" Elements.empty;
-  omit_close "br";
-
-  let block_E =
-    sos [sol ["p"; "dl"; "div"; "center"; "blockquote"; "form"; "isindex";
-              "hr"; "table"];
-         list_E; preformatted_E]
-  in
-  let flow_E = sos [text_E; block_E]
-  in
-  let body_content_E = sos [sol ["address"]; heading_E; text_E; block_E]
-  in
-  add_elem "body" body_content_E;
-  omit_open "body";
-  omit_close "body";
-
-  let address_content_E = sos [sol ["p"]; text_E] in
-  add_elem "address" address_content_E;
-  
-  add_elem "div" body_content_E;
-  add_elem "center" body_content_E;
-
-  add_elem "a" (Elements.remove "a" text_E);
-  
-  add_elem "map" (sol ["area"]);
-  add_elem "area" Elements.empty;
-  omit_close "area";
-
-  add_elem "link" Elements.empty;
-  omit_close "link";
-   
-  add_elem "img" Elements.empty;
-  omit_close "img";
-
-  add_elem "applet" (Elements.add "param" text_E);
-  add_elem "param" Elements.empty;
-  omit_close "param";
-
-  add_elem "hr" Elements.empty;
-  omit_close "hr";
-
-  add_elem "p" text_E;
-  omit_close "p";
-
-  Elements.iter (fun e -> add_elem e text_E) heading_E;
-
-  let pre_exclusion_E = sol ["img"; "big"; "small"; "sub"; "sup"; "font"]
-  in
-  add_elem "pre" (Elements.diff text_E pre_exclusion_E);
-
-  List.iter (fun e -> add_elem e (sol ["#cdata"])) ["xmp"; "listing"];
-
-  add_elem "blockquote" body_content_E;
-
-  add_elem "dl" (sol ["dt"; "dd"]);
-  add_elem "dt" text_E; omit_close "dt";
-  add_elem "dd" flow_E; omit_close "dd";
-
-  List.iter (fun e -> add_elem e (sol ["li"])) ["ol"; "ul"];
-  List.iter (fun e -> add_elem e (sol ["li"])) ["dir"; "menu"];
-
-  add_elem "li" flow_E;
-  omit_close "li";
 
 
-  add_elem "form" (Elements.remove "form" body_content_E);
-  add_elem "input" Elements.empty;
-  omit_close "input";
-  add_elem "select" (sol ["option"]);
-  add_elem "option" (sol ["#pcdata"]);
-  omit_close "option";
-  add_elem "textarea" (sol ["#pcdata"]);
 
-
-  add_elem "table" (sol ["caption"; "tr"]);
-  add_elem "tr" (sol ["th"; "td"]);
-  omit_close "tr";
-  List.iter (fun e -> add_elem e body_content_E; omit_close e) ["th"; "td"];
-  add_elem "caption" text_E;
-
-
-  let head_content_E = sol ["title"; "isindex"; "base"]
-  in
-
-  add_elem "head" (Elements.union head_content_E head_misc_E);
-  omit_close "head";
-  omit_open "head";
-
-  add_elem "title" (sol ["#pcdata"]);
-  add_elem "isindex" Elements.empty;
-  omit_close "isindex";
-  add_elem "base" Elements.empty;
-  omit_close "base";
-  add_elem "meta" Elements.empty;
-  omit_close "meta";
-
-  add_elem "script" (sol ["#cdata"]);
-  add_elem "style" (sol ["#cdata"]);
-
-  let html_content_E = sol ["head"; "body"] in
-
-  add_elem "html" html_content_E;
-  omit_open "html";
-  omit_close "html";
-
-  (* fake element PCDATA for minimisation rules *)
-  add_elem "#pcdata" Elements.empty;
-
-  (* embed is an extension *)
-  add_elem "embed" Elements.empty;
-  omit_close "embed";
-
-  dtd
-@
-
-<<constant Dtd.current>>=
-let current = ref dtd32
-@
-
-<<constant Dtd.table>>=
-let table = Hashtbl.create 11
-@
-
-<<function Dtd.add>>=
-let add t = Hashtbl.add table t.dtd_name t
-@
-
-<<constant Dtd.get>>=
-let get = Hashtbl.find table
-@
-
-<<function Dtd.names>>=
-let names () =
-  let names = ref [] in
-   Hashtbl.iter (fun name _ -> names := name :: !names) table;
-   !names
-@
-
-<<toplevel Dtd._1>>=
-let _ = add dtd20; add dtd32
-@
 
 <<constant Dtd.dtd32f>>=
 (* Add frames somwhere to dtd32.
@@ -5020,7 +2680,7 @@ open Printf
 
 module Elements = Set.Make(struct type t = string let compare = compare end)
 
-<<enum Dtd.t (./html/dtd.ml)>>
+<<type Dtd.t>>
 
 <<function Dtd.name>>
 
@@ -5056,66 +2716,14 @@ module Elements = Set.Make(struct type t = string let compare = compare end)
 
 \subsection*{[[./html/html.mli]]}
 
-<<enum Html.attribute_name>>=
-(* HTML tokens *)
-type attribute_name = string 
-@
-
-<<enum Html.attribute_value>>=
-type attribute_value = string
-@
-
-<<enum Html.attributes>>=
-type attributes = (attribute_name * attribute_value) list
-@
-
-<<enum Html.tag>>=
-type tag = {
-  tag_name : string;
-  attributes: attributes
-}
-@
-
-<<enum Html.token>>=
-type token =
-   PCData of string
- | CData of string
- | OpenTag of tag
- | CloseTag of string
- | Comment of string
- | Doctype of string
- | EOF
-@
-
-<<enum Html.location>>=
-type location = Loc of int * int
-@
-
-<<exception Html.Html_Lexing>>=
-exception Html_Lexing of string * int
-@
-
-<<exception Html.Invalid_Html>>=
-exception Invalid_Html of string
-@
-
 <<signature Html.init>>=
 val init : bool -> unit 
-@
-
-<<signature Html.verbose>>=
-val verbose : bool ref
-  (* verbose mode for HTML related stuff *)
 @
 
 <<signature Html.warning>>=
 val warning : string -> location -> unit
 @
 
-<<signature Html.print>>=
-val print : token -> unit
-  (* for debugging, prints an HTML token *)
-@
 
 <<signature Html.beautify>>=
 val beautify: bool -> string -> string
@@ -5147,7 +2755,7 @@ val has_attribute : tag -> string -> bool
   (* [has_attribute tag attrib_name] *)
 @
 
-<<enum Html.length>>=
+<<type Html.length>>=
 (* HTML length *)
 type length = 
     Nolength
@@ -5164,15 +2772,15 @@ val length_of_string : string -> length
 %-------------------------------------------------------------
 
 <<./html/html.mli>>=
-<<enum Html.attribute_name>>
-<<enum Html.attribute_value>>
-<<enum Html.attributes>>
+<<type Html.attribute_name>>
+<<type Html.attribute_value>>
+<<type Html.attributes>>
 
-<<enum Html.tag>>
+<<type Html.tag>>
 
-<<enum Html.token>>
+<<type Html.token>>
 
-<<enum Html.location>>
+<<type Html.location>>
 
 <<exception Html.Html_Lexing>>
 <<exception Html.Invalid_Html>>
@@ -5198,7 +2806,7 @@ val length_of_string : string -> length
 
 <<signature Html.has_attribute>>
 
-<<enum Html.length>>
+<<type Html.length>>
       
 <<signature Html.length_of_string>>
 
@@ -5206,48 +2814,6 @@ val length_of_string : string -> length
 
 
 \subsection*{[[./html/html.ml]]}
-
-<<enum Html.attribute_name (./html/html.ml)>>=
-type attribute_name = string 
-@
-
-<<enum Html.attribute_value (./html/html.ml)>>=
-type attribute_value = string
-@
-
-<<enum Html.attributes (./html/html.ml)>>=
-type attributes = (attribute_name * attribute_value) list
-@
-
-<<enum Html.tag (./html/html.ml)>>=
-type tag = {
-  tag_name : string;
-  attributes: attributes
-}
-@
-
-<<enum Html.token (./html/html.ml)>>=
-type token =
-   PCData of string
- | CData of string
- | OpenTag of tag
- | CloseTag of string
- | Comment of string
- | Doctype of string
- | EOF
-@
-
-<<enum Html.location (./html/html.ml)>>=
-type location = Loc of int * int
-@
-
-<<exception Html.Html_Lexing (./html/html.ml)>>=
-exception Html_Lexing of string * int
-@
-
-<<exception Html.Invalid_Html (./html/html.ml)>>=
-exception Invalid_Html of string
-@
 
 <<constant Html.verbose>>=
 let verbose = ref false
@@ -5261,19 +2827,6 @@ let warning s (Loc(n,m)) =
    end
 @
 
-<<function Html.print>>=
-let print = function
-    PCData s -> eprintf "PCData: %s\n" s
-  | CData s -> eprintf "CData: %s\n" s
-  | OpenTag {tag_name = n; attributes = l} ->
-            eprintf "Open: %s\n" n;
-         List.iter (function (a,v) ->
-                   eprintf "%s=%s\n" a v) l
-  | CloseTag n -> eprintf "Close: %s\n" n
-  | Comment s -> eprintf "Comment: %s\n" s
-  | Doctype s -> eprintf "Doctype: %s\n" s
-  | EOF -> eprintf "EOF\n"
-@
 
 <<function Html.beautify>>=
 (*
@@ -5319,119 +2872,6 @@ let issp s =
     Failure "subliminal" -> false
 @
 
-<<constant Html.ampersand_table>>=
-(* 
- * HTML encoding of ISO-latin1 characters
- *  cf Appendix B - Proposed Entities
- *)
-
-let ampersand_table = (Hashtbl.create 101: (string , string) Hashtbl.t)
-@
-
-<<constant Html.latin1_normal>>=
-let latin1_normal = [
-  "amp", 	"&";
-  "gt", 	">";
-  "lt" , 	"<";
-  "quot", 	"\"";
-  "nbsp", 	"\160"; (* non-breaking space *)
-  "iexcl",	"\161"; (* ¡ inverted exclamation mark *)
-  "cent", 	"\162"; (* ¢ cent sign*)
-  "pound",	"\163"; (* £ pound sterling sign*)
-  "curren",	"\164"; (* ¤ general currency sign*)
-  "yen",	"\165"; (* ¥ yen sign*)
-  "brvbar",	"\166"; (* ¦ broken (vertical) bar *)
-  "sect",	"\167"; (* § section sign *)
-  "uml",	"\168"; (* ¨ umlaut (dieresis) *)
-  "copy",	"\169"; (* © copyright sign *)
-  "ordf",	"\170"; (* ª ordinal indicator, feminine *)
-  "laquo",	"\171"; (* « angle quotation mark, left *)
-  "not",	"\172"; (* ¬ not sign *)
-  "shy",	"\173"; (* ­ soft hyphen *)
-  "reg",	"\174"; (* ® registered sign *)
-  "macr",	"\175"; (* ¯ macron *)
-  "deg",	"\176"; (* ° degree sign *)
-  "plusmn",	"\177"; (* ± plus-or-minus sign *)
-  "sup2",	"\178"; (* ² superscript two *)
-  "sup3",	"\179"; (* ³ superscript three *)
-  "acute",	"\180"; (* ´ acute accent *)
-  "micro",	"\181"; (* µ micro sign *)
-  "para",	"\182"; (* ¶ pilcrow (paragraph sign) *)
-  "middot",	"\183"; (* · middle dot *)
-  "cedil",	"\184"; (* ¸ cedilla *)
-  "sup1",	"\185"; (* ¹ superscript one *)
-  "ordm",	"\186"; (* º ordinal indicator, masculine *)
-  "raquo",	"\187"; (* » angle quotation mark, right *)
-  "frac14",	"\188"; (* ¼ fraction one-quarter *)
-  "frac12",	"\189"; (* ½ fraction one-half *)
-  "frac34",	"\190"; (* ¾ fraction three-quarters *)
-  "iquest",	"\191"; (* ¿ inverted question mark *)
-  "Agrave", 	"\192";	(* À capital A, grave accent *)
-  "Aacute", 	"\193";	(* Á capital A, acute accent *)
-  "Acirc", 	"\194";	(* Â capital A, circumflex accent *)
-  "Atilde", 	"\195";	(* Ã capital A, tilde *)
-  "Auml", 	"\196";	(* Ä capital A, dieresis or umlaut mark *)
-  "Aring", 	"\197";	(* Å capital A, ring *)
-  "AElig", 	"\198";	(* Æ capital AE diphthong (ligature) *)
-  "Ccedil", 	"\199";	(* Ç capital C, cedilla *)
-  "Egrave", 	"\200";	(* È capital E, grave accent *)
-  "Eacute", 	"\201";	(* É capital E, acute accent *)
-  "Ecirc", 	"\202";	(* Ê capital E, circumflex accent *)
-  "Euml", 	"\203";	(* Ë capital E, dieresis or umlaut mark *)
-  "Igrave", 	"\204";	(* Ì capital I, grave accent *)
-  "Iacute", 	"\205";	(* Í capital I, acute accent *)
-  "Icirc", 	"\206";	(* Î capital I, circumflex accent *)
-  "Iuml", 	"\207";	(* Ï capital I, dieresis or umlaut mark *)
-  "ETH", 	"\208";	(* Ð capital Eth, Icelandic *)
-  "Ntilde", 	"\209";	(* Ñ capital N, tilde *)
-  "Ograve", 	"\210";	(* Ò capital O, grave accent *)
-  "Oacute", 	"\211";	(* Ó capital O, acute accent *)
-  "Ocirc", 	"\212";	(* Ô capital O, circumflex accent *)
-  "Otilde", 	"\213";	(* Õ capital O, tilde *)
-  "Ouml", 	"\214";	(* Ö capital O, dieresis or umlaut mark *)
-  "times",	"\215"; (* × multiply sign*)
-  "Oslash", 	"\216";	(* Ø capital O, slash *)
-  "Ugrave", 	"\217";	(* Ù capital U, grave accent *)
-  "Uacute", 	"\218";	(* Ú capital U, acute accent *)
-  "Ucirc", 	"\219";	(* Û capital U, circumflex accent *)
-  "Uuml", 	"\220";	(* Ü capital U, dieresis or umlaut mark *)
-  "Yacute",	"\221"; (* Ý capital Y, acute accent *)
-  "THORN", 	"\222";	(* Þ capital THORN, Icelandic *)
-  "szlig", 	"\223";	(* ß small sharp s, German (sz ligature) *)
-  "agrave", 	"\224";	(* à small a, grave accent *)
-  "aacute", 	"\225";	(* á small a, acute accent *)
-  "acirc", 	"\226";	(* â small a, circumflex accent *)
-  "atilde", 	"\227";	(* ã small a, tilde *)
-  "auml", 	"\228";	(* ä small a, dieresis or umlaut mark *)
-  "aring", 	"\229";	(* å small a, ring *)
-  "aelig", 	"\230";	(* æ small ae diphthong (ligature) *)
-  "ccedil", 	"\231";	(* ç small c, cedilla *)
-  "egrave", 	"\232";	(* è small e, grave accent *)
-  "eacute", 	"\233";	(* é small e, acute accent *)
-  "ecirc", 	"\234";	(* ê small e, circumflex accent *)
-  "euml", 	"\235";	(* ë small e, dieresis or umlaut mark *)
-  "igrave", 	"\236";	(* ì small i, grave accent *)
-  "iacute", 	"\237";	(* í small i, acute accent *)
-  "icirc", 	"\238";	(* î small i, circumflex accent *)
-  "iuml", 	"\239";	(* ï small i, dieresis or umlaut mark *)
-  "eth", 	"\240";	(* ð small eth, Icelandic *)
-  "ntilde", 	"\241";	(* ñ small n, tilde *)
-  "ograve", 	"\242";	(* ò small o, grave accent *)
-  "oacute", 	"\243";	(* ó small o, acute accent *)
-  "ocirc", 	"\244";	(* ô small o, circumflex accent *)
-  "otilde", 	"\245";	(* õ small o, tilde *)
-  "ouml", 	"\246";	(* ö small o, dieresis or umlaut mark *)
-  "divide",	"\247"; (* ÷ divide sign *)
-  "oslash", 	"\248";	(* ø small o, slash *)
-  "ugrave", 	"\249";	(* ù small u, grave accent *)
-  "uacute", 	"\250";	(* ú small u, acute accent *)
-  "ucirc", 	"\251";	(* û small u, circumflex accent *)
-  "uuml", 	"\252";	(* ü small u, dieresis or umlaut mark *)
-  "yacute", 	"\253";	(* ý small y, acute accent *)
-  "thorn", 	"\254";	(* þ small thorn, Icelandic *)
-  "yuml", 	"\255" 	(* ÿ small y, dieresis or umlaut mark *)
-  ]
-@
 
 <<constant Html.latin1_japan>>=
 let latin1_japan = [
@@ -5558,57 +2998,8 @@ let init japan =
 let get_entity = Hashtbl.find ampersand_table
 @
 
-<<constant Html.default_attributes>>=
-(* Attribute values *)
-let default_attributes = [ 
-  ("isindex", "prompt"), "Document is indexed/searchable: ";
-  ("a", "methods"), "GET";              (* <A METHODS=GET> *)
-  ("ol", "type"), "1";			(* <OL TYPE=1 *)
-  ("embed", "methods"), "GET";		(* <EMBED METHODS=GET> *)
-  ("embed", "alt"), "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
-  ("form", "method"), "GET";		(* <FORM METHOD=GET> *)
-  ("form", "enctype"), "application/x-www-form-urlencoded";
-  ("input", "type"), "TEXT";		(* <INPUT TYPE=TEXT> *)
-  ("select", "size"), "5";
-  ("textarea", "align"), "bottom";
-  ("input", "align"), "bottom";
-  ("select", "align"), "bottom";
-  ("img", "align"), "bottom";
-  (* ("img", "alt"), "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
-  ("area", "shape"), "rect";
-  ("div", "align"), "left";
-  ("basefont", "size"), "3";
-  (* frames *)
-  ("frame", "frameborder"), "0";
-  ("frame", "scrolling"), "auto";
-  ("frameset", "rows"), "100%";
-  ("frameset", "cols"), "100%";
-  ]
-@
 
-<<function Html.get_attribute>>=
-let get_attribute tag attr =
-  try
-    List.assoc attr tag.attributes 
-  with
-    Not_found ->
-     List.assoc (tag.tag_name, attr) default_attributes
-@
 
-<<function Html.has_attribute>>=
-let has_attribute tag attr =
-     List.mem_assoc attr tag.attributes
-  || List.mem_assoc (tag.tag_name, attr) default_attributes
-@
-
-<<enum Html.length (./html/html.ml)>>=
-(* HTML length *)
-type length = 
-    Nolength
-  | LengthPixels of int
-  | LengthRatio of float
-  | LengthRel of int
-@
 
 <<function Html.length_of_string>>=
 (* Either size in pixels or ration in percent *)
@@ -5637,19 +3028,19 @@ let length_of_string s =
 <<./html/html.ml>>=
 open Printf
 
-<<enum Html.attribute_name (./html/html.ml)>>
-<<enum Html.attribute_value (./html/html.ml)>>
-<<enum Html.attributes (./html/html.ml)>>
+<<type Html.attribute_name>>
+<<type Html.attribute_value>>
+<<type Html.attributes>>
 
-<<enum Html.tag (./html/html.ml)>>
+<<type Html.tag>>
 
 
-<<enum Html.token (./html/html.ml)>>
+<<type Html.token>>
 
-<<enum Html.location (./html/html.ml)>>
+<<type Html.location>>
 
-<<exception Html.Html_Lexing (./html/html.ml)>>
-<<exception Html.Invalid_Html (./html/html.ml)>>
+<<exception Html.Html_Lexing>>
+<<exception Html.Invalid_Html>>
 
 <<constant Html.verbose>>
 
@@ -5684,7 +3075,7 @@ open Printf
 
 <<function Html.has_attribute>>
 
-<<enum Html.length (./html/html.ml)>>
+<<type Html.length>>
 
 <<function Html.length_of_string>>
 
@@ -5693,31 +3084,7 @@ open Printf
 
 \subsection*{[[./html/lexhtml.mli]]}
 
-<<signature Lexhtml.strict>>=
-val strict : bool ref
-    (* if true, use strict parsing; else, activate leniency on some
-       lexing decisisons such as: comments, attribute names and values
-     *)
-@
 
-<<signature Lexhtml.new_data>>=
-val new_data : unit -> t
-    (* instance data for a lexer; must be allocated for each instance, in
-       order to get reentrant lexers
-     *)
-@
-
-<<enum Lexhtml.warnings>>=
-type warnings = (string * int) list
-@
-
-<<signature Lexhtml.html>>=
-val html : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
-@
-
-<<signature Lexhtml.cdata>>=
-val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
-@
 
 
 %-------------------------------------------------------------
@@ -5728,7 +3095,7 @@ val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 type t
 <<signature Lexhtml.new_data>>
 
-<<enum Lexhtml.warnings>>
+<<type Lexhtml.warnings>>
 
 <<signature Lexhtml.html>>
 <<signature Lexhtml.cdata>>
@@ -5737,53 +3104,6 @@ type t
 
 \subsection*{[[./html/html_eval.mli]]}
 
-<<signature Html_eval.debug>>=
-(* HTML Evaluation *)
-
-val debug : bool ref
-@
-
-<<enum Html_eval.minimization>>=
-type minimization =
-  Legal | Illegal of string
-@
-
-<<signature Html_eval.add_html_filter>>=
-(* test suit *)
-val add_html_filter : ((Html.token -> unit) -> Html.token -> unit) -> unit
-(* [add_html_filter filter] adds an HTML filter between the lexing and
-  displaying of HTML. So, the filters do not affect the source (and
-  the source display), change the content of HTML silently, and affect
-  the display. The filter function [filter pfilter] receives a HTML token
-  for each time, and do some job, and send a token to the parent filter 
-  pfilter if possible. The filters will receive a correct HTML token
-  stream (all the tags are placed and closed correctly due to the DTD),
-  and they must send the correct stream to the parent filter also. 
-*)
-@
-
-<<signature Html_eval.sgml_lexer>>=
-(* [add_html_filter filter] adds an HTML filter between the lexing and
-  displaying of HTML. So, the filters do not affect the source (and
-  the source display), change the content of HTML silently, and affect
-  the display. The filter function [filter pfilter] receives a HTML token
-  for each time, and do some job, and send a token to the parent filter 
-  pfilter if possible. The filters will receive a correct HTML token
-  stream (all the tags are placed and closed correctly due to the DTD),
-  and they must send the correct stream to the parent filter also. 
-*)
-
-val sgml_lexer :
-  Dtd.t -> Lexing.lexbuf -> 
-    ((string * int) list * minimization * Html.token list * Html.location)
-@
-
-<<signature Html_eval.automat>>=
-val automat : Dtd.t -> (Html.location -> Html.token -> unit)
-                    -> Lexing.lexbuf
-                    -> (Html.location -> string -> unit)
-            -> unit
-@
 
 
 %-------------------------------------------------------------
@@ -5791,7 +3111,7 @@ val automat : Dtd.t -> (Html.location -> Html.token -> unit)
 <<./html/html_eval.mli>>=
 <<signature Html_eval.debug>>
 
-<<enum Html_eval.minimization>>
+<<type Html_eval.minimization>>
 
 <<signature Html_eval.add_html_filter>>
 <<signature Html_eval.sgml_lexer>>
@@ -5802,389 +3122,6 @@ val automat : Dtd.t -> (Html.location -> Html.token -> unit)
 
 \subsection*{[[./html/html_eval.ml]]}
 
-<<enum Html_eval.minimization (./html/html_eval.ml)>>=
-(* Wrapped up lexer to insert open/close tags in the stream of "normal"
-   tokens, according to some DTD, in order to always get fully parenthesized
-   streams *)
-
-type minimization =
-  Legal | Illegal of string
-@
-
-<<constant Html_eval.debug>>=
-let debug = ref false
-@
-
-<<exception Html_eval.CantMinimize>>=
-exception CantMinimize			            (* bogus HTML *)
-@
-
-<<constant Html_eval.initial>>=
-(* initial element of the DTD *)
-let initial = Elements.add "html" Elements.empty
-@
-
-<<function Html_eval.dump_stack>>=
-let dump_stack () = function
-    (x,_)::(y,_)::(z,_)::_ -> sprintf "..<%s><%s><%s>" z y x
-  | [x,_;y,_] -> sprintf "<%s><%s>" y x
-  | [x,_] -> sprintf "<%s>" x
-  | [] -> "empty stack"
-@
-
-<<function Html_eval.ominimize>>=
-(* open minimize 
-   [ominimize dtd open_tag current_stack]
-   returns a list of inferred open/close tags and the new stack
- *)
-let ominimize dtd t stack =
-  let elem = t.tag_name in
-
-  (* Is elem allowed for the given stack ? *)
-  let goodpos = function
-      [] -> Elements.mem elem initial
-    | (_, cts)::l -> Elements.mem elem cts
-
-  (* Return with inferred and stack.
-     The stack has been reduced during the inference, so it is enough
-     to push the opened element *)
-  (* Special hack when t is fake #pcdata... *)
-  and return inferred stack =
-    if elem = "#pcdata" then
-      List.rev inferred, stack
-    else
-      List.rev ((OpenTag t) :: inferred),
-      (elem, Hashtbl.find dtd.contents elem) :: stack
-      
-  in
-  (* [attempt_close mods_so_far current_stack] *)
-  let rec attempt_close accu = function
-     [] -> (* reached all the possible closing, attempt to open again *)
-        attempt_open accu []
-   | ((last, _)::l) as stack ->
-       if Elements.mem last dtd.close_omitted then
-          (* we can attempt to close the previous element *)
-      if goodpos l then 
-        (* good position, we're done *)
-        return ((CloseTag last) :: accu) l
-          else (* attempt to open in this new position *)
-        try 
-              attempt_open ((CloseTag last) :: accu) l
-            with
-          CantMinimize -> (* try once more to close *)
-             attempt_close ((CloseTag last)::accu) l
-       else begin (* since we can't close, try to open *)
-      attempt_open accu stack
-       end
-
-   (* [attempt_open mods_so_far currentstack] *)
-   and attempt_open accu = function
-     [] -> 
-       (* open HTML, and retry from there *)
-       (* should actually iterate on all elements in initial *)
-       let newstack = ["html", Hashtbl.find dtd.contents "html"]
-       and newaccu = (OpenTag {tag_name = "html"; attributes = []}) :: accu
-       in
-      if goodpos newstack then return newaccu newstack
-          else attempt_open newaccu newstack
-
-   | ((_, cts)::l ) as stack ->
-       (* check if, in contents, there is an element with implicit omission
-          that would help *)
-       let possible = Elements.inter cts dtd.open_omitted in
-        match Elements.cardinal possible with
-      0 -> (* argh *) raise CantMinimize
-        | 1 -> 
-      (* open this element and try from there *)
-      let newelem = Elements.choose possible in
-      let newaccu = (OpenTag {tag_name = newelem; attributes = []})::accu
-          and newstack = (newelem, Hashtbl.find dtd.contents newelem)::stack
-          in
-        if goodpos newstack 
-        then return newaccu newstack
-        else attempt_open newaccu newstack (* maybe more ? *)
-        | n -> (* since we have the choice, examine all possibilities *)
-       let elems = Elements.elements possible in
-       let rec backtrack = function 
-             [] -> raise CantMinimize
-        | x::l -> 
-        try
-          let newaccu = (OpenTag {tag_name = x; attributes = []})::accu
-          and newstack = (x, Hashtbl.find dtd.contents x)::stack
-                  in
-            if goodpos newstack then return newaccu newstack 
-            else attempt_open newaccu newstack
-        with
-         CantMinimize -> backtrack l
-           in 
-       backtrack elems
-  in
-   (* now do some error recovery *)   
-   try Legal, attempt_close [] stack
-   with
-     CantMinimize ->
-       (* what the hell, dammit, open it anyway, who cares, duh *)
-       let current = match stack with (x,_)::l -> x | [] -> "" in
-       Illegal (sprintf "illegal <%s> in %a, keep it though"
-                t.tag_name dump_stack stack),
-       return [] stack
-@
-
-<<function Html_eval.cminimize>>=
-(* close minimize
-   [cminimize dtd elem current_stack]
-   returns a list of inferred open/close tags and the new stack
- *)
-let cminimize dtd tagname stack =
-  (* Is elem allowed for the given stack ? *)
-  let goodpos = function
-      [] -> false
-    | (elem, cts)::l -> tagname = elem
-
-  and return inferred stack =
-     List.rev ((CloseTag tagname) :: inferred), stack
-
-  in
-  (* [attempt_close mods_so_far current_stack] *)
-  let rec attempt_close accu = function
-     [] -> raise CantMinimize
-   | ((last, _)::l) as stack ->
-       if Elements.mem last dtd.close_omitted then
-          (* we can attempt to close the previous element *)
-      if goodpos l then 
-        (* good position, we're done *)
-        return (CloseTag last :: accu) (List.tl l)
-          else (* close a bit more ? *)
-        attempt_close ((CloseTag last)::accu) l
-       else 
-     (* there's no reason we should have to open a new element in order
-        to close the current one, is it ? *)
-          raise CantMinimize
-  in
-  (* error recovery strategy *)
-  let rec attempt_matching accu = function
-     [] -> raise Not_found (* didn't find a matching open at all ! *)
-   | (curelem,_):: l when curelem = tagname ->
-     (* so, consider we match this open, and close them all *)
-     return accu l
-   | (curelem,_):: l  -> (* otherwise, find something up there *)
-     attempt_matching (CloseTag curelem :: accu) l
-   in
-   (* now do some error recovery *)   
-   try Legal, attempt_close [] stack
-   with
-     CantMinimize ->
-       try
-     Illegal (sprintf "unmatched </%s> in %a, close closest match"
-                  tagname dump_stack stack),
-         attempt_matching [] stack 
-       with
-     Not_found -> 
-       Illegal (sprintf "unmatched </%s> in %a, skipped"
-                    tagname dump_stack stack),
-           ([], stack) (* just skip the damn thing *)
-@
-
-<<function Html_eval.is_cdata>>=
-let is_cdata cts =
-     Elements.cardinal cts = 1 
-  && Elements.mem "#cdata" cts
-@
-
-<<function Html_eval.sgml_lexer>>=
-let sgml_lexer dtd =
-  let current_lex = ref Lexhtml.html
-  and stack = ref [] 
-  and lexdata = Lexhtml.new_data ()
-  in
-
-  (* currently allowed elements *)
-  let allowed () = match !stack with
-      [] -> initial
-    | (elem, cts)::_ -> cts 
-  in
-  (* whatever the situation (but close), if the previous element is empty
-     with an omittable close, close it *)
-  let close_empty () = match !stack with
-      [] -> []
-    | (elem, ctx)::l ->
-    if Elements.is_empty ctx && Elements.mem elem dtd.close_omitted
-    then (stack := l; [CloseTag elem])
-    else []
-  in  
-  (fun lexbuf ->
-    let warnings, token, loc = !current_lex lexbuf lexdata in
-    if !debug then 
-      begin prerr_string "got "; Html.print token; prerr_newline() end;
-    let status, tokens = 
-      match token with
-      | OpenTag t ->
-          begin try (* first check that we know this element *)
-        let contents = Hashtbl.find dtd.contents t.tag_name in
-            let extraclose = close_empty() in    
-        (* check changing of lexers; this works only if error recovery
-           rules imply that the tag will *always* be open
-             *)
-        if is_cdata contents then current_lex := Lexhtml.cdata
-        else current_lex := Lexhtml.html;
-        (* is it allowed in here ? *)
-        if Elements.mem t.tag_name (allowed()) then begin
-              (* push on the stack *)
-              stack := (t.tag_name, contents) :: !stack;
-          Legal, extraclose @ [token]
-              end
-            else begin (* minimisation or error *)
-              let flag, (res, l) = ominimize dtd t !stack in
-        stack := l;
-        flag, extraclose @ res
-              end
-          with
-        Not_found -> 
-          (* Not in the DTD ! We return it, but don't change our state
-         or stack. An applet extension to the HTML display machine
-                 can attempt to do something with it *)
-          Illegal (sprintf "Element %s not in DTD" t.tag_name),
-          [token]
-          end
-        
-      | CloseTag t ->
-      begin try (* do we know this element *)
-            let _ = Hashtbl.find dtd.contents t in
-        match !stack with
-          [] -> 
-        Illegal(sprintf "Unmatched closing </%s>" t),
-        []
-            | (elem, cts)::l when elem = t -> (* matching close *)
-            stack := l; (* pop the stack *)
-                (* the lexer has to be "normal" again, because CDATA
-                   can't be nested anyway *)
-               current_lex := Lexhtml.html;
-        Legal, [token]
-            | (elem, cts)::l -> (* unmatched close ! *)
-        (* if we were in cdata, change the token to cdata *)
-        if is_cdata cts then Legal, [CData (sprintf "</%s>" t)]
-        else begin
-                 current_lex := Lexhtml.html;
-          let flag, (res, l) = cminimize dtd t !stack in
-          stack := l;
-          flag, res
-        end
-          with
-        Not_found ->
-          Illegal (sprintf "Element %s not in DTD" t),
-          [token]
-          end
-
-      | PCData s ->
-          let extraclose = close_empty() in    
-      (* is it allowed in here ? *)
-      if Elements.mem "#pcdata" (allowed()) then
-              Legal, extraclose @ [token]
-          (* ignore PCData made of spaces if not relevant to the context *)
-      else if issp s then Legal, extraclose
-      else
-           begin	    
-          (* bad hack. make believe that we try to open the #pcdata element *)
-        let flag, (res, l) = 
-          ominimize dtd {tag_name = "#pcdata"; attributes = []} !stack in
-          stack := l;
-          flag,  extraclose @ res @ [token]
-       end
-
-      (* CData never happens with an empty stack *)
-      | CData s ->
-          let extraclose = close_empty() in    
-      if Elements.mem "#cdata" (allowed()) then
-        Legal, extraclose @ [token]
-          else
-        Illegal(sprintf "Unexpected CDATA in %a" dump_stack !stack),
-        extraclose @ [token]
-        
-      (* See if the stack is empty *)
-      | EOF ->
-      begin match !stack with
-        [] -> Legal, [EOF]
-          | l ->
-             (* we must be able to close all remaining tags *)
-         let rec closethem tokens = function
-        [] -> None, EOF :: tokens
-          | (last,_) :: l ->
-          if Elements.mem last dtd.close_omitted then
-            closethem (CloseTag last::tokens) l
-          else
-            let status, tokens = 
-              closethem (CloseTag last::tokens) l in
-            let err = sprintf "</%s>" last in
-            let newstatus = match status with
-              Some s -> Some (err^s)
-            | None -> Some err in
-            newstatus, tokens
-         in
-         match closethem [] l with
-           None, tokens -> Legal, List.rev tokens
-         | Some s, tokens -> Illegal ("Missing "^s), List.rev tokens
-          end
-
-      | _ ->  Legal, [token] (* ignore all other cases *)
-      
-      in
-      warnings, status, tokens, loc)
-@
-
-<<constant Html_eval.filters>>=
-let filters = ref []
-@
-
-<<function Html_eval.add_html_filter>>=
-let add_html_filter f =
-  filters := f :: !filters
-@
-
-<<function Html_eval.sgml_lexer (./html/html_eval.ml)>>=
-(* Redefine sgml_lexer with filters *)
-let sgml_lexer dtd = 
-  let org_lexer = sgml_lexer dtd in
-  let buf = ref [] in
-  let allfilter = 
-    List.fold_right (fun f st -> f st) !filters 
-      (fun tkn -> buf := !buf @ [tkn]) 
-  in
-  function lexbuf ->
-    let warnings, correct, tokens, loc = org_lexer lexbuf in
-    List.iter allfilter tokens; (* inefficient *)
-    let tokens = !buf in 
-    buf := [];
-    warnings, correct, tokens, loc
-@
-
-<<function Html_eval.automat>>=
-let automat dtd action lexbuf error =
-  try
-    let lexer = sgml_lexer dtd in
-    while true do
-      try 
-       let warnings, correct, tokens, loc = lexer lexbuf in
-    List.iter (fun (reason, pos) -> error (Loc(pos,succ pos)) reason)
-              warnings;
-    begin match correct with
-      Legal -> ()
-        | Illegal reason -> error loc reason
-        end;
-    List.iter 
-      (function token -> 
-            begin 
-          try action loc token
-              with Invalid_Html s -> error loc s
-            end;
-        if token = EOF then failwith "quit_html_eval")
-       tokens
-      with
-        Html_Lexing (s,n) -> error (Loc(n,n+1)) s
-    done
-  with
-    Failure "quit_html_eval" -> ()
-@
-
 
 %-------------------------------------------------------------
 
@@ -6193,7 +3130,7 @@ open Printf
 open Html
 open Dtd
 
-<<enum Html_eval.minimization (./html/html_eval.ml)>>
+<<type Html_eval.minimization>>
 
 <<constant Html_eval.debug>>
 
@@ -6228,7 +3165,7 @@ open Dtd
 let _ = Html.verbose := false (* we do our own error report *)
 @
 
-<<enum Htparse.mode>>=
+<<type Htparse.mode>>=
 type mode =
   Check | Indent of int | Nesting
 @
@@ -6381,7 +3318,7 @@ open Printf
 
 <<toplevel Htparse._1>>
 
-<<enum Htparse.mode>>
+<<type Htparse.mode>>
 
 <<constant Htparse.verbose>>
 <<constant Htparse.mode>>
@@ -6421,18 +3358,7 @@ val decode : string -> string
 %-------------------------------------------------------------
 
 <<./http/base64.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: base64.mli,v 1.1 1996/10/22 13:12:31 rouaix Exp $ *)
+<<copyright header v6>>
 
 <<signature Base64.encode>>
 <<signature Base64.decode>>
@@ -6531,18 +3457,7 @@ let encode s =
 %-------------------------------------------------------------
 
 <<./http/base64.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: base64.ml,v 1.2 1997/06/25 14:05:06 rouaix Exp $ *)
+<<copyright header v6>>
 
 (* For basic credentials only *)
 (* Encoding is [A-Z][a-z][0-9]+/= *)
@@ -6564,7 +3479,7 @@ let encode s =
 
 \subsection*{[[./http/http_date.mli]]}
 
-<<enum Http_date.http_time>>=
+<<type Http_date.http_time>>=
 (* Based on Unix.tm *)
 type http_time =
   { ht_sec : int;                       (* Seconds 0..59 *)
@@ -6607,22 +3522,11 @@ val ht_of_stamp : float -> http_time
 %-------------------------------------------------------------
 
 <<./http/http_date.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: http_date.mli,v 1.2 1998/12/08 15:28:33 furuse Exp $ *)
+<<copyright header v6>>
 
 (* HTTP Date format *)
 
-<<enum Http_date.http_time>>
+<<type Http_date.http_time>>
 
 
 <<signature Http_date.expired>>
@@ -6640,7 +3544,7 @@ val ht_of_stamp : float -> http_time
 
 \subsection*{[[./http/http_date.ml]]}
 
-<<enum Http_date.http_time (./http/http_date.ml)>>=
+<<type Http_date.http_time (./http/http_date.ml)>>=
 (* Based on Unix.tm *)
 type http_time =
   { ht_sec : int;                       (* Seconds 0..59 *)
@@ -6721,24 +3625,14 @@ let ht_of_stamp ut =
 %-------------------------------------------------------------
 
 <<./http/http_date.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header v6>>
 
-(* $Id: http_date.ml,v 1.1 1996/10/22 13:12:33 rouaix Exp $ *)
 open Printf
 open Unix
 open Mstring
 open Date
 
-<<enum Http_date.http_time (./http/http_date.ml)>>
+<<type Http_date.http_time (./http/http_date.ml)>>
 
 <<function Http_date.expired>>
 
@@ -6757,7 +3651,7 @@ open Date
 
 \subsection*{[[./http/messages.mli]]}
 
-<<enum Messages.request>>=
+<<type Messages.request>>=
 (* Request-Line of a Request *)
 type request = {
   request_version: string;	(* HTTP/1.0 *)
@@ -6766,7 +3660,7 @@ type request = {
   }
 @
 
-<<enum Messages.status>>=
+<<type Messages.status>>=
 (* Status-Line of a Response *)
 type status =  { 
     status_version : string;	(* HTTP/1.0 *)
@@ -6775,12 +3669,12 @@ type status =  {
  }
 @
 
-<<enum Messages.header>>=
+<<type Messages.header>>=
 (* Other headers *)
 type header = string
 @
 
-<<enum Messages.request_message>>=
+<<type Messages.request_message>>=
 (* HTTP-Message *)
 type request_message = {
   request : request;
@@ -6791,7 +3685,7 @@ type request_message = {
   }
 @
 
-<<enum Messages.response_message>>=
+<<type Messages.response_message>>=
 type response_message = {
   status : status;
   response_headers : header list;
@@ -6803,26 +3697,15 @@ type response_message = {
 %-------------------------------------------------------------
 
 <<./http/messages.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
-(* $Id: messages.mli,v 1.1 1996/10/22 13:12:36 rouaix Exp $ *)
+<<copyright header v6>>
 
 (* HTTP Messages *)
 
-<<enum Messages.request>>
+<<type Messages.request>>
 
-<<enum Messages.status>>
+<<type Messages.status>>
 
-<<enum Messages.header>>
+<<type Messages.header>>
 
 
 (* HTTP messages: requests and responses
@@ -6830,9 +3713,9 @@ type response_message = {
  *  What a server answers is called a response
  *)
 
-<<enum Messages.request_message>>
+<<type Messages.request_message>>
 
-<<enum Messages.response_message>>
+<<type Messages.response_message>>
 
 @
 
@@ -6944,14 +3827,14 @@ val status_message : int -> string
   (* [status_message n] returns Reason-Phrase for code [n] *)
 @
 
-<<enum Http_headers.authScheme>>=
+<<type Http_headers.authScheme>>=
 (* Authorisation headers *)
 type authScheme =
     AuthBasic
   | AuthExtend of string
 @
 
-<<enum Http_headers.authChallenge>>=
+<<type Http_headers.authChallenge>>=
 type authChallenge =
     { challenge_scheme : authScheme;
       challenge_realm : string;
@@ -6959,17 +3842,17 @@ type authChallenge =
     }
 @
 
-<<enum Http_headers.media_parameter>>=
+<<type Http_headers.media_parameter>>=
 (* Media types *)
 
 type media_parameter = string * string
 @
 
-<<enum Http_headers.media_type>>=
+<<type Http_headers.media_type>>=
 type media_type = string * string
 @
 
-<<enum Http_headers.hint>>=
+<<type Http_headers.hint>>=
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
     ContentType of header
@@ -7026,14 +3909,14 @@ open Messages
  * Details for specific headers
  *)
 
-<<enum Http_headers.authScheme>>
+<<type Http_headers.authScheme>>
 
-<<enum Http_headers.authChallenge>>
+<<type Http_headers.authChallenge>>
 
-<<enum Http_headers.media_parameter>>
-<<enum Http_headers.media_type>>
+<<type Http_headers.media_parameter>>
+<<type Http_headers.media_type>>
 
-<<enum Http_headers.hint>>
+<<type Http_headers.hint>>
 
 <<signature Http_headers.hints>>
 
@@ -7197,14 +4080,14 @@ let rec rem_contentencoding = function
  | x::l -> x :: rem_contentencoding l
 @
 
-<<enum Http_headers.authScheme (./http/http_headers.ml)>>=
+<<type Http_headers.authScheme (./http/http_headers.ml)>>=
 (* Authorisation headers *)
 type authScheme =
     AuthBasic
   | AuthExtend of string
 @
 
-<<enum Http_headers.authChallenge (./http/http_headers.ml)>>=
+<<type Http_headers.authChallenge (./http/http_headers.ml)>>=
 type authChallenge =
     { challenge_scheme : authScheme;
       challenge_realm : string;
@@ -7212,17 +4095,17 @@ type authChallenge =
     }
 @
 
-<<enum Http_headers.media_parameter (./http/http_headers.ml)>>=
+<<type Http_headers.media_parameter (./http/http_headers.ml)>>=
 (* Media types *)
 
 type media_parameter = string * string
 @
 
-<<enum Http_headers.media_type (./http/http_headers.ml)>>=
+<<type Http_headers.media_type (./http/http_headers.ml)>>=
 type media_type = string * string
 @
 
-<<enum Http_headers.hint (./http/http_headers.ml)>>=
+<<type Http_headers.hint (./http/http_headers.ml)>>=
 (* Hints : Associates MIME type or encoding to suffix *)
 type hint =
     ContentType of header
@@ -7427,14 +4310,14 @@ and expires hs =
  * Details for specific headers
  *)
 
-<<enum Http_headers.authScheme (./http/http_headers.ml)>>
+<<type Http_headers.authScheme (./http/http_headers.ml)>>
 
-<<enum Http_headers.authChallenge (./http/http_headers.ml)>>
+<<type Http_headers.authChallenge (./http/http_headers.ml)>>
 
-<<enum Http_headers.media_parameter (./http/http_headers.ml)>>
-<<enum Http_headers.media_type (./http/http_headers.ml)>>
+<<type Http_headers.media_parameter (./http/http_headers.ml)>>
+<<type Http_headers.media_type (./http/http_headers.ml)>>
 
-<<enum Http_headers.hint (./http/http_headers.ml)>>
+<<type Http_headers.hint (./http/http_headers.ml)>>
 
 <<constant Http_headers.suffixes>>
 
@@ -7460,7 +4343,7 @@ and expires hs =
 
 \subsection*{[[./http/auth.mli]]}
 
-<<enum Auth.authSpace>>=
+<<type Auth.authSpace>>=
 type authSpace = {
    auth_proxy: bool;
    auth_host : string;
@@ -7513,7 +4396,7 @@ val check : Www.request -> authChallenge -> authSpace ->
 <<./http/auth.mli>>=
 open Http_headers
 
-<<enum Auth.authSpace>>
+<<type Auth.authSpace>>
 
 
 <<signature Auth.lifetime>>
@@ -7534,7 +4417,7 @@ open Http_headers
 
 \subsection*{[[./http/auth.ml]]}
 
-<<enum Auth.authSpace (./http/auth.ml)>>=
+<<type Auth.authSpace (./http/auth.ml)>>=
 (* Authorizations are remembered on the base of the directory url and realm
  * They are kept during the whole MMM session, with expiration
  *)
@@ -7548,7 +4431,7 @@ type authSpace = {
   }
 @
 
-<<enum Auth.authEntry>>=
+<<type Auth.authEntry>>=
 type authEntry = {
    auth_cookie : string;
    mutable auth_lastused : float
@@ -7767,9 +4650,9 @@ open Http_headers
 open Url
 open Www
 
-<<enum Auth.authSpace (./http/auth.ml)>>
+<<type Auth.authSpace (./http/auth.ml)>>
 
-<<enum Auth.authEntry>>
+<<type Auth.authEntry>>
 
 <<constant Auth.authorizations>>
 
@@ -7896,7 +4779,7 @@ let verbose = ref false
 exception HTTP_error of string
 @
 
-<<enum Http.status>>=
+<<type Http.status>>=
 (* Support for aborting requests while in connect/write/headers mode.
    When we start applying the document continuation, it is not our job
    anymore to abort the connection.
@@ -8138,7 +5021,7 @@ and proxy_port = ref 80
 
 <<exception Http.HTTP_error>>
 
-<<enum Http.status>>
+<<type Http.status>>
 
 class cnx (sock,finish) =
  object (self)
@@ -8425,7 +5308,7 @@ val kill : document_id -> unit
 val postmortem : unit -> unit
 @
 
-<<enum Cache.cache_fill>>=
+<<type Cache.cache_fill>>=
 type cache_fill = {
   cache_write : string -> int -> int -> unit;
   cache_close : unit -> unit
@@ -8498,7 +5381,7 @@ open Document
 
 <<signature Cache.postmortem>>
 
-<<enum Cache.cache_fill>>
+<<type Cache.cache_fill>>
 
 <<exception Cache.DontCache>>
 
@@ -8541,14 +5424,14 @@ let max_lastused = 100000000000.0
 let cutlinks = ref []
 @
 
-<<enum Cache.cache_fill (./protocols/cache.ml)>>=
+<<type Cache.cache_fill (./protocols/cache.ml)>>=
 type cache_fill = {
   cache_write : string -> int -> int -> unit;
   cache_close : unit -> unit
  }
 @
 
-<<enum Cache.entry>>=
+<<type Cache.entry>>=
 (* A cache entry *)
 type entry = {
   mutable cache_document : document;
@@ -8950,9 +5833,9 @@ and current = ref 0
 
 <<constant Cache.cutlinks>>
 
-<<enum Cache.cache_fill (./protocols/cache.ml)>>
+<<type Cache.cache_fill (./protocols/cache.ml)>>
 
-<<enum Cache.entry>>
+<<type Cache.entry>>
 
 <<exception Cache.DontCache (./protocols/cache.ml)>>
 
@@ -9381,7 +6264,7 @@ open Feed
 let mailer = ref ""
 @
 
-<<enum Mailto.msg>>=
+<<type Mailto.msg>>=
 type msg = {
   dest : string;
   subject : string;
@@ -9511,7 +6394,7 @@ open Url
 
 <<constant Mailto.mailer>>
 
-<<enum Mailto.msg>>
+<<type Mailto.msg>>
 
 <<function Mailto.error>>
 
@@ -9685,7 +6568,7 @@ and kocolor = NamedColor "#dc5c5c"
 
 \subsection*{[[./retrieve/retrieve.mli]]}
 
-<<enum Retrieve.retrievalStatus>>=
+<<type Retrieve.retrievalStatus>>=
 type retrievalStatus =
   Started of (unit -> unit)  | InUse
 @
@@ -9698,7 +6581,7 @@ val f : Www.request ->  (* the request *)
         retrievalStatus
 @
 
-<<enum Retrieve.behaviour>>=
+<<type Retrieve.behaviour>>=
 type behaviour =
    Ok 
  | Stop of string
@@ -9719,11 +6602,11 @@ val add_http_processor :
 (* Document retrieval *)
 open Document
 
-<<enum Retrieve.retrievalStatus>>
+<<type Retrieve.retrievalStatus>>
 
 <<signature Retrieve.f>>
 
-<<enum Retrieve.behaviour>>
+<<type Retrieve.behaviour>>
 
 <<signature Retrieve.add_http_processor>>
 @
@@ -9731,12 +6614,12 @@ open Document
 
 \subsection*{[[./retrieve/retrieve.ml]]}
 
-<<enum Retrieve.retrievalStatus (./retrieve/retrieve.ml)>>=
+<<type Retrieve.retrievalStatus (./retrieve/retrieve.ml)>>=
 type retrievalStatus =
   Started of (unit -> unit)  | InUse
 @
 
-<<enum Retrieve.behaviour (./retrieve/retrieve.ml)>>=
+<<type Retrieve.behaviour (./retrieve/retrieve.ml)>>=
 (* We should implement the proper behaviours for all return codes
  * defined in the HTTP/1.0 protocol draft. 
  * Return codes are HTTP specific, but since all protocols are more or
@@ -9976,9 +6859,9 @@ open Http
 open Http_headers
 open Auth
 
-<<enum Retrieve.retrievalStatus (./retrieve/retrieve.ml)>>
+<<type Retrieve.retrievalStatus (./retrieve/retrieve.ml)>>
 
-<<enum Retrieve.behaviour (./retrieve/retrieve.ml)>>
+<<type Retrieve.behaviour (./retrieve/retrieve.ml)>>
 
 <<constant Retrieve.http_process>>
 
@@ -10395,7 +7278,7 @@ module ImageScheduler = Scheduler.Make(ImageData)
 val debug : bool ref
 @
 
-<<enum Scheduler.progress_func>>=
+<<type Scheduler.progress_func>>=
 type progress_func = int option -> int -> unit
 @
 
@@ -10405,7 +7288,7 @@ type progress_func = int option -> int -> unit
 <<./retrieve/scheduler.mli>>=
 <<signature Scheduler.debug>>
 
-<<enum Scheduler.progress_func>>
+<<type Scheduler.progress_func>>
 
 module type Data =
   sig
@@ -10473,7 +7356,7 @@ module Make(J : Data):(S with type shared_data = J.t)
 let debug = ref false 
 @
 
-<<enum Scheduler.progress_func (./retrieve/scheduler.ml)>>=
+<<type Scheduler.progress_func (./retrieve/scheduler.ml)>>=
 type progress_func = int option -> int -> unit
 @
 
@@ -10493,7 +7376,7 @@ open Http_headers
 
 <<constant Scheduler.debug>>
 
-<<enum Scheduler.progress_func (./retrieve/scheduler.ml)>>
+<<type Scheduler.progress_func (./retrieve/scheduler.ml)>>
 
 (* Handling of data downloaded by this scheduler *)
 module type Data =
@@ -11048,7 +7931,7 @@ val add_viewer :
 val rem_viewer :  Http_headers.media_type -> unit
 @
 
-<<enum Embed.embobject>>=
+<<type Embed.embobject>>=
 (* Embedded objects *)
 type embobject = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
@@ -11081,7 +7964,7 @@ module EmbeddedScheduler : Scheduler.S with
 
 <<signature Embed.rem_viewer>>
 
-<<enum Embed.embobject>>
+<<type Embed.embobject>>
 
 <<signature Embed.add>>
 <<signature Embed.update>>
@@ -11125,7 +8008,7 @@ let embedded_viewer frame ctx doc =
       let l = Label.create frame [Text t] in pack [l][]
 @
 
-<<enum Embed.embobject (./viewers/embed.ml)>>=
+<<type Embed.embobject (./viewers/embed.ml)>>=
 type embobject = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
   embed_frame : Widget.widget;  
@@ -11392,7 +8275,7 @@ and rem_viewer = Hashtbl.remove embedded_viewers
 <<function Embed.embedded_viewer>>
 
 
-<<enum Embed.embobject (./viewers/embed.ml)>>
+<<type Embed.embobject (./viewers/embed.ml)>>
 
 <<constant Embed.embedded>>
 
@@ -11737,11 +8620,11 @@ open Feed
 
 \subsection*{[[./viewers/viewers.mli]]}
 
-<<enum Viewers.vparams>>=
+<<type Viewers.vparams>>=
 type vparams = (string * string) list
 @
 
-<<enum Viewers.frame_targets>>=
+<<type Viewers.frame_targets>>=
 type frame_targets = (string * Widget.widget) list
 @
 
@@ -11755,7 +8638,7 @@ val frame_fugue : frame_targets -> frame_targets
     (* forget about _self and _parents *)
 @
 
-<<enum Viewers.hyper_func>>=
+<<type Viewers.hyper_func>>=
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
@@ -11767,7 +8650,7 @@ type hyper_func = {
 val di_compare : display_info -> display_info -> bool
 @
 
-<<enum Viewers.t>>=
+<<type Viewers.t>>=
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
@@ -11803,13 +8686,13 @@ open Www
 open Document
 open Http_headers
 
-<<enum Viewers.vparams>>
-<<enum Viewers.frame_targets>>
+<<type Viewers.vparams>>
+<<type Viewers.frame_targets>>
 
 <<signature Viewers.frame_adopt>>
 <<signature Viewers.frame_fugue>>
 
-<<enum Viewers.hyper_func>>
+<<type Viewers.hyper_func>>
 
 (* list of additionnal parameters for the viewer, according to its
    activation point *)
@@ -11868,7 +8751,7 @@ end
 
 <<signature Viewers.di_compare>>
 
-<<enum Viewers.t>>
+<<type Viewers.t>>
 
 <<signature Viewers.add_viewer>>
 
@@ -11884,12 +8767,12 @@ end
 
 \subsection*{[[./viewers/viewers.ml]]}
 
-<<enum Viewers.vparams (./viewers/viewers.ml)>>=
+<<type Viewers.vparams (./viewers/viewers.ml)>>=
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
 @
 
-<<enum Viewers.frame_targets (./viewers/viewers.ml)>>=
+<<type Viewers.frame_targets (./viewers/viewers.ml)>>=
 type frame_targets = (string * Widget.widget) list
 @
 
@@ -11913,7 +8796,7 @@ let frame_fugue targets =
   ff [] targets
 @
 
-<<enum Viewers.hyper_func (./viewers/viewers.ml)>>=
+<<type Viewers.hyper_func (./viewers/viewers.ml)>>=
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
@@ -12006,14 +8889,14 @@ let extern dh ctype =
        )
 @
 
-<<enum Viewers.t (./viewers/viewers.ml)>>=
+<<type Viewers.t (./viewers/viewers.ml)>>=
 (* Definition of an internal viewer *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
 @
 
-<<enum Viewers.spec>>=
+<<type Viewers.spec>>=
 type spec =
     Internal of t
   | External         (* pass to metamail *)
@@ -12079,14 +8962,14 @@ open Www
 open Hyper
 
 (* The context given to a viewer *)
-<<enum Viewers.vparams (./viewers/viewers.ml)>>
-<<enum Viewers.frame_targets (./viewers/viewers.ml)>>
+<<type Viewers.vparams (./viewers/viewers.ml)>>
+<<type Viewers.frame_targets (./viewers/viewers.ml)>>
 
 <<function Viewers.frame_adopt>>
 
 <<function Viewers.frame_fugue>>
 
-<<enum Viewers.hyper_func (./viewers/viewers.ml)>>
+<<type Viewers.hyper_func (./viewers/viewers.ml)>>
 
 class  virtual context ((did : Document.document_id), 
                (v : vparams)) =
@@ -12215,9 +9098,9 @@ end
  * will be passed to metamail.
  *)
 
-<<enum Viewers.t (./viewers/viewers.ml)>>
+<<type Viewers.t (./viewers/viewers.ml)>>
 
-<<enum Viewers.spec>>
+<<type Viewers.spec>>
 
 <<constant Viewers.viewers>>
 
@@ -12807,9 +9690,9 @@ class tags (thtml) =
 
   (* flush tag definitions *)
   method flush =
-    onhold +> List.rev +> List.iter (fun (t,d) -> 
+    onhold |> List.rev |> List.iter (fun (t,d) -> 
       try Text.tag_configure wid t d with TkError _ -> ());
-    decorations +> List.rev +> List.iter (fun (t,d,e) -> 
+    decorations |> List.rev |> List.iter (fun (t,d,e) -> 
       Text.tag_add wid t d e);
     onhold <- [];
     decorations <- []
@@ -12834,7 +9717,7 @@ class anchortags (thtml) =
 
   method flush =
     tags#flush;
-    mappings +> List.iter (fun (s,e,h) ->
+    mappings |> List.iter (fun (s,e,h) ->
       let loc1 = Text.index wid s
       and loc2 = Text.index wid e
       in
@@ -13586,7 +10469,7 @@ open Protocol
 
 \subsection*{[[./display/fonts.mli]]}
 
-<<enum Fonts.fontInfo>>=
+<<type Fonts.fontInfo>>=
 type fontInfo =
   | Family of string
   | Weight of string
@@ -13595,11 +10478,11 @@ type fontInfo =
   | FontDelta of int
 @
 
-<<enum Fonts.fontAttrs>>=
+<<type Fonts.fontAttrs>>=
 type fontAttrs = fontInfo list
 @
 
-<<enum Fonts.fontDesc>>=
+<<type Fonts.fontDesc>>=
 type fontDesc = { 
   pattern: Jpf_font.pattern;
   mutable pxlsz: int;
@@ -13644,11 +10527,11 @@ val reset: unit -> unit
 
 <<./display/fonts.mli>>=
 
-<<enum Fonts.fontInfo>>
+<<type Fonts.fontInfo>>
 
-<<enum Fonts.fontAttrs>>
+<<type Fonts.fontAttrs>>
 
-<<enum Fonts.fontDesc>>
+<<type Fonts.fontDesc>>
 
 <<signature Fonts.default>>
 
@@ -13668,7 +10551,7 @@ val reset: unit -> unit
 
 \subsection*{[[./display/fonts.ml]]}
 
-<<enum Fonts.fontDesc (./display/fonts.ml)>>=
+<<type Fonts.fontDesc (./display/fonts.ml)>>=
 (* Font manipulation *)
 
 type fontDesc = 
@@ -13677,7 +10560,7 @@ type fontDesc =
     }
 @
 
-<<enum Fonts.fontInfo (./display/fonts.ml)>>=
+<<type Fonts.fontInfo (./display/fonts.ml)>>=
 type fontInfo =
    Family of string
  | Weight of string
@@ -13686,7 +10569,7 @@ type fontInfo =
  | FontDelta of int
 @
 
-<<enum Fonts.fontAttrs (./display/fonts.ml)>>=
+<<type Fonts.fontAttrs (./display/fonts.ml)>>=
 type fontAttrs = fontInfo list
 @
 
@@ -13881,11 +10764,11 @@ open Tk80
 open Tk
 open Jpf_font
 
-<<enum Fonts.fontDesc (./display/fonts.ml)>>
+<<type Fonts.fontDesc (./display/fonts.ml)>>
 
-<<enum Fonts.fontInfo (./display/fonts.ml)>>
+<<type Fonts.fontInfo (./display/fonts.ml)>>
 
-<<enum Fonts.fontAttrs (./display/fonts.ml)>>
+<<type Fonts.fontAttrs (./display/fonts.ml)>>
 
 <<function Fonts.copy>>
 
@@ -14771,7 +11654,7 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 
 \subsection*{[[./display/htmlfmt.mli]]}
 
-<<enum Htmlfmt.gattr>>=
+<<type Htmlfmt.gattr>>=
 type gattr =
   |  Margin of int
   |  Justification of string
@@ -14785,14 +11668,14 @@ type gattr =
   |  Lowerscript
 @
 
-<<enum Htmlfmt.formatterSpec>>=
+<<type Htmlfmt.formatterSpec>>=
 type formatterSpec = 
   | TopFormatter of bool		(* flag is pixel-scrolling mode *)
   | NestedFormatter
   | FrameFormatter of (string * string) list (* decoration ... *)
 @
 
-<<enum Htmlfmt.formatter>>=
+<<type Htmlfmt.formatter>>=
 type formatter = {
   (* Text primitives of the device *)
   new_paragraph: unit -> unit;  	(* Open a new paragraph *)
@@ -14827,12 +11710,12 @@ type formatter = {
 }
 @
 
-<<enum Htmlfmt.input_kind>>=
+<<type Htmlfmt.input_kind>>=
 (* Form manager *)
 type input_kind = EntryInput | FileInput | OtherInput
 @
 
-<<enum Htmlfmt.width_constraint>>=
+<<type Htmlfmt.width_constraint>>=
 (* Table manager *)
 type width_constraint =
   | TopWidth				(* toplevel window size*)
@@ -14850,11 +11733,11 @@ open Www
 open Fonts
 open Embed
 
-<<enum Htmlfmt.gattr>>
+<<type Htmlfmt.gattr>>
 
-<<enum Htmlfmt.formatterSpec>>
+<<type Htmlfmt.formatterSpec>>
 
-<<enum Htmlfmt.formatter>>
+<<type Htmlfmt.formatter>>
 
 module type GfxHTML = sig
  val create : 
@@ -14884,7 +11767,7 @@ module type ImgDisplay = sig
    val create : unit -> loader
  end
 
-<<enum Htmlfmt.input_kind>>
+<<type Htmlfmt.input_kind>>
     
 class  virtual form_behaviour : (unit) -> object
     method virtual add_get : input_kind -> (unit -> (string * string) list) -> unit
@@ -14921,7 +11804,7 @@ module type FormDisplay = sig
  end
 
 
-<<enum Htmlfmt.width_constraint>>
+<<type Htmlfmt.width_constraint>>
 
 module type TableDisplay = sig
     type cell_type = HeaderCell | DataCell
@@ -14946,7 +11829,7 @@ module type TableDisplay = sig
 
 \subsection*{[[./display/imgload.mli]]}
 
-<<enum Imgload.mode>>=
+<<type Imgload.mode>>=
 type mode =
   | DuringDoc
   | AfterDocAuto
@@ -14974,7 +11857,7 @@ val create : unit -> loader
 
 <<./display/imgload.mli>>=
 
-<<enum Imgload.mode>>
+<<type Imgload.mode>>
 
 <<signature Imgload.mode>>
 <<signature Imgload.no_images>>
@@ -14994,7 +11877,7 @@ end
 
 \subsection*{[[./display/imgload.ml]]}
 
-<<enum Imgload.mode (./display/imgload.ml)>>=
+<<type Imgload.mode (./display/imgload.ml)>>=
 (* Images are embedded objects, with a twist *)
 type mode =
     DuringDoc
@@ -15267,7 +12150,7 @@ open Embed
 open Img
 open Viewers
 
-<<enum Imgload.mode (./display/imgload.ml)>>
+<<type Imgload.mode (./display/imgload.ml)>>
 
 <<constant Imgload.mode>>
 <<constant Imgload.no_images>>
@@ -16495,7 +13378,7 @@ end
 val form_bg : string ref
 @
 
-<<enum Form.t>>=
+<<type Form.t>>=
 type t = {
   text_input : Widget.widget -> Html.tag -> unit;
       (* [text_input top tag] *)
@@ -16529,7 +13412,7 @@ val create:
 
 <<signature Form.form_bg>>
 
-<<enum Form.t>>
+<<type Form.t>>
 
 <<signature Form.create>>
 
@@ -16542,7 +13425,7 @@ val create:
 let form_bg = ref "#d9d9d9"
 @
 
-<<enum Form.t (./display/form.ml)>>=
+<<type Form.t (./display/form.ml)>>=
 type t = {
   text_input : Widget.widget -> tag -> unit;
       (* [text_input top tag] *)
@@ -16924,7 +13807,7 @@ open Viewers
 
 <<constant Form.form_bg>>
 
-<<enum Form.t (./display/form.ml)>>
+<<type Form.t (./display/form.ml)>>
 
 (* Most of the widgets created here are created with [TakeFocus false];
  * The reason is that otherwise, in "focus follows mouse" mode, when scrolling
@@ -17303,11 +14186,11 @@ val debug : bool ref
 val strict_32 : bool ref
 @
 
-<<enum Table.cell_type>>=
+<<type Table.cell_type>>=
 type cell_type = HeaderCell | DataCell
 @
 
-<<enum Table.t>>=
+<<type Table.t>>=
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -17334,9 +14217,9 @@ val topwidth : Widget.widget -> int
 <<signature Table.debug>>
 <<signature Table.strict_32>>
 
-<<enum Table.cell_type>>
+<<type Table.cell_type>>
 
-<<enum Table.t>>
+<<type Table.t>>
 
 <<signature Table.create>>
 
@@ -17376,12 +14259,12 @@ let strict_32 = ref true
        *)
 @
 
-<<enum Table.cell_type (./display/table.ml)>>=
+<<type Table.cell_type (./display/table.ml)>>=
 (* a manager for a single TABLE *)
 type cell_type = HeaderCell | DataCell
 @
 
-<<enum Table.t (./display/table.ml)>>=
+<<type Table.t (./display/table.ml)>>=
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -17393,7 +14276,7 @@ type t = {
   }
 @
 
-<<enum Table.table>>=
+<<type Table.table>>=
 (* Internal structure of tables *)
 type table = {
   master_widget : Widget.widget;
@@ -17815,10 +14698,10 @@ open Htmlfmt
 <<constant Table.debug>>
 <<constant Table.strict_32>>
 
-<<enum Table.cell_type (./display/table.ml)>>
-<<enum Table.t (./display/table.ml)>>
+<<type Table.cell_type (./display/table.ml)>>
+<<type Table.t (./display/table.ml)>>
 
-<<enum Table.table>>
+<<type Table.table>>
 
 <<function Table.topwidth>>
 
@@ -17888,7 +14771,7 @@ let figure_geom l =
       l
 @
 
-<<enum Htframe.frame>>=
+<<type Htframe.frame>>=
 type frame = {
     frame_src : string;
     frame_name : string;
@@ -17898,18 +14781,18 @@ type frame = {
   } 
 @
 
-<<enum Htframe.frameset>>=
+<<type Htframe.frameset>>=
 and frameset =
     int ref * int ref * celldesc array array
 @
 
-<<enum Htframe.cell_contents>>=
+<<type Htframe.cell_contents>>=
 and cell_contents = 
   | Frame of frame
   | Frameset of frameset
 @
 
-<<enum Htframe.celldesc>>=
+<<type Htframe.celldesc>>=
 and celldesc = {
     cell_width : Html.length list;
     cell_height : Html.length list;
@@ -18172,13 +15055,13 @@ open Htmlfmt
 <<function Htframe.figure_geom>>
 
 (* We build this data structure when parsing FRAMESET *)
-<<enum Htframe.frame>>
+<<type Htframe.frame>>
 
-<<enum Htframe.frameset>>
+<<type Htframe.frameset>>
 
-<<enum Htframe.cell_contents>>
+<<type Htframe.cell_contents>>
 
-<<enum Htframe.celldesc>>
+<<type Htframe.celldesc>>
 
 <<function Htframe.ignore_fo>>
 
@@ -20771,7 +17654,7 @@ open Hyper
 
 \subsection*{[[./gui/prefs.mli]]}
 
-<<enum Prefs.pref_type>>=
+<<type Prefs.pref_type>>=
 (* Exported so that we can plug applet preferences *)
 type pref_type =
    Bool of bool ref
@@ -20783,7 +17666,7 @@ type pref_type =
                  (* init, set *)
 @
 
-<<enum Prefs.pref>>=
+<<type Prefs.pref>>=
 type pref = {
   packed_widget : Widget.widget;
   pref_variable : Textvariable.textVariable;
@@ -20793,7 +17676,7 @@ type pref = {
 }
 @
 
-<<enum Prefs.pref_family>>=
+<<type Prefs.pref_family>>=
 (* A family of preferences *)
 type pref_family =
   {family_widget: Widget.widget;
@@ -20878,13 +17761,13 @@ val define :
 %-------------------------------------------------------------
 
 <<./gui/prefs.mli>>=
-<<enum Prefs.pref_type>>
+<<type Prefs.pref_type>>
 
-<<enum Prefs.pref>>
+<<type Prefs.pref>>
 
 module PrefMap : Map.S with type key = string
 
-<<enum Prefs.pref_family>>
+<<type Prefs.pref_family>>
 
 <<signature Prefs.bool_pref>>
 <<signature Prefs.int_pref>>
@@ -20962,7 +17845,7 @@ let class_name = resource_name
   (* it is not correct but works *)
 @
 
-<<enum Prefs.pref_type (./gui/prefs.ml)>>=
+<<type Prefs.pref_type (./gui/prefs.ml)>>=
 (*
  * Various predefined preference types
  *)
@@ -20976,7 +17859,7 @@ type pref_type =
                  (* init, set  as defined below *)
 @
 
-<<enum Prefs.pref (./gui/prefs.ml)>>=
+<<type Prefs.pref (./gui/prefs.ml)>>=
 (*
  * Support for interactive setting of a preference 
  *)
@@ -21268,7 +18151,7 @@ let save_file prefmaps f =
 @
 %$
 
-<<enum Prefs.pref_family (./gui/prefs.ml)>>=
+<<type Prefs.pref_family (./gui/prefs.ml)>>=
 (* Builds a family of preferences *)
 type pref_family =
   {family_widget: Widget.widget;    (* the main widget for this family *)
@@ -21496,9 +18379,9 @@ open Fontprefs
 
 <<constant Prefs.class_name>>
 
-<<enum Prefs.pref_type (./gui/prefs.ml)>>
+<<type Prefs.pref_type (./gui/prefs.ml)>>
 
-<<enum Prefs.pref (./gui/prefs.ml)>>
+<<type Prefs.pref (./gui/prefs.ml)>>
 
 
 <<function Prefs.init_pref>>
@@ -21539,7 +18422,7 @@ module PrefMap = Map.Make(struct type t = string let compare = compare end)
 
 <<function Prefs.save_file>>
       
-<<enum Prefs.pref_family (./gui/prefs.ml)>>
+<<type Prefs.pref_family (./gui/prefs.ml)>>
 
 <<function Prefs.family>>
 
@@ -21593,7 +18476,7 @@ open Protocol
 
 \subsection*{[[./gui/history.ml]]}
 
-<<enum History.history_entry>>=
+<<type History.history_entry>>=
 (* 
    Linear history: we keep going adding to the end of the list,
    EXCEPT when you go back and then on a new link.
@@ -21608,7 +18491,7 @@ type history_entry = {
   }
 @
 
-<<enum History.t>>=
+<<type History.t>>=
 type t = {
   h_key : int;
   mutable h_start : history_entry;
@@ -21727,9 +18610,9 @@ let set_current h e =
 (* History *)
 open Document
 
-<<enum History.history_entry>>
+<<type History.history_entry>>
 
-<<enum History.t>>
+<<type History.t>>
 
 <<function History.contents>>
 
@@ -21751,7 +18634,7 @@ open Document
 
 \subsection*{[[./gui/nav.mli]]}
 
-<<enum Nav.t>>=
+<<type Nav.t>>=
 type t =
   { nav_id: int;
     nav_viewer_frame: Widget.widget;
@@ -21818,7 +18701,7 @@ val dont_check_cache : Www.request -> bool
 %-------------------------------------------------------------
 
 <<./gui/nav.mli>>=
-<<enum Nav.t>>
+<<type Nav.t>>
 
 <<signature Nav.request>>
 
@@ -21842,7 +18725,7 @@ val dont_check_cache : Www.request -> bool
 
 \subsection*{[[./gui/nav.ml]]}
 
-<<enum Nav.t (./gui/nav.ml)>>=
+<<type Nav.t (./gui/nav.ml)>>=
 (* Navigation *)
 
 type t = {
@@ -22184,7 +19067,7 @@ open Http_headers
 open Viewers
 open Embed
 
-<<enum Nav.t (./gui/nav.ml)>>
+<<type Nav.t (./gui/nav.ml)>>
 
 <<exception Nav.Duplicate>>
 
@@ -24019,13 +20902,13 @@ open Viewers
 let log s = try prerr_endline s with _ -> () 
 @
 
-<<enum Remove_simple_table.table_token>>=
+<<type Remove_simple_table.table_token>>=
 type table_token =
     ChildTable of Html.token list
   | Token of Html.token 
 @
 
-<<enum Remove_simple_table.rst_env>>=
+<<type Remove_simple_table.rst_env>>=
 type rst_env = {
     mutable tokens : table_token list;
     mutable trs : int;
@@ -24148,9 +21031,9 @@ module Mmm = Get(Provide)
 
 open Html
 
-<<enum Remove_simple_table.table_token>>
+<<type Remove_simple_table.table_token>>
 
-<<enum Remove_simple_table.rst_env>>
+<<type Remove_simple_table.rst_env>>
 
 <<function Remove_simple_table.remove_simple_table>>
 
@@ -24490,11 +21373,11 @@ let mpoly_data =
 14.239914, -5.200000]
 @
 
-<<enum Tachy_space.vector>>=
+<<type Tachy_space.vector>>=
 type vector = float * float * float
 @
 
-<<enum Tachy_space.matrix>>=
+<<type Tachy_space.matrix>>=
 type matrix = vector * vector * vector
 @
 
@@ -24511,7 +21394,7 @@ let pi = 3.1415926
 let log10 = log 10.0 
 @
 
-<<enum Tachy_space.ball>>=
+<<type Tachy_space.ball>>=
 type ball = {
   tag : Tk.tagOrId;
   mutable x : float;
@@ -24556,8 +21439,8 @@ module Mmm = Get(Provide)
 
 <<constant Tachy_space.mpoly_data>>
 
-<<enum Tachy_space.vector>>
-<<enum Tachy_space.matrix>>
+<<type Tachy_space.vector>>
+<<type Tachy_space.matrix>>
 
 let x_rotation a = let c = cos a and s = sin a in
     ((1.0,0.0,0.0), (0.0,c,s), (0.0,-.s,c))
@@ -24569,7 +21452,7 @@ and y_rotation a = let c = cos a and s = sin a in
 <<constant Tachy_space.pi>>
 <<constant Tachy_space.log10>>
 
-<<enum Tachy_space.ball>>
+<<type Tachy_space.ball>>
 
 class space_tachy (top : Widget.widget) =
  object (self)

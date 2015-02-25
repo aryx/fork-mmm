@@ -1,25 +1,26 @@
 (*s: ./html/html.ml *)
 open Printf
 
-(*s: enum Html.attribute_name (./html/html.ml) *)
+(*s: type Html.attribute_name *)
+(* HTML tokens *)
 type attribute_name = string 
-(*e: enum Html.attribute_name (./html/html.ml) *)
-(*s: enum Html.attribute_value (./html/html.ml) *)
+(*e: type Html.attribute_name *)
+(*s: type Html.attribute_value *)
 type attribute_value = string
-(*e: enum Html.attribute_value (./html/html.ml) *)
-(*s: enum Html.attributes (./html/html.ml) *)
+(*e: type Html.attribute_value *)
+(*s: type Html.attributes *)
 type attributes = (attribute_name * attribute_value) list
-(*e: enum Html.attributes (./html/html.ml) *)
+(*e: type Html.attributes *)
 
-(*s: enum Html.tag (./html/html.ml) *)
+(*s: type Html.tag *)
 type tag = {
   tag_name : string;
   attributes: attributes
 }
-(*e: enum Html.tag (./html/html.ml) *)
+(*e: type Html.tag *)
 
 
-(*s: enum Html.token (./html/html.ml) *)
+(*s: type Html.token *)
 type token =
    PCData of string
  | CData of string
@@ -28,18 +29,18 @@ type token =
  | Comment of string
  | Doctype of string
  | EOF
-(*e: enum Html.token (./html/html.ml) *)
+(*e: type Html.token *)
 
-(*s: enum Html.location (./html/html.ml) *)
+(*s: type Html.location *)
 type location = Loc of int * int
-(*e: enum Html.location (./html/html.ml) *)
+(*e: type Html.location *)
 
-(*s: exception Html.Html_Lexing (./html/html.ml) *)
+(*s: exception Html.Html_Lexing *)
 exception Html_Lexing of string * int
-(*e: exception Html.Html_Lexing (./html/html.ml) *)
-(*s: exception Html.Invalid_Html (./html/html.ml) *)
+(*e: exception Html.Html_Lexing *)
+(*s: exception Html.Invalid_Html *)
 exception Invalid_Html of string
-(*e: exception Html.Invalid_Html (./html/html.ml) *)
+(*e: exception Html.Invalid_Html *)
 
 (*s: constant Html.verbose *)
 let verbose = ref false
@@ -396,14 +397,14 @@ let has_attribute tag attr =
   || List.mem_assoc (tag.tag_name, attr) default_attributes
 (*e: function Html.has_attribute *)
 
-(*s: enum Html.length (./html/html.ml) *)
+(*s: type Html.length *)
 (* HTML length *)
 type length = 
     Nolength
   | LengthPixels of int
   | LengthRatio of float
   | LengthRel of int
-(*e: enum Html.length (./html/html.ml) *)
+(*e: type Html.length *)
 
 (*s: function Html.length_of_string *)
 (* Either size in pixels or ration in percent *)

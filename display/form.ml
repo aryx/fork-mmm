@@ -14,7 +14,7 @@ open Viewers
 let form_bg = ref "#d9d9d9"
 (*e: constant Form.form_bg *)
 
-(*s: enum Form.t (./display/form.ml) *)
+(*s: type Form.t (./display/form.ml) *)
 type t = {
   text_input : Widget.widget -> tag -> unit;
       (* [text_input top tag] *)
@@ -33,7 +33,7 @@ type t = {
   textarea:  Widget.widget -> string -> tag -> unit
       (* [textarea top initial attrs] *)
   }
-(*e: enum Form.t (./display/form.ml) *)
+(*e: type Form.t (./display/form.ml) *)
 
 (* Most of the widgets created here are created with [TakeFocus false];
  * The reason is that otherwise, in "focus follows mouse" mode, when scrolling

@@ -1,12 +1,12 @@
 (*s: ./www/uri.mli *)
-(*s: enum Uri.abs_uri *)
+(*s: type Uri.abs_uri *)
 (* URI utilities. RFC 1630 *)
 
 type abs_uri = {
    uri_url : string;
    uri_frag : string option
  }
-(*e: enum Uri.abs_uri *)
+(*e: type Uri.abs_uri *)
 
 (*s: signature Uri.is_absolute *)
 val is_absolute : string -> bool

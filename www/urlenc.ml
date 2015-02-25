@@ -1,4 +1,5 @@
 (*s: ./www/urlenc.ml *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,8 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header v6 *)
 
-(* $Id: urlenc.ml,v 1.7 1998/03/31 12:34:39 rouaix Exp $ *)
 open Mstring
 
 (*s: function Urlenc.hexchar *)

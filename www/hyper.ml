@@ -7,13 +7,13 @@ open Url
 (* An hypertext(media) link on the Web *)
 
 (* This is currently for HTTP and derived, but ... *)
-(*s: enum Hyper.link_method (./www/hyper.ml) *)
+(*s: type Hyper.link_method *)
 (* Contains only the one we support *)
 type link_method =
    GET 
  | HEAD
  | POST of string
-(*e: enum Hyper.link_method (./www/hyper.ml) *)
+(*e: type Hyper.link_method *)
 
 (*s: function Hyper.parse_method *)
 let parse_method = function
@@ -24,24 +24,24 @@ let parse_method = function
 (*e: function Hyper.parse_method *)
 
 
-(*s: enum Hyper.link (./www/hyper.ml) *)
+(*s: type Hyper.link *)
 type link = {
   h_uri : string;
   h_context: string option;
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
   }
-(*e: enum Hyper.link (./www/hyper.ml) *)
+(*e: type Hyper.link *)
 
-(*s: enum Hyper.link_error (./www/hyper.ml) *)
+(*s: type Hyper.link_error *)
 type link_error =
     LinkResolve of string
   | UrlLexing of string * int
-(*e: enum Hyper.link_error (./www/hyper.ml) *)
+(*e: type Hyper.link_error *)
 
-(*s: exception Hyper.Invalid_link (./www/hyper.ml) *)
+(*s: exception Hyper.Invalid_link *)
 exception Invalid_link of link_error
-(*e: exception Hyper.Invalid_link (./www/hyper.ml) *)
+(*e: exception Hyper.Invalid_link *)
 
 (* parsed Absolute URL + URL -> Absolute URL *)
 (*s: function Hyper.urlconcat *)

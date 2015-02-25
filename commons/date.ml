@@ -1,4 +1,5 @@
 (*s: ./commons/date.ml *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,8 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header v6 *)
 
-(* $Id: date.ml,v 1.2 1997/06/25 14:06:02 rouaix Exp $ *)
 open Printf
 open Unix
 

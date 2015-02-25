@@ -1,4 +1,5 @@
 (*s: ./commons/msys.ml *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,12 +10,10 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: msys.ml,v 1.3 1997/10/23 16:06:44 furuse Exp $ *)
+(*e: copyright header v6 *)
 
 open Printf
 open Unix
-
 
 (* Tilde substitution *)
 

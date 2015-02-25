@@ -7,7 +7,7 @@ open Http_headers
 open Url
 open Www
 
-(*s: enum Auth.authSpace (./http/auth.ml) *)
+(*s: type Auth.authSpace (./http/auth.ml) *)
 (* Authorizations are remembered on the base of the directory url and realm
  * They are kept during the whole MMM session, with expiration
  *)
@@ -19,14 +19,14 @@ type authSpace = {
    auth_dir : string;
    auth_realm : string
   }
-(*e: enum Auth.authSpace (./http/auth.ml) *)
+(*e: type Auth.authSpace (./http/auth.ml) *)
 
-(*s: enum Auth.authEntry *)
+(*s: type Auth.authEntry *)
 type authEntry = {
    auth_cookie : string;
    mutable auth_lastused : float
    }
-(*e: enum Auth.authEntry *)
+(*e: type Auth.authEntry *)
 
 (*s: constant Auth.authorizations *)
 let authorizations = Hashtbl.create 37

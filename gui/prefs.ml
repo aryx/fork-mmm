@@ -51,7 +51,7 @@ let class_name = resource_name
   (* it is not correct but works *)
 (*e: constant Prefs.class_name *)
 
-(*s: enum Prefs.pref_type (./gui/prefs.ml) *)
+(*s: type Prefs.pref_type (./gui/prefs.ml) *)
 (*
  * Various predefined preference types
  *)
@@ -63,9 +63,9 @@ type pref_type =
  | AbstractType of (Textvariable.textVariable -> unit) * 
                 (Textvariable.textVariable -> unit)
                  (* init, set  as defined below *)
-(*e: enum Prefs.pref_type (./gui/prefs.ml) *)
+(*e: type Prefs.pref_type (./gui/prefs.ml) *)
 
-(*s: enum Prefs.pref (./gui/prefs.ml) *)
+(*s: type Prefs.pref (./gui/prefs.ml) *)
 (*
  * Support for interactive setting of a preference 
  *)
@@ -78,7 +78,7 @@ type pref = {
   pref_name : string;	 (* internal name (shall not contain :) *)
   resource_name : string (* resource name (shall not contain :) *)
 }
-(*e: enum Prefs.pref (./gui/prefs.ml) *)
+(*e: type Prefs.pref (./gui/prefs.ml) *)
 
 
 (*s: function Prefs.init_pref *)
@@ -367,7 +367,7 @@ let save_file prefmaps f =
       pref_error (I18n.sprintf "Can't open preference file: %s (%s)" f s)
 (*e: function Prefs.save_file *)
       
-(*s: enum Prefs.pref_family (./gui/prefs.ml) *)
+(*s: type Prefs.pref_family (./gui/prefs.ml) *)
 (* Builds a family of preferences *)
 type pref_family =
   {family_widget: Widget.widget;    (* the main widget for this family *)
@@ -376,7 +376,7 @@ type pref_family =
    family_load : unit -> unit;  (* loads from persistent storage *)
    family_title : string;
   }
-(*e: enum Prefs.pref_family (./gui/prefs.ml) *)
+(*e: type Prefs.pref_family (./gui/prefs.ml) *)
 
 (*s: function Prefs.family *)
 (* Computing a family from the predefined preference types *)

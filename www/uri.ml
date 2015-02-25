@@ -2,12 +2,14 @@
 open Printf
 open Mstring
 
-(*s: enum Uri.abs_uri (./www/uri.ml) *)
+(*s: type Uri.abs_uri *)
+(* URI utilities. RFC 1630 *)
+
 type abs_uri = {
    uri_url : string;
    uri_frag : string option
  }
-(*e: enum Uri.abs_uri (./www/uri.ml) *)
+(*e: type Uri.abs_uri *)
 
 (*s: function Uri.is_absolute *)
 (* RFC 1630, partial forms *)

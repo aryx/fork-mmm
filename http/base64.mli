@@ -1,4 +1,5 @@
 (*s: ./http/base64.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: base64.mli,v 1.1 1996/10/22 13:12:31 rouaix Exp $ *)
+(*e: copyright header v6 *)
 
 (*s: signature Base64.encode *)
 (* Base64 encoding (ONLY for Basic authentication) *)

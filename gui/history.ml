@@ -2,7 +2,7 @@
 (* History *)
 open Document
 
-(*s: enum History.history_entry *)
+(*s: type History.history_entry *)
 (* 
    Linear history: we keep going adding to the end of the list,
    EXCEPT when you go back and then on a new link.
@@ -15,16 +15,16 @@ type history_entry = {
   h_prev : history_entry option;
   mutable h_next : history_entry option
   }
-(*e: enum History.history_entry *)
+(*e: type History.history_entry *)
 
-(*s: enum History.t *)
+(*s: type History.t *)
 type t = {
   h_key : int;
   mutable h_start : history_entry;
   mutable h_current: history_entry;
   mutable h_first : bool
   }
-(*e: enum History.t *)
+(*e: type History.t *)
 
 (*s: function History.contents *)
 let contents h =

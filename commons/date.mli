@@ -1,4 +1,5 @@
 (*s: ./commons/date.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,10 +10,9 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header v6 *)
 
 (*s: signature Date.asc_wkday *)
-(* $Id: date.mli,v 1.3 1998/12/08 15:28:07 furuse Exp $ *)
-
 val asc_wkday : int -> string
     (* [asc_wkday n] maps 0..6 to Sun..Sat *)
 (*e: signature Date.asc_wkday *)

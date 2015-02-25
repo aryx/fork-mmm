@@ -1,12 +1,15 @@
 (*s: ./www/url.mli *)
-(*s: enum Url.protocol *)
+(*s: type Url.protocol *)
 (* URLs as defined by RFC 1738 *)
 
 type protocol =
-   FTP | HTTP | GOPHER | MAILTO | NEWS | NNTP | TELNET | WAIS
- | FILE | PROSPERO
+ | HTTP 
+ | FILE | MAILTO | FTP
+ | GOPHER | NEWS | NNTP | WAIS
+ | TELNET 
+ | PROSPERO
  | OtherProtocol of string
-(*e: enum Url.protocol *)
+(*e: type Url.protocol *)
 
 (*s: signature Url.string_of_protocol *)
 val string_of_protocol: protocol -> string
@@ -14,18 +17,22 @@ val string_of_protocol: protocol -> string
 (*e: signature Url.string_of_protocol *)
 
 (* Not all components are used for all protocols. See RFC. *)
-(*s: enum Url.t *)
+(*s: type Url.t *)
 (* Relative adressing in anchors, fragments are NOT URLs, but URI *)
 type t = 
   { mutable protocol : protocol;
+
     mutable user : string option;
     mutable password: string option;
+
     mutable host : string option;
     mutable port : int option;
+
     mutable path : string option;
+
     mutable search: string option
   }
-(*e: enum Url.t *)
+(*e: type Url.t *)
 
 (*s: signature Url.string_of *)
 (* These are used to get "normalized urls" *)

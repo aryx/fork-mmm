@@ -9,12 +9,12 @@ open Http
 open Http_headers
 open Auth
 
-(*s: enum Retrieve.retrievalStatus (./retrieve/retrieve.ml) *)
+(*s: type Retrieve.retrievalStatus (./retrieve/retrieve.ml) *)
 type retrievalStatus =
   Started of (unit -> unit)  | InUse
-(*e: enum Retrieve.retrievalStatus (./retrieve/retrieve.ml) *)
+(*e: type Retrieve.retrievalStatus (./retrieve/retrieve.ml) *)
 
-(*s: enum Retrieve.behaviour (./retrieve/retrieve.ml) *)
+(*s: type Retrieve.behaviour (./retrieve/retrieve.ml) *)
 (* We should implement the proper behaviours for all return codes
  * defined in the HTTP/1.0 protocol draft. 
  * Return codes are HTTP specific, but since all protocols are more or
@@ -29,7 +29,7 @@ type behaviour =
  | Error of string           (* same as stop, but it's an error *)
  | Restart of (handle -> handle)  (* restart the same request, but apply
                      transformation on the continuation *)
-(*e: enum Retrieve.behaviour (./retrieve/retrieve.ml) *)
+(*e: type Retrieve.behaviour (./retrieve/retrieve.ml) *)
 
 (*s: constant Retrieve.http_process *)
 (*

@@ -1,4 +1,5 @@
 (*s: ./commons/ebuffer.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: ebuffer.mli,v 1.1 1996/10/22 13:12:42 rouaix Exp $ *)
+(*e: copyright header v6 *)
 
 (* Extensible buffers *)
 

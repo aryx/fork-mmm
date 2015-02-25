@@ -4,17 +4,17 @@ open Feed
 open Www
 open Hyper
 
-(*s: enum Document.logger *)
+(*s: type Document.logger *)
 type logger = {
   logger_destroy : bool -> unit;
   logger_progress : int -> unit;
   logger_msg : string -> unit;
   logger_end : string -> unit
 }
-(*e: enum Document.logger *)
+(*e: type Document.logger *)
 
-(*s: enum Document.document_id (./www/document.ml) *)
-(* Document Id is a reference to a document in the browser
+(*s: type Document.document_id *)
+(* Document Id is a reference to a document in the browser.
    For some documents, e.g. results of POST queries, the URL is not a
    sufficient description. Stamp is 0 for unique documents.
 *)
@@ -22,43 +22,59 @@ type document_id = {
   document_url : Url.t;
   document_stamp : int
   }
-(*e: enum Document.document_id (./www/document.ml) *)
+(*e: type Document.document_id *)
 
 module DocumentIDSet =
   Set.Make(struct type t = document_id let compare = compare end)
 
-(*s: enum Document.handle (./www/document.ml) *)
+(*s: type Document.handle *)
+(* This is passed around by request continuations. It represents a handle
+   on a connexion for retrieving a document *)
 type handle = {
   document_id : document_id;
   document_referer : string option;
+    (* URL of refering document, if any *)
   mutable document_status : int;
+    (* Status code of response *)
   mutable document_headers : string list;
+    (* HTTP headers of document, or faked ones *)
   document_feed : Feed.t;
+    (* where to get the data *)
   document_fragment : string option;
+    (* fragment (#foo) if any *)
   mutable document_logger : logger
+    (* how to log information relative to this document processing *)
 }
-(*e: enum Document.handle (./www/document.ml) *)
+(*e: type Document.handle *)
 
-(*s: enum Document.document_continuation (./www/document.ml) *)
+(*s: type Document.document_continuation *)
 type document_continuation = {
   document_process : handle -> unit;
-  document_finish : bool -> unit
+    (* What to do one we have a dh on the real document *)
+  document_finish :  bool -> unit
+    (* What to do if a request does not yield a document *)
 }
-(*e: enum Document.document_continuation (./www/document.ml) *)
+(*e: type Document.document_continuation *)
 
-(*s: enum Document.document_data (./www/document.ml) *)
+(*s: type Document.document_data *)
+(*
+ * Information on a document, as could be requested by "other" clients,
+ * that is clients not directly on the chain of processes dealing with
+ * the handle
+ *)
+
 type document_data =
    MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
-(*e: enum Document.document_data (./www/document.ml) *)
+(*e: type Document.document_data *)
 
-(*s: enum Document.document (./www/document.ml) *)
+(*s: type Document.document *)
 type document = {
   document_address : Url.t;
   mutable document_data : document_data;
   document_info : string list
   }
-(*e: enum Document.document (./www/document.ml) *)
+(*e: type Document.document *)
 
 (*s: constant Document.stamp_counter *)
 let stamp_counter = ref 0
@@ -149,10 +165,11 @@ let add_log dh initmsg abort =
      Timer.set 3000
       (fun () -> if Winfo.exists t then (Wm.deiconify t; iconified := false))
 (*e: function Document.add_log *)
-
+(*s: functions Document.xxx_log *)
 let put_log dh = dh.document_logger.logger_msg
-and destroy_log dh = dh.document_logger.logger_destroy
-and progress_log dh = dh.document_logger.logger_progress
+let destroy_log dh = dh.document_logger.logger_destroy
+let progress_log dh = dh.document_logger.logger_progress
+(*e: functions Document.xxx_log *)
 (*s: function Document.end_log *)
 let end_log dh msg =
     dh.document_logger.logger_end msg;
@@ -160,7 +177,7 @@ let end_log dh msg =
 (*e: function Document.end_log *)
 
 
-(*s: enum Document.display_info *)
+(*s: type Document.display_info *)
 type display_info = {
     di_abort : unit -> unit;
     di_destroy : unit -> unit;
@@ -170,6 +187,6 @@ type display_info = {
     di_source : unit -> unit;
     di_load_images : unit -> unit
 }
-(*e: enum Document.display_info *)
+(*e: type Document.display_info *)
 
 (*e: ./www/document.ml *)

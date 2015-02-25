@@ -40,9 +40,9 @@ class tags (thtml) =
 
   (* flush tag definitions *)
   method flush =
-    onhold +> List.rev +> List.iter (fun (t,d) -> 
+    onhold |> List.rev |> List.iter (fun (t,d) -> 
       try Text.tag_configure wid t d with TkError _ -> ());
-    decorations +> List.rev +> List.iter (fun (t,d,e) -> 
+    decorations |> List.rev |> List.iter (fun (t,d,e) -> 
       Text.tag_add wid t d e);
     onhold <- [];
     decorations <- []
@@ -67,7 +67,7 @@ class anchortags (thtml) =
 
   method flush =
     tags#flush;
-    mappings +> List.iter (fun (s,e,h) ->
+    mappings |> List.iter (fun (s,e,h) ->
       let loc1 = Text.index wid s
       and loc2 = Text.index wid e
       in

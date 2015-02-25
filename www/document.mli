@@ -1,6 +1,6 @@
 (*s: ./www/document.mli *)
-(*s: enum Document.document_id *)
-(* Document Id is a reference to a document in the browser
+(*s: type Document.document_id *)
+(* Document Id is a reference to a document in the browser.
    For some documents, e.g. results of POST queries, the URL is not a
    sufficient description. Stamp is 0 for unique documents.
 *)
@@ -8,7 +8,7 @@ type document_id = {
   document_url : Url.t;
   document_stamp : int
   }
-(*e: enum Document.document_id *)
+(*e: type Document.document_id *)
 
 (*s: signature Document.no_stamp *)
 val no_stamp : int
@@ -22,7 +22,7 @@ type logger
 val tty_logger : logger
 (*e: signature Document.tty_logger *)
 
-(*s: enum Document.handle *)
+(*s: type Document.handle *)
 (* This is passed around by request continuations. It represents a handle
    on a connexion for retrieving a document *)
 type handle = {
@@ -40,18 +40,18 @@ type handle = {
   mutable document_logger : logger
     (* how to log information relative to this document processing *)
 }
-(*e: enum Document.handle *)
+(*e: type Document.handle *)
 
-(*s: enum Document.document_continuation *)
+(*s: type Document.document_continuation *)
 type document_continuation = {
   document_process : handle -> unit;
     (* What to do one we have a dh on the real document *)
   document_finish :  bool -> unit
     (* What to do if a request does not yield a document *)
 }
-(*e: enum Document.document_continuation *)
+(*e: type Document.document_continuation *)
 
-(*s: enum Document.document_data *)
+(*s: type Document.document_data *)
 (*
  * Information on a document, as could be requested by "other" clients,
  * that is clients not directly on the chain of processes dealing with
@@ -61,15 +61,15 @@ type document_continuation = {
 type document_data =
    MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
-(*e: enum Document.document_data *)
+(*e: type Document.document_data *)
 
-(*s: enum Document.document *)
+(*s: type Document.document *)
 type document = {
   document_address : Url.t;
   mutable document_data : document_data;
   document_info : string list
   }
-(*e: enum Document.document *)
+(*e: type Document.document *)
 
 module DocumentIDSet : Set.S with type elt = document_id
 

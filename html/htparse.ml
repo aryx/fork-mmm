@@ -7,10 +7,10 @@ open Printf
 let _ = Html.verbose := false (* we do our own error report *)
 (*e: toplevel Htparse._1 *)
 
-(*s: enum Htparse.mode *)
+(*s: type Htparse.mode *)
 type mode =
   Check | Indent of int | Nesting
-(*e: enum Htparse.mode *)
+(*e: type Htparse.mode *)
 
 (*s: constant Htparse.verbose *)
 let verbose = ref false

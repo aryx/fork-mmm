@@ -13,7 +13,7 @@ val add_viewer :
 val rem_viewer :  Http_headers.media_type -> unit
 (*e: signature Embed.rem_viewer *)
 
-(*s: enum Embed.embobject *)
+(*s: type Embed.embobject *)
 (* Embedded objects *)
 type embobject = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
@@ -23,7 +23,7 @@ type embobject = {
   embed_map : Maps.t;                  (* associated map *)
   embed_alt : string
  }
-(*e: enum Embed.embobject *)
+(*e: type Embed.embobject *)
 
 (*s: signature Embed.add *)
 val add : embobject -> unit

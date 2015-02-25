@@ -29,12 +29,12 @@ let mpoly_data =
 14.239914, -5.200000]
 (*e: constant Tachy_space.mpoly_data *)
 
-(*s: enum Tachy_space.vector *)
+(*s: type Tachy_space.vector *)
 type vector = float * float * float
-(*e: enum Tachy_space.vector *)
-(*s: enum Tachy_space.matrix *)
+(*e: type Tachy_space.vector *)
+(*s: type Tachy_space.matrix *)
 type matrix = vector * vector * vector
-(*e: enum Tachy_space.matrix *)
+(*e: type Tachy_space.matrix *)
 
 let x_rotation a = let c = cos a and s = sin a in
     ((1.0,0.0,0.0), (0.0,c,s), (0.0,-.s,c))
@@ -53,14 +53,14 @@ let pi = 3.1415926
 let log10 = log 10.0 
 (*e: constant Tachy_space.log10 *)
 
-(*s: enum Tachy_space.ball *)
+(*s: type Tachy_space.ball *)
 type ball = {
   tag : Tk.tagOrId;
   mutable x : float;
   mutable y : float;
   mutable z : float
  }
-(*e: enum Tachy_space.ball *)
+(*e: type Tachy_space.ball *)
 
 class space_tachy (top : Widget.widget) =
  object (self)

@@ -1,24 +1,24 @@
 (*s: ./display/fonts.mli *)
 
-(*s: enum Fonts.fontInfo *)
+(*s: type Fonts.fontInfo *)
 type fontInfo =
   | Family of string
   | Weight of string
   | Slant of string
   | FontIndex of int
   | FontDelta of int
-(*e: enum Fonts.fontInfo *)
+(*e: type Fonts.fontInfo *)
 
-(*s: enum Fonts.fontAttrs *)
+(*s: type Fonts.fontAttrs *)
 type fontAttrs = fontInfo list
-(*e: enum Fonts.fontAttrs *)
+(*e: type Fonts.fontAttrs *)
 
-(*s: enum Fonts.fontDesc *)
+(*s: type Fonts.fontDesc *)
 type fontDesc = { 
   pattern: Jpf_font.pattern;
   mutable pxlsz: int;
 }
-(*e: enum Fonts.fontDesc *)
+(*e: type Fonts.fontDesc *)
 
 (*s: signature Fonts.default *)
 val default: fontDesc ref

@@ -14,9 +14,9 @@ val new_data : unit -> t
      *)
 (*e: signature Lexhtml.new_data *)
 
-(*s: enum Lexhtml.warnings *)
+(*s: type Lexhtml.warnings *)
 type warnings = (string * int) list
-(*e: enum Lexhtml.warnings *)
+(*e: type Lexhtml.warnings *)
 
 (*s: signature Lexhtml.html *)
 val html : Lexing.lexbuf -> t -> warnings * Html.token * Html.location

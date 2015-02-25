@@ -8,11 +8,11 @@ val debug : bool ref
 val strict_32 : bool ref
 (*e: signature Table.strict_32 *)
 
-(*s: enum Table.cell_type *)
+(*s: type Table.cell_type *)
 type cell_type = HeaderCell | DataCell
-(*e: enum Table.cell_type *)
+(*e: type Table.cell_type *)
 
-(*s: enum Table.t *)
+(*s: type Table.t *)
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -22,7 +22,7 @@ type t = {
   new_cell : cell_type -> Html.tag -> Widget.widget -> string -> Htmlfmt.width_constraint;
   bound : unit -> bool
   }
-(*e: enum Table.t *)
+(*e: type Table.t *)
 
 (*s: signature Table.create *)
 val create : Widget.widget -> Html.tag -> Htmlfmt.width_constraint -> t

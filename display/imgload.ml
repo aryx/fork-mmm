@@ -10,13 +10,13 @@ open Embed
 open Img
 open Viewers
 
-(*s: enum Imgload.mode (./display/imgload.ml) *)
+(*s: type Imgload.mode (./display/imgload.ml) *)
 (* Images are embedded objects, with a twist *)
 type mode =
     DuringDoc
   | AfterDocAuto
   | AfterDocManual
-(*e: enum Imgload.mode (./display/imgload.ml) *)
+(*e: type Imgload.mode (./display/imgload.ml) *)
 
 (*s: constant Imgload.mode *)
 (* Preference settings *)

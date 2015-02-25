@@ -3,27 +3,27 @@ open Tk80
 open Tk
 open Jpf_font
 
-(*s: enum Fonts.fontDesc (./display/fonts.ml) *)
+(*s: type Fonts.fontDesc (./display/fonts.ml) *)
 (* Font manipulation *)
 
 type fontDesc = 
     { pattern: Jpf_font.pattern;
       mutable pxlsz: int (* not pxlsz, but font index *)
     }
-(*e: enum Fonts.fontDesc (./display/fonts.ml) *)
+(*e: type Fonts.fontDesc (./display/fonts.ml) *)
 
-(*s: enum Fonts.fontInfo (./display/fonts.ml) *)
+(*s: type Fonts.fontInfo (./display/fonts.ml) *)
 type fontInfo =
    Family of string
  | Weight of string
  | Slant of string
  | FontIndex of int
  | FontDelta of int
-(*e: enum Fonts.fontInfo (./display/fonts.ml) *)
+(*e: type Fonts.fontInfo (./display/fonts.ml) *)
 
-(*s: enum Fonts.fontAttrs (./display/fonts.ml) *)
+(*s: type Fonts.fontAttrs (./display/fonts.ml) *)
 type fontAttrs = fontInfo list
-(*e: enum Fonts.fontAttrs (./display/fonts.ml) *)
+(*e: type Fonts.fontAttrs (./display/fonts.ml) *)
 
 (*s: function Fonts.copy *)
 let copy fd = { pattern= Jpf_font.copy fd.pattern;

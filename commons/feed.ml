@@ -1,10 +1,10 @@
 (*s: ./commons/feed.ml *)
-(*s: enum Feed.internal (./commons/feed.ml) *)
+(*s: type Feed.internal (./commons/feed.ml) *)
 (* An abstract notion of connection *)
 type internal = Unix.file_descr
-(*e: enum Feed.internal (./commons/feed.ml) *)
+(*e: type Feed.internal (./commons/feed.ml) *)
 
-(*s: enum Feed.t (./commons/feed.ml) *)
+(*s: type Feed.t (./commons/feed.ml) *)
 type t = {
   feed_read : string -> int -> int -> int;
   feed_schedule : (unit -> unit) -> unit;
@@ -12,7 +12,7 @@ type t = {
   feed_close : unit -> unit;
   feed_internal : internal  
   }
-(*e: enum Feed.t (./commons/feed.ml) *)
+(*e: type Feed.t (./commons/feed.ml) *)
 
 (*s: function Feed.of_fd *)
 (* We should distinguish internal/external connections *)

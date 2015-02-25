@@ -2,32 +2,32 @@
 (* An hypertext(media) link on the Web *)
 
 (* This is currently for HTTP and derived, but ... *)
-(*s: enum Hyper.link_method *)
+(*s: type Hyper.link_method *)
 (* Contains only the one we support *)
 type link_method =
    GET 
  | HEAD
  | POST of string
-(*e: enum Hyper.link_method *)
+(*e: type Hyper.link_method *)
 
 (*s: signature Hyper.parse_method *)
 val parse_method : string -> link_method
 (*e: signature Hyper.parse_method *)
 
-(*s: enum Hyper.link *)
+(*s: type Hyper.link *)
 type link = {
   h_uri : string;
   h_context: string option;
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
   }
-(*e: enum Hyper.link *)
+(*e: type Hyper.link *)
 
-(*s: enum Hyper.link_error *)
+(*s: type Hyper.link_error *)
 type link_error =
     LinkResolve of string
   | UrlLexing of string * int
-(*e: enum Hyper.link_error *)
+(*e: type Hyper.link_error *)
 
 (*s: exception Hyper.Invalid_link *)
 exception Invalid_link of link_error

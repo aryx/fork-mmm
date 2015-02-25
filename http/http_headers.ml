@@ -181,36 +181,36 @@ let rec rem_contentencoding = function
  * Details for specific headers
  *)
 
-(*s: enum Http_headers.authScheme (./http/http_headers.ml) *)
+(*s: type Http_headers.authScheme (./http/http_headers.ml) *)
 (* Authorisation headers *)
 type authScheme =
     AuthBasic
   | AuthExtend of string
-(*e: enum Http_headers.authScheme (./http/http_headers.ml) *)
+(*e: type Http_headers.authScheme (./http/http_headers.ml) *)
 
-(*s: enum Http_headers.authChallenge (./http/http_headers.ml) *)
+(*s: type Http_headers.authChallenge (./http/http_headers.ml) *)
 type authChallenge =
     { challenge_scheme : authScheme;
       challenge_realm : string;
       challenge_params: (string * string) list
     }
-(*e: enum Http_headers.authChallenge (./http/http_headers.ml) *)
+(*e: type Http_headers.authChallenge (./http/http_headers.ml) *)
 
-(*s: enum Http_headers.media_parameter (./http/http_headers.ml) *)
+(*s: type Http_headers.media_parameter (./http/http_headers.ml) *)
 (* Media types *)
 
 type media_parameter = string * string
-(*e: enum Http_headers.media_parameter (./http/http_headers.ml) *)
-(*s: enum Http_headers.media_type (./http/http_headers.ml) *)
+(*e: type Http_headers.media_parameter (./http/http_headers.ml) *)
+(*s: type Http_headers.media_type (./http/http_headers.ml) *)
 type media_type = string * string
-(*e: enum Http_headers.media_type (./http/http_headers.ml) *)
+(*e: type Http_headers.media_type (./http/http_headers.ml) *)
 
-(*s: enum Http_headers.hint (./http/http_headers.ml) *)
+(*s: type Http_headers.hint (./http/http_headers.ml) *)
 (* Hints : Associates MIME type or encoding to suffix *)
 type hint =
     ContentType of header
   | ContentEncoding of header
-(*e: enum Http_headers.hint (./http/http_headers.ml) *)
+(*e: type Http_headers.hint (./http/http_headers.ml) *)
 
 (*s: constant Http_headers.suffixes *)
 let suffixes = (Hashtbl.create 101 : (string, hint) Hashtbl.t)

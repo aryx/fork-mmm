@@ -40,12 +40,12 @@ val kill : document_id -> unit
 val postmortem : unit -> unit
 (*e: signature Cache.postmortem *)
 
-(*s: enum Cache.cache_fill *)
+(*s: type Cache.cache_fill *)
 type cache_fill = {
   cache_write : string -> int -> int -> unit;
   cache_close : unit -> unit
  }
-(*e: enum Cache.cache_fill *)
+(*e: type Cache.cache_fill *)
 
 (*s: exception Cache.DontCache *)
 exception DontCache

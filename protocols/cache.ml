@@ -33,14 +33,14 @@ and current = ref 0
 let cutlinks = ref []
 (*e: constant Cache.cutlinks *)
 
-(*s: enum Cache.cache_fill (./protocols/cache.ml) *)
+(*s: type Cache.cache_fill (./protocols/cache.ml) *)
 type cache_fill = {
   cache_write : string -> int -> int -> unit;
   cache_close : unit -> unit
  }
-(*e: enum Cache.cache_fill (./protocols/cache.ml) *)
+(*e: type Cache.cache_fill (./protocols/cache.ml) *)
 
-(*s: enum Cache.entry *)
+(*s: type Cache.entry *)
 (* A cache entry *)
 type entry = {
   mutable cache_document : document;
@@ -52,7 +52,7 @@ type entry = {
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
        *) (* JPF: it is now float! max_int -> max_float *)
   }
-(*e: enum Cache.entry *)
+(*e: type Cache.entry *)
 
 (*s: exception Cache.DontCache (./protocols/cache.ml) *)
 exception DontCache

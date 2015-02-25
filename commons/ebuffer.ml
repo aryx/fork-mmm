@@ -1,4 +1,5 @@
 (*s: ./commons/ebuffer.ml *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,16 +10,15 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header v6 *)
 
-(* $Id: ebuffer.ml,v 1.1 1996/10/22 13:12:41 rouaix Exp $ *)
-
-(*s: enum Ebuffer.t *)
+(*s: type Ebuffer.t *)
 (* Extensible buffers *)
 type t = {
     mutable buffer : string;
     mutable pos : int;
     mutable len : int}
-(*e: enum Ebuffer.t *)
+(*e: type Ebuffer.t *)
 
 (*s: function Ebuffer.create *)
 let create n = {

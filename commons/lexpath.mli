@@ -1,4 +1,5 @@
 (*s: ./commons/lexpath.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: lexpath.mli,v 1.1 1996/10/22 13:12:46 rouaix Exp $ *)
+(*e: copyright header v6 *)
 
 (*s: signature Lexpath.path_components *)
 (* Path lexer

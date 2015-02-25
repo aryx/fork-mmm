@@ -104,36 +104,36 @@ val status_message : int -> string
  * Details for specific headers
  *)
 
-(*s: enum Http_headers.authScheme *)
+(*s: type Http_headers.authScheme *)
 (* Authorisation headers *)
 type authScheme =
     AuthBasic
   | AuthExtend of string
-(*e: enum Http_headers.authScheme *)
+(*e: type Http_headers.authScheme *)
 
-(*s: enum Http_headers.authChallenge *)
+(*s: type Http_headers.authChallenge *)
 type authChallenge =
     { challenge_scheme : authScheme;
       challenge_realm : string;
       challenge_params: (string * string) list
     }
-(*e: enum Http_headers.authChallenge *)
+(*e: type Http_headers.authChallenge *)
 
-(*s: enum Http_headers.media_parameter *)
+(*s: type Http_headers.media_parameter *)
 (* Media types *)
 
 type media_parameter = string * string
-(*e: enum Http_headers.media_parameter *)
-(*s: enum Http_headers.media_type *)
+(*e: type Http_headers.media_parameter *)
+(*s: type Http_headers.media_type *)
 type media_type = string * string
-(*e: enum Http_headers.media_type *)
+(*e: type Http_headers.media_type *)
 
-(*s: enum Http_headers.hint *)
+(*s: type Http_headers.hint *)
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
     ContentType of header
   | ContentEncoding of header
-(*e: enum Http_headers.hint *)
+(*e: type Http_headers.hint *)
 
 (*s: signature Http_headers.hints *)
 val hints : string -> header list

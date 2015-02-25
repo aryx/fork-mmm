@@ -1,23 +1,23 @@
 (*s: ./html/html.mli *)
-(*s: enum Html.attribute_name *)
+(*s: type Html.attribute_name *)
 (* HTML tokens *)
 type attribute_name = string 
-(*e: enum Html.attribute_name *)
-(*s: enum Html.attribute_value *)
+(*e: type Html.attribute_name *)
+(*s: type Html.attribute_value *)
 type attribute_value = string
-(*e: enum Html.attribute_value *)
-(*s: enum Html.attributes *)
+(*e: type Html.attribute_value *)
+(*s: type Html.attributes *)
 type attributes = (attribute_name * attribute_value) list
-(*e: enum Html.attributes *)
+(*e: type Html.attributes *)
 
-(*s: enum Html.tag *)
+(*s: type Html.tag *)
 type tag = {
   tag_name : string;
   attributes: attributes
 }
-(*e: enum Html.tag *)
+(*e: type Html.tag *)
 
-(*s: enum Html.token *)
+(*s: type Html.token *)
 type token =
    PCData of string
  | CData of string
@@ -26,11 +26,11 @@ type token =
  | Comment of string
  | Doctype of string
  | EOF
-(*e: enum Html.token *)
+(*e: type Html.token *)
 
-(*s: enum Html.location *)
+(*s: type Html.location *)
 type location = Loc of int * int
-(*e: enum Html.location *)
+(*e: type Html.location *)
 
 (*s: exception Html.Html_Lexing *)
 exception Html_Lexing of string * int
@@ -88,14 +88,14 @@ val has_attribute : tag -> string -> bool
   (* [has_attribute tag attrib_name] *)
 (*e: signature Html.has_attribute *)
 
-(*s: enum Html.length *)
+(*s: type Html.length *)
 (* HTML length *)
 type length = 
     Nolength
   | LengthPixels of int
   | LengthRatio of float
   | LengthRel of int
-(*e: enum Html.length *)
+(*e: type Html.length *)
       
 (*s: signature Html.length_of_string *)
 val length_of_string : string -> length

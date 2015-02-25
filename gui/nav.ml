@@ -11,7 +11,7 @@ open Http_headers
 open Viewers
 open Embed
 
-(*s: enum Nav.t (./gui/nav.ml) *)
+(*s: type Nav.t (./gui/nav.ml) *)
 (* Navigation *)
 
 type t = {
@@ -25,7 +25,7 @@ type t = {
   nav_add_active : Url.t -> (unit -> unit) -> unit;
   nav_rem_active : Url.t -> unit
  }
-(*e: enum Nav.t (./gui/nav.ml) *)
+(*e: type Nav.t (./gui/nav.ml) *)
 
 (*s: exception Nav.Duplicate *)
 exception Duplicate of Url.t

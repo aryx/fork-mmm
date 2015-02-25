@@ -13,13 +13,13 @@ open Www
 open Hyper
 
 (* The context given to a viewer *)
-(*s: enum Viewers.vparams (./viewers/viewers.ml) *)
+(*s: type Viewers.vparams (./viewers/viewers.ml) *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
-(*e: enum Viewers.vparams (./viewers/viewers.ml) *)
-(*s: enum Viewers.frame_targets (./viewers/viewers.ml) *)
+(*e: type Viewers.vparams (./viewers/viewers.ml) *)
+(*s: type Viewers.frame_targets (./viewers/viewers.ml) *)
 type frame_targets = (string * Widget.widget) list
-(*e: enum Viewers.frame_targets (./viewers/viewers.ml) *)
+(*e: type Viewers.frame_targets (./viewers/viewers.ml) *)
 
 (*s: function Viewers.frame_adopt *)
 let frame_adopt w targets = 
@@ -41,13 +41,13 @@ let frame_fugue targets =
   ff [] targets
 (*e: function Viewers.frame_fugue *)
 
-(*s: enum Viewers.hyper_func (./viewers/viewers.ml) *)
+(*s: type Viewers.hyper_func (./viewers/viewers.ml) *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
   hyper_func : frame_targets -> Hyper.link -> unit
   }
-(*e: enum Viewers.hyper_func (./viewers/viewers.ml) *)
+(*e: type Viewers.hyper_func (./viewers/viewers.ml) *)
 
 class  virtual context ((did : Document.document_id), 
                (v : vparams)) =
@@ -253,20 +253,20 @@ let extern dh ctype =
  * will be passed to metamail.
  *)
 
-(*s: enum Viewers.t (./viewers/viewers.ml) *)
+(*s: type Viewers.t (./viewers/viewers.ml) *)
 (* Definition of an internal viewer *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
-(*e: enum Viewers.t (./viewers/viewers.ml) *)
+(*e: type Viewers.t (./viewers/viewers.ml) *)
 
-(*s: enum Viewers.spec *)
+(*s: type Viewers.spec *)
 type spec =
     Internal of t
   | External         (* pass to metamail *)
   | Save	     (* always save *)
   | Interactive	     (* ask what to do about it *)
-(*e: enum Viewers.spec *)
+(*e: type Viewers.spec *)
 
 (*s: constant Viewers.viewers *)
 let viewers = Hashtbl.create 17

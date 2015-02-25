@@ -1,4 +1,5 @@
 (*s: ./www/urlenc.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,8 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: urlenc.mli,v 1.3 1997/10/15 13:45:07 rouaix Exp $ *)
+(*e: copyright header v6 *)
 
 (*s: signature Urlenc.decode *)
 (* URL encoding *)

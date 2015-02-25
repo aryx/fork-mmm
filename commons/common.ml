@@ -7,6 +7,6 @@ let spf = Printf.sprintf
 module StringSet = Set.Make(struct type t = string let compare = compare end)
 
 (*s: function Common.TODOOPERATOR *)
-let (+>) o f = f o
+let (|>) o f = f o
 (*e: function Common.TODOOPERATOR *)
 (*e: ./commons/common.ml *)

@@ -1,5 +1,5 @@
 (*s: ./www/www.mli *)
-(*s: enum Www.request *)
+(*s: type Www.request *)
 (*
  * Requests
  *)
@@ -8,12 +8,13 @@ type request =  {
     www_link : Hyper.link;        (* the link that produced this request *)
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
+
     mutable www_auth : (string * string) list;  (* basic auth *)
     mutable www_headers : string list;		  (* additional headers *)
     mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t
   }
-(*e: enum Www.request *)
+(*e: type Www.request *)
 
 (*s: exception Www.Invalid_request *)
 exception Invalid_request of request * string

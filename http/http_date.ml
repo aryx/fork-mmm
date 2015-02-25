@@ -1,4 +1,5 @@
 (*s: ./http/http_date.ml *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,14 +10,14 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header v6 *)
 
-(* $Id: http_date.ml,v 1.1 1996/10/22 13:12:33 rouaix Exp $ *)
 open Printf
 open Unix
 open Mstring
 open Date
 
-(*s: enum Http_date.http_time (./http/http_date.ml) *)
+(*s: type Http_date.http_time (./http/http_date.ml) *)
 (* Based on Unix.tm *)
 type http_time =
   { ht_sec : int;                       (* Seconds 0..59 *)
@@ -26,7 +27,7 @@ type http_time =
     ht_mon : int;                       (* Month of year 0..11 *)
     ht_year : int;                      (* Year - 1900 *)
     ht_wday : int }                     (* Day of week (Sunday is 0) *)
-(*e: enum Http_date.http_time (./http/http_date.ml) *)
+(*e: type Http_date.http_time (./http/http_date.ml) *)
 
 (*s: function Http_date.expired *)
 let expired ht =

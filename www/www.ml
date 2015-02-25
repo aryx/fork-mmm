@@ -2,23 +2,26 @@
 open Uri
 open Url
 
-(*s: enum Www.request (./www/www.ml) *)
-type request =
-  { 
-    www_link : Hyper.link;	  (* the link that produced this request *)
-    www_url : Url.t;	  (* parsed version *)
+(*s: type Www.request *)
+(*
+ * Requests
+ *)
+
+type request =  { 
+    www_link : Hyper.link;        (* the link that produced this request *)
+    www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
-    mutable www_auth : (string * string) list;
-    mutable www_headers : string list;
-    mutable www_logging : string -> unit;
+
+    mutable www_auth : (string * string) list;  (* basic auth *)
+    mutable www_headers : string list;		  (* additional headers *)
+    mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t
-
   }
-(*e: enum Www.request (./www/www.ml) *)
+(*e: type Www.request *)
 
-(*s: exception Www.Invalid_request (./www/www.ml) *)
+(*s: exception Www.Invalid_request *)
 exception Invalid_request of request * string
-(*e: exception Www.Invalid_request (./www/www.ml) *)
+(*e: exception Www.Invalid_request *)
 
 (*s: constant Www.sp *)
 let sp = Str.regexp "[ \t\n]"
@@ -64,10 +67,11 @@ module UrlSet =
 (*s: constant Www.active_connexions *)
 let active_connexions = ref UrlSet.empty
 (*e: constant Www.active_connexions *)
-let is_active_cnx url = UrlSet.mem url !active_connexions
-and add_active_cnx url = 
+let is_active_cnx url = 
+  UrlSet.mem url !active_connexions
+let add_active_cnx url = 
   active_connexions := UrlSet.add url !active_connexions
-and rem_active_cnx url =
+let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 
 (*e: ./www/www.ml *)

@@ -5,7 +5,7 @@ open Www
 open Fonts
 open Embed
 
-(*s: enum Htmlfmt.gattr *)
+(*s: type Htmlfmt.gattr *)
 type gattr =
   |  Margin of int
   |  Justification of string
@@ -17,16 +17,16 @@ type gattr =
   |  Spacing of int
   |  Superscript
   |  Lowerscript
-(*e: enum Htmlfmt.gattr *)
+(*e: type Htmlfmt.gattr *)
 
-(*s: enum Htmlfmt.formatterSpec *)
+(*s: type Htmlfmt.formatterSpec *)
 type formatterSpec = 
   | TopFormatter of bool		(* flag is pixel-scrolling mode *)
   | NestedFormatter
   | FrameFormatter of (string * string) list (* decoration ... *)
-(*e: enum Htmlfmt.formatterSpec *)
+(*e: type Htmlfmt.formatterSpec *)
 
-(*s: enum Htmlfmt.formatter *)
+(*s: type Htmlfmt.formatter *)
 type formatter = {
   (* Text primitives of the device *)
   new_paragraph: unit -> unit;  	(* Open a new paragraph *)
@@ -59,7 +59,7 @@ type formatter = {
   (* Re-centering on a fragment *)
   see_frag : string option -> unit;
 }
-(*e: enum Htmlfmt.formatter *)
+(*e: type Htmlfmt.formatter *)
 
 module type GfxHTML = sig
  val create : 
@@ -89,10 +89,10 @@ module type ImgDisplay = sig
    val create : unit -> loader
  end
 
-(*s: enum Htmlfmt.input_kind *)
+(*s: type Htmlfmt.input_kind *)
 (* Form manager *)
 type input_kind = EntryInput | FileInput | OtherInput
-(*e: enum Htmlfmt.input_kind *)
+(*e: type Htmlfmt.input_kind *)
     
 class  virtual form_behaviour : (unit) -> object
     method virtual add_get : input_kind -> (unit -> (string * string) list) -> unit
@@ -129,13 +129,13 @@ module type FormDisplay = sig
  end
 
 
-(*s: enum Htmlfmt.width_constraint *)
+(*s: type Htmlfmt.width_constraint *)
 (* Table manager *)
 type width_constraint =
   | TopWidth				(* toplevel window size*)
   | FixedWidth of int			(* width is given in pixels *)
   | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
-(*e: enum Htmlfmt.width_constraint *)
+(*e: type Htmlfmt.width_constraint *)
 
 module type TableDisplay = sig
     type cell_type = HeaderCell | DataCell

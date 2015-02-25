@@ -2,10 +2,10 @@
 (* Document retrieval *)
 open Document
 
-(*s: enum Retrieve.retrievalStatus *)
+(*s: type Retrieve.retrievalStatus *)
 type retrievalStatus =
   Started of (unit -> unit)  | InUse
-(*e: enum Retrieve.retrievalStatus *)
+(*e: type Retrieve.retrievalStatus *)
 
 (*s: signature Retrieve.f *)
 (* f is supposed to raise only Invalid_url *)
@@ -15,14 +15,14 @@ val f : Www.request ->  (* the request *)
         retrievalStatus
 (*e: signature Retrieve.f *)
 
-(*s: enum Retrieve.behaviour *)
+(*s: type Retrieve.behaviour *)
 type behaviour =
    Ok 
  | Stop of string
  | Retry of Hyper.link
  | Error of string
  | Restart of (handle -> handle)
-(*e: enum Retrieve.behaviour *)
+(*e: type Retrieve.behaviour *)
 
 (*s: signature Retrieve.add_http_processor *)
 val add_http_processor : 

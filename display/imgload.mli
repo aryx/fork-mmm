@@ -1,11 +1,11 @@
 (*s: ./display/imgload.mli *)
 
-(*s: enum Imgload.mode *)
+(*s: type Imgload.mode *)
 type mode =
   | DuringDoc
   | AfterDocAuto
   | AfterDocManual
-(*e: enum Imgload.mode *)
+(*e: type Imgload.mode *)
 
 (*s: signature Imgload.mode *)
 val mode : mode ref

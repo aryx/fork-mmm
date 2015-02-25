@@ -4,7 +4,7 @@
 val form_bg : string ref
 (*e: signature Form.form_bg *)
 
-(*s: enum Form.t *)
+(*s: type Form.t *)
 type t = {
   text_input : Widget.widget -> Html.tag -> unit;
       (* [text_input top tag] *)
@@ -24,7 +24,7 @@ type t = {
   textarea:  Widget.widget -> string -> Html.tag -> unit
       (* [textarea top initial attrs] *)
 }
-(*e: enum Form.t *)
+(*e: type Form.t *)
 
 (*s: signature Form.create *)
 val create: 

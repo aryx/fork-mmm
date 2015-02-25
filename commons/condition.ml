@@ -7,9 +7,9 @@
 
 open Printf
 
-(*s: enum Condition.t *)
+(*s: type Condition.t *)
 type t = Textvariable.textVariable * int ref
-(*e: enum Condition.t *)
+(*e: type Condition.t *)
 
 let create () =
   Textvariable.create(), ref 0

@@ -1,4 +1,5 @@
 (*s: ./http/http_date.mli *)
+(*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
@@ -9,12 +10,11 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: http_date.mli,v 1.2 1998/12/08 15:28:33 furuse Exp $ *)
+(*e: copyright header v6 *)
 
 (* HTTP Date format *)
 
-(*s: enum Http_date.http_time *)
+(*s: type Http_date.http_time *)
 (* Based on Unix.tm *)
 type http_time =
   { ht_sec : int;                       (* Seconds 0..59 *)
@@ -24,7 +24,7 @@ type http_time =
     ht_mon : int;                       (* Month of year 0..11 *)
     ht_year : int;                      (* Year - 1900 *)
     ht_wday : int }                     (* Day of week (Sunday is 0) *)
-(*e: enum Http_date.http_time *)
+(*e: type Http_date.http_time *)
 
 
 (*s: signature Http_date.expired *)

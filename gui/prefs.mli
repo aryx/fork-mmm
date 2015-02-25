@@ -1,5 +1,5 @@
 (*s: ./gui/prefs.mli *)
-(*s: enum Prefs.pref_type *)
+(*s: type Prefs.pref_type *)
 (* Exported so that we can plug applet preferences *)
 type pref_type =
    Bool of bool ref
@@ -9,9 +9,9 @@ type pref_type =
  | AbstractType of (Textvariable.textVariable -> unit) * 
                 (Textvariable.textVariable -> unit)
                  (* init, set *)
-(*e: enum Prefs.pref_type *)
+(*e: type Prefs.pref_type *)
 
-(*s: enum Prefs.pref *)
+(*s: type Prefs.pref *)
 type pref = {
   packed_widget : Widget.widget;
   pref_variable : Textvariable.textVariable;
@@ -19,11 +19,11 @@ type pref = {
   pref_name : string; (* shall not contain : *)
   resource_name : string (* shall not contain : *)
 }
-(*e: enum Prefs.pref *)
+(*e: type Prefs.pref *)
 
 module PrefMap : Map.S with type key = string
 
-(*s: enum Prefs.pref_family *)
+(*s: type Prefs.pref_family *)
 (* A family of preferences *)
 type pref_family =
   {family_widget: Widget.widget;
@@ -32,7 +32,7 @@ type pref_family =
    family_load : unit -> unit;
    family_title : string
   }
-(*e: enum Prefs.pref_family *)
+(*e: type Prefs.pref_family *)
 
 (*s: signature Prefs.bool_pref *)
 val bool_pref : string -> bool ref -> Widget.widget -> pref

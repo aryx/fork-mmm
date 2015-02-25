@@ -1,5 +1,5 @@
 (*s: ./gui/nav.mli *)
-(*s: enum Nav.t *)
+(*s: type Nav.t *)
 type t =
   { nav_id: int;
     nav_viewer_frame: Widget.widget;
@@ -10,7 +10,7 @@ type t =
     nav_new: Hyper.link -> unit;
     nav_add_active: Url.t -> (unit -> unit) -> unit;
     nav_rem_active: Url.t -> unit }
-(*e: enum Nav.t *)
+(*e: type Nav.t *)
 
 (*s: signature Nav.request *)
 val request :
