@@ -49,10 +49,10 @@ let main () =
   Condition.backend := Tk_condition.backend ();
   Low.timer_add_backend := (fun a b -> Timer.add a b |> ignore);
   Low.update_idletasks_backend := Tk.update_idletasks;
-  File_event.add_fileinput_ref := Fileevent.add_fileinput;
-  File_event.remove_fileinput_ref := Fileevent.remove_fileinput;
-  File_event.add_fileoutput_ref := Fileevent.add_fileoutput;
-  File_event.remove_fileoutput_ref := Fileevent.remove_fileoutput;
+  Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
+  Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
+  Fileevent_.add_fileoutput_ref := Fileevent.add_fileoutput;
+  Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
   Document.add_log_backend := Tk_document.add_log;
   Maps.broadcast_backend := Frx_synth.broadcast;
 

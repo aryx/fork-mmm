@@ -31,10 +31,10 @@ let of_fd fd =
   (* In other cases : this is non blocking but not fully threaded. *)
   let special_read buf ofs len =
      (* remove the normal handler *)
-     File_event.remove_fileinput fd; 
+     Fileevent_.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
-     File_event.add_fileinput fd (fun () ->
-     File_event.remove_fileinput fd; (* remove myself *)
+     Fileevent_.add_fileinput fd (fun () ->
+     Fileevent_.remove_fileinput fd; (* remove myself *)
      Condition.set condition);
      (* wait for the condition to happen *)
      Condition.wait condition;
@@ -49,7 +49,7 @@ let of_fd fd =
         call the event loop, otherwise we loose sequentiality of reads *)
      (match !action with
         Some f ->
-      File_event.add_fileinput fd (fun () -> first_read := true; f())
+      Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
       | None -> ());
      (* and return *)
      n

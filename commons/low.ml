@@ -46,14 +46,14 @@ and action = ref (fun _ -> ())
 let add_fileinput fd f =
   incr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  File_event.add_fileinput fd f
+  Fileevent_.add_fileinput fd f
 (*e: function Low.add_fileinput *)
 
 (*s: function Low.remove_fileinput *)
 let remove_fileinput fd =
   decr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  File_event.remove_fileinput fd
+  Fileevent_.remove_fileinput fd
 (*e: function Low.remove_fileinput *)
 
 (* We catch dead children here, to avoid large number of zombies.

@@ -8,7 +8,7 @@ TARGET=lib
 
 # Miscellaneous additional libraries
 SRC= common.ml \
-  file_event.ml \
+  fileevent_.ml \
   low.ml mstring.ml mlist.ml msys.ml \
   ebuffer.ml munix.ml date.ml \
   log.ml \
