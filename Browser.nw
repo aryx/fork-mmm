@@ -159,7 +159,8 @@ Here are other candidates that were considered but ultimately discarded:
 % huge
 \item khtml/webkit/blink (kconqueror, chrome, safari)
 % huge
-\item hubhub
+\item netsurf
+% with subprojects like hubhub, libcss, libdom, etc
 %... was used originally by servo
 \item servo
 % already lots of LOC actually
@@ -170,9 +171,12 @@ Here are other candidates that were considered but ultimately discarded:
 % I have it printed.
 %todo: my todo-browser/ somewhere
 
+%tod:
 %https://github.com/servo/servo/wiki/Relevant-spec-links
 
 %http://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+%todo: 
+%http://www.html5rocks.com/en/tutorials/internals/howbrowserswork/
 
 %todo: look at ocamlnet? more up to date web components?
 
@@ -683,6 +687,7 @@ type document_continuation = {
 
 \section{DOM}
 
+%https://dom.spec.whatwg.org/
 
 \section{Abstract syntax trees}
 
@@ -691,6 +696,8 @@ type document_continuation = {
 % js
 
 \subsection{HTML}
+
+%https://html.spec.whatwg.org/multipage/introduction.html#a-quick-introduction-to-html
 
 <<type Html.tag>>=
 type tag = {
@@ -783,6 +790,10 @@ let has_attribute tag attr =
   || List.mem_assoc (tag.tag_name, attr) default_attributes
 @
 
+
+\subsection{CSS}
+
+\subsection{Javascript}
 
 \section{Protocols}
 
@@ -1521,6 +1532,7 @@ val normalize : string -> string
 
 \section{HTML}
 
+%https://html.spec.whatwg.org/multipage/syntax.html#parsing
 
 
 \subsection{Lexing}
@@ -1537,6 +1549,7 @@ type token =
  | Doctype of string
  | EOF
 @
+% need doctype?
 
 <<type Html.location>>=
 type location = Loc of int * int
@@ -1577,9 +1590,14 @@ val new_data : unit -> t
 val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 @
 
+\subsubsection{Comments}
+
+\subsubsection{Escaped characters}
+
+\subsubsection{Doctype}
 
 
-\subsection{DTDs}
+\subsection{Parsing, the DTD}
 
 % for 3.2
 % html 4.0 and 5.0 has been published
@@ -2458,7 +2476,6 @@ let html_indent name level =
       lexbuf
       (fun _ msg -> Format.print_string (sprintf "ERROR(%s)" msg))
 @
-
 
 
 
@@ -4028,6 +4045,26 @@ let _ =
 \subsection{Tables}
 
 \subsection{Frames}
+
+\chapter{CSS}
+
+%http://www.w3.org/TR/CSS2/
+% (better spec than CSS 3 according to rubeck, more self contained)
+
+%http://www.w3.org/TR/selectors/#specificity
+
+% rules
+% selectors
+
+\section{Lexing}
+
+\section{Parsing}
+
+\chapter{Javascript}
+
+\section{Lexing}
+
+\section{Parsing}
 
 
 \chapter{Other Features}
