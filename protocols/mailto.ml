@@ -32,8 +32,8 @@ let error body =
       Error.default#f (I18n.sprintf "Can't send mail, can't save dead.letter")
 (*e: function Mailto.error *)
 
-  (* if the mail contains a dot line, we're f*cked *)
 (*s: function Mailto.sendmail *)
+(* if the mail contains a dot line, we're f*cked *)
 let sendmail msg =
  let cmd = try Sys.getenv "MMM_MAIL" with Not_found -> "mail" in
  try

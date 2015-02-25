@@ -25,7 +25,7 @@
 %   (harder to understand non functional code using lots of globals)
 
 %thx to this manual, better understand web browsers?:
-% - ??
+% - TODO encodings, accents, base64, iso8559, etc
 
 %history LP-ization:
 % - skeleton, mostly copy paste of Template.nw skeleton
@@ -173,6 +173,8 @@ Here are other candidates that were considered but ultimately discarded:
 %https://github.com/servo/servo/wiki/Relevant-spec-links
 
 %http://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+
+%todo: look at ocamlnet? more up to date web components?
 
 \section{Getting started}
 
@@ -446,7 +448,7 @@ let is_absolute uri =
     Not_found -> false (* absolute must have a : *)
 @
 
-\subsection{URLs}
+\subsection{URLs and protocols}
 % =~ protocol://host@user:port/paths?search
 
 <<type Url.protocol>>=
@@ -622,6 +624,45 @@ let document_id wwwr =
   | _ -> { document_url = wwwr.www_url; document_stamp = no_stamp}
 @
 
+
+
+
+<<module Document.DocumentIDSet>>=
+module DocumentIDSet =
+  Set.Make(struct type t = document_id let compare = compare end)
+@
+
+<<type Document.handle>>=
+(* This is passed around by request continuations. It represents a handle
+   on a connexion for retrieving a document *)
+type handle = {
+  document_id : document_id;
+  document_referer : string option;
+    (* URL of refering document, if any *)
+  mutable document_status : int;
+    (* Status code of response *)
+  mutable document_headers : string list;
+    (* HTTP headers of document, or faked ones *)
+  document_feed : Feed.t;
+    (* where to get the data *)
+  document_fragment : string option;
+    (* fragment (#foo) if any *)
+  mutable document_logger : logger
+    (* how to log information relative to this document processing *)
+}
+@
+
+% important one
+<<type Document.document_continuation>>=
+type document_continuation = {
+  document_process : handle -> unit;
+    (* What to do one we have a dh on the real document *)
+  document_finish :  bool -> unit
+    (* What to do if a request does not yield a document *)
+}
+@
+
+
 \section{DOM}
 
 
@@ -725,7 +766,81 @@ let has_attribute tag attr =
 @
 
 
+\section{Protocols}
+
+<<constant Protos.protos>>=
+let protos = Hashtbl.create 11
+@
+
+<<constant Protos.get>>=
+let get = Hashtbl.find protos
+@
+
+
+<<toplevel Protos._2>>=
+let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
+@
+
+
 \section{HTTP}
+% 1.0.
+% 2.0 just got published recently
+
+<<function Http.req>>=
+let req wr cont =
+  let cnx = request wr cont in
+    (fun () -> cnx#abort)
+@
+
+
+
+<<type Messages.request>>=
+(* Request-Line of a Request *)
+type request = {
+  request_version: string;	(* HTTP/1.0 *)
+  request_method : string;	(* GET, POST, etc... *)
+  request_uri : string		(* the uri *)
+  }
+@
+
+<<type Messages.status>>=
+(* Status-Line of a Response *)
+type status =  { 
+    status_version : string;	(* HTTP/1.0 *)
+    status_code : int;		(* http return codes *)
+    status_message : string	(* http return message *)
+ }
+@
+
+<<type Messages.header>>=
+(* Other headers *)
+type header = string
+@
+
+%(* HTTP messages: requests and responses
+% *  What a client sends to a server is called a request 
+% *  What a server answers is called a response
+% *)
+
+<<type Messages.request_message>>=
+(* HTTP-Message *)
+type request_message = {
+  request : request;
+  request_headers : header list;
+  request_body : string;
+  request_auth : (string * string) option 
+           (* have we authentified the emitter (authtype, authuser) *)
+  }
+@
+
+<<type Messages.response_message>>=
+type response_message = {
+  status : status;
+  response_headers : header list;
+  response_body : string        (* responde body is *not* the document body *)
+  }
+@
+
 
 \chapter{[[main()]]}
 
@@ -849,9 +964,11 @@ let reset () =
 
 \chapter{Navigator Interface}
 % The chrome
+% gui/
 
 
 \chapter{Parsing}
+% www/ html/ 
 
 \section{URLs}
 
@@ -1277,6 +1394,10 @@ val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 
 
 \subsection{DTDs}
+
+% for 3.2
+% html 4.0 and 5.0 has been published
+% TODO: add 4.0 with span element
 
 <<signature module Dtd.Elements>>=
 module Elements : Set.S with type elt = string
@@ -1988,10 +2109,20 @@ let automat dtd action lexbuf error =
 
 %(* Testing the HTML Lexer/evaluator *)
 
+<<type Htparse.mode>>=
+type mode =
+  Check | Indent of int | Nesting
+@
+<<constant Htparse.mode>>=
+let mode = ref Check
+@
+
+
 <<function Htparse.main>>=
 let main () =
   Lang.japan := Lang.is_japanese ();
   Html.init !Lang.japan;
+
   Arg.parse [
      "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";
      "-strict", Arg.Set Lexhtml.strict, "Strict mode";
@@ -2002,10 +2133,11 @@ let main () =
      "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
      ]
      (fun s -> 
-     match !mode with
-       Check -> html_lex s
-         | Indent n -> html_indent s n
-         | Nesting -> html_nest s)
+       match !mode with
+       | Check -> html_lex s
+       | Indent n -> html_indent s n
+       | Nesting -> html_nest s
+       )
      "Usage: htparse <opts> file1.html ... filen.html"
 @
 
@@ -2014,9 +2146,263 @@ let _ = Printexc.catch main ()
 @
 
 
-\section{HTTP headers}
+<<function Htparse.html_lex>>=
+let html_lex name =
+  let ic = open_in name in
+  let lexbuf, find_line = line_reporting ic in
+  Html_eval.automat Dtd.dtd32f
+     (fun loc token ->
+        match token with
+        | EOF -> close_in ic
+        | t -> if !verbose then (Html.print t; flush stdout)
+     )
+     lexbuf
+     (error name find_line)
+@
+
+
+<<toplevel Htparse._1>>=
+let _ = 
+  Html.verbose := false (* we do our own error report *)
+@
+
+<<constant Htparse.verbose>>=
+let verbose = ref false
+@
+
+
+
+<<function Htparse.error>>=
+let error name find_line (Loc(n,n')) msg =
+  let linenum, linestart = find_line n in
+  printf "File \"%s\", line %d, characters %d-%d:\n%s\n"
+         name linenum (n - linestart) (n' - linestart) msg
+@
+
+<<function Htparse.line_reporting>>=
+(* lines: start at 1 *)
+(* pos: start at 0 as in caml *)
+let line_reporting ic =
+  let lines = ref [] 
+  and current_line = ref 1
+  and current_pos = ref 0 in
+  let read = 
+    if !Lang.japan then 
+      (Japan.create_read_japanese (input ic) (Japan.default_config ()))#read
+    else input ic 
+  in
+  Lexing.from_function (fun buf len ->
+     let n = read buf 0 len in
+       for i = 0 to n - 1 do
+     match buf.[i] with
+       '\n' -> incr current_pos; incr current_line;
+               lines := (!current_pos, !current_line) :: !lines
+         | _ -> incr current_pos
+         done; 
+         n),
+  (fun pos ->
+    let rec find_line = function
+      [] -> 1, 0
+    | (linestart, linenum)::l when pos < linestart -> find_line l
+    | (linestart, linenum)::l -> linenum, linestart
+    in
+     find_line !lines)
+@
+
+
+
+
+<<function Htparse.html_nest>>=
+let html_nest name =
+  let ic = open_in name in
+  let lexbuf = Lexing.from_channel ic in
+  let stack = ref [] in
+   Html_eval.automat Dtd.dtd32f
+      (function Loc(n,n') ->
+      function 
+        EOF -> close_in ic
+          | OpenTag t ->
+          stack := t.tag_name :: !stack
+          | CloseTag t ->
+          begin match !stack with
+            hd::tl when hd = t -> stack := tl
+              | hd::tl -> eprintf "Unmatched closing tag %s (expected %s) at 
+                            pos %d - %d" t hd n n'
+          | [] -> eprintf "Unmatched closing tag %s (Empty stack) at
+                            pos %d - %d" t n n'
+              end
+          | _ -> ())
+      lexbuf
+      (fun _ _ -> ())
+@
+
+<<function Htparse.html_indent>>=
+let html_indent name level =
+  let box = match level with
+     0 -> Format.open_box
+   | 1 -> Format.open_hvbox
+   | n -> Format.open_vbox in
+  let ic = open_in name in
+  let lexbuf  = Lexing.from_channel ic in
+   box 0;
+   Html_eval.automat Dtd.dtd32f
+      (fun loc token ->
+      match token with
+        EOF -> 
+        Format.print_newline();
+        close_in ic
+          | OpenTag t ->
+                Format.print_cut();
+        box 0;
+        box 2;
+        Format.print_string (sprintf "<%s>" t.tag_name)
+      | CloseTag t ->
+        Format.close_box();
+                Format.print_cut();
+        Format.print_string (sprintf "</%s>" t);
+                Format.close_box()
+      | PCData _ -> Format.print_string "*"
+      | _ -> ()
+      )
+      lexbuf
+      (fun _ msg -> Format.print_string (sprintf "ERROR(%s)" msg))
+@
+
+
+
+
+\section{HTTP}
+
+<<signature Http_headers.parse_status>>=
+val parse_status : string -> status
+  (* Parses a Status-Line
+     Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+     Raises [Invalid_HTTP_header "Status-Line"] 
+     or [Not_found] if the string is not a Status-Line at all *)
+@
+
+<<signature Http_headers.parse_request>>=
+val parse_request : string -> request
+  (* Parses a Request-Line
+     Request-Line = Method SP Request-URI SP HTTP-Version CRLF
+     Raises [Invalid_HTTP_header "Request-Line"] *)
+@
+
+
+
+<<function Http_headers.parse_status>>=
+(* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
+let parse_status s =
+ if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
+ try
+  match Str.bounded_split (regexp "[ ]") s 3 with
+    [v;c;m] ->
+         { status_version = v;
+           status_code = int_of_string c;
+           status_message = m }
+  (* it happened once with Server: Netscape-Commerce/1.1 *)
+  (* where the Status Line was: HTTP/1.0 302 *)
+  | [v;c] ->
+         { status_version = v;
+           status_code = int_of_string c;
+           status_message = "empty" }
+  | _ -> raise (Invalid_HTTP_header "Status-Line")
+ with
+   Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
+ else (* 0.9, dammit *)
+   raise Not_found
+@
+
+
+
+<<function Http_headers.parse_request>>=
+(* CHECK: Normally the URI should be encoded (no spaces ?) *)
+let parse_request s =
+ try
+  match Str.bounded_split (regexp "[ ]") s 3 with
+    [m;r;v] ->
+         { request_version = v;
+       request_method = m;
+       request_uri = r }
+  | ["GET"; uri] ->
+         { request_version = "HTTP/0.9";
+           request_method = "GET";
+       request_uri = uri }
+  | [m;s] -> (* uri omitted ? *)
+         { request_version = s;
+           request_method = m;
+       request_uri = "/" }
+  | _ -> raise (Invalid_HTTP_header "Request-Line")
+ with
+   Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
+@
+
+
+\subsection{Headers}
+
+<<signature Http_headers.get_header>>=
+val get_header : string -> header list -> string
+  (* [get_header field_name hs] returns the field_value, if any, of
+     the headers, or raises [Not_found].
+     [field_name] is the token is lowercase (e.g. "content-type") *)
+@
+
+<<signature Http_headers.get_multi_header>>=
+val get_multi_header : string -> header list -> string list
+  (* [get_multi_header field_name hs] returns the list of field_value
+     of the headers.
+     [field_name] is the token is lowercase (e.g. "content-type") *)
+@
+
+
+<<function Http_headers.get_header>>=
+(* [get_header field-name headers]
+ *   returns, if it exists the field value of the header field-name
+ * This is a bit costly though, but we keep headers as plain strings.
+ * CHECK: speed up with some regexp matching.
+ * HYP: field-name in lower-case
+ *)
+let get_header field_name = 
+  let size = String.length field_name in
+  let rec search = function
+     [] -> raise Not_found
+   | s::l ->
+    if   String.length s >= size + 2 (* : SP *)
+       & String.lowercase (String.sub s 0 size) = field_name
+    then String.sub s (size + 2) (String.length s - size - 2)
+    else search l in
+  search
+@
+
+<<function Http_headers.get_multi_header>>=
+(* [get_multi_header field_name headers]
+ *   get all values of the header
+ *)
+let get_multi_header field_name =
+  let size = String.length field_name in (* :SP *)
+  let rec search = function
+     [] -> []
+   | s::l ->
+    if   String.length s >= size + 2 (* : SP *)
+       & String.lowercase (String.sub s 0 size) = field_name
+    then (String.sub s (size + 2) (String.length s - size - 2)) :: search l
+    else search l in
+  search
+@
+
+\subsection{Lexing}
+
+<<signature Lexheaders.media_type>>=
+val media_type : string -> media_type * media_parameter list
+@
+
+<<signature Lexheaders.challenge>>=
+val challenge : Lexing.lexbuf -> authChallenge
+@
+
 
 \chapter{HTML}
+% html/
 
 \section{Tables}
 
@@ -2136,10 +2522,913 @@ let get name =
 @
 
 
-\chapter{Communication Protocol}
-% http
+\chapter{HTTP}
+%Communication Protocol
+% http/
 
-\chapter{Retrieving}
+% will see http://, main protocol, see also file://, mailto://
+% in extra protocol chapter
+
+\section{Headers}
+
+<<signature Http_headers.merge_headers>>=
+val merge_headers : header list -> header list -> header list
+  (* [merge_headers oldhs newhs] merges headers, overriding headers in
+     [oldhs] by headers in [newhs] *)
+@
+
+<<signature Http_headers.remove_headers>>=
+val remove_headers : header list -> string list -> header list
+  (* [remove_headers hs field_names] returns [hs] without the headers
+     with field_name present in [field_names] *)
+@
+
+<<signature Http_headers.header_type>>=
+val header_type : string -> string
+  (* [header_type h] returns the field_name token of [h], in lowercase *)
+@
+
+
+
+<<function Http_headers.header_type>>=
+let header_type s =
+  match Str.bounded_split (regexp "[:]") s 2 with
+    [t;_] -> String.lowercase t
+  | _ -> raise (Invalid_HTTP_header s)
+@
+
+<<function Http_headers.merge_headers>>=
+(* Keep only unmodified headers *)
+let merge_headers oldh newh =
+  let rec filter acc = function
+     [] -> acc
+   | s::l ->
+      if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
+       filter acc l
+      else
+       try
+        let t = header_type s in
+        let d = get_header t newh in
+      filter acc l
+       with
+          Invalid_HTTP_header _ -> 
+          Log.debug (sprintf "Dumping invalid header (%s)" s);
+              filter acc l
+        | Not_found -> filter (s::acc) l in
+  (filter [] oldh) @ newh
+@
+
+<<function Http_headers.remove_headers>>=
+let remove_headers hs names =
+  Log.debug "remove headers";
+  let rec rem acc = function
+     [] -> acc
+   | h::l ->
+      try
+       let t = header_type h in
+         if List.mem t names then rem acc l
+     else rem (h::acc) l
+      with
+        Invalid_HTTP_header s ->
+      Log.debug (sprintf "Dumping invalid header (%s)" s);
+          rem acc l
+
+   in rem [] hs
+@
+
+
+
+\section{Content}
+
+<<toplevel Http_headers._1>>=
+(* If the suffix file says otherwise, it will have priority *)
+let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
+[ 
+  "html",	ContentType  "Content-Type: text/html";
+  "htm",	ContentType  "Content-Type: text/html";
+  "txt",  	ContentType  "Content-Type: text/plain";
+  "ps",  	ContentType  "Content-Type: application/postscript";
+  "dvi",  	ContentType  "Content-Type: application/x-dvi";
+  "gif",	ContentType  "Content-Type: image/gif";
+  "jpeg",	ContentType  "Content-Type: image/jpeg";
+  "jpg",	ContentType  "Content-Type: image/jpeg";
+  "tiff",	ContentType  "Content-Type: image/tiff";
+  "tif",	ContentType  "Content-Type: image/tiff";
+  "au",		ContentType  "Content-Type: audio/basic";
+  "snd",	ContentType  "Content-Type: audio/basic";
+  "wav",	ContentType  "Content-Type: audio/x-wav";
+  "mid",	ContentType  "Content-Type: audio/midi";
+  "mpeg",	ContentType  "Content-Type: video/mpeg";
+  "mpg",	ContentType  "Content-Type: video/mpeg";
+  "avi",	ContentType  "Content-Type: video/avi";
+  "fli",	ContentType  "Content-Type: video/fli";
+  "flc",	ContentType  "Content-Type: video/fli";
+  "gz",		ContentEncoding  "Content-Encoding: gzip";
+  "Z",		ContentEncoding  "Content-Encoding: compress";
+  "asc",	ContentEncoding  "Content-Encoding: pgp";
+  "pgp",	ContentEncoding  "Content-Encoding: pgp";
+  "cmo",        ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+]
+@
+
+\subsection{Content type}
+
+<<signature Http_headers.contenttype>>=
+(* Predefined access functions *)
+val contenttype : header list -> string
+  (* Content-Type *)
+@
+
+\subsection{Content length}
+
+<<signature Http_headers.contentlength>>=
+val contentlength : header list -> int
+  (* Content-Length *)
+@
+
+\subsection{Content encoding}
+
+<<signature Http_headers.contentencoding>>=
+val contentencoding : header list -> string
+  (* Content-Encoding *)
+@
+
+
+\section{Status}
+
+<<toplevel Http_headers._2>>=
+let _ = List.iter (function (code, msg) ->
+                     Hashtbl.add status_messages code msg)
+  [ 200, "OK";
+    201, "Created";
+    202, "Accepted";
+    204, "No Content";
+    301, "Moved Permanently";
+    302, "Moved Temporarily";
+    304, "Not Modified";
+    400, "Bad Request";
+    401, "Unauthorized";
+    403, "Forbidden";
+    404, "Not Found";
+    500, "Internal Server Error";
+    501, "Not Implemented";
+    502, "Bad Gateway";
+    503, "Service Unavailable";
+    (* These are proposed for HTTP1.1 *)
+    407, "Proxy Authentication Required"
+  ]
+@
+
+
+<<function Http_headers.http_status>>=
+(* A typical status line *)
+let http_status code =
+  {
+   status_version = "HTTP/1.0";
+   status_code = code;
+   status_message = status_message code
+  }
+@
+
+<<constant Http_headers.status_messages>>=
+(* Messages in Status-Line *)
+let status_messages = Hashtbl.create 101
+@
+
+
+<<function Http_headers.status_message>>=
+let status_message code =  
+  try Hashtbl.find status_messages code
+  with Not_found -> " "
+@
+
+\section{Auth}
+
+
+<<signature Http_headers.challenge>>=
+val challenge : header list -> string
+  (* WWW-Authenticate *)
+@
+
+<<signature Http_headers.proxy_challenge>>=
+val proxy_challenge : header list -> string
+  (* Proxy-Authenticate *)
+@
+
+<<signature Http_headers.expires>>=
+val expires : header list -> Http_date.http_time option
+  (* Expires *)
+@
+
+<<type Http_headers.authScheme>>=
+(* Authorisation headers *)
+type authScheme =
+    AuthBasic
+  | AuthExtend of string
+@
+
+<<type Http_headers.authChallenge>>=
+type authChallenge =
+    { challenge_scheme : authScheme;
+      challenge_realm : string;
+      challenge_params: (string * string) list
+    }
+@
+
+
+
+<<type Auth.authSpace>>=
+(* Authorizations are remembered on the base of the directory url and realm
+ * They are kept during the whole MMM session, with expiration
+ *)
+type authSpace = {
+   auth_proxy: bool;
+   auth_host : string;
+   auth_port : int;
+   auth_dir : string;
+   auth_realm : string
+  }
+@
+
+
+
+
+<<signature Auth.lifetime>>=
+val lifetime : int ref
+@
+
+<<signature Auth.auth_file>>=
+val auth_file : string ref
+@
+
+<<signature Auth.edit>>=
+val edit : unit -> unit
+@
+
+<<signature Auth.load>>=
+val load : unit -> unit
+@
+
+<<signature Auth.save>>=
+val save : unit -> unit
+@
+
+<<signature Auth.add>>=
+val add : authSpace -> string -> unit
+@
+
+<<signature Auth.get>>=
+val get : authSpace -> string
+@
+
+<<signature Auth.init>>=
+val init : unit -> unit
+@
+
+<<signature Auth.check>>=
+val check : Www.request -> authChallenge -> authSpace ->
+                  (string * bool * authSpace) option
+@
+
+
+
+
+<<type Auth.authEntry>>=
+type authEntry = {
+   auth_cookie : string;
+   mutable auth_lastused : float
+   }
+@
+
+<<constant Auth.authorizations>>=
+let authorizations = Hashtbl.create 37
+@
+
+<<function Auth.get>>=
+let get space = 
+  let entry = Hashtbl.find authorizations space in
+    entry.auth_lastused <- Unix.time();
+    entry.auth_cookie
+@
+
+<<constant Auth.lifetime>>=
+(* Lifetime, in minutes. Default is one hour *)
+let lifetime = ref 60
+@
+
+<<function Auth.lookup>>=
+let rec lookup space = 
+  (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
+  try
+    Hashtbl.find authorizations space
+  with
+    Not_found ->
+     if space.auth_dir = "/" or space.auth_dir = "." 
+     then raise Not_found 
+     else
+      let newdir = Filename.dirname space.auth_dir in
+       lookup {auth_proxy = space.auth_proxy;
+               auth_host = space.auth_host;
+            auth_port = space.auth_port;
+        auth_dir = newdir;
+        auth_realm = space.auth_realm}
+@
+
+<<function Auth.ask_cookie>>=
+let ask_cookie forwhere =
+  try
+    let u,p = Frx_req.open_passwd forwhere in
+      Base64.encode (u^":"^p)
+  with
+    Failure "cancelled" -> failwith "cancelled"
+  | _ -> Error.default#f (I18n.sprintf "Error in base 64 encoding");
+        failwith "cancelled"
+@
+
+<<function Auth.replace>>=
+let replace kind cookie l =
+  let rec repl acc = function
+    [] -> (kind,cookie)::acc
+  | (k,_)::l when k = kind -> repl (acc) l
+  | p::l -> repl (p::acc) l in
+  repl [] l
+@
+
+<<function Auth.add>>=
+let add space cookie =
+  Log.debug "adding cookie";
+  Hashtbl.add authorizations 
+      space 
+      {auth_cookie = cookie; auth_lastused = Unix.time()}
+@
+
+<<function Auth.check>>=
+(* Kind is either: realm or proxy *)
+let check wwwr challenge authspace =
+  let kind = if authspace.auth_proxy then "proxy" else "realm" in
+  match challenge.challenge_scheme with
+    AuthExtend _ -> (* we don't know how to do this *) 
+       None
+  | AuthBasic -> (* params are gleefully ignored *)
+     try (* if the passwd request is cancelled *)
+      let cookie, isnew =
+        if List.mem_assoc kind wwwr.www_auth then begin
+           (* we already tried, so the authorization is bad ! *)
+           Hashtbl.remove authorizations authspace; (* in case *)
+           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm 
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+           true
+           end
+       else (* ah, it is our first try,  get the authorization *)
+         if authspace.auth_proxy then 
+            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+            true
+         else
+           try 
+             let entry = lookup authspace in
+              entry.auth_lastused <- Unix.time();
+              entry.auth_cookie, false
+           with Not_found ->
+            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+            true
+      in
+      wwwr.www_auth <- replace kind cookie wwwr.www_auth;
+      Some (cookie, isnew, authspace)
+     with
+      Failure "cancelled" -> None
+@
+
+<<function Auth.edit>>=
+(* needs to be refined *)
+let edit () =
+  let top =
+    Toplevel.create Widget.default_toplevel 
+         [Class "MMMAuthorizations"] in
+    Wm.title_set top (I18n.sprintf "Authorizations");
+    let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
+      Hashtbl.iter (fun space cookie ->
+       Listbox.insert lb End
+      [Printf.sprintf "(%s) http://%s:%d/%s" 
+         space.auth_realm space.auth_host space.auth_port space.auth_dir])
+       authorizations;
+    let buts = Frame.create top [] in
+    let clearb = Button.create_named buts "clear"
+       [Text (I18n.sprintf "Clear"); 
+       Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
+    and dismissb = Button.create_named buts "dismiss"
+       [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] in
+      pack [clearb] [Side Side_Left; Expand true];
+      pack [dismissb] [Side Side_Right; Expand true];
+      pack [buts][Side Side_Bottom; Fill Fill_X];
+      pack [f][Side Side_Top; Fill Fill_Both; Expand true]
+@
+
+<<constant Auth.auth_file>>=
+(* Saving authorizations to file *)
+let auth_file = ref ""
+@
+
+<<function Auth.save>>=
+let save () =
+ if !auth_file <> "" then
+  let auth_file = Msys.tilde_subst !auth_file in
+  try
+    let o = openfile auth_file [O_WRONLY; O_CREAT] 0o600 in
+    let oc = out_channel_of_descr o in
+      output_value oc authorizations;
+      flush oc;
+      close o
+  with
+    Unix_error(e,_,_) ->
+      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
+                 (Unix.error_message e))
+  | Sys_error s ->
+      Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
+
+ else 
+   Error.default#f (I18n.sprintf "No authorisation file defined")
+@
+
+<<function Auth.load>>=
+let load () =
+  if !auth_file <> "" then
+    let auth_file = Msys.tilde_subst !auth_file in
+    try
+      let ic = open_in auth_file in
+      let table = input_value ic
+      and time = Unix.time() in
+       Hashtbl.iter
+          (fun spacerealm entry ->
+           entry.auth_lastused <- time;
+           Hashtbl.add authorizations spacerealm entry)
+          table;
+    close_in ic
+    with
+      Sys_error s ->
+       Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+ else 
+   Error.default#f (I18n.sprintf "No authorisation file defined")
+@
+
+<<function Auth.init>>=
+let init () =
+  let check () =
+    let remove = ref []
+    and lifetime = float (60 * !lifetime)
+    and time = Unix.time () in
+    Hashtbl.iter 
+      (fun space entry ->
+       let expiration_time = entry.auth_lastused +. lifetime in
+    if time > expiration_time then remove := space :: !remove)
+      authorizations;
+    List.iter (Hashtbl.remove authorizations) !remove
+  in
+  let rec tim () =
+    Timer.set (!lifetime * 30000) (fun () -> check(); tim ())
+  in
+  tim ()
+@
+
+
+
+
+\section{Time}
+% could be in Stdlib? with Date?
+
+<<type Http_date.http_time>>=
+(* Based on Unix.tm *)
+type http_time =
+  { ht_sec : int;                       (* Seconds 0..59 *)
+    ht_min : int;                       (* Minutes 0..59 *)
+    ht_hour : int;                      (* Hours 0..23 *)
+    ht_mday : int;                      (* Day of month 1..31 *)
+    ht_mon : int;                       (* Month of year 0..11 *)
+    ht_year : int;                      (* Year - 1900 *)
+    ht_wday : int }                     (* Day of week (Sunday is 0) *)
+@
+
+<<signature Http_date.expired>>=
+val expired : http_time -> bool
+  (* Determines if an http_time is in the past *)
+@
+
+<<signature Http_date.compare>>=
+val compare : http_time -> http_time -> int
+  (* Compares two http_times *)
+@
+
+<<signature Http_date.string_of_ht>>=
+val string_of_ht : http_time -> string
+  (* Text version (RFC822) of an http time stamp *)
+@
+
+<<signature Http_date.tm_of_ht>>=
+val tm_of_ht : http_time -> Unix.tm
+@
+
+<<signature Http_date.stamp_of_ht>>=
+val stamp_of_ht : http_time -> float
+@
+
+<<signature Http_date.ht_of_stamp>>=
+val ht_of_stamp : float -> http_time
+@
+
+
+
+<<function Http_date.expired>>=
+let expired ht =
+  let now = gmtime(time()) in
+  let lht = 
+    [ht.ht_year; ht.ht_mon; ht.ht_mday; ht.ht_hour; ht.ht_min; ht.ht_sec]
+  and lnow =
+    [now.tm_year; now.tm_mon; now.tm_mday; now.tm_hour; now.tm_min; now.tm_sec]
+  in
+    compare_time (lht, lnow) <= 0
+@
+
+<<function Http_date.compare>>=
+let compare ht1 ht2 =
+ compare_time
+  ([ht1.ht_year; ht1.ht_mon; ht1.ht_mday; ht1.ht_hour; ht1.ht_min; ht1.ht_sec],
+   [ht2.ht_year; ht2.ht_mon; ht2.ht_mday; ht2.ht_hour; ht2.ht_min; ht2.ht_sec])
+@
+
+<<function Http_date.string_of_ht>>=
+let string_of_ht ht =
+  sprintf "%s, %02d %s %d %02d:%02d:%02d GMT"
+      (asc_wkday ht.ht_wday)
+      ht.ht_mday
+      (asc_month ht.ht_mon)
+      (ht.ht_year + 1900)
+      ht.ht_hour
+      ht.ht_min
+      ht.ht_sec
+@
+
+<<function Http_date.tm_of_ht>>=
+(* 
+let has_dst = localtime(time()).tm_isdst
+*)
+let tm_of_ht ht = {
+    tm_sec = ht.ht_sec;
+    tm_min = ht.ht_min;
+    tm_hour = ht.ht_hour;
+    tm_mday = ht.ht_mday;
+    tm_mon = ht.ht_mon;
+    tm_year = ht.ht_year;
+    tm_wday = ht.ht_wday;
+    tm_yday = 0;
+    tm_isdst = false        (* I don't have a clue here *)
+   }
+@
+
+<<function Http_date.stamp_of_ht>>=
+let stamp_of_ht ht =
+   fst (mktime (tm_of_ht ht))
+@
+
+<<function Http_date.ht_of_stamp>>=
+let ht_of_stamp ut =
+  let tm = gmtime ut in {
+    ht_sec = tm.tm_sec;
+    ht_min = tm.tm_min;
+    ht_hour = tm.tm_hour;
+    ht_mday = tm.tm_mday;
+    ht_mon = tm.tm_mon;
+    ht_year = tm.tm_year;
+    ht_wday = tm.tm_wday
+     }
+@
+\section{Retrieving an HTTP document}
+
+%todo: no http.mli?
+
+<<constant Http.always_proxy>>=
+let always_proxy = ref false
+@
+
+<<constant Http.timeout>>=
+let timeout = ref 60		(* in seconds *)
+@
+
+<<constant Http.verbose>>=
+let verbose = ref false
+@
+
+<<exception Http.HTTP_error>>=
+exception HTTP_error of string
+@
+
+<<type Http.status>>=
+(* Support for aborting requests while in connect/write/headers mode.
+   When we start applying the document continuation, it is not our job
+   anymore to abort the connection.
+ *)
+type status = Writing | Reading of handle | Discharged
+@
+
+<<function Http.tcp_connect>>=
+(* Open a TCP connection, asynchronously (except for DNS).
+   We pass the continuation *)
+let tcp_connect server_name port log cont error =
+  (*  Find the inet address *)
+  let server_addr =
+    try inet_addr_of_string server_name
+    with Failure _ ->
+      try
+        log (I18n.sprintf "Looking for %s ..." server_name);
+        let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
+      log (I18n.sprintf "%s found" server_name);
+      adr
+      with Not_found -> 
+       raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) in
+  (* Attempt to connect *)
+  let sock = socket PF_INET SOCK_STREAM 0 in
+  Unix.clear_nonblock sock;
+    log (I18n.sprintf "Contacting host...");
+    Unix.set_nonblock sock; (* set to non-blocking *)
+  let cnx = new cnx (sock, error "User abort") in
+    try
+      begin try
+        connect sock (ADDR_INET(server_addr, port));
+        (* just in case. Normally an error should be raised *)
+        Unix.clear_nonblock sock; (* set to non-blocking *)
+    log (I18n.sprintf "connection established");
+    Log.debug "Connect returned without error !";
+    (* because we need to return cnx *)
+    Timer.set 10 (fun () -> cont cnx);
+        cnx
+      with
+       Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
+         (* that is ok, we are starting something *)
+      let stuck = ref true in
+      Fileevent.add_fileoutput sock
+          (* we are called when the cnx is established *)
+         (fun () -> 
+         stuck := false;
+         Fileevent.remove_fileoutput sock;
+         Unix.clear_nonblock sock; (* return to blocking mode *)
+        begin try (* But has there been a cnx actually *)
+           let _ = getpeername sock in
+           log (I18n.sprintf "connection established");
+           cont cnx
+             with
+               Unix_error(ENOTCONN, "getpeername", _) ->
+             cnx#close;
+         error (I18n.sprintf "Connection refused to %s" server_name)
+                   false
+             end);
+     (* but also start the timer if nothing happens now
+         * the kernel has a timeout, but it might be too long (linux) *)
+         Timer.set (1000 * !timeout) 
+        (fun () -> 
+          if not cnx#aborted && !stuck then begin
+           Fileevent.remove_fileoutput sock;
+           cnx#close;
+           error (I18n.sprintf "Timeout during connect to %s" server_name)
+                 false
+          end);
+     cnx
+      end
+    with
+      Unix_error(e,fn,_) ->  (* other errors in connect *)
+        cnx#close;
+        raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
+                             (error_message e) fn))
+@
+
+<<constant Http.send_referer>>=
+(*
+ * HTTP/1.0
+ * Headers should be configurable
+ *)
+
+let send_referer = ref false
+@
+
+<<constant Http.user_agent>>=
+let user_agent = ref Version.http
+@
+
+<<function Http.std_request_headers>>=
+let std_request_headers() =
+  Printf.sprintf "User-Agent: %s\r\n" !user_agent
+@
+
+<<function Http.full_request>>=
+let full_request w proxy_mode wwwr = 
+  let url = 
+    if proxy_mode then Url.string_of wwwr.www_url
+    else distant_path wwwr.www_url in
+  let write_referer = match wwwr.www_link.h_context with
+     None -> (fun () -> ())
+   | Some r ->  (fun () -> if !send_referer then w ("Referer: " ^ r ^ "\r\n"))
+  and write_other_headers () =
+    List.iter (fun s -> w s; w "\r\n") wwwr.www_headers;
+    (* If no Accept given in request, write default one *)
+    begin
+      try
+    ignore (get_header "accept" wwwr.www_headers)
+      with
+    Not_found -> w "Accept: */*\r\n"
+    end
+  (* Host: header for virtual domains *)
+  and write_host () =
+    match wwwr.www_url.host with
+      None -> (* never happens *) ()
+    | Some h -> 
+    match wwwr.www_url.port with
+      None -> w ("Host: "^h^"\r\n")
+    | Some p ->  w ("Host: "^h^":"^string_of_int p^"\r\n")
+  (* If the request has an Authorization, write it *)
+  and write_realm_auth () =
+    try
+      let cookie = List.assoc "realm" wwwr.www_auth in
+     w ("Authorization: Basic "^cookie^"\r\n")
+    with
+      Not_found -> ()
+  (* For proxy, we don't wait until we get an authorization error *)
+  and write_proxy_auth () =
+    let authspace = {
+    auth_proxy = true;
+    auth_host = !proxy;
+    auth_port = !proxy_port;
+    auth_dir = "";
+    auth_realm = ""} in
+      try (* do we know the cookie *)
+    let cookie = Auth.get authspace in
+        w ("Proxy-Authorization: Basic "^cookie^"\r\n")
+      with
+    Not_found -> (* is that in the request ? *)
+     try
+          let cookie = List.assoc "proxy" wwwr.www_auth in
+          w ("Proxy-Authorization: Basic "^cookie^"\r\n")
+     with
+       Not_found -> ()
+
+  in
+   match wwwr.www_link.h_method with
+    GET ->
+      w ("GET "^url^" HTTP/1.0\r\n");
+      (* No General-Header *)
+      w (std_request_headers());
+      write_referer ();
+      write_realm_auth ();
+      if proxy_mode then write_proxy_auth();
+      write_other_headers();
+      write_host();
+      w "\r\n"
+ |  HEAD ->
+      w ("HEAD "^url^" HTTP/1.0\r\n");
+      (* No General-Header *)
+      w (std_request_headers());
+      write_referer ();
+      write_realm_auth ();
+      if proxy_mode then write_proxy_auth();
+      write_other_headers();
+      write_host();
+      w "\r\n"
+ |  POST data ->
+      w ("POST "^url^" HTTP/1.0\r\n");
+      (* No General-Header *)
+      w (std_request_headers());
+      write_referer ();
+    write_realm_auth ();
+    if proxy_mode then write_proxy_auth();
+      write_other_headers();
+      write_host();
+      (* 8.2.1 *)
+      w ("Content-Type: application/x-www-form-urlencoded\r\n");
+      (* 7.2 note *)
+      w ("Content-Length: " ^ string_of_int (String.length data)^ "\r\n");
+      w "\r\n";
+      w data
+@
+
+<<function Http.failed_request>>=
+(* shared error *)
+let failed_request wr finish s aborted =
+  finish aborted;
+  Www.rem_active_cnx wr.www_url;
+  wr.www_logging (I18n.sprintf "Failed");
+  wr.www_error#f   (I18n.sprintf "Request for %s failed\n%s" 
+            (Url.string_of wr.www_url) s)
+@
+
+<<exception Http.End_of_headers>>=
+(* [read_headers fd]
+ *  reads HTTP headers from a fd
+ *    raises End_of_file
+ *    raises Invalid_HTTP_header
+ *)
+exception End_of_headers
+@
+
+<<function Http.read_headers>>=
+let read_headers fd previous =
+  let l = Munix.read_line fd in
+   if String.length l = 0 then raise End_of_headers (* end of headers *)
+   else if l.[0] = ' ' or l.[0] = '\t' then  (* continuation *)
+       match previous with
+     [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
+       | s :: rest -> (s^l) :: rest
+   else l :: previous
+@
+
+\chapter{Network}
+%Retrieving Documents}
+% retrieve/
+
+<<type Retrieve.retrievalStatus>>=
+type retrievalStatus =
+  Started of (unit -> unit)  | InUse
+@
+
+<<signature Retrieve.f>>=
+(* f is supposed to raise only Invalid_url *)
+val f : Www.request ->  (* the request *)
+        (Hyper.link -> unit) -> (* the retry function *)
+        Document.document_continuation -> (* the handlers *)
+        retrievalStatus
+@
+
+<<type Retrieve.behaviour>>=
+(* We should implement the proper behaviours for all return codes
+ * defined in the HTTP/1.0 protocol draft. 
+ * Return codes are HTTP specific, but since all protocols are more or
+ * less mapped to http, we deal with them at the retrieval level.
+ *)
+type behaviour =
+   Ok 			              (* process the document *)
+ | Stop of string             (* stop (no document) and display message *)
+ | Retry of Hyper.link        (* restart with a new link *)
+ | Error of string            (* same as stop, but it's an error *)
+ | Restart of (handle -> handle) (* restart the same request, but apply
+                     transformation on the continuation *)
+@
+
+<<signature Retrieve.add_http_processor>>=
+val add_http_processor : 
+  int -> (Www.request -> handle -> behaviour) -> unit
+@
+
+
+<<constant Retrieve.http_process>>=
+(*
+ * Provision for user (re)definition of behaviours.
+ *)
+let http_process = Hashtbl.create 37
+@
+
+<<constant Retrieve.add_http_processor>>=
+let add_http_processor = Hashtbl.add http_process
+@
+
+<<toplevel Retrieve._1>>=
+(* 400 : proxies do return this code when they can satisfy the request,
+ *       so we keep it as default (displayed)
+ *)
+let _ =
+ List.iter (function (code, behave) -> Hashtbl.add http_process code behave)
+  [200, code200;
+   201, code200;
+   202, code200;
+   204, code204;
+
+   301, forward_permanent;
+   302, forward;
+   (* 304, update; *)
+   401, unauthorized;
+   407, proxy_unauthorized]
+@
+
+% no 404? :)
+
+
+<<function Retrieve.code200>>=
+(* 200 OK *)
+let code200 wwwr dh = Ok
+(* 201 Created (same as 200) *)
+(* 202 Accepted (same as 200) *)
+@
+
+
+<<function Retrieve.code400>>=
+(* 400 Bad request *)
+let code400 wwwr dh = Error (I18n.sprintf "Bad Request")
+@
 
 \section{Connections}
 
@@ -2303,39 +3592,6 @@ let rem_active_cnx url =
 
 \section{Documents}
 
-<<module Document.DocumentIDSet>>=
-module DocumentIDSet =
-  Set.Make(struct type t = document_id let compare = compare end)
-@
-
-<<type Document.handle>>=
-(* This is passed around by request continuations. It represents a handle
-   on a connexion for retrieving a document *)
-type handle = {
-  document_id : document_id;
-  document_referer : string option;
-    (* URL of refering document, if any *)
-  mutable document_status : int;
-    (* Status code of response *)
-  mutable document_headers : string list;
-    (* HTTP headers of document, or faked ones *)
-  document_feed : Feed.t;
-    (* where to get the data *)
-  document_fragment : string option;
-    (* fragment (#foo) if any *)
-  mutable document_logger : logger
-    (* how to log information relative to this document processing *)
-}
-@
-
-<<type Document.document_continuation>>=
-type document_continuation = {
-  document_process : handle -> unit;
-    (* What to do one we have a dh on the real document *)
-  document_finish :  bool -> unit
-    (* What to do if a request does not yield a document *)
-}
-@
 
 <<type Document.document_data>>=
 (*
@@ -2469,19 +3725,310 @@ type display_info = {
 }
 @
 
+\section{Images}
+
+<<signature Img.get>>=
+val get : document_id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
+            Scheduler.progress_func -> unit
+@
+
+<<signature Img.update>>=
+val update : Url.t -> unit
+@
 
 
+<<function Img.get>>=
+let get did link cont prog =
+  let wr = Www.make link in
+   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
+   ImageScheduler.add_request wr did cont prog
+@
+
+
+<<function Img.update>>=
+let update url =
+  try
+    let (oldi,refs,headers) = ImageData.direct_cache_access url in
+    let link = { h_uri = Url.string_of url;
+         h_context = None;
+         h_method = GET;
+             h_params = []} in
+    let wr = Www.make link in
+    let date_received = get_header "date" headers in
+    wr.www_headers <- 
+       ("If-Modified-Since: "^date_received)
+       :: "Pragma: no-cache"
+       :: wr.www_headers;
+
+    ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
+      (fun url i -> 
+    match oldi, i with
+      Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
+        Imagephoto.copy oldn newn []
+  | _, _ -> ())
+      Progress.no_meter
+
+  with
+    Not_found ->  (* either not in cache (bogus) or no date *)
+      ()
+@
+
+
+\section{Progressing}
+% important in a slow word to have some feedback
+
+<<signature Progress.no_meter>>=
+val no_meter : Scheduler.progress_func
+@
+
+<<signature Progress.meter>>=
+val meter : Widget.widget -> Scheduler.progress_func
+@
+
+<<constant Progress.no_meter>>=
+let no_meter = (fun _ _ -> () : Scheduler.progress_func)
+@
+
+
+<<function Progress.meter>>=
+let meter frame =
+  (* expected name of "alt" widget *)
+  let altw = Widget.atom frame "alt" in
+  if Winfo.exists altw then
+    (* the progress widget is created on the first call *)
+    let bw = lazy (int_of_string (cget frame CBorderWidth)) in
+    let width = lazy (Winfo.reqwidth frame - Lazy.force bw * 2)
+    and height = lazy (Winfo.reqheight frame - Lazy.force bw * 2) in
+    let canv = 
+      lazy (
+      let c = 
+    Canvas.create_named frame "gauge" [ 
+    Width (Pixels (Lazy.force width - 2)); (* a kind of magic... *)
+    Height (Pixels 3);
+    BorderWidth (Pixels 1);
+    Relief Sunken ]
+      in
+      place c [X (Pixels 0); Y (Pixels (Lazy.force height)); Anchor SW];
+      c)
+    in
+    let rect = lazy
+      (Canvas.create_rectangle (Lazy.force canv)
+     (Pixels 0) (Pixels 0) (Pixels 0) (Pixels 0) 
+     [ FillColor okcolor; Outline okcolor])
+    in
+    let rotate = ref 0 in
+    (fun total cur ->
+      (* always check that alt widget is still there *)
+      if Winfo.exists altw then
+    if cur = -1 then
+      Canvas.configure_rectangle (Lazy.force canv) (Lazy.force rect)
+        [ FillColor kocolor; Outline kocolor]
+    else match total with
+    | Some cont -> (* expected length is known *)
+        let x = 
+          if cont = 0 then (Lazy.force width - 2)
+          else cur * (Lazy.force width - 2) / cont + 1 in
+        Canvas.coords_set (Lazy.force canv) (Lazy.force rect)
+          [ Pixels 1; Pixels 1; Pixels x; Pixels 4 ]
+    | None -> (* expected length is unknown *)
+        if cur <> 0 then begin
+          let w = Lazy.force width / 16 in
+          Canvas.coords_set (Lazy.force canv) (Lazy.force rect)
+           [ Pixels (1 + w * !rotate); Pixels 1; 
+          Pixels (1 + w * (!rotate + 2)); Pixels 4 ];
+          rotate := (!rotate + 1) mod 15
+        end)
+  else
+    no_meter
+@
+
+
+\section{Scheduling}
+
+<<type Scheduler.progress_func>>=
+type progress_func = int option -> int -> unit
+@
 
 
 \chapter{Viewers}
+% viewers/
+
+
+<<constant Viewers.viewers>>=
+let viewers = Hashtbl.create 17
+@
+
+<<type Viewers.spec>>=
+type spec =
+    Internal of t
+  | External         (* pass to metamail *)
+  | Save	     (* always save *)
+  | Interactive	     (* ask what to do about it *)
+@
+
+<<constant Viewers.builtin_viewers>>=
+let builtin_viewers = ref []
+@
+
+<<function Viewers.add_builtin>>=
+let add_builtin t v =
+  builtin_viewers := (t,v) :: !builtin_viewers
+@
+
+
+<<function Viewers.reset>>=
+let reset () =
+  (* Reset the viewer table *)
+  Hashtbl.clear viewers;
+  (* Restore the builtin viewers *)
+  List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
+  (* Preference settings *)
+  let l = Tkresource.stringlist "externalViewers" [] in
+  List.iter (fun ctype -> 
+    try
+      let (typ,sub),pars = Lexheaders.media_type ctype in
+      Hashtbl.add viewers (typ,sub) External
+    with
+      Invalid_HTTP_header e ->
+    Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
+    l;
+  let l = Tkresource.stringlist "savedTypes" [] in
+  List.iter (fun ctype -> 
+    try
+      let (typ,sub),pars = Lexheaders.media_type ctype in
+      Hashtbl.add viewers (typ,sub) Save
+    with
+      Invalid_HTTP_header e ->
+    Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
+    l
+@
 
 \section{Mime}
+
+\section{Decoders}
+
+<<signature Decoders.insert>>=
+val insert  : handle -> handle
+@
+
+<<signature Decoders.add>>=
+val add : string -> (handle -> handle) -> unit
+@
+
+<<constant Decoders.decoders>>=
+(* Insert a decoding if necessary.
+ * We don't do it in http, since we don't want do decompress when we
+ * save for example.
+ *)
+
+let decoders = Hashtbl.create 37
+@
+
+
+<<toplevel Decoders._1>>=
+let _ =  List.iter (fun (s,t) -> Hashtbl.add decoders s t)
+  [ "COMPRESS", gzip;
+    "X-COMPRESS", gzip;
+    "GZIP", gzip;
+    "X-GZIP", gzip]
+@
+
+
+\section{Embedded objects}
+
+<<type Embed.embobject>>=
+(* Embedded objects *)
+type embobject = {
+  embed_hlink : Hyper.link;               (* hyperlink to the object *)
+  embed_frame : Widget.widget;  
+     (* the frame where the viewers can do their stuff *)
+  embed_context : Viewers.context;
+  embed_map : Maps.t;                  (* associated map *)
+  embed_alt : string
+ }
+@
+
+
+<<signature Embed.add>>=
+val add : embobject -> unit
+@
+
+<<signature Embed.update>>=
+val update : 
+    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
+    -> unit
+@
+
+
+
+<<signature Embed.add_viewer>>=
+val add_viewer : 
+  Http_headers.media_type -> 
+  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
+    Document.document -> unit) -> unit
+@
+
+<<signature Embed.rem_viewer>>=
+val rem_viewer :  Http_headers.media_type -> unit
+@
+
+
+<<constant Embed.embedded_viewers>>=
+(* Embedded viewers *)
+
+let embedded_viewers = Hashtbl.create 11
+@
+
+<<function Embed.embedded_viewer>>=
+let embedded_viewer frame ctx doc =
+  (* Destroy the alt window *)
+  List.iter Tk.destroy (Winfo.children frame);
+  try
+    let ctype = contenttype doc.document_info in
+    let (typ,subtyp),l = Lexheaders.media_type ctype in
+    try
+      let viewer = 
+    try Hashtbl.find embedded_viewers (typ,subtyp)
+        with Not_found -> Hashtbl.find embedded_viewers (typ,"*") in
+      viewer l frame ctx doc
+    with
+    Not_found ->
+      let t = 
+        I18n.sprintf "Embed Error: no viewer for type %s/%s" typ subtyp in
+      let l = Label.create frame [Text t] in pack [l][]
+  with
+    Not_found ->
+      let t = I18n.sprintf "Embed Error: no type for document %s" 
+                          (Url.string_of doc.document_address) in 
+      let l = Label.create frame [Text t] in pack [l][]
+  | Invalid_HTTP_header e ->
+      let t = 
+       I18n.sprintf "Embed Error: malformed type %s (%s)"
+         (contenttype doc.document_info) e in
+      let l = Label.create frame [Text t] in pack [l][]
+@
 
 \section{[[text/html]]}
 
 \section{[[text/plain]]}
 
+<<function Plain.display_plain>>=
+(* Viewing text/plain *)
+
+let display_plain mediapars top vcontext dh =
+  let viewer = new plain (top,vcontext,dh) in
+  viewer#init;
+  Some (viewer :> Viewers.display_info)
+@
+
+<<toplevel Plain._1>>=
+let _ =
+  Viewers.add_builtin ("text","plain") display_plain
+@
+
 \chapter{Rendering}
+% display/
+% layout engine
 
 \section{Display primitives}
 
@@ -2497,11 +4044,492 @@ type display_info = {
 
 \section{Caches}
 
+\chapter{Extra Protocols}
+
+
+\section{[[file://]]}
+
+<<toplevel Protos._7>>=
+let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
+@
+
+
+
+<<signature File.request>>=
+(* file: protocol *)
+val request :  Www.request -> Document.document_continuation -> unit -> unit
+    (* [request wr cont] returns [abort] *)
+@
+
+<<exception File.File_error>>=
+exception File_error of string
+@
+
+
+
+
+
+<<function File.request>>=
+(*
+ * Display a file on the local unix file system (file:)
+ *  is path really supposed to be absolute ?
+ * Note: completely ignores method (GET, POST,...)
+ *)
+
+let request wr cont =
+  let path = match wr.www_url.path with
+    Some path -> "/" ^ (Lexurl.remove_dots path)
+  | None -> "/" in
+  if is_cgi path then (fake_cgi wr cont path; (fun () -> ()))
+  else   (* A bit weird, but we don't want to capture errors from the cont *)
+  let st =
+    try stat path 
+    with 
+      _ -> raise (File_error (I18n.sprintf "cannot stat file")) in
+    match st.st_kind with
+    S_REG ->
+      begin
+      (* check if this is an update *)
+        try 
+          let since = get_header "if-modified-since" wr.www_headers in
+          let ht = Lexdate.ht_of_string since 
+          and filet = Http_date.ht_of_stamp st.st_mtime in
+          if Http_date.compare filet ht > 0
+          then raise Not_found (* fall through *)
+          else begin
+        let dh = { 
+          document_id = document_id wr;
+          document_referer = wr.www_link.h_context;
+          document_status = 304;
+          document_headers = [ sprintf "Date: %s" (Date.asc_now())];
+          document_feed = 
+             Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
+          document_fragment = wr.www_fragment;
+          document_logger = tty_logger} in
+       Retype.f dh;
+       cont.document_process dh;
+           (fun () -> ())
+          end
+        with
+          Not_found  (* default case *)
+        | Lexdate.Invalid_date (_,_) ->
+        let s = 
+          try openfile path [O_RDONLY] 0
+          with Unix_error(_,_,_) -> 
+            raise (File_error (I18n.sprintf "cannot open file")) in
+       let dh =
+          {document_id = document_id wr;
+            document_referer = wr.www_link.h_context;
+            document_status = 200;
+            document_headers = 
+            [sprintf "Content-Length: %d" st.st_size;
+              sprintf "Date: %s" (Date.asc_now());
+              sprintf "Last-modified: %s" (Date.asc st.st_mtime)];
+            document_feed = Feed.of_fd s;
+            document_fragment = wr.www_fragment;
+            document_logger = tty_logger} in
+       Retype.f dh;
+       cont.document_process dh;
+           (fun () -> ())
+      end
+      | S_DIR -> 
+      let s = dir path in
+        cont.document_process 
+          {document_id = document_id wr;
+           document_referer = wr.www_link.h_context;
+           document_status = 200;
+           document_headers = ["Content-Type: text/html"];
+           document_feed = Feed.of_fd s;
+           document_fragment = wr.www_fragment;
+              document_logger = tty_logger};
+            (fun () -> ())
+
+      | _ -> raise (File_error (I18n.sprintf "cannot open file"))
+@
+
+
+
+
+
+
+
+
+
+
+
+
+<<function File.isdir>>=
+(* 
+ * Simulate directory
+ *)
+
+let isdir path f =
+  let fullname = Filename.concat path f in
+    (stat fullname).st_kind = S_DIR
+@
+
+<<function File.d2html>>=
+let d2html path d =
+  (* make sure that when path is used in url, it is / terminated *)
+  let pathurl =
+    let l = String.length path in
+    if l = 0 then path else
+    if path.[l-1] = '/' then path
+    else sprintf "%s/" path
+  in
+  printf 
+"<HTML>
+<HEAD><TITLE>%s</TITLE>
+<BASE HREF=\"file://localhost%s\">
+</HEAD>
+<BODY>
+<H1>Directory list: %s</H1>
+<PRE>" path pathurl path;
+  let entries = ref [] in
+  begin try
+    while true do 
+      entries := (readdir d) :: !entries
+      done      	
+  with 
+      End_of_file -> closedir d
+  end;
+  entries := Sort.list (<=) !entries;
+  List.iter (function
+      "." -> ()
+    | ".." ->
+       printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
+              (Filename.concat (dirname (dirname pathurl)) "")
+    | f ->
+       try
+         let fullname = Filename.concat path f in
+     let st = stat fullname in
+     match st.st_kind with
+       S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
+     | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
+                       f f (st.st_size)
+     | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
+     | _ -> ()
+       with
+     Unix_error(_,_,_) -> ())
+    !entries;
+  printf "</PRE></BODY></HTML>"
+@
+
+<<function File.dir>>=
+(* It's easiest to do it asynchronously anyway *)
+let dir path =
+  try
+    let d = opendir path in
+    let cin, cout = pipe() in
+      match Low.fork() with
+       0 -> 
+      close cin; dup2 cout stdout; close cout;
+      begin
+        try d2html path d 
+        with e ->
+          print_endline (Printexc.to_string e)
+      end;
+      flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
+      exit 0;
+      cin (*duh*)
+      | n -> closedir d; close cout; cin
+  with
+    Unix_error(_,_,_)  -> 
+      raise (File_error (I18n.sprintf "cannot open dir"))
+@
+
+<<function File.document_id>>=
+let document_id wwwr =
+  { document_url = wwwr.www_url; document_stamp = no_stamp}
+@
+
+<<function File.fake_cgi>>=
+(* Not true CGI interface, just a hack *)
+(* TODO: headers ? *)
+let fake_cgi wwwr cont path =
+  try 
+    let (cmd_in, cmd_out) = pipe() in
+    let cmd, args = 
+      try 
+       let pos = String.index path '?' in
+    let cmd = String.sub path 0 pos in
+    if pos + 1 = String.length path then cmd, [| cmd |]
+    else 
+         cmd, [|cmd; String.sub path (pos+1) (String.length path - pos - 1)|]
+      with
+       Not_found -> path, [| path |] in
+    match Low.fork() with
+      0 -> 
+       close cmd_in;
+    dup2 cmd_out stdout; close cmd_out;
+    begin try execvp cmd args 
+    with
+      Unix_error(e, _, _) ->
+       Munix.write_string stdout "HTTP/1.0 404 Not found\r\n";
+       Munix.write_string stdout "Content-Type: text/html\r\n\r\n";
+       Munix.write_string stdout "<H1>Cannot execute local file</H1>";
+       Munix.write_string stdout "Command \"";
+       Munix.write_string stdout cmd;
+       Munix.write_string stdout "\" failed:";
+       Munix.write_string stdout (Unix.error_message e);
+       Munix.write_string stdout "\n";
+       exit 1
+    end
+    | n ->
+         close cmd_out;
+     let dh = {document_id = document_id wwwr;
+           document_referer = wwwr.www_link.h_context;
+           document_status = 0;
+           document_headers = [];
+           document_feed = Feed.of_fd cmd_in;
+           document_fragment = wwwr.www_fragment;
+           document_logger = tty_logger} in
+      dh.document_feed.feed_schedule
+        (fun () ->
+           try
+         if dh.document_headers = [] then begin
+           (* it should be the HTTP Status-Line *)
+            let l = Munix.read_line cmd_in in
+              dh.document_status <- (parse_status l).status_code;
+              dh.document_headers <- [l] (* keep it there *)
+            end
+          else 
+            dh.document_headers <- 
+              read_headers cmd_in dh.document_headers
+           with
+         End_of_headers ->
+           dh.document_feed.feed_unschedule();
+           cont.document_process dh
+           | Not_found -> (* No HTTP/ header *)
+           dh.document_feed.feed_unschedule();
+           dh.document_status <- 200;
+               dh.document_headers <- ["Content-Type: text/plain"];
+           cont.document_process dh
+           | Unix_error(_,_,_) ->
+           dclose true dh;
+               raise (File_error (I18n.sprintf 
+               "Error while reading headers of %s\n%s" path "(read)"))
+           | Invalid_HTTP_header s ->
+           dclose true dh;
+           raise (File_error (I18n.sprintf 
+                  "Error while reading headers of %s\n%s" path s))
+           | End_of_file ->
+           dclose true dh;
+           raise (File_error (I18n.sprintf 
+               "Error while reading headers of %s\n%s" path "eof"))
+          )
+  with Unix_error(_,_,_) -> 
+    raise (File_error (I18n.sprintf "cannot exec file"))
+@
+
+<<constant File.binary_path>>=
+(* Pref stuff *)
+let binary_path = ref ([] : string list)
+@
+
+<<constant File.r>>=
+let r = Str.regexp ":"
+@
+
+
+% ???
+<<signature File.pref_init>>=
+val pref_init : Textvariable.textVariable -> unit
+@
+<<signature File.pref_set>>=
+val pref_set  : Textvariable.textVariable -> unit
+@
+
+
+
+<<function File.pref_init>>=
+let pref_init v =
+  Textvariable.set v (String.concat ":" !binary_path)
+@
+
+<<function File.pref_set>>=
+let pref_set v = 
+  binary_path :=
+     List.map Msys.tilde_subst (Str.split r (Textvariable.get v))
+@
+
+<<function File.is_cgi>>=
+let is_cgi file =
+  match !binary_path with
+    [] -> false
+  | path ->
+      let l = String.length file in
+      List.exists (fun dir ->
+    let ldir = String.length dir in
+    l > ldir && String.sub file 0 ldir = dir)
+    path
+(*
+ * Display a file on the local unix file system (file:)
+ *  is path really supposed to be absolute ?
+ * Note: completely ignores method (GET, POST,...)
+ *)
+@
+
+
+
+\section{[[mailto://]]}
+% see extra
+
+\section{Proxied protocols}
+
+<<toplevel Protos._1>>=
+let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._3>>=
+let _ = Hashtbl.add protos GOPHER (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._4>>=
+let _ = Hashtbl.add protos NEWS (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._5>>=
+let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._6>>=
+let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
+@
+
+
+<<function Http.prox_req>>=
+and proxy_req wr cont = 
+  let cnx = proxy_request wr cont in
+    (fun () -> cnx#abort)
+@
+
+
+<<function Http.proxy_request>>=
+(* Process an HTTP request using the proxy.
+   We pass on the continuation *)
+and proxy_request wr cont =
+  tcp_connect !proxy !proxy_port wr.www_logging
+          (start_request true wr cont)
+          (failed_request wr cont.document_finish)
+@
+
+<<global Http.proxy>>=
+(* Default proxy definitions *)
+let proxy = ref "no-proxy-defined"
+@
+
+<<global Http.proxy_port>>=
+let proxy_port = ref 80
+@
+
 \chapter{Advanced Topics}
 
 \section{Encodings}
 
 % base64, 8859, url encode, etc.
+
+\subsection{Base 64}
+
+<<signature Base64.encode>>=
+(* Base64 encoding (ONLY for Basic authentication) *)
+val encode : string -> string
+@
+
+<<signature Base64.decode>>=
+val decode : string -> string
+@
+
+<<constant Base64.index64>>=
+(* For basic credentials only *)
+(* Encoding is [A-Z][a-z][0-9]+/= *)
+(* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
+
+let index64 = Array.create 128 0
+(* Init the index *)
+@
+
+<<toplevel Base64._1>>=
+(* Init the index *)
+let _ =
+  for i = 0 to 25 do index64.(i + Char.code 'A') <- i done;
+  for i = 0 to 25 do index64.(i + Char.code 'a') <- i + 26 done;
+  for i = 0 to 9 do  index64.(i + Char.code '0') <- i + 52 done;
+  index64.(Char.code '+') <- 62;
+  index64.(Char.code '/') <- 63
+@
+
+<<function Base64.decode>>=
+let decode s =
+  let rpos = ref 0
+  and wpos = ref 0
+  and len = String.length s in
+  let res = String.create (len / 4 * 3) in
+    while !rpos < len do
+      let v1 = index64.(Char.code s.[!rpos]) in
+      let v2 = index64.(Char.code s.[!rpos + 1]) in
+      let v3 = index64.(Char.code s.[!rpos + 2]) in
+      let v4 = index64.(Char.code s.[!rpos + 3]) in
+      (* each char gives 6 bits *)
+      let i = (v1 lsl 18) lor (v2 lsl 12) lor (v3 lsl 6) lor v4 in
+      res.[!wpos] <- Char.chr (i lsr 16);
+      res.[!wpos+1] <- Char.chr ((i lsr 8) land 0xFF);
+      res.[!wpos+2] <- Char.chr (i land 0xFF);
+      rpos := !rpos + 4;
+      wpos := !wpos + 3
+      done;
+  let cut = 
+    if s.[len - 1] = '=' then
+      if s.[len - 2] = '=' then 2
+      else 1
+    else 0 
+  in
+  String.sub res 0 (String.length res - cut)
+@
+
+<<constant Base64.char64>>=
+let char64 = Array.create 64 'a'
+@
+
+<<toplevel Base64._2>>=
+let _ =
+  for i = 0 to 25 do char64.(i) <- Char.chr (Char.code 'A' + i) done;
+  for i = 0 to 25 do char64.(i+26) <- Char.chr (Char.code 'a' + i) done;
+  for i = 0 to 9 do char64.(i+52) <- Char.chr (Char.code '0' + i) done;
+  char64.(62) <- '+';
+  char64.(63) <- '/'
+@
+
+<<function Base64.encode>>=
+(* Encoding *)
+let encode s =
+  let rpos = ref 0 
+  and wpos = ref 0 in
+  let origlen = String.length s in
+  let s,len = match origlen mod 3 with
+      0 -> s, origlen
+    | 1 -> s ^ "\000\000", origlen + 2
+    | 2 -> s ^ "\000", origlen + 1 
+    | _ -> assert false
+  in
+  let res = String.create (len / 3 * 4) in
+    while !rpos < len do
+      let i1 = Char.code s.[!rpos] in
+      let i2 = Char.code s.[!rpos+1] in
+      let i3 = Char.code s.[!rpos+2] in
+      let i = (i1 lsl 16) lor (i2 lsl 8) lor i3 in
+      res.[!wpos] <- char64.((i lsr 18) land 0x3f);
+      res.[!wpos+1] <- char64.((i lsr 12) land 0x3f);
+      res.[!wpos+2] <- char64.((i lsr 6) land 0x3f);
+      res.[!wpos+3] <- char64.(i land 0x3f);
+      rpos := !rpos + 3;
+      wpos := !wpos + 4
+      done;
+  (* Correct padding *)
+  for i = 1 to len - origlen do res.[String.length res - i] <- '=' done;
+  res
+@
+
 
 \section{i18n}
 
@@ -2913,6 +4941,36 @@ val debug : bool ref
 
 <<constant Html_eval.debug>>=
 let debug = ref false
+@
+
+\subsection{Caches}
+
+<<signature Cache.debug>>=
+(* Configurable settings *)
+val debug : bool ref
+@
+
+<<constant Cache.debug>>=
+let debug = ref false
+@
+
+\subsection{Scheduler}
+
+<<signature Scheduler.debug>>=
+(*
+ * Certain kind of documents need to be shared, such as in-lined images.
+ * In this case, instead of working with Retrieve.f and the normal
+ * document continuation, we queue the request to a scheduler, with a
+ * continuation to be applied to an object representing the shared 
+ * information for that document.
+ * E.G: for in-lined images, the shared information is the Tk-handle to
+ * the image.
+ *)
+
+val debug : bool ref
+@
+<<constant Scheduler.debug>>=
+let debug = ref false 
 @
 
 

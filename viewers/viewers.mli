@@ -4,6 +4,7 @@ open Document
 open Http_headers
 
 (*s: type Viewers.vparams *)
+(* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
 (*e: type Viewers.vparams *)
 (*s: type Viewers.frame_targets *)
@@ -87,6 +88,7 @@ val di_compare : display_info -> display_info -> bool
 (*e: signature Viewers.di_compare *)
 
 (*s: type Viewers.t *)
+(* Definition of an internal viewer *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option

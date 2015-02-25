@@ -11,17 +11,23 @@ type retrievalStatus =
 (* f is supposed to raise only Invalid_url *)
 val f : Www.request ->  (* the request *)
         (Hyper.link -> unit) -> (* the retry function *)
-        document_continuation -> (* the handlers *)
+        Document.document_continuation -> (* the handlers *)
         retrievalStatus
 (*e: signature Retrieve.f *)
 
 (*s: type Retrieve.behaviour *)
+(* We should implement the proper behaviours for all return codes
+ * defined in the HTTP/1.0 protocol draft. 
+ * Return codes are HTTP specific, but since all protocols are more or
+ * less mapped to http, we deal with them at the retrieval level.
+ *)
 type behaviour =
-   Ok 
- | Stop of string
- | Retry of Hyper.link
- | Error of string
- | Restart of (handle -> handle)
+   Ok 			              (* process the document *)
+ | Stop of string             (* stop (no document) and display message *)
+ | Retry of Hyper.link        (* restart with a new link *)
+ | Error of string            (* same as stop, but it's an error *)
+ | Restart of (handle -> handle) (* restart the same request, but apply
+                     transformation on the continuation *)
 (*e: type Retrieve.behaviour *)
 
 (*s: signature Retrieve.add_http_processor *)

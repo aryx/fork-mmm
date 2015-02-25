@@ -4,7 +4,8 @@ open Html
 open Printf
 
 (*s: toplevel Htparse._1 *)
-let _ = Html.verbose := false (* we do our own error report *)
+let _ = 
+  Html.verbose := false (* we do our own error report *)
 (*e: toplevel Htparse._1 *)
 
 (*s: type Htparse.mode *)
@@ -61,13 +62,14 @@ let line_reporting ic =
 let html_lex name =
   let ic = open_in name in
   let lexbuf, find_line = line_reporting ic in
-   Html_eval.automat Dtd.dtd32f
-      (fun loc token ->
-      match token with
-        EOF -> close_in ic
-         |  t -> if !verbose then (Html.print t; flush stdout))
-      lexbuf
-      (error name find_line)
+  Html_eval.automat Dtd.dtd32f
+     (fun loc token ->
+        match token with
+        | EOF -> close_in ic
+        | t -> if !verbose then (Html.print t; flush stdout)
+     )
+     lexbuf
+     (error name find_line)
 (*e: function Htparse.html_lex *)
 
 (*s: function Htparse.html_nest *)
@@ -130,6 +132,7 @@ let html_indent name level =
 let main () =
   Lang.japan := Lang.is_japanese ();
   Html.init !Lang.japan;
+
   Arg.parse [
      "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";
      "-strict", Arg.Set Lexhtml.strict, "Strict mode";
@@ -140,10 +143,11 @@ let main () =
      "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
      ]
      (fun s -> 
-     match !mode with
-       Check -> html_lex s
-         | Indent n -> html_indent s n
-         | Nesting -> html_nest s)
+       match !mode with
+       | Check -> html_lex s
+       | Indent n -> html_indent s n
+       | Nesting -> html_nest s
+       )
      "Usage: htparse <opts> file1.html ... filen.html"
 (*e: function Htparse.main *)
 

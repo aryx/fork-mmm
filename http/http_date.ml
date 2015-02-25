@@ -17,7 +17,7 @@ open Unix
 open Mstring
 open Date
 
-(*s: type Http_date.http_time (./http/http_date.ml) *)
+(*s: type Http_date.http_time *)
 (* Based on Unix.tm *)
 type http_time =
   { ht_sec : int;                       (* Seconds 0..59 *)
@@ -27,7 +27,7 @@ type http_time =
     ht_mon : int;                       (* Month of year 0..11 *)
     ht_year : int;                      (* Year - 1900 *)
     ht_wday : int }                     (* Day of week (Sunday is 0) *)
-(*e: type Http_date.http_time (./http/http_date.ml) *)
+(*e: type Http_date.http_time *)
 
 (*s: function Http_date.expired *)
 let expired ht =

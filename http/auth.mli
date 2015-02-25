@@ -2,6 +2,9 @@
 open Http_headers
 
 (*s: type Auth.authSpace *)
+(* Authorizations are remembered on the base of the directory url and realm
+ * They are kept during the whole MMM session, with expiration
+ *)
 type authSpace = {
    auth_proxy: bool;
    auth_host : string;

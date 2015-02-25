@@ -5,7 +5,7 @@ open Tk
  * JPF + cleanup by FRX with lazy
  *)
 let okcolor = NamedColor "#3cb371"
-and kocolor = NamedColor "#dc5c5c"
+let kocolor = NamedColor "#dc5c5c"
 
 (*s: constant Progress.no_meter *)
 let no_meter = (fun _ _ -> () : Scheduler.progress_func)

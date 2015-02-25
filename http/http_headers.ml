@@ -4,9 +4,9 @@ open Str
 open Mstring
 open Messages
 
-(*s: exception Http_headers.Invalid_HTTP_header (./http/http_headers.ml) *)
+(*s: exception Http_headers.Invalid_HTTP_header *)
 exception Invalid_HTTP_header of string
-(*e: exception Http_headers.Invalid_HTTP_header (./http/http_headers.ml) *)
+(*e: exception Http_headers.Invalid_HTTP_header *)
 
 (*s: function Http_headers.parse_status *)
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
@@ -181,36 +181,36 @@ let rec rem_contentencoding = function
  * Details for specific headers
  *)
 
-(*s: type Http_headers.authScheme (./http/http_headers.ml) *)
+(*s: type Http_headers.authScheme *)
 (* Authorisation headers *)
 type authScheme =
     AuthBasic
   | AuthExtend of string
-(*e: type Http_headers.authScheme (./http/http_headers.ml) *)
+(*e: type Http_headers.authScheme *)
 
-(*s: type Http_headers.authChallenge (./http/http_headers.ml) *)
+(*s: type Http_headers.authChallenge *)
 type authChallenge =
     { challenge_scheme : authScheme;
       challenge_realm : string;
       challenge_params: (string * string) list
     }
-(*e: type Http_headers.authChallenge (./http/http_headers.ml) *)
+(*e: type Http_headers.authChallenge *)
 
-(*s: type Http_headers.media_parameter (./http/http_headers.ml) *)
+(*s: type Http_headers.media_parameter *)
 (* Media types *)
 
 type media_parameter = string * string
-(*e: type Http_headers.media_parameter (./http/http_headers.ml) *)
-(*s: type Http_headers.media_type (./http/http_headers.ml) *)
+(*e: type Http_headers.media_parameter *)
+(*s: type Http_headers.media_type *)
 type media_type = string * string
-(*e: type Http_headers.media_type (./http/http_headers.ml) *)
+(*e: type Http_headers.media_type *)
 
-(*s: type Http_headers.hint (./http/http_headers.ml) *)
-(* Hints : Associates MIME type or encoding to suffix *)
+(*s: type Http_headers.hint *)
+(* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
     ContentType of header
   | ContentEncoding of header
-(*e: type Http_headers.hint (./http/http_headers.ml) *)
+(*e: type Http_headers.hint *)
 
 (*s: constant Http_headers.suffixes *)
 let suffixes = (Hashtbl.create 101 : (string, hint) Hashtbl.t)

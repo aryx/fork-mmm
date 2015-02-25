@@ -13,13 +13,13 @@ open Www
 open Hyper
 
 (* The context given to a viewer *)
-(*s: type Viewers.vparams (./viewers/viewers.ml) *)
+(*s: type Viewers.vparams *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
-(*e: type Viewers.vparams (./viewers/viewers.ml) *)
-(*s: type Viewers.frame_targets (./viewers/viewers.ml) *)
+(*e: type Viewers.vparams *)
+(*s: type Viewers.frame_targets *)
 type frame_targets = (string * Widget.widget) list
-(*e: type Viewers.frame_targets (./viewers/viewers.ml) *)
+(*e: type Viewers.frame_targets *)
 
 (*s: function Viewers.frame_adopt *)
 let frame_adopt w targets = 
@@ -41,13 +41,13 @@ let frame_fugue targets =
   ff [] targets
 (*e: function Viewers.frame_fugue *)
 
-(*s: type Viewers.hyper_func (./viewers/viewers.ml) *)
+(*s: type Viewers.hyper_func *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
   hyper_func : frame_targets -> Hyper.link -> unit
   }
-(*e: type Viewers.hyper_func (./viewers/viewers.ml) *)
+(*e: type Viewers.hyper_func *)
 
 class  virtual context ((did : Document.document_id), 
                (v : vparams)) =
@@ -253,12 +253,12 @@ let extern dh ctype =
  * will be passed to metamail.
  *)
 
-(*s: type Viewers.t (./viewers/viewers.ml) *)
+(*s: type Viewers.t *)
 (* Definition of an internal viewer *)
 type t = 
     media_parameter list -> Widget.widget -> context -> handle 
           -> display_info option
-(*e: type Viewers.t (./viewers/viewers.ml) *)
+(*e: type Viewers.t *)
 
 (*s: type Viewers.spec *)
 type spec =

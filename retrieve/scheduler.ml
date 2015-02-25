@@ -13,9 +13,9 @@ open Http_headers
 let debug = ref false 
 (*e: constant Scheduler.debug *)
 
-(*s: type Scheduler.progress_func (./retrieve/scheduler.ml) *)
+(*s: type Scheduler.progress_func *)
 type progress_func = int option -> int -> unit
-(*e: type Scheduler.progress_func (./retrieve/scheduler.ml) *)
+(*e: type Scheduler.progress_func *)
 
 (* Handling of data downloaded by this scheduler *)
 module type Data =

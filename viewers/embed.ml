@@ -108,7 +108,8 @@ let embedded_viewer frame ctx doc =
 (*e: function Embed.embedded_viewer *)
 
 
-(*s: type Embed.embobject (./viewers/embed.ml) *)
+(*s: type Embed.embobject *)
+(* Embedded objects *)
 type embobject = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
   embed_frame : Widget.widget;  
@@ -117,7 +118,7 @@ type embobject = {
   embed_map : Maps.t;                  (* associated map *)
   embed_alt : string
  }
-(*e: type Embed.embobject (./viewers/embed.ml) *)
+(*e: type Embed.embobject *)
 
 (*s: constant Embed.embedded *)
 (* Remember all current embedded objects by their frame *)

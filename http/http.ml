@@ -17,9 +17,13 @@ let always_proxy = ref false
 let timeout = ref 60		(* in seconds *)
 (*e: constant Http.timeout *)
 
+(*s: global Http.proxy *)
 (* Default proxy definitions *)
 let proxy = ref "no-proxy-defined"
-and proxy_port = ref 80
+(*e: global Http.proxy *)
+(*s: global Http.proxy_port *)
+let proxy_port = ref 80
+(*e: global Http.proxy_port *)
 
 (*s: constant Http.verbose *)
 let verbose = ref false
@@ -390,12 +394,14 @@ and start_request09 proxy_mode wwwr cont cnx =
   async_request proxy_mode wwwr (process_response09 wwwr cont) cnx
 
 
+(*s: function Http.proxy_request *)
 (* Process an HTTP request using the proxy.
    We pass on the continuation *)
 and proxy_request wr cont =
   tcp_connect !proxy !proxy_port wr.www_logging
           (start_request true wr cont)
           (failed_request wr cont.document_finish)
+(*e: function Http.proxy_request *)
  
 
 and proxy_request09 wr cont =
@@ -456,10 +462,14 @@ and request09 wr cont =
       raise (HTTP_error (I18n.sprintf "INTERNAL ERROR\nHttp.request09 (not a distant http url): %s" (Url.string_of wr.www_url)))
 
 (* Wrappers returning the abort callback *)
+(*s: function Http.req *)
 let req wr cont =
   let cnx = request wr cont in
     (fun () -> cnx#abort)
+(*e: function Http.req *)
+(*s: function Http.prox_req *)
 and proxy_req wr cont = 
   let cnx = proxy_request wr cont in
     (fun () -> cnx#abort)
+(*e: function Http.prox_req *)
 (*e: ./http/http.ml *)

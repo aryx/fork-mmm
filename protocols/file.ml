@@ -13,9 +13,9 @@ open Http
 open Document
 open Feed
 
-(*s: exception File.File_error (./protocols/file.ml) *)
+(*s: exception File.File_error *)
 exception File_error of string
-(*e: exception File.File_error (./protocols/file.ml) *)
+(*e: exception File.File_error *)
 
 (*s: function File.isdir *)
 (* 
@@ -103,8 +103,8 @@ let document_id wwwr =
   { document_url = wwwr.www_url; document_stamp = no_stamp}
 (*e: function File.document_id *)
 
-(* Not true CGI interface, just a hack *)
 (*s: function File.fake_cgi *)
+(* Not true CGI interface, just a hack *)
 (* TODO: headers ? *)
 let fake_cgi wwwr cont path =
   try 

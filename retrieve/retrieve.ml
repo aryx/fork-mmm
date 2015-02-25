@@ -9,27 +9,25 @@ open Http
 open Http_headers
 open Auth
 
-(*s: type Retrieve.retrievalStatus (./retrieve/retrieve.ml) *)
+(*s: type Retrieve.retrievalStatus *)
 type retrievalStatus =
   Started of (unit -> unit)  | InUse
-(*e: type Retrieve.retrievalStatus (./retrieve/retrieve.ml) *)
+(*e: type Retrieve.retrievalStatus *)
 
-(*s: type Retrieve.behaviour (./retrieve/retrieve.ml) *)
+(*s: type Retrieve.behaviour *)
 (* We should implement the proper behaviours for all return codes
  * defined in the HTTP/1.0 protocol draft. 
  * Return codes are HTTP specific, but since all protocols are more or
  * less mapped to http, we deal with them at the retrieval level.
  *)
-
-
 type behaviour =
-   Ok			     (* process the document *)
- | Stop of string            (* stop (no document) and display message *)
- | Retry of Hyper.link       (* restart with a new link *)
- | Error of string           (* same as stop, but it's an error *)
- | Restart of (handle -> handle)  (* restart the same request, but apply
+   Ok 			              (* process the document *)
+ | Stop of string             (* stop (no document) and display message *)
+ | Retry of Hyper.link        (* restart with a new link *)
+ | Error of string            (* same as stop, but it's an error *)
+ | Restart of (handle -> handle) (* restart the same request, but apply
                      transformation on the continuation *)
-(*e: type Retrieve.behaviour (./retrieve/retrieve.ml) *)
+(*e: type Retrieve.behaviour *)
 
 (*s: constant Retrieve.http_process *)
 (*
@@ -146,8 +144,8 @@ and f request retry cont =
 (* 200 OK *)
 let code200 wwwr dh = Ok
 (* 201 Created (same as 200) *)
-(*e: function Retrieve.code200 *)
 (* 202 Accepted (same as 200) *)
+(*e: function Retrieve.code200 *)
 
 (*s: function Retrieve.code204 *)
 (* 204 No Content: we should modify the headers of the referer ? *)
@@ -265,8 +263,8 @@ let unauthorized wwwr dh =
                 newdh)
 (*e: function Retrieve.unauthorized *)
 
-(* 407 Unauthorized *)
 (*s: function Retrieve.ask_proxy_auth *)
+(* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
 let ask_proxy_auth wwwr dh =
   wwwr.www_logging (I18n.sprintf "Checking proxy authentication");
@@ -317,6 +315,7 @@ let _ =
    201, code200;
    202, code200;
    204, code204;
+
    301, forward_permanent;
    302, forward;
    (* 304, update; *)

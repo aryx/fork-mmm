@@ -103,8 +103,9 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 # The standalone HTML syntax checker
-HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo
-htparse: $(HTMISC) i18n/japan/lib.cma html/lib.cma
+HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo\
+       i18n/japan/lib.cma html/lib.cma html/htparse.cmo
+htparse: $(HTMISC)
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
