@@ -15097,6 +15097,7 @@ let max_keep = ref 5
 
 <<constant Gcache.table>>=
 let table = (Hashtbl.create 37 :
+              (int, (document_id * display_info) list ref) Hashtbl.t)
 @
 
 <<function Gcache.get_nav>>=
@@ -15243,7 +15244,6 @@ open Viewers
 <<constant Gcache.max_keep>>
 
 <<constant Gcache.table>>
-              (int, (document_id * display_info) list ref) Hashtbl.t)
 
 <<function Gcache.get_nav>>
 
@@ -16152,30 +16152,7 @@ module PrefMap = Map.Make(struct type t = string let compare = compare end)
 
 \subsection*{[[./gui/debug.ml]]}
 
-<<function Debug.active_cb>>=
-let active_cb _ =
-  let cnter = ref 0 in
-  Hashtbl.iter 
-    (fun w id ->
-      incr cnter;
-      Printf.fprintf stdout "%s %s %b\n"
-        (Widget.name w) (string_of_cbid id) (Winfo.exists w))
-    callback_memo_table;
-  Printf.fprintf stdout "Memo cb: %d\n" !cnter;
-  cnter := 0;
-  Hashtbl.iter (fun _ _ -> incr cnter) callback_naming_table;
-  Printf.fprintf stdout "Active cb: %d\n" !cnter;
-  flush stdout
-@
 
-<<function Debug.init>>=
-let init () =
-  Frx_rpc.register "cb" active_cb;
-  Frx_rpc.register "cache"
-     (fun _ -> Cache.postmortem(); Gcache.postmortem(); flush stderr);
-  Frx_rpc.register "images" (fun _ -> Img.ImageData.dump(); flush stderr);
-  Frx_rpc.register "camltkdb" (fun _ -> Protocol.debug := not !Protocol.debug)
-@
 
 
 %-------------------------------------------------------------
@@ -18179,183 +18156,6 @@ open Hyper
 
 \subsection*{[[./main.ml]]}
 
-<<function Main.safe_loop>>=
-(*****************************************************************************)
-
-let rec safe_loop() =
-  try
-    Printexc.print Tk.mainLoop () (* prints and reraises *)
-  with
-  | Out_of_memory -> raise Out_of_memory
-  | Sys.Break -> raise Sys.Break
-  | Stack_overflow -> raise Stack_overflow
-  | e -> 
-      flush Pervasives.stderr; 
-      safe_loop()
-@
-
-<<function Main.localize>>=
-let localize file =
-  let localized = spf "%s.%s" file !I18n.language in
-  if Sys.file_exists localized 
-  then localized 
-  else file
-@
-
-<<function Main.main>>=
-(*****************************************************************************)
-
-let main () =
-
- (* As always, we must parse argument first, using references... *)
-  let sufxfile = ref (Mmm.user_file "mime.types")
-  and display = ref (try Sys.getenv("DISPLAY") with Not_found -> "")
-  and preffile = ref (Mmm.user_file "MMM.ad")
-  and init_urls = ref [] 
-  and accept_external = ref false
-  and palette = ref None
-  and modules = ref true
-  and clicktofocus = ref false
-  in
-  Arg.parse [
-  "-proxy", Arg.String (fun s -> Http.proxy := s), 
-  "<hostname>\tProxy host";
-  "-port", Arg.Int (fun i -> Http.proxy_port := i),
-  "<port>\t\tProxy port";
-  "-d", Arg.String (fun s -> display := s),
-  "<foo:0>\t\tDisplay";
-  "-display", Arg.String (fun s -> display := s),
-  "<foo:0>\tDisplay";
-  "-suffixes", Arg.String (fun s -> sufxfile := s),
-  "<file>\tSuffix file";
-  "-external", Arg.Unit (fun () -> accept_external := true),
-  "\t\tAccept remote command (mmm_remote <url>)";
-  "-lang", Arg.String (fun s -> I18n.language := s),
-  "<lang>\t\tI18n language";
-  "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-  "<file>\tI18n message file";
-  "-prefs", Arg.String (fun s -> preffile := s),
-  "<file>\t\tPreference File";
-  "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-  "<url>\tHelp URL";
-  "-palette", Arg.String (fun s -> palette := Some s),
-  "<color>\tTk Palette";
-  "-nomodule", Arg.Unit (fun () -> modules := false),
-  "\t\tDon't load initial modules";
-  "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-  "\tClick to Focus mode (default is Focus Follows Mouse)";
-  "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-  "<wxh+x+y>\tInitial geometry for the first navigator"
-  ]
-    (fun s -> init_urls := s :: !init_urls)
-    "Usage: meuh <opts> <initial url>";
-
-  Sys.catch_break true;
-  (* Avoid SIGPIPE completely, in favor of write() errors *)
-  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
-
-  let top = Tk.openTkDisplayClass !display "mmm" in
-
-  (* Just after the init. of Tk, we have to detect the Tk is under
-   * Latin or Japanese mode at first. 
-   *)
-  Lang.japan := Jtk.is_japanese_mode () && Lang.is_japanese ();
-  (* Run Tcl in JIS (ISO2022-jp) Mode *)
-  if !Lang.japan 
-  then Jtk.Kanji.internal_code_set Jtk.JIS;
-
-  Wm.withdraw top;
-  
-  if not !clicktofocus 
-  then Focus.follows_mouse();
-
-  (* Default values for navigator window *)
-  Resource.add "*MMM.Width" "640" Tk.WidgetDefault;
-  Resource.add "*MMM.Height" "480" Tk.WidgetDefault;
-
-  (* Resources *)
-  let site_resfile =
-    localize (Filename.concat (Filename.dirname Sys.argv.(0)) "MMM.ad") in
-  (* Site specific resource file usually in $INSTALLDIR=/usr/local/lib/mmm *)
-  if Sys.file_exists site_resfile 
-  then Tkresource.readfile site_resfile Tk.StartupFile;
-
-  begin match !palette with
-  | None -> ()
-  | Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
-  end;
-
-  (* Initialisations in frx library : kbd navigation, search 
-   * No prerequisite except Tk *)
-  Frx_text.init ();
-  (* Initialisations in jpf's balloon library *)
-  Balloon.init ();
-  (* Initialisations in jpf's GIF ANIMATION library *)
-  Tkaniminit.f ();
-
-  (* Local initialisations *)
-  Low.init();                         (* start regular tasks *)
-  Cache.init();                       (* builtin document *)
-  Auth.init();                        (* start expiration timer *)
-  Debug.init();                       (* debugging RPC *)
-  
-  (* Suffix mapping to Content-Type and Content-Encoding *)
-  if Sys.file_exists !sufxfile 
-  then Http_headers.read_suffix_file !sufxfile;
-  
-  (* Various stuff for the HTML viewer, needing Tk *)
-  Ctext.init();
-  Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
-
-  (* Initialization of HTML entities *)
-  Html.init !Lang.japan;
-
-  (* The applet system.
-   * This loads the local modules also, so any setup that might be
-   * overriden by a local module should happen before here.
-   * However, preference initialisation must happen *after* initialisation
-   * of the applet system
-   *)
-  !Version.applet_init !modules;
-
-  (* This must occur after most initialisations *)
-  if !accept_external 
-  then Cci.init();
-
-  (* Start the initial navigator *)
-  ignore
-    (Mmm.initial_navigator 
-        (localize !preffile)
-        (match !init_urls with | [] -> None | x :: l -> Some x));
-  safe_loop();
-  if !Log.debug_mode then begin
-    Cache.postmortem();
-    Gcache.postmortem()
-  end
-@
-%$
-
-<<function Main.postmortem>>=
-(*****************************************************************************)
-let postmortem () =
-  try 
-    main ()
-  with
-  | Dynlink.Error err ->
-      failwith (spf "dynlink error = %s" (Dynlink.error_message err))
-  | e -> 
-      if !Log.debug_mode then begin
-        Cache.postmortem();
-        Gcache.postmortem();
-      end;
-      raise e
-@
-
-<<toplevel Main._1>>=
-let _ = 
-  Printexc.catch postmortem ()
-@
-
 
 %-------------------------------------------------------------
 
@@ -18372,6 +18172,8 @@ open Common
 
 (*****************************************************************************)
 (* Helpers *)
+(*****************************************************************************)
+
 <<function Main.safe_loop>>
        
 <<function Main.localize>>
@@ -18382,6 +18184,8 @@ open Common
 
 (*****************************************************************************)
 (* Main entry point *)
+(*****************************************************************************)
+
 <<function Main.main>>
       
 <<function Main.postmortem>>
@@ -18391,45 +18195,6 @@ open Common
 
 
 \subsection*{[[./main_remote.ml]]}
-
-<<function Main_remote.request>>=
-let request sock cmd url =
-  if cmd <> "" then ignore (write sock cmd 0 (String.length cmd));
-  ignore (write sock url 0 (String.length url));
-  ignore (write sock "\n" 0 1);
-  let buf = String.create 1024 in
-  try
-    while true do
-      let n = read sock buf 0 1024 in
-      if n = 0 then raise End_of_file else
-      ignore (write stdout buf 0 n)
-    done
-  with
-    End_of_file -> close sock
-@
-
-<<function Main_remote.main>>=
-let main () =
-  let file = 
-    Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
-  let cmd = ref "" in
-  
-  let s = socket PF_UNIX SOCK_STREAM 0 in
-  connect s (ADDR_UNIX file);
-  Arg.parse [ 
-  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
-  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
-  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
-  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
-]
-    (fun url -> request s !cmd url)
-    "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
-     The default is -show."
-@
-
-<<toplevel Main_remote._1>>=
-let _ = Printexc.catch main ()
-@
 
 
 %-------------------------------------------------------------
@@ -18449,29 +18214,6 @@ open Unix
 \section{[[./extensions/]]}
 
 \subsection*{[[./extensions/audio.ml]]}
-
-<<function Audio.fake_embed>>=
-(* Defines embedded viewer for audio types as re-running the document *)
-let fake_embed media_pars w ctx dh =
-  Document.dclose true dh;
-  try 
-    let hlink = {h_uri = Url.string_of dh.document_id.document_url;
-         h_context = None;
-         h_method = GET;
-         h_params = []} in
-    pack [Label.create w [Text "Redispatched externally"]][];
-    ctx#goto hlink
-  with 
-    Not_found (* goto *) -> 
-      pack [Label.create w [Text "No navigation given to us"]][]
-  | e ->
-      pack [Label.create w [Text (Printexc.to_string e)]][]
-@
-
-<<toplevel Audio._1>>=
-let _ =
-  Mmm.add_embedded_viewer ("audio", "*") fake_embed
-@
 
 
 %-------------------------------------------------------------

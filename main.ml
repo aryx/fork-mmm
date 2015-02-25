@@ -11,9 +11,9 @@ open Common
 
 (*****************************************************************************)
 (* Helpers *)
-(*s: function Main.safe_loop *)
 (*****************************************************************************)
 
+(*s: function Main.safe_loop *)
 let rec safe_loop() =
   try
     Printexc.print Tk.mainLoop () (* prints and reraises *)
@@ -40,9 +40,9 @@ let localize file =
 
 (*****************************************************************************)
 (* Main entry point *)
-(*s: function Main.main *)
 (*****************************************************************************)
 
+(*s: function Main.main *)
 let main () =
 
  (* As always, we must parse argument first, using references... *)
@@ -173,7 +173,6 @@ let main () =
 (*e: function Main.main *)
       
 (*s: function Main.postmortem *)
-(*****************************************************************************)
 let postmortem () =
   try 
     main ()

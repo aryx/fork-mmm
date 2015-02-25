@@ -275,6 +275,7 @@ let viewers = Hashtbl.create 17
 (* That's for internal viewers only *)
 let add_viewer ctype viewer =
   Hashtbl.add viewers ctype (Internal viewer)
+
 let rem_viewer ctype =
   Hashtbl.remove viewers ctype
 

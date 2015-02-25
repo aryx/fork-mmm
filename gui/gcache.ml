@@ -18,8 +18,8 @@ let max_keep = ref 5
 
 (*s: constant Gcache.table *)
 let table = (Hashtbl.create 37 :
-(*e: constant Gcache.table *)
               (int, (document_id * display_info) list ref) Hashtbl.t)
+(*e: constant Gcache.table *)
 
 (*s: function Gcache.get_nav *)
 let get_nav hkey =
