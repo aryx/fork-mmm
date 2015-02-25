@@ -14,10 +14,10 @@ type t = Textvariable.textVariable * int ref
 let create () =
   Textvariable.create(), ref 0
 
-and set (v , r) =
+let set (v , r) =
   incr r; Textvariable.set v (sprintf "cond%d" !r)
 
-and wait (v, _) = Tkwait.variable v
+let wait (v, _) = Tkwait.variable v
 
-and free (v, _) = Textvariable.free v
+let free (v, _) = Textvariable.free v
 (*e: ./commons/condition.ml *)

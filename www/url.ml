@@ -6,9 +6,9 @@ open Printf
 
 type protocol =
  | HTTP 
- | FILE | MAILTO | FTP
- | GOPHER | NEWS | NNTP | WAIS
+ | FILE | MAILTO | FTP | NNTP
  | TELNET 
+ | GOPHER | NEWS | WAIS
  | PROSPERO
  | OtherProtocol of string
 (*e: type Url.protocol *)
@@ -31,6 +31,7 @@ let string_of_protocol = function
 
 (*s: type Url.t *)
 (* Relative adressing in anchors, fragments are NOT URLs, but URI *)
+(* Not all components are used for all protocols. See RFC. *)
 type t = 
   { mutable protocol : protocol;
 

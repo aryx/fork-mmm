@@ -8,7 +8,8 @@
 let number = 418
 (*e: constant Version.number *)
 (*s: constant Version.version_number *)
-let version_number = string_of_int number;;
+let version_number = 
+  string_of_int number;;
 (*e: constant Version.version_number *)
 
 (*s: constant Version.http *)

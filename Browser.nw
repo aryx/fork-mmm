@@ -227,12 +227,24 @@ the main author of MMM.
 \section{[[mmm]] services}
 
 
+<<signature Version.number>>=
+(* Version and other builtin strings *)
+val number : int
+@
 <<constant Version.number>>=
 (* Version *)
 let number = 418
 @
 
+<<constant Version.version_number>>=
+let version_number = 
+  string_of_int number;;
+@
 
+
+<<signature Version.about>>=
+val about : string -> string   (* dialog *)
+@
 <<function Version.about>>=
 (* dialog uses an gigantic font ! *)
 let about = function
@@ -275,10 +287,22 @@ http://pauillac.inria.fr/~furuse/
 @
 
 
+<<signature Version.http>>=
+val http : string              (* the version in User-Agent field *)
+@
+<<constant Version.http>>=
+(* User-Agent field *)
+let http = "MMM/0." ^ string_of_int number
+@
+
+
 \section{HTML document language}
 
 \section{[[hello.html]]}
 
+<<signature Version.html>>=
+val html : string -> string    (* fake initial document *)
+@
 <<function Version.html>>=
 let html = function
   | "iso8859" ->
@@ -369,10 +393,10 @@ get an updated copy.
 
 % commons/: utilities
 % globals/: config
-% www http html: main formats, parsing
-% protocols retrieve viewers: fetching stuff
-% display: display engine
-% gui: interface
+% www/ http/ html/: main formats, parsing
+% protocols/ retrieve/ viewers/: fetching stuff
+% display/: display engine
+% gui/: interface
 
 % skipped for now: i18n/japan/ applets/ sandbox/ crcs/ demos/ extensions/
 
@@ -388,11 +412,10 @@ get an updated copy.
 
 \chapter{Core Data Structures}
 
-\section{DOM}
-
 \section{Request}
 
 \subsection{URIs}
+% =~ /path/elements/
 
 <<type Uri.abs_uri>>=
 (* URI utilities. RFC 1630 *)
@@ -416,7 +439,7 @@ let is_absolute uri =
     let colonpos = String.index uri ':' in
     try 
       let slashpos = String.index uri '/' in
-       colonpos < slashpos (* colon must occur before slash *)
+      colonpos < slashpos (* colon must occur before slash *)
     with
       Not_found -> true (* colon occurs before slash *)
   with
@@ -424,21 +447,24 @@ let is_absolute uri =
 @
 
 \subsection{URLs}
+% =~ protocol://host@user:port/paths?search
 
 <<type Url.protocol>>=
 (* URLs as defined by RFC 1738 *)
 
 type protocol =
  | HTTP 
- | FILE | MAILTO | FTP
- | GOPHER | NEWS | NNTP | WAIS
+ | FILE | MAILTO | FTP | NNTP
  | TELNET 
+ | GOPHER | NEWS | WAIS
  | PROSPERO
  | OtherProtocol of string
 @
+%PROSPERO??
 
 <<type Url.t>>=
 (* Relative adressing in anchors, fragments are NOT URLs, but URI *)
+(* Not all components are used for all protocols. See RFC. *)
 type t = 
   { mutable protocol : protocol;
 
@@ -453,7 +479,6 @@ type t =
     mutable search: string option
   }
 @
-%(* Not all components are used for all protocols *)
 
 
 <<signature Url.distant_path>>=
@@ -472,17 +497,21 @@ let distant_path urlp =
 @
 
 \subsection{Hypertext Links}
+%=~ <a href="...">
 
 <<type Hyper.link>>=
+(* An hypertext(media) link on the Web *)
 type link = {
   h_uri : string;
   h_context: string option;
+
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
   }
 @
 
 <<type Hyper.link_method>>=
+(* This is currently for HTTP and derived, but ... *)
 (* Contains only the one we support *)
 type link_method =
    GET 
@@ -490,126 +519,8 @@ type link_method =
  | POST of string
 @
 
-<<signature Hyper.urlconcat>>=
-val urlconcat: Url.t -> string -> string
-   (* [urlconcat url relurl] resolves the relative URL [relurl] in the
-       context of the URL [url]
-      Doesn't handle fragments
-    *)
-@
-
-<<signature Hyper.resolve>>=
-val resolve : link -> Uri.abs_uri
-  (* raises Invalid_link(msg) *)
-@
-
-
-<<function Hyper.urlconcat>>=
-(* NO FRAGMENT HANDLING *)
-
-let urlconcat contextp newuri =
-  let l = String.length newuri in 
-    if l = 0 then string_of contextp 
-    else if l > 2 & newuri.[0] = '/' & newuri.[1] = '/' then
-      (* this is probably a gopher relative uri *)
-      sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
-    else if newuri.[0] = '/' then (* start from root *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = Some (Urlenc.unquote 
-                (String.sub newuri 1 (String.length newuri - 1)));
-     search = None }
-    else if newuri.[0] = '?' then (* change only search part *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = contextp.path;
-     search = Some (String.sub newuri 1 (String.length newuri - 1))}
-    else 
-      let pathpart,searchpart =
-    try
-      let n = String.index newuri '?' in
-      String.sub newuri 0 n,
-      Some (String.sub newuri (n+1) (l - n - 1))
-    with
-      Not_found -> newuri, None
-      in
-      match contextp.path with
-      None | Some "" -> 
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote (Lexurl.remove_dots pathpart));
-        search = searchpart}
-    | Some old ->
-        (* only the "dirname" part of the context path is important *)
-        (* e.g  .../d/e/f becomes /d/e/ *)
-       let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
-        (* we then have to remove dots *)
-    let reduced = Lexurl.remove_dots path in
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote reduced);
-        search = searchpart}
-@
-
-<<function Hyper.resolve>>=
-(* Produces an URL *)
-let resolve link =
-  (* First remove the possible fragment of the uri *)
-  let newuri, frag =
-    try
-      let pos = String.index link.h_uri '#' in
-       String.sub link.h_uri 0 pos, 
-        Some (String.sub link.h_uri (succ pos) 
-                    (String.length link.h_uri - pos - 1))
-    with
-        Not_found -> link.h_uri, None 
-  in
-  if Uri.is_absolute newuri then
-    try
-     {uri_url = Lexurl.normalize newuri;
-      uri_frag = frag}
-    with
-      Url_Lexing _ ->
-    raise (Invalid_link
-              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
-
-  else begin (* It is a relative uri *)
-    let context =
-      match link.h_context with 
-     None -> 
-      raise (Invalid_link (LinkResolve (I18n.sprintf 
-                  "no context and not an absolute url")))
-       | Some c -> c in
-
-    let contextp = 
-       try Lexurl.maken context
-       with
-    Url_Lexing (err,pos) ->
-     raise (Invalid_link (UrlLexing (err,pos)))
-       in
-    {uri_url = urlconcat contextp newuri;
-     uri_frag = frag}
-     end
-@
-
-
 \subsection{Request}
+% =~ ?
 
 <<type Www.request>>=
 (*
@@ -663,7 +574,7 @@ let make hlink =
 @
 
 
-\subsection{Document}
+\section{Document}
 
 <<type Document.document_id>>=
 (* Document Id is a reference to a document in the browser.
@@ -711,6 +622,9 @@ let document_id wwwr =
   | _ -> { document_url = wwwr.www_url; document_stamp = no_stamp}
 @
 
+\section{DOM}
+
+
 \section{Abstract syntax trees}
 
 % html
@@ -718,6 +632,17 @@ let document_id wwwr =
 % js
 
 \subsection{HTML}
+
+<<type Html.tag>>=
+type tag = {
+  tag_name : string;
+  attributes: attributes
+}
+@
+
+<<type Html.attributes>>=
+type attributes = (attribute_name * attribute_value) list
+@
 
 <<type Html.attribute_name>>=
 (* HTML tokens *)
@@ -727,31 +652,9 @@ type attribute_name = string
 type attribute_value = string
 @
 
-<<type Html.attributes>>=
-type attributes = (attribute_name * attribute_value) list
-@
 
-<<type Html.tag>>=
-type tag = {
-  tag_name : string;
-  attributes: attributes
-}
-@
+%todo: where is the tree? the full AST?
 
-<<type Html.token>>=
-type token =
-   PCData of string
- | CData of string
- | OpenTag of tag
- | CloseTag of string
- | Comment of string
- | Doctype of string
- | EOF
-@
-
-<<type Html.location>>=
-type location = Loc of int * int
-@
 
 
 
@@ -784,6 +687,28 @@ let default_attributes = [
 @
 
 
+<<signature Html.get_entity>>=
+val get_entity : string -> string
+  (* [get_entity "amp"] returns "&" *)
+@
+
+<<constant Html.get_entity>>=
+let get_entity = Hashtbl.find ampersand_table
+@
+
+
+
+<<signature Html.get_attribute>>=
+val get_attribute : tag -> string -> string
+  (* [get_attribute tag attrib_name] *)
+@
+
+<<signature Html.has_attribute>>=
+val has_attribute : tag -> string -> bool
+  (* [has_attribute tag attrib_name] *)
+@
+
+
 <<function Html.get_attribute>>=
 let get_attribute tag attr =
   try
@@ -804,7 +729,63 @@ let has_attribute tag attr =
 
 \chapter{[[main()]]}
 
+
+<<signature Version.initurl>>=
+val initurl : string -> string (* fake initial url *)
+@
+
+<<signature Version.helpurl>>=
+val helpurl : string -> string (* help url *)
+@
+
+
+<<signature Version.home>>=
+val home : string -> string    (* MMM home page *)
+@
+
+<<function Version.home>>=
+let home = function 
+  | "iso8859" -> "http://pauillac.inria.fr/mmm/"
+  | "ja" -> "http://pauillac.inria.fr/mmm/jmmm/"
+  | _ -> assert false
+@
+
+<<function Version.initurl>>=
+(* MUST BE NORMALIZED *)
+let initurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
+  | "ja" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/jmmm/v%d/about.html"
+    number
+  | _ -> assert false
+@
+
+<<function Version.helpurl>>=
+let helpurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
+  | "ja" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex-ja.html"
+    number
+  | _ -> assert false
+@
+
+\section{[[Html.init()]]}
+
+<<signature Html.init>>=
+val init : bool -> unit 
+@
+
+<<function Html.init>>=
+let init japan =
+  List.iter (fun (str, c) -> Hashtbl.add ampersand_table str c) 
+    (if japan then latin1_japan else latin1_normal) 
+@
+
 \section{The event loop}
+
+\subsection{[[Glevents]]}
 
 <<signature Glevents.get>>=
 val get : string -> (modifier list * xEvent) list 
@@ -813,7 +794,6 @@ val get : string -> (modifier list * xEvent) list
 <<signature Glevents.reset>>=
 val reset : unit -> unit
 @
-
 
 <<constant Glevents.events>>=
 (* A global table for describing events
@@ -826,11 +806,13 @@ let events = Hashtbl.create 37
 
 <<constant Glevents.builtin_defaults>>=
 let builtin_defaults = [
+
   (* tachymeter bindings *)
   "tachy_about", [[], ButtonPressDetail 3];
   "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
   "tachy_new", [[], ButtonPressDetail 1];
   "tachy_sel", [[], ButtonPressDetail 2];
+
   (* bindings on inlined images *)
   "loadimage", [[Control], ButtonPressDetail 1];
   "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
@@ -838,6 +820,7 @@ let builtin_defaults = [
   "restartanim", [[Shift], ButtonPressDetail 2];
   "copyimgurl", [[], ButtonPressDetail 2];
   "updateimage", [[Shift], ButtonPressDetail 2];
+
   (* anchor bindings *)
   "goto", [[], ButtonPressDetail 1];
   "save", [[Shift], ButtonPressDetail 1];
@@ -845,6 +828,7 @@ let builtin_defaults = [
   "hypermenu", [[Control], ButtonPressDetail 1];
 ]
 @
+% ???
 
 <<constant Glevents.get>>=
 let get = Hashtbl.find events
@@ -866,6 +850,7 @@ let reset () =
 \chapter{Navigator Interface}
 % The chrome
 
+
 \chapter{Parsing}
 
 \section{URLs}
@@ -883,14 +868,9 @@ val make : string -> Url.t
 val maken : string -> Url.t
    (* raise Url_Lexing(msg,pos) *)
 @
+% diff?
 
-<<signature Lexurl.remove_dots>>=
-val remove_dots : string -> string
-@
 
-<<signature Lexurl.normalize>>=
-val normalize : string -> string
-@
 
 
 %todo: lexurl.mll?
@@ -922,7 +902,7 @@ val remove_dots : string -> string
 @
 
 \subsection{Encoding}
-% unparsing?
+% unparsing? escaping?
 
 <<signature Urlenc.decode>>=
 (* URL encoding *)
@@ -967,6 +947,7 @@ let hexchar c =
 @
 
 <<function Urlenc.decode>>=
+(* Decode escaped characters *)
 (* Note: beware of order of splitting wrt '&' and decoding *)
 let decode s =
   let l = String.length s in
@@ -1103,7 +1084,174 @@ let parse_method = function
 @
 
 
+
+
+
+
+<<signature Hyper.urlconcat>>=
+val urlconcat: Url.t -> string -> string
+   (* [urlconcat url relurl] resolves the relative URL [relurl] in the
+       context of the URL [url]
+      Doesn't handle fragments
+    *)
+@
+
+<<signature Hyper.resolve>>=
+val resolve : link -> Uri.abs_uri
+  (* raises Invalid_link(msg) *)
+@
+
+
+<<function Hyper.urlconcat>>=
+(* parsed Absolute URL + URL -> Absolute URL *)
+(* NO FRAGMENT HANDLING *)
+
+let urlconcat contextp newuri =
+  let l = String.length newuri in 
+    if l = 0 then string_of contextp 
+    else if l > 2 & newuri.[0] = '/' & newuri.[1] = '/' then
+      (* this is probably a gopher relative uri *)
+      sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
+    else if newuri.[0] = '/' then (* start from root *)
+      string_of {
+        protocol = contextp.protocol;
+     user = contextp.user;
+     password = contextp.password;
+        host = contextp.host;
+        port = contextp.port;
+     path = Some (Urlenc.unquote 
+                (String.sub newuri 1 (String.length newuri - 1)));
+     search = None }
+    else if newuri.[0] = '?' then (* change only search part *)
+      string_of {
+        protocol = contextp.protocol;
+     user = contextp.user;
+     password = contextp.password;
+        host = contextp.host;
+        port = contextp.port;
+     path = contextp.path;
+     search = Some (String.sub newuri 1 (String.length newuri - 1))}
+    else 
+      let pathpart,searchpart =
+    try
+      let n = String.index newuri '?' in
+      String.sub newuri 0 n,
+      Some (String.sub newuri (n+1) (l - n - 1))
+    with
+      Not_found -> newuri, None
+      in
+      match contextp.path with
+      None | Some "" -> 
+        string_of {
+        protocol = contextp.protocol;
+        user = contextp.user;
+        password = contextp.password;
+        host = contextp.host;
+        port = contextp.port;
+        path = Some (Urlenc.unquote (Lexurl.remove_dots pathpart));
+        search = searchpart}
+    | Some old ->
+        (* only the "dirname" part of the context path is important *)
+        (* e.g  .../d/e/f becomes /d/e/ *)
+       let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
+        (* we then have to remove dots *)
+    let reduced = Lexurl.remove_dots path in
+        string_of {
+        protocol = contextp.protocol;
+        user = contextp.user;
+        password = contextp.password;
+        host = contextp.host;
+        port = contextp.port;
+        path = Some (Urlenc.unquote reduced);
+        search = searchpart}
+@
+
+<<function Hyper.resolve>>=
+(* Produces an URL *)
+let resolve link =
+  (* First remove the possible fragment of the uri *)
+  let newuri, frag =
+    try
+      let pos = String.index link.h_uri '#' in
+       String.sub link.h_uri 0 pos, 
+        Some (String.sub link.h_uri (succ pos) 
+                    (String.length link.h_uri - pos - 1))
+    with
+        Not_found -> link.h_uri, None 
+  in
+  if Uri.is_absolute newuri then
+    try
+     {uri_url = Lexurl.normalize newuri;
+      uri_frag = frag}
+    with
+      Url_Lexing _ ->
+    raise (Invalid_link
+              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
+
+  else begin (* It is a relative uri *)
+    let context =
+      match link.h_context with 
+     None -> 
+      raise (Invalid_link (LinkResolve (I18n.sprintf 
+                  "no context and not an absolute url")))
+       | Some c -> c in
+
+    let contextp = 
+       try Lexurl.maken context
+       with
+    Url_Lexing (err,pos) ->
+     raise (Invalid_link (UrlLexing (err,pos)))
+       in
+    {uri_url = urlconcat contextp newuri;
+     uri_frag = frag}
+     end
+@
+
+
+\subsection{Normalization}
+
+<<signature Lexurl.remove_dots>>=
+val remove_dots : string -> string
+@
+<<signature Lexurl.normalize>>=
+val normalize : string -> string
+@
+
+
 \section{HTML}
+
+
+
+\subsection{Lexing}
+
+<<type Html.token>>=
+type token =
+   PCData of string
+ | CData of string
+ | OpenTag of tag
+ | CloseTag of string
+ | Comment of string
+ | Doctype of string
+ | EOF
+@
+
+<<type Html.location>>=
+type location = Loc of int * int
+@
+
+% lexhtml.mll
+
+
+<<signature Lexhtml.html>>=
+val html : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
+@
+
+<<type Lexhtml.warnings>>=
+type warnings = (string * int) list
+@
+
+
+
 
 <<signature Lexhtml.strict>>=
 val strict : bool ref
@@ -1111,12 +1259,6 @@ val strict : bool ref
        lexing decisisons such as: comments, attribute names and values
      *)
 @
-
-<<signature Lexhtml.html>>=
-val html : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
-@
-
-
 
 
 <<signature Lexhtml.new_data>>=
@@ -1126,19 +1268,23 @@ val new_data : unit -> t
      *)
 @
 
-<<type Lexhtml.warnings>>=
-type warnings = (string * int) list
-@
 
 
 <<signature Lexhtml.cdata>>=
 val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 @
 
-% lexhtml.mll
 
 
 \subsection{DTDs}
+
+<<signature module Dtd.Elements>>=
+module Elements : Set.S with type elt = string
+@
+
+<<module Dtd.elements>>=
+module Elements = Set.Make(struct type t = string let compare = compare end)
+@
 
 <<type Dtd.t>>=
 type t = {
@@ -1196,6 +1342,14 @@ let sos l =
 
 
 
+%(* #PCDATA and #CDATA are considered as elements, but they will never
+%   be pushed on the stack during evaluation. Moreover, since they are
+%   not in open_omitted/close_omitted, minimization algorithm will not
+%   attempt to choose them
+% *)
+
+%todo: copy the comments made on dtd20 to dtd32
+% and adapt to latest dtd of html5?
 <<constant Dtd.dtd32>>=
 let dtd32 =
   let dtd = {
@@ -1376,7 +1530,48 @@ let names () =
 let _ = add dtd20; add dtd32
 @
 
-\subsection{Minimization}
+
+<<constant Dtd.dtd32f>>=
+(* Add frames somwhere to dtd32.
+ * Luckily we chose sets, and they are functional
+ *)
+let dtd32f =
+  let dtd = {
+    dtd_name = "HTML 3.2 + frames";
+    contents = Hashtbl.create 101;
+    open_omitted = dtd32.open_omitted;
+    close_omitted = dtd32.close_omitted;
+  } in
+  let omit_open el =
+    dtd.open_omitted <- Elements.add el dtd.open_omitted
+  and omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted
+  and add_elem = 
+   Hashtbl.add dtd.contents
+  in
+  (* first : copy in the 3.2 contents *)
+  Hashtbl.iter add_elem dtd32.contents;
+
+  (* frameset and frames is pretty simple *)
+  add_elem "frameset" (sol ["frameset"; "frame"; "noframes"]);
+  add_elem "frame" Elements.empty;
+  omit_close "frame";
+  (* we say that noframes contains the same thing as body in 3.2 *)
+  add_elem "noframes" (Hashtbl.find dtd.contents "body");
+  (* and we say that frameset can occur in html *)
+  let html_contents = Hashtbl.find dtd.contents "html" in
+  Hashtbl.remove dtd.contents "html";
+  add_elem "html" (Elements.add "frameset" 
+             (Elements.add "noframes" html_contents));
+  dtd
+@
+
+<<toplevel Dtd._2>>=
+let _ = add dtd32f
+@
+
+
+\subsection{SGML evaluator}
 
 <<type Html_eval.minimization>>=
 (* Wrapped up lexer to insert open/close tags in the stream of "normal"
@@ -1402,16 +1597,6 @@ val add_html_filter : ((Html.token -> unit) -> Html.token -> unit) -> unit
 @
 
 <<signature Html_eval.sgml_lexer>>=
-(* [add_html_filter filter] adds an HTML filter between the lexing and
-  displaying of HTML. So, the filters do not affect the source (and
-  the source display), change the content of HTML silently, and affect
-  the display. The filter function [filter pfilter] receives a HTML token
-  for each time, and do some job, and send a token to the parent filter 
-  pfilter if possible. The filters will receive a correct HTML token
-  stream (all the tags are placed and closed correctly due to the DTD),
-  and they must send the correct stream to the parent filter also. 
-*)
-
 val sgml_lexer :
   Dtd.t -> Lexing.lexbuf -> 
     ((string * int) list * minimization * Html.token list * Html.location)
@@ -1801,6 +1986,34 @@ let automat dtd action lexbuf error =
 
 \subsection{[[htparse]]}
 
+%(* Testing the HTML Lexer/evaluator *)
+
+<<function Htparse.main>>=
+let main () =
+  Lang.japan := Lang.is_japanese ();
+  Html.init !Lang.japan;
+  Arg.parse [
+     "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";
+     "-strict", Arg.Set Lexhtml.strict, "Strict mode";
+     "-v", Arg.Unit (function () -> verbose := true), "Verbose mode";
+     "-struct", Arg.Int (function n -> mode := Indent n), "Parse Tree";
+     "-nesting", Arg.Unit (function () -> mode := Nesting), "Check nesting";
+     "-dtd", Arg.Unit (function () -> Dtd.dump Dtd.dtd32f), "Dump DTD";
+     "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
+     ]
+     (fun s -> 
+     match !mode with
+       Check -> html_lex s
+         | Indent n -> html_indent s n
+         | Nesting -> html_nest s)
+     "Usage: htparse <opts> file1.html ... filen.html"
+@
+
+<<toplevel Htparse._2>>=
+let _ = Printexc.catch main ()
+@
+
+
 \section{HTTP headers}
 
 \chapter{HTML}
@@ -1928,19 +2141,142 @@ let get name =
 
 \chapter{Retrieving}
 
+\section{Connections}
+
+<<type Feed.internal>>=
+(* An abstract notion of connection *)
+
+type internal = Unix.file_descr
+@
+
+<<type Feed.t>>=
+type t = {
+  feed_read : string -> int -> int -> int;
+  feed_schedule : (unit -> unit) -> unit;
+  feed_unschedule : unit -> unit;
+  feed_close : unit -> unit;
+  feed_internal : internal  
+  }
+@
+
+<<signature Feed.of_fd>>=
+val of_fd : Unix.file_descr -> t
+@
+
+<<signature Feed.internal>>=
+val internal : t -> internal
+@
+
+
+<<function Feed.of_fd>>=
+(* We should distinguish internal/external connections *)
+let of_fd fd =
+  let is_open = ref true
+  and action = ref None
+  and condition = Condition.create()
+  and first_read = ref false
+  in
+  (* ASSUMES: this is the first read on the fileevent *)
+  let safe_read buf offs len =
+    first_read := false;
+    if !is_open then Low.read fd buf offs len else 0
+  in
+  (* In other cases : this is non blocking but not fully threaded. *)
+  let special_read buf ofs len =
+     (* remove the normal handler *)
+     Fileevent.remove_fileinput fd; 
+     (* add a handler to trigger the condition *)
+     Fileevent.add_fileinput fd (fun () ->
+     Fileevent.remove_fileinput fd; (* remove myself *)
+     Condition.set condition);
+     (* wait for the condition to happen *)
+     Condition.wait condition;
+     (* Meanwhile, someone may have unscheduled/closed the 
+    feed (e.g. abort). We call safe_read, but if the feed has been
+    closed, read will fail.
+    To know if we have to put back on schedule, check the *current*
+    state of action
+      *)
+     let n = try safe_read buf ofs len with _ -> 0 in
+     (* reschedule; it is essential that Low.add_fileinput does not
+        call the event loop, otherwise we loose sequentiality of reads *)
+     (match !action with
+        Some f ->
+      Fileevent.add_fileinput fd (fun () -> first_read := true; f())
+      | None -> ());
+     (* and return *)
+     n
+  in {
+   feed_read =
+    (fun buf ofs len -> 
+       if !first_read then safe_read buf ofs len
+       else special_read buf ofs len);
+   feed_schedule = 
+    (function f ->
+       if not !is_open then
+     Log.f "ERROR: feed is closed, can't schedule"
+       else match !action with
+     Some f -> (* we are already scheduled ! *)
+       Log.f "Warning: feed already scheduled"
+       | None -> begin
+        action := Some f;
+        Low.add_fileinput fd (fun () -> first_read := true; f())
+      end);
+   feed_unschedule = 
+    (function () -> 
+       match !action with
+     Some f -> Low.remove_fileinput fd; action := None
+       | None -> (* this happens quite often (for all action codes which
+            do not process the body of the document, the feed got
+            unscheduled as the end of headers) *)
+       ());
+
+   (* feed_close must be called only if the feed it *not* scheduled *)
+   feed_close =
+    (function () -> 
+       (* if we abort during a state when we are waiting on the condition,
+          the feed is unscheduled but we never get out. So always change
+      the state *)
+       Condition.set condition;
+       if !is_open then begin
+     match !action with 
+        Some f -> Log.f "ERROR: feed is scheduled, can't close"
+      | None -> Unix.close fd;
+                is_open := false;
+            (* Condition.free condition RACE CONDITION HERE *)
+       end);
+   feed_internal = fd
+     }
+@
+
+<<function Feed.internal>>=
+let internal {feed_internal = fd} = fd
+@
+
+
 \section{Active}
 
-%(* We need to keep a trace of pending connections, since there is a race
-%   condition when the user clicks twice rapidly on an anchor. If the second
-%   click occurs before the document is added to the cache, (e.g. because we
-%   are waiting for the headers), then the document will be retrieved twice.
-%   And naturally, for documents that don't enter the cache we always will
-%   duplicate connexions.
-%   Retrieve.f is a safe place to add the request to the list of pending
-%   connexions, because it is synchronous.
-%   Removing an active connexion must take place when we close the 
-%   dh.document_fd.
-%*)
+<<module Www.UrlSet>>=
+(* We need to keep a trace of pending connections, since there is a race
+   condition when the user clicks twice rapidly on an anchor. If the second
+   click occurs before the document is added to the cache, (e.g. because we
+   are waiting for the headers), then the document will be retrieved twice.
+   And naturally, for documents that don't enter the cache we always will
+   duplicate connexions.
+   Retrieve.f is a safe place to add the request to the list of pending
+   connexions, because it is synchronous.
+   Removing an active connexion must take place when we close the 
+   dh.document_fd.
+*)
+module UrlSet =
+  Set.Make(struct type t = Url.t let compare = compare end)
+@
+
+
+<<signature module Www.UrlSet>>=
+(* Table of unresolved active connexions *)
+module UrlSet : Set.S with type elt = Url.t
+@
 
 <<constant Www.active_connexions>>=
 let active_connexions = ref UrlSet.empty
@@ -1956,7 +2292,21 @@ val add_active_cnx : Url.t -> unit
 val rem_active_cnx : Url.t -> unit
 @
 
+<<functions Www.xxx_active_cnx>>=
+let is_active_cnx url = 
+  UrlSet.mem url !active_connexions
+let add_active_cnx url = 
+  active_connexions := UrlSet.add url !active_connexions
+let rem_active_cnx url =
+  active_connexions := UrlSet.remove url !active_connexions
+@
+
 \section{Documents}
+
+<<module Document.DocumentIDSet>>=
+module DocumentIDSet =
+  Set.Make(struct type t = document_id let compare = compare end)
+@
 
 <<type Document.handle>>=
 (* This is passed around by request continuations. It represents a handle
@@ -2148,6 +2498,10 @@ type display_info = {
 \section{Caches}
 
 \chapter{Advanced Topics}
+
+\section{Encodings}
+
+% base64, 8859, url encode, etc.
 
 \section{i18n}
 
@@ -2461,6 +2815,10 @@ let latin1_normal = [
 
 \section{Applets}
 
+<<signature Version.applet_init>>=
+(*-*)
+val applet_init : (bool -> unit) ref
+@
 <<constant Version.applet_init>>=
 (* Make it easier to compile both bytecode and native versions *)
 let applet_init = ref (fun _ -> ())
@@ -2502,6 +2860,10 @@ let debug s = if !debug_mode then f s
 
 \subsection{Tty}
 
+<<signature type logger>>=
+type logger
+@
+
 <<signature Document.tty_logger>>=
 val tty_logger : logger
 @
@@ -2530,6 +2892,18 @@ let tty_logger =
 val verbose : bool ref
   (* verbose mode for HTML related stuff *)
 @
+<<constant Html.verbose>>=
+let verbose = ref false
+@
+
+<<function Html.warning>>=
+let warning s (Loc(n,m)) = 
+  if !verbose then begin 
+    eprintf "HTML Warning: %s at (%d, %d)\n" s n m;
+    flush stderr
+   end
+@
+
 
 <<signature Html_eval.debug>>=
 (* HTML Evaluation *)
@@ -2725,19 +3099,22 @@ let default = new t default_toplevel
 <<signature Error.f>>=
 val f : string -> unit
 @
-
 <<signature Error.ok>>=
 val ok : string -> unit
 @
-
 <<signature Error.choose>>=
 val choose : string -> bool
 @
-
 <<signature Error.ari>>=
 val ari : string -> int
 @
 
+<<functions Error.xxx>>=
+let f msg = default#f msg
+and ok msg = default#ok msg
+and choose msg = default#choose msg
+and ari msg = default#ari msg
+@
 
 <<class Error.t>>=
 class t (top) =
@@ -2783,6 +3160,10 @@ end
 exception Url_Lexing of string * int
 @
 
+<<exception Url.Invalid_url>>=
+exception Invalid_url of t * string
+@
+
 \section{Links}
 
 <<type Hyper.link_error>>=
@@ -2810,6 +3191,11 @@ exception Html_Lexing of string * int
 <<exception Html.Invalid_Html>>=
 exception Invalid_Html of string
 @
+
+<<signature Html.warning>>=
+val warning : string -> location -> unit
+@
+
 
 \chapter{Standard Library}
 

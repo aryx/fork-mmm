@@ -6,8 +6,8 @@ open Url
 
 (* An hypertext(media) link on the Web *)
 
-(* This is currently for HTTP and derived, but ... *)
 (*s: type Hyper.link_method *)
+(* This is currently for HTTP and derived, but ... *)
 (* Contains only the one we support *)
 type link_method =
    GET 
@@ -25,9 +25,11 @@ let parse_method = function
 
 
 (*s: type Hyper.link *)
+(* An hypertext(media) link on the Web *)
 type link = {
   h_uri : string;
   h_context: string option;
+
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
   }
@@ -43,8 +45,8 @@ type link_error =
 exception Invalid_link of link_error
 (*e: exception Hyper.Invalid_link *)
 
-(* parsed Absolute URL + URL -> Absolute URL *)
 (*s: function Hyper.urlconcat *)
+(* parsed Absolute URL + URL -> Absolute URL *)
 (* NO FRAGMENT HANDLING *)
 
 let urlconcat contextp newuri =

@@ -1,7 +1,9 @@
 (*s: ./html/dtd.ml *)
 open Printf
 
+(*s: module Dtd.elements *)
 module Elements = Set.Make(struct type t = string let compare = compare end)
+(*e: module Dtd.elements *)
 
 (*s: type Dtd.t *)
 type t = {
@@ -40,15 +42,18 @@ let sos l =
 let dtd20 =
   let dtd = {
     dtd_name = "HTML 2.0";
+
     contents = Hashtbl.create 53;
     open_omitted = Elements.empty;
     close_omitted = Elements.empty
      } in
+
   let omit_open el =
     dtd.open_omitted <- Elements.add el dtd.open_omitted
   and omit_close el =
     dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
+  and add_elem = 
+    Hashtbl.add dtd.contents
   in
 
   (* Some entities *)
@@ -439,10 +444,12 @@ let dtd32f =
     dtd.open_omitted <- Elements.add el dtd.open_omitted
   and omit_close el =
     dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
+  and add_elem = 
+   Hashtbl.add dtd.contents
   in
   (* first : copy in the 3.2 contents *)
   Hashtbl.iter add_elem dtd32.contents;
+
   (* frameset and frames is pretty simple *)
   add_elem "frameset" (sol ["frameset"; "frame"; "noframes"]);
   add_elem "frame" Elements.empty;

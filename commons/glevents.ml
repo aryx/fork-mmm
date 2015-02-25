@@ -13,11 +13,13 @@ let events = Hashtbl.create 37
 
 (*s: constant Glevents.builtin_defaults *)
 let builtin_defaults = [
+
   (* tachymeter bindings *)
   "tachy_about", [[], ButtonPressDetail 3];
   "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
   "tachy_new", [[], ButtonPressDetail 1];
   "tachy_sel", [[], ButtonPressDetail 2];
+
   (* bindings on inlined images *)
   "loadimage", [[Control], ButtonPressDetail 1];
   "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
@@ -25,6 +27,7 @@ let builtin_defaults = [
   "restartanim", [[Shift], ButtonPressDetail 2];
   "copyimgurl", [[], ButtonPressDetail 2];
   "updateimage", [[Shift], ButtonPressDetail 2];
+
   (* anchor bindings *)
   "goto", [[], ButtonPressDetail 1];
   "save", [[Shift], ButtonPressDetail 1];

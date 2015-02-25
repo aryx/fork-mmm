@@ -6,6 +6,7 @@ module type S =
     val empty: 'a t
     val add: (key * key) -> 'a -> 'a t -> 'a t
     val find: key -> 'a t -> 'a
+
     val find_interval : key -> 'a t -> key * key
   end
 

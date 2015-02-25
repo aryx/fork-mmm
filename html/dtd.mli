@@ -1,5 +1,7 @@
 (*s: ./html/dtd.mli *)
+(*s: signature module Dtd.Elements *)
 module Elements : Set.S with type elt = string
+(*e: signature module Dtd.Elements *)
 
 (*s: type Dtd.t *)
 type t = {

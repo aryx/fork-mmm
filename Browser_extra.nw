@@ -7,9 +7,9 @@
 
 <<./commons/common.ml>>=
 
-<<constant Common.spf>>
-
 module StringSet = Set.Make(struct type t = string let compare = compare end)
+
+<<constant Common.spf>>
 
 <<function Common.TODOOPERATOR>>
 @
@@ -22,13 +22,12 @@ module StringSet = Set.Make(struct type t = string let compare = compare end)
 <<signature Condition.create>>=
 val create : unit -> t
 @
+<<signature Condition.wait>>=
+val wait : t -> unit
+@
 
 <<signature Condition.set>>=
 val set : t -> unit
-@
-
-<<signature Condition.wait>>=
-val wait : t -> unit
 @
 
 <<signature Condition.free>>=
@@ -71,12 +70,12 @@ open Printf
 let create () =
   Textvariable.create(), ref 0
 
-and set (v , r) =
+let set (v , r) =
   incr r; Textvariable.set v (sprintf "cond%d" !r)
 
-and wait (v, _) = Tkwait.variable v
+let wait (v, _) = Tkwait.variable v
 
-and free (v, _) = Textvariable.free v
+let free (v, _) = Textvariable.free v
 @
 
 
@@ -334,10 +333,7 @@ open Mstring
 <<constant Error.default>>
 
 (* backward compatibility *)
-let f msg = default#f msg
-and ok msg = default#ok msg
-and choose msg = default#choose msg
-and ari msg = default#ari msg
+<<functions Error.xxx>>
 @
 
 
@@ -632,6 +628,35 @@ and eprintf fmt = fprintf stderr fmt
 \subsection*{[[./commons/ibtree.mli]]}
 
 %todo: replace with Map?
+% have notion of interval? good for anchors?
+
+%(* Exemples
+%let anchors = [
+% {start = 1,3; stop = 1,7};
+% {start = 1,13; stop = 1,17};
+% {start = 1,30; stop = 1,70};
+% {start = 10,3; stop = 10,7};
+% {start = 11,3; stop = 12,1};
+% {start = 12,3; stop = 13,17};
+% {start = 14,30; stop = 15,7};
+% {start = 100,3; stop = 100,7};
+% {start = 101,3; stop = 101,7};
+% {start = 101,31; stop = 101,37}
+% ]
+%do_list add_anchor anchors
+%
+%find_anchor (1,6)
+%find_anchor (12,0)
+%find_anchor (11,7)
+%find_anchor (101,3)
+%find_anchor (15,3)
+%find_anchor (16,3)
+%
+%(* A bit long (more than 3 seconds in Caml Light) *)
+%for i = 0 to 10000 do 
+% add_anchor {start = i, 1+i/2; stop = i, i}
+%done
+%*)
 
 %-------------------------------------------------------------
 
@@ -643,6 +668,7 @@ module type S =
     val empty: 'a t
     val add: (key * key) -> 'a -> 'a t -> 'a t
     val find: key -> 'a t -> 'a
+
     val find_interval : key -> 'a t -> key * key
   end
 
@@ -1617,29 +1643,7 @@ open Unix
 
 \subsection*{[[./commons/feed.mli]]}
 
-<<type Feed.internal>>=
-(* An abstract notion of connection *)
 
-type internal = Unix.file_descr
-@
-
-<<type Feed.t>>=
-type t = {
-  feed_read : string -> int -> int -> int;
-  feed_schedule : (unit -> unit) -> unit;
-  feed_unschedule : unit -> unit;
-  feed_close : unit -> unit;
-  feed_internal : internal  
-  }
-@
-
-<<signature Feed.of_fd>>=
-val of_fd : Unix.file_descr -> t
-@
-
-<<signature Feed.internal>>=
-val internal : t -> internal
-@
 
 
 %-------------------------------------------------------------
@@ -1656,113 +1660,14 @@ val internal : t -> internal
 
 \subsection*{[[./commons/feed.ml]]}
 
-<<type Feed.internal (./commons/feed.ml)>>=
-(* An abstract notion of connection *)
-type internal = Unix.file_descr
-@
-
-<<type Feed.t (./commons/feed.ml)>>=
-type t = {
-  feed_read : string -> int -> int -> int;
-  feed_schedule : (unit -> unit) -> unit;
-  feed_unschedule : unit -> unit;
-  feed_close : unit -> unit;
-  feed_internal : internal  
-  }
-@
-
-<<function Feed.of_fd>>=
-(* We should distinguish internal/external connections *)
-let of_fd fd =
-  let is_open = ref true
-  and action = ref None
-  and condition = Condition.create()
-  and first_read = ref false
-  in
-  (* ASSUMES: this is the first read on the fileevent *)
-  let safe_read buf offs len =
-    first_read := false;
-    if !is_open then Low.read fd buf offs len else 0
-  in
-  (* In other cases : this is non blocking but not fully threaded. *)
-  let special_read buf ofs len =
-     (* remove the normal handler *)
-     Fileevent.remove_fileinput fd; 
-     (* add a handler to trigger the condition *)
-     Fileevent.add_fileinput fd (fun () ->
-     Fileevent.remove_fileinput fd; (* remove myself *)
-     Condition.set condition);
-     (* wait for the condition to happen *)
-     Condition.wait condition;
-     (* Meanwhile, someone may have unscheduled/closed the 
-    feed (e.g. abort). We call safe_read, but if the feed has been
-    closed, read will fail.
-    To know if we have to put back on schedule, check the *current*
-    state of action
-      *)
-     let n = try safe_read buf ofs len with _ -> 0 in
-     (* reschedule; it is essential that Low.add_fileinput does not
-        call the event loop, otherwise we loose sequentiality of reads *)
-     (match !action with
-        Some f ->
-      Fileevent.add_fileinput fd (fun () -> first_read := true; f())
-      | None -> ());
-     (* and return *)
-     n
-  in {
-   feed_read =
-    (fun buf ofs len -> 
-       if !first_read then safe_read buf ofs len
-       else special_read buf ofs len);
-   feed_schedule = 
-    (function f ->
-       if not !is_open then
-     Log.f "ERROR: feed is closed, can't schedule"
-       else match !action with
-     Some f -> (* we are already scheduled ! *)
-       Log.f "Warning: feed already scheduled"
-       | None -> begin
-        action := Some f;
-        Low.add_fileinput fd (fun () -> first_read := true; f())
-      end);
-   feed_unschedule = 
-    (function () -> 
-       match !action with
-     Some f -> Low.remove_fileinput fd; action := None
-       | None -> (* this happens quite often (for all action codes which
-            do not process the body of the document, the feed got
-            unscheduled as the end of headers) *)
-       ());
-
-   (* feed_close must be called only if the feed it *not* scheduled *)
-   feed_close =
-    (function () -> 
-       (* if we abort during a state when we are waiting on the condition,
-          the feed is unscheduled but we never get out. So always change
-      the state *)
-       Condition.set condition;
-       if !is_open then begin
-     match !action with 
-        Some f -> Log.f "ERROR: feed is scheduled, can't close"
-      | None -> Unix.close fd;
-                is_open := false;
-            (* Condition.free condition RACE CONDITION HERE *)
-       end);
-   feed_internal = fd
-     }
-@
-
-<<function Feed.internal>>=
-let internal {feed_internal = fd} = fd
-@
 
 
 %-------------------------------------------------------------
 
 <<./commons/feed.ml>>=
-<<type Feed.internal (./commons/feed.ml)>>
+<<type Feed.internal>>
 
-<<type Feed.t (./commons/feed.ml)>>
+<<type Feed.t>>
 
 <<function Feed.of_fd>>
  
@@ -1838,40 +1743,6 @@ let f url title =
 
 \subsection*{[[./globals/version.mli]]}
 
-<<signature Version.number>>=
-(* Version and other builtin strings *)
-val number : int
-@
-
-<<signature Version.http>>=
-val http : string              (* the version in User-Agent field *)
-@
-
-<<signature Version.about>>=
-val about : string -> string   (* dialog *)
-@
-
-<<signature Version.initurl>>=
-val initurl : string -> string (* fake initial url *)
-@
-
-<<signature Version.helpurl>>=
-val helpurl : string -> string (* help url *)
-@
-
-<<signature Version.html>>=
-val html : string -> string    (* fake initial document *)
-@
-
-<<signature Version.home>>=
-val home : string -> string    (* MMM home page *)
-@
-
-<<signature Version.applet_init>>=
-(*-*)
-val applet_init : (bool -> unit) ref
-@
-
 
 %-------------------------------------------------------------
 
@@ -1888,46 +1759,6 @@ val applet_init : (bool -> unit) ref
 
 
 \subsection*{[[./globals/version.ml]]}
-
-
-<<constant Version.version_number>>=
-let version_number = string_of_int number;;
-@
-
-<<constant Version.http>>=
-(* User-Agent field *)
-let http = "MMM/0." ^ string_of_int number
-@
-
-
-<<function Version.home>>=
-let home = function 
-  | "iso8859" -> "http://pauillac.inria.fr/mmm/"
-  | "ja" -> "http://pauillac.inria.fr/mmm/jmmm/"
-  | _ -> assert false
-@
-
-<<function Version.initurl>>=
-(* MUST BE NORMALIZED *)
-let initurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
-  | "ja" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/jmmm/v%d/about.html"
-    number
-  | _ -> assert false
-@
-
-<<function Version.helpurl>>=
-let helpurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
-  | "ja" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex-ja.html"
-    number
-  | _ -> assert false
-@
-
 
 
 
@@ -1969,9 +1800,6 @@ let helpurl = function
 <<type Uri.abs_uri>>
 
 <<signature Uri.is_absolute>>
-
-
-
 @
 
 
@@ -2000,7 +1828,6 @@ open Mstring
 
 <<signature Url.string_of_protocol>>
 
-(* Not all components are used for all protocols. See RFC. *)
 <<type Url.t>>
 
 <<signature Url.string_of>>
@@ -2015,9 +1842,6 @@ open Mstring
 
 \subsection*{[[./www/url.ml]]}
 
-<<exception Url.Invalid_url>>=
-exception Invalid_url of t * string
-@
 
 
 %-------------------------------------------------------------
@@ -2073,7 +1897,6 @@ open Mstring
 
 <<function Urlenc.hexchar>>
 
-(* Decode escaped characters *)
 <<function Urlenc.decode>>
 
 <<constant Urlenc.keep_quoted>>
@@ -2115,7 +1938,6 @@ open Mstring
 <<./www/hyper.mli>>=
 (* An hypertext(media) link on the Web *)
 
-(* This is currently for HTTP and derived, but ... *)
 <<type Hyper.link_method>>
 
 <<signature Hyper.parse_method>>
@@ -2149,7 +1971,6 @@ open Url
 
 (* An hypertext(media) link on the Web *)
 
-(* This is currently for HTTP and derived, but ... *)
 <<type Hyper.link_method>>
 
 <<function Hyper.parse_method>>
@@ -2161,7 +1982,6 @@ open Url
 
 <<exception Hyper.Invalid_link>>
 
-(* parsed Absolute URL + URL -> Absolute URL *)
 <<function Hyper.urlconcat>>
           
 <<function Hyper.resolve>>
@@ -2249,8 +2069,7 @@ open Printf
 
 <<signature Www.make>>
 
-(* Table of unresolved active connexions *)
-module UrlSet : Set.S with type elt = Url.t
+<<signature module Www.UrlSet>>
 
 <<signature Www.is_active_cnx>>
 <<signature Www.add_active_cnx>>
@@ -2279,27 +2098,10 @@ open Url
  
 
 
-(* We need to keep a trace of pending connections, since there is a race
-   condition when the user clicks twice rapidly on an anchor. If the second
-   click occurs before the document is added to the cache, (e.g. because we
-   are waiting for the headers), then the document will be retrieved twice.
-   And naturally, for documents that don't enter the cache we always will
-   duplicate connexions.
-   Retrieve.f is a safe place to add the request to the list of pending
-   connexions, because it is synchronous.
-   Removing an active connexion must take place when we close the 
-   dh.document_fd.
-*)
-module UrlSet =
-  Set.Make(struct type t = Url.t let compare = compare end)
+<<module Www.UrlSet>>
 
 <<constant Www.active_connexions>>
-let is_active_cnx url = 
-  UrlSet.mem url !active_connexions
-let add_active_cnx url = 
-  active_connexions := UrlSet.add url !active_connexions
-let rem_active_cnx url =
-  active_connexions := UrlSet.remove url !active_connexions
+<<functions Www.xxx_active_cnx>>
 
 @
 
@@ -2316,7 +2118,7 @@ let rem_active_cnx url =
 <<signature Document.no_stamp>>
 <<signature Document.new_stamp>>
 
-type logger
+<<signature type logger>>
 <<signature Document.tty_logger>>
 
 <<type Document.handle>>
@@ -2356,8 +2158,7 @@ open Hyper
 
 <<type Document.document_id>>
 
-module DocumentIDSet =
-  Set.Make(struct type t = document_id let compare = compare end)
+<<module Document.DocumentIDSet>>
 
 <<type Document.handle>>
 
@@ -2401,13 +2202,13 @@ val dtd20 : t
 <<signature Dtd.dtd32f>>=
 val dtd32f : t
 @
-
+% with frame?
 
 
 %-------------------------------------------------------------
 
 <<./html/dtd.mli>>=
-module Elements : Set.S with type elt = string
+<<signature module Dtd.Elements>>
 
 <<type Dtd.t>>
 
@@ -2440,15 +2241,18 @@ module Elements : Set.S with type elt = string
 let dtd20 =
   let dtd = {
     dtd_name = "HTML 2.0";
+
     contents = Hashtbl.create 53;
     open_omitted = Elements.empty;
     close_omitted = Elements.empty
      } in
+
   let omit_open el =
     dtd.open_omitted <- Elements.add el dtd.open_omitted
   and omit_close el =
     dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
+  and add_elem = 
+    Hashtbl.add dtd.contents
   in
 
   (* Some entities *)
@@ -2632,53 +2436,12 @@ let dtd20 =
 @
 
 
-
-
-
-<<constant Dtd.dtd32f>>=
-(* Add frames somwhere to dtd32.
- * Luckily we chose sets, and they are functional
- *)
-let dtd32f =
-  let dtd = {
-    dtd_name = "HTML 3.2 + frames";
-    contents = Hashtbl.create 101;
-    open_omitted = dtd32.open_omitted;
-    close_omitted = dtd32.close_omitted;
-  } in
-  let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
-  in
-  (* first : copy in the 3.2 contents *)
-  Hashtbl.iter add_elem dtd32.contents;
-  (* frameset and frames is pretty simple *)
-  add_elem "frameset" (sol ["frameset"; "frame"; "noframes"]);
-  add_elem "frame" Elements.empty;
-  omit_close "frame";
-  (* we say that noframes contains the same thing as body in 3.2 *)
-  add_elem "noframes" (Hashtbl.find dtd.contents "body");
-  (* and we say that frameset can occur in html *)
-  let html_contents = Hashtbl.find dtd.contents "html" in
-  Hashtbl.remove dtd.contents "html";
-  add_elem "html" (Elements.add "frameset" 
-             (Elements.add "noframes" html_contents));
-  dtd
-@
-
-<<toplevel Dtd._2>>=
-let _ = add dtd32f
-@
-
-
 %-------------------------------------------------------------
 
 <<./html/dtd.ml>>=
 open Printf
 
-module Elements = Set.Make(struct type t = string let compare = compare end)
+<<module Dtd.elements>>
 
 <<type Dtd.t>>
 
@@ -2716,13 +2479,7 @@ module Elements = Set.Make(struct type t = string let compare = compare end)
 
 \subsection*{[[./html/html.mli]]}
 
-<<signature Html.init>>=
-val init : bool -> unit 
-@
 
-<<signature Html.warning>>=
-val warning : string -> location -> unit
-@
 
 
 <<signature Html.beautify>>=
@@ -2740,20 +2497,6 @@ val issp : string -> bool
   (* [issp s] is true if s is formed only of SP *)
 @
 
-<<signature Html.get_entity>>=
-val get_entity : string -> string
-  (* [get_entity "amp"] returns "&" *)
-@
-
-<<signature Html.get_attribute>>=
-val get_attribute : tag -> string -> string
-  (* [get_attribute tag attrib_name] *)
-@
-
-<<signature Html.has_attribute>>=
-val has_attribute : tag -> string -> bool
-  (* [has_attribute tag attrib_name] *)
-@
 
 <<type Html.length>>=
 (* HTML length *)
@@ -2814,18 +2557,6 @@ val length_of_string : string -> length
 
 
 \subsection*{[[./html/html.ml]]}
-
-<<constant Html.verbose>>=
-let verbose = ref false
-@
-
-<<function Html.warning>>=
-let warning s (Loc(n,m)) = 
-  if !verbose then begin 
-    eprintf "HTML Warning: %s at (%d, %d)\n" s n m;
-    flush stderr
-   end
-@
 
 
 <<function Html.beautify>>=
@@ -2988,15 +2719,7 @@ let latin1_japan = List.map (fun (str,c) ->
   (str, "\027\040\066" ^ c))  latin1_normal
 @
 
-<<function Html.init>>=
-let init japan =
-  List.iter (fun (str, c) -> Hashtbl.add ampersand_table str c) 
-    (if japan then latin1_japan else latin1_normal) 
-@
 
-<<constant Html.get_entity>>=
-let get_entity = Hashtbl.find ampersand_table
-@
 
 
 
@@ -3186,6 +2909,7 @@ let error name find_line (Loc(n,n')) msg =
 @
 
 <<function Htparse.line_reporting>>=
+(* lines: start at 1 *)
 (* pos: start at 0 as in caml *)
 let line_reporting ic =
   let lines = ref [] 
@@ -3283,30 +3007,6 @@ let html_indent name level =
       (fun _ msg -> Format.print_string (sprintf "ERROR(%s)" msg))
 @
 
-<<function Htparse.main>>=
-let main () =
-  Lang.japan := Lang.is_japanese ();
-  Html.init !Lang.japan;
-  Arg.parse [
-     "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";
-     "-strict", Arg.Set Lexhtml.strict, "Strict mode";
-     "-v", Arg.Unit (function () -> verbose := true), "Verbose mode";
-     "-struct", Arg.Int (function n -> mode := Indent n), "Parse Tree";
-     "-nesting", Arg.Unit (function () -> mode := Nesting), "Check nesting";
-     "-dtd", Arg.Unit (function () -> Dtd.dump Dtd.dtd32f), "Dump DTD";
-     "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
-     ]
-     (fun s -> 
-     match !mode with
-       Check -> html_lex s
-         | Indent n -> html_indent s n
-         | Nesting -> html_nest s)
-     "Usage: htparse <opts> file1.html ... filen.html"
-@
-
-<<toplevel Htparse._2>>=
-let _ = Printexc.catch main ()
-@
 
 
 %-------------------------------------------------------------
@@ -3326,7 +3026,6 @@ open Printf
 <<function Htparse.error>>
 
 
-(* lines: start at 1 *)
 <<function Htparse.line_reporting>>
 
 <<function Htparse.html_lex>>

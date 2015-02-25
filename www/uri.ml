@@ -18,7 +18,7 @@ let is_absolute uri =
     let colonpos = String.index uri ':' in
     try 
       let slashpos = String.index uri '/' in
-       colonpos < slashpos (* colon must occur before slash *)
+      colonpos < slashpos (* colon must occur before slash *)
     with
       Not_found -> true (* colon occurs before slash *)
   with

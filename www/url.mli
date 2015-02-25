@@ -4,9 +4,9 @@
 
 type protocol =
  | HTTP 
- | FILE | MAILTO | FTP
- | GOPHER | NEWS | NNTP | WAIS
+ | FILE | MAILTO | FTP | NNTP
  | TELNET 
+ | GOPHER | NEWS | WAIS
  | PROSPERO
  | OtherProtocol of string
 (*e: type Url.protocol *)
@@ -16,9 +16,9 @@ val string_of_protocol: protocol -> string
   (* maps FTP to "ftp", etc... *)
 (*e: signature Url.string_of_protocol *)
 
-(* Not all components are used for all protocols. See RFC. *)
 (*s: type Url.t *)
 (* Relative adressing in anchors, fragments are NOT URLs, but URI *)
+(* Not all components are used for all protocols. See RFC. *)
 type t = 
   { mutable protocol : protocol;
 

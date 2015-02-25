@@ -13,7 +13,4 @@ val is_absolute : string -> bool
    (* [is_absolute uri] determines if [uri] is absolute according to
       rules of RFC 1630 *)
 (*e: signature Uri.is_absolute *)
-
-
-
 (*e: ./www/uri.mli *)

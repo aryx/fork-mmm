@@ -46,8 +46,10 @@ let default = new t default_toplevel
 (*e: constant Error.default *)
 
 (* backward compatibility *)
+(*s: functions Error.xxx *)
 let f msg = default#f msg
 and ok msg = default#ok msg
 and choose msg = default#choose msg
 and ari msg = default#ari msg
+(*e: functions Error.xxx *)
 (*e: ./commons/error.ml *)

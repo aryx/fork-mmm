@@ -24,8 +24,10 @@ type document_id = {
   }
 (*e: type Document.document_id *)
 
+(*s: module Document.DocumentIDSet *)
 module DocumentIDSet =
   Set.Make(struct type t = document_id let compare = compare end)
+(*e: module Document.DocumentIDSet *)
 
 (*s: type Document.handle *)
 (* This is passed around by request continuations. It represents a handle

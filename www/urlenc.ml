@@ -23,8 +23,8 @@ let hexchar c =
   s
 (*e: function Urlenc.hexchar *)
 
-(* Decode escaped characters *)
 (*s: function Urlenc.decode *)
+(* Decode escaped characters *)
 (* Note: beware of order of splitting wrt '&' and decoding *)
 let decode s =
   let l = String.length s in

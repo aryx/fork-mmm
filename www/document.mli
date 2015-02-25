@@ -17,7 +17,9 @@ val no_stamp : int
 val new_stamp : unit -> int
 (*e: signature Document.new_stamp *)
 
+(*s: signature type logger *)
 type logger
+(*e: signature type logger *)
 (*s: signature Document.tty_logger *)
 val tty_logger : logger
 (*e: signature Document.tty_logger *)

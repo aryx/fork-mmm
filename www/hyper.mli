@@ -1,8 +1,8 @@
 (*s: ./www/hyper.mli *)
 (* An hypertext(media) link on the Web *)
 
-(* This is currently for HTTP and derived, but ... *)
 (*s: type Hyper.link_method *)
+(* This is currently for HTTP and derived, but ... *)
 (* Contains only the one we support *)
 type link_method =
    GET 
@@ -15,9 +15,11 @@ val parse_method : string -> link_method
 (*e: signature Hyper.parse_method *)
 
 (*s: type Hyper.link *)
+(* An hypertext(media) link on the Web *)
 type link = {
   h_uri : string;
   h_context: string option;
+
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
   }

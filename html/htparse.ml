@@ -27,8 +27,8 @@ let error name find_line (Loc(n,n')) msg =
 (*e: function Htparse.error *)
 
 
-(* lines: start at 1 *)
 (*s: function Htparse.line_reporting *)
+(* lines: start at 1 *)
 (* pos: start at 0 as in caml *)
 let line_reporting ic =
   let lines = ref [] 

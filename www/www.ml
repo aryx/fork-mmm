@@ -50,6 +50,7 @@ let make hlink =
  
 
 
+(*s: module Www.UrlSet *)
 (* We need to keep a trace of pending connections, since there is a race
    condition when the user clicks twice rapidly on an anchor. If the second
    click occurs before the document is added to the cache, (e.g. because we
@@ -63,15 +64,18 @@ let make hlink =
 *)
 module UrlSet =
   Set.Make(struct type t = Url.t let compare = compare end)
+(*e: module Www.UrlSet *)
 
 (*s: constant Www.active_connexions *)
 let active_connexions = ref UrlSet.empty
 (*e: constant Www.active_connexions *)
+(*s: functions Www.xxx_active_cnx *)
 let is_active_cnx url = 
   UrlSet.mem url !active_connexions
 let add_active_cnx url = 
   active_connexions := UrlSet.add url !active_connexions
 let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
+(*e: functions Www.xxx_active_cnx *)
 
 (*e: ./www/www.ml *)
