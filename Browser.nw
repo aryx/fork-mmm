@@ -171,10 +171,12 @@ Here are other candidates that were considered but ultimately discarded:
 % I have it printed.
 %todo: my todo-browser/ somewhere
 
-%tod:
+%todo:
 %https://github.com/servo/servo/wiki/Relevant-spec-links
 
+%good:
 %http://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+
 %todo: 
 %http://www.html5rocks.com/en/tutorials/internals/howbrowserswork/
 
@@ -225,10 +227,18 @@ the main author of MMM.
 %  - http protocol to fetch the document
 %  - client/server around this protocol
 
-% a web browser is than a special kind of interface on top of that:
+% a web browser is then a special kind of interface on top of that:
 % a navigator interface! (history, forward, click etc)
 
 % see mmm-gdr-fr.ps
+
+
+%"The main function of a browser is to present the web resource you
+%choose, by requesting it from the server and displaying it in the
+%browser window. The resource is usually an HTML document, but may also
+%be a PDF, image, or some other type of content. The location of the
+%resource is specified by the user using a URI (Uniform Resource
+%Identifier)." HBW
 
 \section{[[mmm]] services}
 
@@ -1055,16 +1065,6 @@ val helpurl : string -> string (* help url *)
 @
 
 
-<<signature Version.home>>=
-val home : string -> string    (* MMM home page *)
-@
-
-<<function Version.home>>=
-let home = function 
-  | "iso8859" -> "http://pauillac.inria.fr/mmm/"
-  | "ja" -> "http://pauillac.inria.fr/mmm/jmmm/"
-  | _ -> assert false
-@
 
 <<function Version.initurl>>=
 (* MUST BE NORMALIZED *)
@@ -1168,6 +1168,27 @@ let reset () =
 \chapter{Navigator Interface}
 % The chrome
 % gui/
+
+\section{Address bar}
+
+\section{Back and forward}
+
+\section{Refresh and stop}
+
+\section{Home}
+
+<<signature Version.home>>=
+val home : string -> string    (* MMM home page *)
+@
+
+<<function Version.home>>=
+let home = function 
+  | "iso8859" -> "http://pauillac.inria.fr/mmm/"
+  | "ja" -> "http://pauillac.inria.fr/mmm/jmmm/"
+  | _ -> assert false
+@
+
+\section{Bookmarks}
 
 \section{History}
 
