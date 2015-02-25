@@ -1,12 +1,11 @@
 (*s: ./commons/low.ml *)
 (* Wrapping of some low-level functions *)
+open Common
 
 open Unix
-open Tk
 
 (* Tachymeter support *)
-class  virtual tachymeter (w : Widget.widget) =
- object
+class  virtual tachymeter = object
   method virtual report_cnx : int -> unit     (* displays number of active cnx *)
   method virtual report_busy : bool -> unit   (* displays busy status *)
   method virtual report_traffic : int -> int -> int -> unit
@@ -15,18 +14,17 @@ class  virtual tachymeter (w : Widget.widget) =
   method virtual quit : unit
   end
 
-class no_tachy (w : Widget.widget) =
- object
-  inherit tachymeter (w)
+class no_tachy = object
+  inherit tachymeter
+
   method report_cnx cnx = ()
   method report_busy flag = ()
   method report_traffic tick total sample = ()
   method quit = ()
-
-  end
+end
 
 (*s: constant Low.cur_tachy *)
-let cur_tachy = ref (new no_tachy Widget.default_toplevel :> tachymeter)
+let cur_tachy = ref (new no_tachy :> tachymeter)
 (*e: constant Low.cur_tachy *)
 
 (* for the tachymeter *)
@@ -48,14 +46,14 @@ and action = ref (fun _ -> ())
 let add_fileinput fd f =
   incr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  Fileevent.add_fileinput fd f
+  File_event.add_fileinput fd f
 (*e: function Low.add_fileinput *)
 
 (*s: function Low.remove_fileinput *)
 let remove_fileinput fd =
   decr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  Fileevent.remove_fileinput fd
+  File_event.remove_fileinput fd
 (*e: function Low.remove_fileinput *)
 
 (* We catch dead children here, to avoid large number of zombies.
@@ -122,7 +120,9 @@ let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
-  let _ = Timer.add tick_duration refresh in ()
+(*  let _ = Timer.add tick_duration refresh in () *)
+  pr2 "TODO: Timer.add"
+
 (*e: function Low.refresh *)
 
 (*s: function Low.add_task *)
@@ -141,7 +141,9 @@ let last_update = ref !global_time
 (*s: function Low.update_idletasks *)
 let update_idletasks () =
   if !global_time <> !last_update then begin
-    update_idletasks(); last_update := !global_time
+    (* update_idletasks();  *)
+    pr2 "TODO: Tk.update_idletasks?";
+    last_update := !global_time
   end
 (*e: function Low.update_idletasks *)
 (*e: ./commons/low.ml *)

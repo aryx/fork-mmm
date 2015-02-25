@@ -11,9 +11,7 @@ val sprintf: ('a, unit, string) format -> 'a
 (*e: signature I18n.sprintf *)
 
 (*s: signature I18n.menu_option *)
-val menu_option: Tk.options list -> Tk.options list
 (*e: signature I18n.menu_option *)
 (*s: signature I18n.menu_pattern *)
-val menu_pattern: Tk.options list -> string
 (*e: signature I18n.menu_pattern *)
 (*e: ./commons/i18n.mli *)

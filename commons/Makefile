@@ -8,21 +8,20 @@ TARGET=lib
 
 # Miscellaneous additional libraries
 SRC= common.ml \
+  file_event.ml \
   low.ml mstring.ml mlist.ml msys.ml \
   ebuffer.ml munix.ml date.ml \
   log.ml \
   condition.ml feed.ml \
   lexpath.ml \
   ibtree.ml \
-  tkresource.ml \
-  glevents.ml \
   i18nprintf.ml lang.ml i18n.ml \
   error.ml hotlist.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 INCLUDEDIRS=
-SYSINCLUDES=$(TKCOMPFLAGS)
+SYSINCLUDES=
 
 ##############################################################################
 # Generic variables
@@ -47,16 +46,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-# for tk ressource and its use of the parser extension
-PP=-pp camlp4o
-
-tkresource.cmo: tkresource.cmi
-	$(OCAMLC) $(PP) -c tkresource.ml
-
-tkresource.cmx: tkresource.cmi
-	$(OCAMLOPT) $(PP) -c tkresource.ml
 
 
 lexpath.ml : lexpath.mll

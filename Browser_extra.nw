@@ -12,6 +12,9 @@ module StringSet = Set.Make(struct type t = string let compare = compare end)
 <<constant Common.spf>>
 
 <<function Common.TODOOPERATOR>>
+
+let pr2 s = prerr_string (s ^ "\n")
+
 @
 
 
@@ -50,7 +53,7 @@ type t
 \subsection*{[[./commons/condition.ml]]}
 
 <<type Condition.t>>=
-type t = Textvariable.textVariable * int ref
+type t = string
 @
 
 
@@ -58,24 +61,41 @@ type t = Textvariable.textVariable * int ref
 
 <<./commons/condition.ml>>=
 (* Conditions *)
-(* We don't take any chance with the semantics of tkwait variable, in the
-   sense that we make sure that the value changes each time we set the
-   condition
- *)
-
-open Printf
+open Common
 
 <<type Condition.t>>
 
+type condition_backend = {
+  create: t -> unit;
+  set: t -> unit;
+  wait: t -> unit;
+  free: t -> unit;
+}
+
+let default_backend () = {
+  create = (fun s -> ());
+  set = (fun s -> ());
+  wait = (fun s -> ());
+  free = (fun s -> ());
+}
+let backend = ref (default_backend ())
+  
+let count = ref 0
+
 let create () =
-  Textvariable.create(), ref 0
+  incr count;
+  let var = spf "var%d" !count in
+  (!backend).create var;
+  var
 
-let set (v , r) =
-  incr r; Textvariable.set v (sprintf "cond%d" !r)
+let set s =
+  !backend.set s
 
-let wait (v, _) = Tkwait.variable v
+let wait s = 
+  !backend.wait s
 
-let free (v, _) = Textvariable.free v
+let free s = 
+  !backend.free s
 @
 
 
@@ -324,11 +344,24 @@ let used buf =
 %-------------------------------------------------------------
 
 <<./commons/error.ml>>=
-open Tk
-open Widget
-open Mstring
+open Common
 
 <<class Error.t>>
+
+class virtual t = object
+ method virtual f : string -> unit
+ method virtual ok : string -> unit
+ method virtual choose : string -> bool
+ method virtual ari : string -> int
+end
+
+class x = object
+  inherit t
+  method f _ = pr2 "TODO: Error.x.f"
+  method ok _ = pr2 "TODO: Error.x.ok"
+  method choose _ = failwith "TODO: Error.x.choose"
+  method ari _ = failwith "TODO: Error.x.ari"
+end
 
 <<constant Error.default>>
 
@@ -1045,14 +1078,14 @@ open Unix
 <<signature Low.add_task>>
 
 
-class  virtual tachymeter : (Widget.widget) -> object
+class  virtual tachymeter : object
   method virtual report_cnx : int -> unit     (* displays number of active cnx *)
   method virtual report_busy : bool -> unit   (* displays busy status *)
   method virtual report_traffic : int -> int -> int -> unit
        (* [report_traffic tick_duration total sample] displays traffic
           from [total] and [sample] in last [tick_duration] *)
   method virtual quit : unit
-  end
+end
 
 <<signature Low.cur_tachy>>
 
@@ -1066,7 +1099,7 @@ class  virtual tachymeter : (Widget.widget) -> object
 \subsection*{[[./commons/low.ml]]}
 
 <<constant Low.cur_tachy>>=
-let cur_tachy = ref (new no_tachy Widget.default_toplevel :> tachymeter)
+let cur_tachy = ref (new no_tachy :> tachymeter)
 @
 
 <<function Low.read>>=
@@ -1081,14 +1114,14 @@ let read fd buf offs l =
 let add_fileinput fd f =
   incr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  Fileevent.add_fileinput fd f
+  File_event.add_fileinput fd f
 @
 
 <<function Low.remove_fileinput>>=
 let remove_fileinput fd =
   decr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  Fileevent.remove_fileinput fd
+  File_event.remove_fileinput fd
 @
 
 <<function Low.fork>>=
@@ -1149,7 +1182,9 @@ let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
-  let _ = Timer.add tick_duration refresh in ()
+(*  let _ = Timer.add tick_duration refresh in () *)
+  pr2 "TODO: Timer.add"
+
 @
 
 <<function Low.add_task>>=
@@ -1169,7 +1204,9 @@ let last_update = ref !global_time
 <<function Low.update_idletasks>>=
 let update_idletasks () =
   if !global_time <> !last_update then begin
-    update_idletasks(); last_update := !global_time
+    (* update_idletasks();  *)
+    pr2 "TODO: Tk.update_idletasks?";
+    last_update := !global_time
   end
 @
 
@@ -1178,13 +1215,12 @@ let update_idletasks () =
 
 <<./commons/low.ml>>=
 (* Wrapping of some low-level functions *)
+open Common
 
 open Unix
-open Tk
 
 (* Tachymeter support *)
-class  virtual tachymeter (w : Widget.widget) =
- object
+class  virtual tachymeter = object
   method virtual report_cnx : int -> unit     (* displays number of active cnx *)
   method virtual report_busy : bool -> unit   (* displays busy status *)
   method virtual report_traffic : int -> int -> int -> unit
@@ -1193,15 +1229,14 @@ class  virtual tachymeter (w : Widget.widget) =
   method virtual quit : unit
   end
 
-class no_tachy (w : Widget.widget) =
- object
-  inherit tachymeter (w)
+class no_tachy = object
+  inherit tachymeter
+
   method report_cnx cnx = ()
   method report_busy flag = ()
   method report_traffic tick total sample = ()
   method quit = ()
-
-  end
+end
 
 <<constant Low.cur_tachy>>
 
@@ -1419,7 +1454,6 @@ open Unix
 %-------------------------------------------------------------
 
 <<./commons/i18n.ml>>=
-open Tk
 
 <<function I18n.fprintf>>
 <<function I18n.sprintf>>
@@ -1721,10 +1755,10 @@ let program = ref ""
 <<function Hotlist.f>>=
 let f url title =
   match !program with 
-    "" -> Error.default#f (I18n.sprintf "No hotlist command defined")
+    "" -> (!Error.default)#f (I18n.sprintf "No hotlist command defined")
   | s -> 
       let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
-      Error.default#ok
+      (!Error.default)#ok
     (I18n.sprintf "%s\nadded to hotlist with title\n%s" url title)
 @
 

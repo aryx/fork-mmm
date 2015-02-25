@@ -1,23 +1,40 @@
 (*s: ./commons/condition.ml *)
 (* Conditions *)
-(* We don't take any chance with the semantics of tkwait variable, in the
-   sense that we make sure that the value changes each time we set the
-   condition
- *)
-
-open Printf
+open Common
 
 (*s: type Condition.t *)
-type t = Textvariable.textVariable * int ref
+type t = string
 (*e: type Condition.t *)
 
+type condition_backend = {
+  create: t -> unit;
+  set: t -> unit;
+  wait: t -> unit;
+  free: t -> unit;
+}
+
+let default_backend () = {
+  create = (fun s -> ());
+  set = (fun s -> ());
+  wait = (fun s -> ());
+  free = (fun s -> ());
+}
+let backend = ref (default_backend ())
+  
+let count = ref 0
+
 let create () =
-  Textvariable.create(), ref 0
+  incr count;
+  let var = spf "var%d" !count in
+  (!backend).create var;
+  var
 
-let set (v , r) =
-  incr r; Textvariable.set v (sprintf "cond%d" !r)
+let set s =
+  !backend.set s
 
-let wait (v, _) = Tkwait.variable v
+let wait s = 
+  !backend.wait s
 
-let free (v, _) = Textvariable.free v
+let free s = 
+  !backend.free s
 (*e: ./commons/condition.ml *)

@@ -1,16 +1,16 @@
 (*s: ./commons/error.mli *)
 
 (*s: signature class Error.t *)
-class t : (Widget.widget) -> object
- method f : string -> unit
- method ok : string -> unit
- method choose : string -> bool
- method ari : string -> int
+class virtual t : object
+ method virtual f : string -> unit
+ method virtual ok : string -> unit
+ method virtual choose : string -> bool
+ method virtual ari : string -> int
 end
 (*e: signature class Error.t *)
 
 (*s: signature Error.default *)
-val default : t
+val default : t ref
 (*e: signature Error.default *)
 
 (*s: signature Error.f *)

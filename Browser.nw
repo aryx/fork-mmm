@@ -3402,10 +3402,10 @@ let of_fd fd =
   (* In other cases : this is non blocking but not fully threaded. *)
   let special_read buf ofs len =
      (* remove the normal handler *)
-     Fileevent.remove_fileinput fd; 
+     File_event.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
-     Fileevent.add_fileinput fd (fun () ->
-     Fileevent.remove_fileinput fd; (* remove myself *)
+     File_event.add_fileinput fd (fun () ->
+     File_event.remove_fileinput fd; (* remove myself *)
      Condition.set condition);
      (* wait for the condition to happen *)
      Condition.wait condition;
@@ -3420,7 +3420,7 @@ let of_fd fd =
         call the event loop, otherwise we loose sequentiality of reads *)
      (match !action with
         Some f ->
-      Fileevent.add_fileinput fd (fun () -> first_read := true; f())
+      File_event.add_fileinput fd (fun () -> first_read := true; f())
       | None -> ());
      (* and return *)
      n
@@ -4985,11 +4985,9 @@ val sprintf: ('a, unit, string) format -> 'a
 @
 
 <<signature I18n.menu_option>>=
-val menu_option: Tk.options list -> Tk.options list
 @
 
 <<signature I18n.menu_pattern>>=
-val menu_pattern: Tk.options list -> string
 @
 
 
@@ -5110,46 +5108,12 @@ let sprintf (fmt : ('a, unit, string) format) =
 @
 
 <<function I18n.menu_option>>=
-let menu_option l =
-  let under_pos = ref (-1) 
-  and text = ref ""
-  in
-    List.iter (function 
-    UnderlinedChar x -> under_pos := x
-      | Text x  -> text := x
-      | Label x -> text := x
-      |	_ -> () ) l;
-    let trans = translate !text in
-      let new_text, new_under_pos =
-    if !text = trans then !text, !under_pos
-    else
-      if !under_pos = 0 & 
-        String.get !text 0 = String.get trans 0 then trans, 0
-      else
-        (String.make 1 (String.get !text !under_pos)) ^ ":" ^ trans, 0 
-      in
-        List.map (function
-        UnderlinedChar _ -> UnderlinedChar new_under_pos
-      | Text x -> Text new_text
-      | Label x -> Label new_text
-      | x -> x ) l
 @
 
 <<exception I18n.Found>>=
-exception Found of string
 @
 
 <<function I18n.menu_pattern>>=
-let menu_pattern l =
-  let l' = menu_option l in
-  try
-    List.iter (function
-      | Text x -> raise (Found x)
-      | Label x -> raise (Found x)
-      | _ -> ()) l';
-    raise (Failure "I18n.menu_pattern : the option list contains no text")
-  with
-    Found x -> x
 @
 
 \subsection{Accents}
@@ -5595,20 +5559,20 @@ let print = function
 \section{[[Error.t]]}
 
 <<signature class Error.t>>=
-class t : (Widget.widget) -> object
- method f : string -> unit
- method ok : string -> unit
- method choose : string -> bool
- method ari : string -> int
+class virtual t : object
+ method virtual f : string -> unit
+ method virtual ok : string -> unit
+ method virtual choose : string -> bool
+ method virtual ari : string -> int
 end
 @
 
 
 <<signature Error.default>>=
-val default : t
+val default : t ref
 @
 <<constant Error.default>>=
-let default = new t default_toplevel
+let default = ref (new x)
 @
 
 
@@ -5627,48 +5591,13 @@ val ari : string -> int
 @
 
 <<functions Error.xxx>>=
-let f msg = default#f msg
-and ok msg = default#ok msg
-and choose msg = default#choose msg
-and ari msg = default#ari msg
+let f msg = (!default)#f msg
+and ok msg = !default#ok msg
+and choose msg = !default#choose msg
+and ari msg = !default#ari msg
 @
 
 <<class Error.t>>=
-class t (top) =
- object
- (* val top = top *)
-
-method f msg =
-  let _ =
-   Frx_dialog.f top (gensym "error")
-     (I18n.sprintf "MMM Error")
-     msg
-     (Predefined "error") 0 ["Ok"] in
-  ()
-
-
-method ok msg = 
-  ignore (
-   Frx_dialog.f  top (gensym "error")
-     (I18n.sprintf "MMM Notify")
-     msg
-     (Predefined "info") 0 ["Ok"])
-
-method choose msg =
- 0 =
-  Frx_dialog.f top (gensym "error")
-    (I18n.sprintf "MMM Choice")
-    msg
-    (Predefined "question") 1 ["Yes"; "No"]
-
-method ari msg =
-  Frx_dialog.f top (gensym "error")
-    (I18n.sprintf "MMM Error")
-    msg
-    (Predefined "question") 1 
-    [I18n.sprintf "A)bort"; I18n.sprintf "R)etry"; I18n.sprintf "I)gnore"]
-
-end
 @
 
 \section{URL}

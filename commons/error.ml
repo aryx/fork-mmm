@@ -1,55 +1,33 @@
 (*s: ./commons/error.ml *)
-open Tk
-open Widget
-open Mstring
+open Common
 
 (*s: class Error.t *)
-class t (top) =
- object
- (* val top = top *)
-
-method f msg =
-  let _ =
-   Frx_dialog.f top (gensym "error")
-     (I18n.sprintf "MMM Error")
-     msg
-     (Predefined "error") 0 ["Ok"] in
-  ()
-
-
-method ok msg = 
-  ignore (
-   Frx_dialog.f  top (gensym "error")
-     (I18n.sprintf "MMM Notify")
-     msg
-     (Predefined "info") 0 ["Ok"])
-
-method choose msg =
- 0 =
-  Frx_dialog.f top (gensym "error")
-    (I18n.sprintf "MMM Choice")
-    msg
-    (Predefined "question") 1 ["Yes"; "No"]
-
-method ari msg =
-  Frx_dialog.f top (gensym "error")
-    (I18n.sprintf "MMM Error")
-    msg
-    (Predefined "question") 1 
-    [I18n.sprintf "A)bort"; I18n.sprintf "R)etry"; I18n.sprintf "I)gnore"]
-
-end
 (*e: class Error.t *)
 
+class virtual t = object
+ method virtual f : string -> unit
+ method virtual ok : string -> unit
+ method virtual choose : string -> bool
+ method virtual ari : string -> int
+end
+
+class x = object
+  inherit t
+  method f _ = pr2 "TODO: Error.x.f"
+  method ok _ = pr2 "TODO: Error.x.ok"
+  method choose _ = failwith "TODO: Error.x.choose"
+  method ari _ = failwith "TODO: Error.x.ari"
+end
+
 (*s: constant Error.default *)
-let default = new t default_toplevel
+let default = ref (new x)
 (*e: constant Error.default *)
 
 (* backward compatibility *)
 (*s: functions Error.xxx *)
-let f msg = default#f msg
-and ok msg = default#ok msg
-and choose msg = default#choose msg
-and ari msg = default#ari msg
+let f msg = (!default)#f msg
+and ok msg = !default#ok msg
+and choose msg = !default#choose msg
+and ari msg = !default#ari msg
 (*e: functions Error.xxx *)
 (*e: ./commons/error.ml *)

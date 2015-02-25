@@ -9,4 +9,7 @@ let spf = Printf.sprintf
 (*s: function Common.TODOOPERATOR *)
 let (|>) o f = f o
 (*e: function Common.TODOOPERATOR *)
+
+let pr2 s = prerr_string (s ^ "\n")
+
 (*e: ./commons/common.ml *)

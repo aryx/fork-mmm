@@ -35,14 +35,14 @@ val add_task : (unit -> unit) -> unit
 (*e: signature Low.add_task *)
 
 
-class  virtual tachymeter : (Widget.widget) -> object
+class  virtual tachymeter : object
   method virtual report_cnx : int -> unit     (* displays number of active cnx *)
   method virtual report_busy : bool -> unit   (* displays busy status *)
   method virtual report_traffic : int -> int -> int -> unit
        (* [report_traffic tick_duration total sample] displays traffic
           from [total] and [sample] in last [tick_duration] *)
   method virtual quit : unit
-  end
+end
 
 (*s: signature Low.cur_tachy *)
 val cur_tachy : tachymeter ref
