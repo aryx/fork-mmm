@@ -53,6 +53,10 @@ val cur_tachy : tachymeter ref
 val init : unit -> unit
 (*e: signature Low.init *)
 
+
+val timer_add_backend: (int -> (unit -> unit) -> unit) ref
+val update_idletasks_backend: (unit -> unit) ref
+
 (*s: signature Low.update_idletasks *)
 val update_idletasks : unit -> unit
 (*e: signature Low.update_idletasks *)

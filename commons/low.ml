@@ -115,14 +115,15 @@ let tasks = ref [
   ]
 (*e: constant Low.tasks *)
 
+let timer_add_backend = 
+  ref (fun _ _ -> failwith "no time_add defined")
+
 (*s: function Low.refresh *)
 let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
-(*  let _ = Timer.add tick_duration refresh in () *)
-  pr2 "TODO: Timer.add"
-
+  !timer_add_backend tick_duration refresh
 (*e: function Low.refresh *)
 
 (*s: function Low.add_task *)
@@ -133,6 +134,10 @@ let add_task f = tasks := f :: !tasks
 let init () = refresh ()
 (*e: function Low.init *)
 
+let update_idletasks_backend = 
+  ref (fun _ -> failwith "no update_idletasks defined")
+
+
 (*s: constant Low.last_update *)
 (* We need manual refresh for progressive display (?), but we don't
    want to do it too frequently *)
@@ -141,8 +146,7 @@ let last_update = ref !global_time
 (*s: function Low.update_idletasks *)
 let update_idletasks () =
   if !global_time <> !last_update then begin
-    (* update_idletasks();  *)
-    pr2 "TODO: Tk.update_idletasks?";
+    !update_idletasks_backend ();
     last_update := !global_time
   end
 (*e: function Low.update_idletasks *)

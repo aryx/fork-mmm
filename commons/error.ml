@@ -25,7 +25,7 @@ let default = ref (new x)
 
 (* backward compatibility *)
 (*s: functions Error.xxx *)
-let f msg = (!default)#f msg
+let f msg = !default#f msg
 and ok msg = !default#ok msg
 and choose msg = !default#choose msg
 and ari msg = !default#ari msg

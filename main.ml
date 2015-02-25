@@ -47,7 +47,8 @@ let main () =
 
   Error.default := new Tk_error.t Widget.default_toplevel;
   Condition.backend := Tk_condition.backend ();
-
+  Low.timer_add_backend := (fun a b -> Timer.add a b |> ignore);
+  Low.update_idletasks_backend := Tk.update_idletasks;
 
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")
