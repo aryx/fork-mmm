@@ -64,7 +64,7 @@ class cnx (sock,finish) =
      if not aborted then begin
        aborted <- true;
        match status with
-     Writing -> Fileevent.remove_fileoutput fd; self#close; finish true
+     Writing -> Fileevent_.remove_fileoutput fd; self#close; finish true
        | Reading dh -> dclose true dh; finish true
        | Discharged -> ()
      end
@@ -100,17 +100,17 @@ let tcp_connect server_name port log cont error =
     log (I18n.sprintf "connection established");
     Log.debug "Connect returned without error !";
     (* because we need to return cnx *)
-    Timer.set 10 (fun () -> cont cnx);
+    Timer_.set 10 (fun () -> cont cnx);
         cnx
       with
        Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
          (* that is ok, we are starting something *)
       let stuck = ref true in
-      Fileevent.add_fileoutput sock
+      Fileevent_.add_fileoutput sock
           (* we are called when the cnx is established *)
          (fun () -> 
          stuck := false;
-         Fileevent.remove_fileoutput sock;
+         Fileevent_.remove_fileoutput sock;
          Unix.clear_nonblock sock; (* return to blocking mode *)
         begin try (* But has there been a cnx actually *)
            let _ = getpeername sock in
@@ -124,10 +124,10 @@ let tcp_connect server_name port log cont error =
              end);
      (* but also start the timer if nothing happens now
          * the kernel has a timeout, but it might be too long (linux) *)
-         Timer.set (1000 * !timeout) 
+         Timer_.set (1000 * !timeout) 
         (fun () -> 
           if not cnx#aborted && !stuck then begin
-           Fileevent.remove_fileoutput sock;
+           Fileevent_.remove_fileoutput sock;
            cnx#close;
            error (I18n.sprintf "Timeout during connect to %s" server_name)
                  false
@@ -277,7 +277,7 @@ exception End_of_headers
 let read_headers fd previous =
   let l = Munix.read_line fd in
    if String.length l = 0 then raise End_of_headers (* end of headers *)
-   else if l.[0] = ' ' or l.[0] = '\t' then  (* continuation *)
+   else if l.[0] = ' ' || l.[0] = '\t' then  (* continuation *)
        match previous with
      [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
        | s :: rest -> (s^l) :: rest
@@ -300,7 +300,7 @@ let rec process_response wwwr cont cnx =
   cnx#set_status (Reading dh);
   (* set up a timer to abort if server is too far/slow *)
   let rec timout () =
-     Timer.set (1000 * !timeout) 
+     Timer_.set (1000 * !timeout) 
       (fun () -> 
     if not cnx#aborted && !stuck then
       match wwwr.www_error#ari
@@ -378,11 +378,11 @@ and async_request proxy_mode wwwr cont cnx =
   and len = Ebuffer.used b in
   let curpos = ref 0 in
     wwwr.www_logging (I18n.sprintf "Writing request...");
-    Fileevent.add_fileoutput cnx#fd (fun _ ->
+    Fileevent_.add_fileoutput cnx#fd (fun _ ->
       let n = write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
        curpos := !curpos  + n;
     if !curpos = len then begin
-         Fileevent.remove_fileoutput cnx#fd;
+         Fileevent_.remove_fileoutput cnx#fd;
       if !verbose then Log.f req;
          cont cnx
          end)

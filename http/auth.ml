@@ -1,7 +1,6 @@
 (*s: ./http/auth.ml *)
 (* HTTP Basic Authentication *)
 open Printf
-open Tk
 open Unix
 open Http_headers
 open Url
@@ -52,7 +51,7 @@ let rec lookup space =
     Hashtbl.find authorizations space
   with
     Not_found ->
-     if space.auth_dir = "/" or space.auth_dir = "." 
+     if space.auth_dir = "/" || space.auth_dir = "." 
      then raise Not_found 
      else
       let newdir = Filename.dirname space.auth_dir in
@@ -63,11 +62,11 @@ let rec lookup space =
         auth_realm = space.auth_realm}
 (*e: function Auth.lookup *)
 
-
+let open_passwd_ref = ref (fun _ -> failwith "no Auth.open_passswd defined")
 (*s: function Auth.ask_cookie *)
 let ask_cookie forwhere =
   try
-    let u,p = Frx_req.open_passwd forwhere in
+    let u,p = !open_passwd_ref forwhere in
       Base64.encode (u^":"^p)
   with
     Failure "cancelled" -> failwith "cancelled"
@@ -140,31 +139,13 @@ let check wwwr challenge authspace =
       Failure "cancelled" -> None
 (*e: function Auth.check *)
 
+let edit_backend = ref (fun _ -> failwith "no Auth.edit defined") 
 
 (* Authorisation control *)
 (*s: function Auth.edit *)
 (* needs to be refined *)
 let edit () =
-  let top =
-    Toplevel.create Widget.default_toplevel 
-         [Class "MMMAuthorizations"] in
-    Wm.title_set top (I18n.sprintf "Authorizations");
-    let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
-      Hashtbl.iter (fun space cookie ->
-       Listbox.insert lb End
-      [Printf.sprintf "(%s) http://%s:%d/%s" 
-         space.auth_realm space.auth_host space.auth_port space.auth_dir])
-       authorizations;
-    let buts = Frame.create top [] in
-    let clearb = Button.create_named buts "clear"
-       [Text (I18n.sprintf "Clear"); 
-       Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
-    and dismissb = Button.create_named buts "dismiss"
-       [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] in
-      pack [clearb] [Side Side_Left; Expand true];
-      pack [dismissb] [Side Side_Right; Expand true];
-      pack [buts][Side Side_Bottom; Fill Fill_X];
-      pack [f][Side Side_Top; Fill Fill_Both; Expand true]
+  !edit_backend ()
 (*e: function Auth.edit *)
 
 (*s: constant Auth.auth_file *)
@@ -229,7 +210,7 @@ let init () =
     List.iter (Hashtbl.remove authorizations) !remove
   in
   let rec tim () =
-    Timer.set (!lifetime * 30000) (fun () -> check(); tim ())
+    Timer_.set (!lifetime * 30000) (fun () -> check(); tim ())
   in
   tim ()
 (*e: function Auth.init *)

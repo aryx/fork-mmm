@@ -48,6 +48,7 @@ let main () =
   Error.default := new Tk_error.t Widget.default_toplevel;
   Condition.backend := Tk_condition.backend ();
   Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
+  Timer_.set_ref := Timer.set;
   Low.update_idletasks_backend := Tk.update_idletasks;
   Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
   Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
@@ -55,6 +56,8 @@ let main () =
   Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
   Document.add_log_backend := Tk_document.add_log;
   Maps.broadcast_backend := Frx_synth.broadcast;
+  Auth.open_passwd_ref := Frx_req.open_passwd;
+  Auth.edit_backend := Tk_auth.edit;
 
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")

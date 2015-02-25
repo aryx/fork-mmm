@@ -11,13 +11,15 @@ SRC= tkresource.ml\
   tk_error.ml\
   tk_i18n.ml\
   tk_document.ml\
-  glevents.ml \
+  tk_auth.ml\
+  glevents.ml\
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 INCLUDEDIRS=\
  $(TOP)/commons\
  $(TOP)/www\
+ $(TOP)/http\
 
 
 SYSINCLUDES=$(TKCOMPFLAGS)

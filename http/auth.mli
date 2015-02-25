@@ -22,6 +22,15 @@ val lifetime : int ref
 val auth_file : string ref
 (*e: signature Auth.auth_file *)
 
+val edit_backend: (unit -> unit) ref
+
+(* pad: only for edit_backend *)
+type authEntry = {
+   auth_cookie : string;
+   mutable auth_lastused : float
+   }
+val authorizations: (authSpace, authEntry) Hashtbl.t
+
 (*s: signature Auth.edit *)
 val edit : unit -> unit
 (*e: signature Auth.edit *)
@@ -42,6 +51,8 @@ val get : authSpace -> string
 (*s: signature Auth.init *)
 val init : unit -> unit
 (*e: signature Auth.init *)
+
+val open_passwd_ref: (string -> string * string) ref
 
 (*s: signature Auth.check *)
 val check : Www.request -> authChallenge -> authSpace ->

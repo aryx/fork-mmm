@@ -6,7 +6,6 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-#todo: auth depends on Tk ??
 SRC= base64.ml lexdate.ml http_headers.ml \
      lexheaders.ml auth.ml \
      http.ml retype.ml \
@@ -16,8 +15,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/www $(TOP)/globals
-
-SYSINCLUDES=$(TKCOMPFLAGS)
+SYSINCLUDES=
 
 ##############################################################################
 # Generic variables
@@ -51,7 +49,3 @@ lexdate.ml : lexdate.mll
 clean::
 	rm -f lexheaders.ml lexdate.ml
 beforedepend:: lexheaders.ml lexdate.ml
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
