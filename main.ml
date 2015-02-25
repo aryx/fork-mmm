@@ -47,7 +47,7 @@ let main () =
 
   Error.default := new Tk_error.t Widget.default_toplevel;
   Condition.backend := Tk_condition.backend ();
-  Low.timer_add_backend := (fun a b -> Timer.add a b |> ignore);
+  Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
   Low.update_idletasks_backend := Tk.update_idletasks;
   Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
   Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;

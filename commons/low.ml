@@ -115,15 +115,12 @@ let tasks = ref [
   ]
 (*e: constant Low.tasks *)
 
-let timer_add_backend = 
-  ref (fun _ _ -> failwith "no time_add defined")
-
 (*s: function Low.refresh *)
 let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
-  !timer_add_backend tick_duration refresh
+  Timer_.add tick_duration refresh
 (*e: function Low.refresh *)
 
 (*s: function Low.add_task *)
