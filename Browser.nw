@@ -15,7 +15,7 @@
 % - deadcode?
 
 %thx to codemap/codegraph/scheck:
-% - use cg to reduce backward deps (ocaml linker enforces that),
+% - use cg to reduce backward deps (but ocaml linker enforces that),
 %   and to reduce dependencies to graphic toolkit
 %   (harder to understand non layered code)
 % - TODO use scheck to remove deadcode, dead prototypes, useless export
@@ -394,12 +394,14 @@ get an updated copy.
 
 \chapter{Core Data Structures}
 
+% url -> request -> document -> data -> ast
+
 \section{URLs}
 
 % URLs are URIs? who is more general?
 % URL is uniform, URIs is universal, so maybe URI is more general
 
-\subsection{URIs}
+\subsection{URIs, [[Uri.abs_uri]]}
 % =~ /path/elements/foo.html#fragment
 
 <<type Uri.abs_uri>>=
@@ -436,7 +438,7 @@ let is_absolute uri =
     Not_found -> false (* absolute must have a : *)
 @
 
-\subsection{URLs and protocols}
+\subsection{URLs and protocols, [[Url.t]]}
 % =~ protocol://host@user:port/paths?search
 
 <<type Url.t>>=
@@ -487,7 +489,7 @@ let distant_path urlp =
    | None, Some s -> "/?" ^ s (* ??? *)
 @
 
-\subsection{Hypertext Links}
+\subsection{Hypertext Links, [[Hyper.link]]}
 %=~ <a href="...">
 
 <<type Hyper.link>>=
@@ -512,7 +514,7 @@ type link_method =
  | POST of string
 @
 
-\subsection{Request}
+\subsection{Request, [[Www.request]]}
 % =~ ?
 
 <<type Www.request>>=
@@ -564,7 +566,7 @@ let make hlink =
     }
 @
 % so URI is also an URL? 
-%todo: ugly try, and does nto handle http protocol here?
+%todo: ugly try, and does not handle http protocol here?
 
 <<constant Www.sp>>=
 let sp = Str.regexp "[ \t\n]"
@@ -573,6 +575,29 @@ let sp = Str.regexp "[ \t\n]"
 
 
 \section{Documents}
+
+<<type Document.document>>=
+type document = {
+  document_address : Url.t;
+  mutable document_data : document_data;
+  document_info : string list
+  }
+@
+
+% used by Protos.get
+<<type Document.document_data>>=
+(*
+ * Information on a document, as could be requested by "other" clients,
+ * that is clients not directly on the chain of processes dealing with
+ * the handle
+ *)
+
+type document_data =
+   MemoryData of Ebuffer.t
+ | FileData of string * bool (* flag is true if file is temporary *)
+@
+
+\subsection{Document ID}
 
 <<type Document.document_id>>=
 (* Document Id is a reference to a document in the browser.
@@ -621,35 +646,91 @@ let document_id wwwr =
 
 
 
-
 <<module Document.DocumentIDSet>>=
 module DocumentIDSet =
   Set.Make(struct type t = document_id let compare = compare end)
 @
 
-% used by Protos.get
-<<type Document.handle>>=
-(* This is passed around by request continuations. It represents a handle
-   on a connexion for retrieving a document *)
-type handle = {
-  document_id : document_id;
 
-  document_referer : string option;
-    (* URL of refering document, if any *)
-  mutable document_status : int;
-    (* Status code of response *)
-  mutable document_headers : string list;
-    (* HTTP headers of document, or faked ones *)
-  document_feed : Feed.t;
-    (* where to get the data *)
-  document_fragment : string option;
-    (* fragment (#foo) if any *)
-  mutable document_logger : logger
-    (* how to log information relative to this document processing *)
-}
+\subsection{Document cache}
+
+<<signature Cache.add>>=
+val add : document_id -> document -> unit
 @
-%less: typedef for document_status int?
-%todo: LP split!
+<<signature Cache.find>>=
+val find : document_id -> document
+@
+<<signature Cache.finished>>=
+val finished : document_id -> unit
+@
+<<signature Cache.touch>>=
+val touch : document_id -> unit
+@
+<<signature Cache.kill>>=
+val kill : document_id -> unit
+@
+% diff with finished?
+
+
+<<constant Cache.memory>>=
+let memory = ref ([] : (Document.document_id * entry) list)
+@
+
+<<type Cache.entry>>=
+(* A cache entry *)
+type entry = {
+  mutable cache_document : document;
+  mutable cache_pending : bool;
+
+  cache_condition : Condition.t;
+
+  mutable cache_lastused : float
+      (* cache_lastused is specified as max_int (0x3fffffff) when we don't
+       * want the entry to be flushed. This will break around
+       * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
+       *) (* JPF: it is now float! max_int -> max_float *)
+  }
+@
+
+
+<<function Cache.find>>=
+(* Find a document*)
+let find did =
+  let entry = List.assoc did !memory in
+  entry.cache_lastused <- Unix.time();
+  if entry.cache_pending 
+  then Condition.wait entry.cache_condition;
+  entry.cache_document
+@
+
+% add, will see later
+
+
+\section{Protocols}
+
+<<signature Protos.get>>=
+val get: Url.protocol ->
+  (Www.request -> Document.document_continuation -> 
+      (unit -> unit)) 
+  *
+  (Document.handle -> 
+      Document.document_data * Cache.cache_fill)
+@
+
+<<constant Protos.protos>>=
+let protos = Hashtbl.create 11
+@
+
+<<constant Protos.get>>=
+let get = Hashtbl.find protos
+@
+
+%will see code like:
+%<<toplevel Protos._2>>=
+%let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
+%@
+
+\subsection{Document continuation}
 
 % used by Protos.get
 <<type Document.document_continuation>>=
@@ -661,19 +742,109 @@ type document_continuation = {
 }
 @
 
+\subsection{Document handle}
+
 
 % used by Protos.get
-<<type Document.document_data>>=
-(*
- * Information on a document, as could be requested by "other" clients,
- * that is clients not directly on the chain of processes dealing with
- * the handle
- *)
+<<type Document.handle>>=
+(* This is passed around by request continuations. It represents a handle
+   on a connexion for retrieving a document *)
+type handle = {
+  document_id : document_id;
 
-type document_data =
-   MemoryData of Ebuffer.t
- | FileData of string * bool (* flag is true if file is temporary *)
+  mutable document_status : int;
+    (* Status code of response *)
+
+  document_feed : Feed.t;
+    (* where to get the data *)
+
+  document_referer : string option;
+    (* URL of refering document, if any *)
+  mutable document_headers : string list;
+    (* HTTP headers of document, or faked ones *)
+  document_fragment : string option;
+    (* fragment (#foo) if any *)
+
+
+  mutable document_logger : logger
+    (* how to log information relative to this document processing *)
+}
 @
+%less: typedef for document_status int?
+%todo: LP split!
+
+\section{HTTP}
+
+% apparently mmm handles http 1.0.
+% there is also 1.1.
+% 2.0 just got published I think
+
+
+%(* HTTP messages: requests and responses
+% *  What a client sends to a server is called a request 
+% *  What a server answers is called a response
+% *)
+
+\subsection{Requests}
+
+
+<<type Messages.request_message>>=
+(* HTTP-Message *)
+type request_message = {
+  request : request;
+
+  request_headers : header list;
+  request_auth : (string * string) option;
+           (* have we authentified the emitter (authtype, authuser) *)
+
+  request_body : string;
+}
+@
+%less: aspectize security
+% diff with Www.request? it also has _headers and _auth.
+% but Www.request is the general case, any request, file://, mailto://,
+% here request_message is the Www.request adapted for http://
+
+<<type Messages.request>>=
+(* Request-Line of a Request *)
+type request = {
+  request_version: string;	(* HTTP/1.0 *)
+  request_method : string;	(* GET, POST, etc... *)
+
+  request_uri : string		(* the uri *)
+}
+@
+
+<<type Messages.header>>=
+(* Other headers *)
+type header = string
+@
+
+
+\subsection{Responses}
+
+<<type Messages.response_message>>=
+type response_message = {
+  status : status;
+
+  response_headers : header list;
+  response_body : string;        (* responde body is *not* the document body *)
+}
+@
+
+
+<<type Messages.status>>=
+(* Status-Line of a Response *)
+type status =  { 
+    status_version : string;	(* HTTP/1.0 *)
+    status_code : int;		(* http return codes *)
+    status_message : string	(* http return message *)
+}
+@
+
+
+
+
 
 
 \section{DOM}
@@ -725,6 +896,7 @@ type attribute_value = string
 (* Attribute values *)
 let default_attributes = [ 
   ("isindex", "prompt"), "Document is indexed/searchable: ";
+
   ("a", "methods"), "GET";              (* <A METHODS=GET> *)
   ("ol", "type"), "1";			(* <OL TYPE=1 *)
   ("embed", "methods"), "GET";		(* <EMBED METHODS=GET> *)
@@ -741,6 +913,7 @@ let default_attributes = [
   ("area", "shape"), "rect";
   ("div", "align"), "left";
   ("basefont", "size"), "3";
+
   (* frames *)
   ("frame", "frameborder"), "0";
   ("frame", "scrolling"), "auto";
@@ -783,100 +956,6 @@ let has_attribute tag attr =
 \subsection{CSS}
 
 \subsection{Javascript}
-
-\section{Protocols}
-
-<<signature Protos.get>>=
-val get: Url.protocol ->
-  (Www.request -> Document.document_continuation -> unit -> unit) *
-  (Document.handle -> Document.document_data * Cache.cache_fill)
-@
-
-<<constant Protos.protos>>=
-let protos = Hashtbl.create 11
-@
-
-<<constant Protos.get>>=
-let get = Hashtbl.find protos
-@
-
-%will see code like:
-%<<toplevel Protos._2>>=
-%let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
-%@
-
-
-
-\section{HTTP}
-% apparently mmm handles http 1.0.
-% there is also 1.1.
-% 2.0 just got published I think
-
-
-%(* HTTP messages: requests and responses
-% *  What a client sends to a server is called a request 
-% *  What a server answers is called a response
-% *)
-
-\subsection{Requests}
-
-
-<<type Messages.request_message>>=
-(* HTTP-Message *)
-type request_message = {
-  request : request;
-
-  request_headers : header list;
-  request_auth : (string * string) option;
-           (* have we authentified the emitter (authtype, authuser) *)
-
-  request_body : string;
-}
-@
-%less: aspectize security
-% diff with Www.request? it also has _headers and _auth
-
-<<type Messages.request>>=
-(* Request-Line of a Request *)
-type request = {
-  request_version: string;	(* HTTP/1.0 *)
-  request_method : string;	(* GET, POST, etc... *)
-
-  request_uri : string		(* the uri *)
-}
-@
-
-<<type Messages.header>>=
-(* Other headers *)
-type header = string
-@
-
-
-\subsection{Responses}
-
-<<type Messages.response_message>>=
-type response_message = {
-  status : status;
-
-  response_headers : header list;
-  response_body : string;        (* responde body is *not* the document body *)
-}
-@
-
-
-<<type Messages.status>>=
-(* Status-Line of a Response *)
-type status =  { 
-    status_version : string;	(* HTTP/1.0 *)
-    status_code : int;		(* http return codes *)
-    status_message : string	(* http return message *)
-}
-@
-
-
-
-
-
 
 \chapter{[[main()]]}
 
@@ -975,7 +1054,8 @@ Mailto.internal_backend := Tk_mailto.internal;
 <<[[Main.main()]] applet system initialisation>>
 <<[[Main.main()]] mmm server initialisation>>
 @
-
+% for suffix, html entities, applet and mmm server, see
+% in later chapters.
 
 \subsection{Graphics initialisation}
 
@@ -1026,6 +1106,17 @@ let clicktofocus = ref false in
 @
 
 
+<<[[Main.main()]] tk libs initialisation>>=
+(* Initialisations in frx library : kbd navigation, search 
+ * No prerequisite except Tk *)
+Frx_text.init ();
+(* Initialisations in jpf's balloon library *)
+Balloon.init ();
+(* Initialisations in jpf's GIF ANIMATION library *)
+Tkaniminit.f ();
+@
+
+
 \subsection{Resources initialisation}
 
 <<[[Main.main()]] resource initialisation>>=
@@ -1054,18 +1145,6 @@ let palette = ref None in
 "<color>\tTk Palette";
 @
 
-\subsection{Graphics libraries initialisation}
-
-<<[[Main.main()]] tk libs initialisation>>=
-(* Initialisations in frx library : kbd navigation, search 
- * No prerequisite except Tk *)
-Frx_text.init ();
-(* Initialisations in jpf's balloon library *)
-Balloon.init ();
-(* Initialisations in jpf's GIF ANIMATION library *)
-Tkaniminit.f ();
-@
-
 \subsection{Local initialisation}
 
 <<[[Main.main()]] local initialisation>>=
@@ -1074,6 +1153,54 @@ Low.init();                         (* start regular tasks *)
 Cache.init();                       (* builtin document *)
 Auth.init();                        (* start expiration timer *)
 Debug.init();                       (* debugging RPC *)
+@
+%Low.init(), see Concurrency chapter
+%Auth.init(), see Security chapter
+%Debug.init(), see Debugging in appendix
+
+% could maybe be moved earlier
+<<signature Cache.init>>=
+val init : unit -> unit
+@
+% main -> <>
+<<function Cache.init>>=
+let init () =
+  let initurl = Lexurl.make (Version.initurl (Lang.lang ())) in
+
+  let b = Ebuffer.create 128 in
+  Ebuffer.output_string b (Version.html (Lang.lang ()));
+
+  let docid = { 
+    document_url = initurl;
+    document_stamp = Document.no_stamp
+  } in
+  let doc = { 
+    document_address = initurl;
+    document_data = MemoryData b;
+    document_info = ["Content-Type: text/html"]
+  } in
+  let docentry = { 
+    cache_document = doc;
+    cache_pending = false;
+    cache_condition = Condition.create();
+    cache_lastused = max_lastused;
+  }
+  in
+
+  memory := [docid, docentry];
+  current := 1
+@
+
+
+<<signature Version.initurl>>=
+val initurl : string -> string (* fake initial url *)
+@
+<<function Version.initurl>>=
+(* MUST BE NORMALIZED *)
+let initurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
+  | _ -> assert false
 @
 
 
@@ -1091,18 +1218,6 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 \section{[[Mmm.initial_navigator()]]}
 
 \subsection{XXX}
-
-<<signature Version.initurl>>=
-val initurl : string -> string (* fake initial url *)
-@
-<<function Version.initurl>>=
-(* MUST BE NORMALIZED *)
-let initurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
-  | _ -> assert false
-@
-
 
 <<[[Main.main()]] command line options>>=
 "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
@@ -2443,8 +2558,8 @@ let error name find_line (Loc(n,n')) msg =
 (* pos: start at 0 as in caml *)
 let line_reporting ic =
   let lines = ref [] 
-  and current_line = ref 1
-  and current_pos = ref 0 in
+  let current_line = ref 1 in
+  let current_pos = ref 0 in
   let read = 
     (*
     if !Lang.japan 
@@ -2543,7 +2658,8 @@ val parse_request : string -> request
      Request-Line = Method SP Request-URI SP HTTP-Version CRLF
      Raises [Invalid_HTTP_header "Request-Line"] *)
 @
-
+%less: why need to parse a request in a client?
+% we need to parse response, not request 
 
 
 
@@ -2555,16 +2671,16 @@ let parse_request s =
   match Str.bounded_split (regexp "[ ]") s 3 with
     [m;r;v] ->
          { request_version = v;
-       request_method = m;
-       request_uri = r }
+           request_method = m;
+           request_uri = r }
   | ["GET"; uri] ->
          { request_version = "HTTP/0.9";
            request_method = "GET";
-       request_uri = uri }
+           request_uri = uri }
   | [m;s] -> (* uri omitted ? *)
          { request_version = s;
            request_method = m;
-       request_uri = "/" }
+           request_uri = "/" }
   | _ -> raise (Invalid_HTTP_header "Request-Line")
  with
    Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
@@ -2584,25 +2700,91 @@ val parse_status : string -> status
 <<function Http_headers.parse_status>>=
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
 let parse_status s =
- if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
- try
-  match Str.bounded_split (regexp "[ ]") s 3 with
-    [v;c;m] ->
-         { status_version = v;
-           status_code = int_of_string c;
-           status_message = m }
-  (* it happened once with Server: Netscape-Commerce/1.1 *)
-  (* where the Status Line was: HTTP/1.0 302 *)
-  | [v;c] ->
-         { status_version = v;
-           status_code = int_of_string c;
-           status_message = "empty" }
-  | _ -> raise (Invalid_HTTP_header "Status-Line")
- with
-   Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
+ if String.length s > 5 & String.sub s 0 5 = "HTTP/" 
+ then
+   try
+    match Str.bounded_split (regexp "[ ]") s 3 with
+      [v;c;m] ->
+           { status_version = v;
+             status_code = int_of_string c;
+             status_message = m }
+    (* it happened once with Server: Netscape-Commerce/1.1 *)
+    (* where the Status Line was: HTTP/1.0 302 *)
+    | [v;c] ->
+           { status_version = v;
+             status_code = int_of_string c;
+             status_message = "empty" }
+    | _ -> raise (Invalid_HTTP_header "Status-Line")
+   with Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
  else (* 0.9, dammit *)
    raise Not_found
 @
+
+
+
+
+
+
+
+
+
+<<signature Http_headers.http_status>>=
+(* Common headers *)
+val http_status : int -> status
+  (* [http_status n] returns Status-Line for code [n] *)
+@
+<<function Http_headers.http_status>>=
+(* A typical status line *)
+let http_status code =
+  {
+   status_version = "HTTP/1.0";
+   status_code = code;
+   status_message = status_message code
+  }
+@
+
+<<function Http_headers.status_message>>=
+let status_message code =  
+  try Hashtbl.find status_messages code
+  with Not_found -> " "
+@
+
+<<constant Http_headers.status_messages>>=
+(* Messages in Status-Line *)
+let status_messages = Hashtbl.create 101
+@
+
+
+<<toplevel Http_headers._2>>=
+let _ = 
+  [ 200, "OK";
+
+    201, "Created";
+    202, "Accepted";
+    204, "No Content";
+
+    301, "Moved Permanently";
+    302, "Moved Temporarily";
+    304, "Not Modified";
+
+    400, "Bad Request";
+    401, "Unauthorized";
+    403, "Forbidden";
+    404, "Not Found";
+
+    500, "Internal Server Error";
+    501, "Not Implemented";
+    502, "Bad Gateway";
+    503, "Service Unavailable";
+
+    (* These are proposed for HTTP1.1 *)
+    407, "Proxy Authentication Required"
+  ] |> List.iter (function (code, msg) -> Hashtbl.add status_messages code msg)
+@
+%404!! :)
+
+
+
 
 
 \subsection{Headers}
@@ -2655,6 +2837,31 @@ let get_multi_header field_name =
     then (String.sub s (size + 2) (String.length s - size - 2)) :: search l
     else search l in
   search
+@
+
+
+
+
+\subsubsection{Content type}
+
+<<signature Http_headers.contenttype>>=
+(* Predefined access functions *)
+val contenttype : header list -> string
+  (* Content-Type *)
+@
+
+\subsubsection{Content length}
+
+<<signature Http_headers.contentlength>>=
+val contentlength : header list -> int
+  (* Content-Length *)
+@
+
+\subsubsection{Content encoding}
+
+<<signature Http_headers.contentencoding>>=
+val contentencoding : header list -> string
+  (* Content-Encoding *)
 @
 
 \subsection{Media}
@@ -2789,12 +2996,23 @@ let get name =
 @
 
 
+
+
+
 \chapter{HTTP}
 %Communication Protocol
 % http/
 
 % will see http://, main protocol, see also file://, mailto://
-% in extra protocol chapter
+% in extra protocol chapter, later
+
+
+%rappel:
+%<<signature Protos.get>>=
+%val get: Url.protocol ->
+%  (Www.request -> Document.document_continuation -> (unit -> unit)) *
+%  (Document.handle -> Document.document_data * Cache.cache_fill)
+%@
 
 <<toplevel Protos._2>>=
 let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
@@ -2803,11 +3021,12 @@ let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 <<function Http.req>>=
 let req wr cont =
   let cnx = request wr cont in
-    (fun () -> cnx#abort)
+  (fun () -> cnx#abort)
 @
 
 
 \section{Headers}
+%todo: merge in parsing/
 
 <<signature Http_headers.merge_headers>>=
 val merge_headers : header list -> header list -> header list
@@ -2878,7 +3097,12 @@ let remove_headers hs names =
 
 \section{Suffixes}
 
-
+<<type Http_headers.hint>>=
+(* Associating MIME type or Content-Encoding with file/URI suffix *)
+type hint =
+    ContentType of header
+  | ContentEncoding of header
+@
 
 
 <<constant Http_headers.suffixes>>=
@@ -2919,6 +3143,7 @@ let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 
   "asc",	ContentEncoding  "Content-Encoding: pgp";
   "pgp",	ContentEncoding  "Content-Encoding: pgp";
+
    <<[[Http_headers.suffixes]] elements>>
 ]
 @
@@ -2978,89 +3203,7 @@ let read_suffix_file f =
 @
 
 
-\section{Content}
 
-\subsection{Content type}
-
-<<signature Http_headers.contenttype>>=
-(* Predefined access functions *)
-val contenttype : header list -> string
-  (* Content-Type *)
-@
-
-\subsection{Content length}
-
-<<signature Http_headers.contentlength>>=
-val contentlength : header list -> int
-  (* Content-Length *)
-@
-
-\subsection{Content encoding}
-
-<<signature Http_headers.contentencoding>>=
-val contentencoding : header list -> string
-  (* Content-Encoding *)
-@
-
-
-\section{Status}
-
-<<toplevel Http_headers._2>>=
-let _ = List.iter (function (code, msg) ->
-                     Hashtbl.add status_messages code msg)
-  [ 200, "OK";
-
-    201, "Created";
-    202, "Accepted";
-    204, "No Content";
-
-    301, "Moved Permanently";
-    302, "Moved Temporarily";
-    304, "Not Modified";
-
-    400, "Bad Request";
-    401, "Unauthorized";
-    403, "Forbidden";
-    404, "Not Found";
-
-    500, "Internal Server Error";
-    501, "Not Implemented";
-    502, "Bad Gateway";
-    503, "Service Unavailable";
-
-    (* These are proposed for HTTP1.1 *)
-    407, "Proxy Authentication Required"
-  ]
-@
-%404!!
-
-<<signature Http_headers.http_status>>=
-(* Common headers *)
-val http_status : int -> status
-  (* [http_status n] returns Status-Line for code [n] *)
-@
-
-<<function Http_headers.http_status>>=
-(* A typical status line *)
-let http_status code =
-  {
-   status_version = "HTTP/1.0";
-   status_code = code;
-   status_message = status_message code
-  }
-@
-
-<<constant Http_headers.status_messages>>=
-(* Messages in Status-Line *)
-let status_messages = Hashtbl.create 101
-@
-
-
-<<function Http_headers.status_message>>=
-let status_message code =  
-  try Hashtbl.find status_messages code
-  with Not_found -> " "
-@
 
 
 \section{Time}
@@ -3187,9 +3330,6 @@ let timeout = ref 60		(* in seconds *)
 let verbose = ref false
 @
 
-<<exception Http.HTTP_error>>=
-exception HTTP_error of string
-@
 
 <<type Http.status>>=
 (* Support for aborting requests while in connect/write/headers mode.
@@ -3441,7 +3581,7 @@ type behaviour =
 
 <<signature Retrieve.add_http_processor>>=
 val add_http_processor : 
-  int -> (Www.request -> handle -> behaviour) -> unit
+  int -> (Www.request -> Document.handle -> behaviour) -> unit
 @
 
 
@@ -3520,16 +3660,17 @@ val internal : t -> internal
 <<function Feed.of_fd>>=
 (* We should distinguish internal/external connections *)
 let of_fd fd =
-  let is_open = ref true
-  and action = ref None
-  and condition = Condition.create()
-  and first_read = ref false
-  in
+  let is_open = ref true in
+  let action = ref None in
+  let condition = Condition.create() in
+  let first_read = ref false in
+
   (* ASSUMES: this is the first read on the fileevent *)
   let safe_read buf offs len =
     first_read := false;
     if !is_open then Low.read fd buf offs len else 0
   in
+
   (* In other cases : this is non blocking but not fully threaded. *)
   let special_read buf ofs len =
      (* remove the normal handler *)
@@ -3556,12 +3697,13 @@ let of_fd fd =
      (* and return *)
      n
   in {
-   feed_read =
-    (fun buf ofs len -> 
+
+   feed_read = (fun buf ofs len -> 
        if !first_read then safe_read buf ofs len
-       else special_read buf ofs len);
-   feed_schedule = 
-    (function f ->
+       else special_read buf ofs len
+   );
+
+   feed_schedule = (function f ->
        if not !is_open then
      Log.f "ERROR: feed is closed, can't schedule"
        else match !action with
@@ -3570,19 +3712,21 @@ let of_fd fd =
        | None -> begin
         action := Some f;
         Low.add_fileinput fd (fun () -> first_read := true; f())
-      end);
-   feed_unschedule = 
-    (function () -> 
+      end
+   );
+
+   feed_unschedule = (function () -> 
        match !action with
      Some f -> Low.remove_fileinput fd; action := None
        | None -> (* this happens quite often (for all action codes which
             do not process the body of the document, the feed got
             unscheduled as the end of headers) *)
-       ());
+       ()
+   );
 
    (* feed_close must be called only if the feed it *not* scheduled *)
-   feed_close =
-    (function () -> 
+
+   feed_close = (function () -> 
        (* if we abort during a state when we are waiting on the condition,
           the feed is unscheduled but we never get out. So always change
       the state *)
@@ -3593,9 +3737,11 @@ let of_fd fd =
       | None -> Unix.close fd;
                 is_open := false;
             (* Condition.free condition RACE CONDITION HERE *)
-       end);
-   feed_internal = fd
-     }
+       end 
+    );
+
+    feed_internal = fd
+   }
 @
 
 <<function Feed.internal>>=
@@ -3647,17 +3793,10 @@ let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 @
 
-\section{Documents}
+\section{Logging}
 
 
 
-<<type Document.document>>=
-type document = {
-  document_address : Url.t;
-  mutable document_data : document_data;
-  document_info : string list
-  }
-@
 
 <<signature Document.dclose>>=
 val dclose : bool -> handle -> unit
@@ -3746,8 +3885,8 @@ val update : Url.t -> unit
 <<function Img.get>>=
 let get did link cont prog =
   let wr = Www.make link in
-   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-   ImageScheduler.add_request wr did cont prog
+  wr.www_headers <- "Accept: image/*" :: wr.www_headers;
+  ImageScheduler.add_request wr did cont prog
 @
 
 
@@ -3780,29 +3919,31 @@ let update url =
 @
 
 
+\section{Scheduling}
+
+
+
 \section{Progressing}
 % important in a slow word to have some feedback
 
+
+<<type Scheduler.progress_func>>=
+type progress_func = int option -> int -> unit
+@
+
+
+
 <<signature Progress.no_meter>>=
 val no_meter : Scheduler.progress_func
+@
+<<constant Progress.no_meter>>=
+let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 @
 
 <<signature Progress.meter>>=
 @
 
-<<constant Progress.no_meter>>=
-let no_meter = (fun _ _ -> () : Scheduler.progress_func)
-@
-
-
 <<function Progress.meter>>=
-@
-
-
-\section{Scheduling}
-
-<<type Scheduler.progress_func>>=
-type progress_func = int option -> int -> unit
 @
 
 
@@ -3814,7 +3955,8 @@ type progress_func = int option -> int -> unit
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> Widget.widget -> 
-    context -> handle -> display_info option
+     context -> Document.handle -> 
+     display_info option
 @
 
 <<constant Viewers.viewers>>=
@@ -3856,19 +3998,21 @@ type spec =
 <<constant Viewers.builtin_viewers>>=
 let builtin_viewers = ref []
 @
-
 <<function Viewers.add_builtin>>=
 let add_builtin t v =
   builtin_viewers := (t,v) :: !builtin_viewers
 @
 
 
+% ??? -> <>
 <<function Viewers.reset>>=
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
+
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
+
   (* Preference settings *)
   let l = Tkresource.stringlist "externalViewers" [] in
   List.iter (fun ctype -> 
@@ -3926,34 +4070,6 @@ val di_compare : display_info -> display_info -> bool
 
 
 \section{Mime}
-
-\section{Decoders}
-
-<<signature Decoders.insert>>=
-val insert  : handle -> handle
-@
-
-<<signature Decoders.add>>=
-val add : string -> (handle -> handle) -> unit
-@
-
-<<constant Decoders.decoders>>=
-(* Insert a decoding if necessary.
- * We don't do it in http, since we don't want do decompress when we
- * save for example.
- *)
-
-let decoders = Hashtbl.create 37
-@
-
-
-<<toplevel Decoders._1>>=
-let _ =  List.iter (fun (s,t) -> Hashtbl.add decoders s t)
-  [ "COMPRESS", gzip;
-    "X-COMPRESS", gzip;
-    "GZIP", gzip;
-    "X-GZIP", gzip]
-@
 
 
 \section{Embedded objects}
@@ -4094,782 +4210,66 @@ let _ =
 \section{Parsing}
 
 
-\chapter{Other Features}
-
-\section{Audio}
-
-<<function Audio.fake_embed>>=
-(* Defines embedded viewer for audio types as re-running the document *)
-let fake_embed media_pars w ctx dh =
-  Document.dclose true dh;
-  try 
-    let hlink = {h_uri = Url.string_of dh.document_id.document_url;
-         h_context = None;
-         h_method = GET;
-         h_params = []} in
-    pack [Label.create w [Text "Redispatched externally"]][];
-    ctx#goto hlink
-  with 
-    Not_found (* goto *) -> 
-      pack [Label.create w [Text "No navigation given to us"]][]
-  | e ->
-      pack [Label.create w [Text (Printexc.to_string e)]][]
-@
-
-<<toplevel Audio._1>>=
-let _ =
-  Mmm.add_embedded_viewer ("audio", "*") fake_embed
-@
-
-
-
-\section{[[mmm_remote]]}
-
-\subsection{Server}
-
-<<[[Main.main()]] references>>=
-let accept_external = ref false in
-@
-
-<<[[Main.main()]] command line options>>=
-"-external", Arg.Unit (fun () -> accept_external := true),
-"\t\tAccept remote command (mmm_remote <url>)";
-@
-
-<<[[Main.main()]] mmm server initialisation>>=
-(* This must occur after most initialisations *)
-if !accept_external 
-then Cci.init();
-@
-
-\subsection{Client}
-<<function Main_remote.request>>=
-let request sock cmd url =
-  if cmd <> "" then ignore (write sock cmd 0 (String.length cmd));
-  ignore (write sock url 0 (String.length url));
-  ignore (write sock "\n" 0 1);
-  let buf = String.create 1024 in
-  try
-    while true do
-      let n = read sock buf 0 1024 in
-      if n = 0 then raise End_of_file else
-      ignore (write stdout buf 0 n)
-    done
-  with
-    End_of_file -> close sock
-@
-
-<<function Main_remote.main>>=
-let main () =
-  let file = 
-    Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
-  let cmd = ref "" in
-  
-  let s = socket PF_UNIX SOCK_STREAM 0 in
-  connect s (ADDR_UNIX file);
-  Arg.parse [ 
-  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
-  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
-  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
-  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
-]
-    (fun url -> request s !cmd url)
-    "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
-     The default is -show."
-@
-
-<<toplevel Main_remote._1>>=
-let _ = Printexc.catch main ()
-@
-
-
-
 
 \chapter{Concurrency}
 % important in browser context, servo was actually started just for that
 % could also have an isolation chapter?
 
-\chapter{Optimisations}
-% could also have an parallel chapter?
+\section{Tasks}
 
-\section{Caches}
-
-\chapter{Security}
-
-
-\section{Parsing}
-
-<<signature Lexheaders.challenge>>=
-val challenge : Lexing.lexbuf -> authChallenge
+<<signature Low.add_task>>=
+val add_task : (unit -> unit) -> unit
+  (* regular tasks *)
 @
 
-\section{Security challgenge}
-% auth
-% mv in later chapter? Security?
-
-
-<<signature Http_headers.challenge>>=
-val challenge : header list -> string
-  (* WWW-Authenticate *)
+<<constant Low.tasks>>=
+(* There is only a default task *)
+let tasks = ref [
+  (fun () -> !cur_tachy#report_traffic tick_duration !bytes_read !sample_read)
+  ]
 @
 
-<<signature Http_headers.proxy_challenge>>=
-val proxy_challenge : header list -> string
-  (* Proxy-Authenticate *)
+% main -> init -> <>
+<<function Low.refresh>>=
+let rec refresh() =
+  incr global_time;
+  List.iter (fun f -> f ()) !tasks;
+  sample_read := 0;
+  Timer_.add tick_duration refresh
 @
 
-<<signature Http_headers.expires>>=
-val expires : header list -> Http_date.http_time option
-  (* Expires *)
+<<signature Low.global_time>>=
+val global_time : int ref
 @
-
-<<type Http_headers.authScheme>>=
-(* Authorisation headers *)
-type authScheme =
-    AuthBasic
-  | AuthExtend of string
-@
-
-<<type Http_headers.authChallenge>>=
-type authChallenge =
-    { challenge_scheme : authScheme;
-      challenge_realm : string;
-      challenge_params: (string * string) list
-    }
+<<constant Low.global_time>>=
+let global_time = ref 0
 @
 
 
-
-<<type Auth.authSpace>>=
-(* Authorizations are remembered on the base of the directory url and realm
- * They are kept during the whole MMM session, with expiration
- *)
-type authSpace = {
-   auth_proxy: bool;
-   auth_host : string;
-   auth_port : int;
-   auth_dir : string;
-   auth_realm : string
-  }
-@
-
-
-
-
-<<signature Auth.lifetime>>=
-val lifetime : int ref
-@
-
-<<signature Auth.auth_file>>=
-val auth_file : string ref
-@
-
-<<signature Auth.edit>>=
-val edit : unit -> unit
-@
-
-<<signature Auth.load>>=
-val load : unit -> unit
-@
-
-<<signature Auth.save>>=
-val save : unit -> unit
-@
-
-<<signature Auth.add>>=
-val add : authSpace -> string -> unit
-@
-
-<<signature Auth.get>>=
-val get : authSpace -> string
-@
-
-<<signature Auth.init>>=
+<<signature Low.init>>=
 val init : unit -> unit
 @
+% main -> <>
+<<function Low.init>>=
+let init () = refresh ()
+@
 
-<<signature Auth.check>>=
-val check : Www.request -> authChallenge -> authSpace ->
-                  (string * bool * authSpace) option
+\section{Tachymeter}
+
+<<global Low.bytes_read>>=
+let bytes_read = ref 0
+@
+
+<<global Low.sample_read>>=
+let sample_read = ref 0
 @
 
 
-
-
-<<type Auth.authEntry>>=
-type authEntry = {
-   auth_cookie : string;
-   mutable auth_lastused : float
-   }
-@
-
-<<constant Auth.authorizations>>=
-let authorizations = Hashtbl.create 37
-@
-
-<<function Auth.get>>=
-let get space = 
-  let entry = Hashtbl.find authorizations space in
-    entry.auth_lastused <- Unix.time();
-    entry.auth_cookie
-@
-
-<<constant Auth.lifetime>>=
-(* Lifetime, in minutes. Default is one hour *)
-let lifetime = ref 60
-@
-
-<<function Auth.lookup>>=
-let rec lookup space = 
-  (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
-  try
-    Hashtbl.find authorizations space
-  with
-    Not_found ->
-     if space.auth_dir = "/" || space.auth_dir = "." 
-     then raise Not_found 
-     else
-      let newdir = Filename.dirname space.auth_dir in
-       lookup {auth_proxy = space.auth_proxy;
-               auth_host = space.auth_host;
-            auth_port = space.auth_port;
-        auth_dir = newdir;
-        auth_realm = space.auth_realm}
-@
-
-<<function Auth.ask_cookie>>=
-let ask_cookie forwhere =
-  try
-    let u,p = !open_passwd_ref forwhere in
-      Base64.encode (u^":"^p)
-  with
-    Failure "cancelled" -> failwith "cancelled"
-  | _ -> (!Error.default)#f (I18n.sprintf "Error in base 64 encoding");
-        failwith "cancelled"
-@
-
-<<function Auth.replace>>=
-let replace kind cookie l =
-  let rec repl acc = function
-    [] -> (kind,cookie)::acc
-  | (k,_)::l when k = kind -> repl (acc) l
-  | p::l -> repl (p::acc) l in
-  repl [] l
-@
-
-<<function Auth.add>>=
-let add space cookie =
-  Log.debug "adding cookie";
-  Hashtbl.add authorizations 
-      space 
-      {auth_cookie = cookie; auth_lastused = Unix.time()}
-@
-
-<<function Auth.check>>=
-(* Kind is either: realm or proxy *)
-let check wwwr challenge authspace =
-  let kind = if authspace.auth_proxy then "proxy" else "realm" in
-  match challenge.challenge_scheme with
-    AuthExtend _ -> (* we don't know how to do this *) 
-       None
-  | AuthBasic -> (* params are gleefully ignored *)
-     try (* if the passwd request is cancelled *)
-      let cookie, isnew =
-        if List.mem_assoc kind wwwr.www_auth then begin
-           (* we already tried, so the authorization is bad ! *)
-           Hashtbl.remove authorizations authspace; (* in case *)
-           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
-                                             %s:%d/%s" 
-                            kind challenge.challenge_realm 
-                            authspace.auth_host authspace.auth_port 
-                            authspace.auth_dir),
-           true
-           end
-       else (* ah, it is our first try,  get the authorization *)
-         if authspace.auth_proxy then 
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
-                                             %s:%d/%s" 
-                            kind challenge.challenge_realm
-                            authspace.auth_host authspace.auth_port 
-                            authspace.auth_dir),
-            true
-         else
-           try 
-             let entry = lookup authspace in
-              entry.auth_lastused <- Unix.time();
-              entry.auth_cookie, false
-           with Not_found ->
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
-                                             %s:%d/%s" 
-                            kind challenge.challenge_realm
-                            authspace.auth_host authspace.auth_port 
-                            authspace.auth_dir),
-            true
-      in
-      wwwr.www_auth <- replace kind cookie wwwr.www_auth;
-      Some (cookie, isnew, authspace)
-     with
-      Failure "cancelled" -> None
-@
-
-<<function Auth.edit>>=
-(* needs to be refined *)
-let edit () =
-  !edit_backend ()
-@
-
-<<constant Auth.auth_file>>=
-(* Saving authorizations to file *)
-let auth_file = ref ""
-@
-
-<<function Auth.save>>=
-let save () =
- if !auth_file <> "" then
-  let auth_file = Msys.tilde_subst !auth_file in
-  try
-    let o = openfile auth_file [O_WRONLY; O_CREAT] 0o600 in
-    let oc = out_channel_of_descr o in
-      output_value oc authorizations;
-      flush oc;
-      close o
-  with
-    Unix_error(e,_,_) ->
-      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
-                 (Unix.error_message e))
-  | Sys_error s ->
-      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
-
- else 
-   !Error.default#f (I18n.sprintf "No authorisation file defined")
-@
-
-<<function Auth.load>>=
-let load () =
-  if !auth_file <> "" then
-    let auth_file = Msys.tilde_subst !auth_file in
-    try
-      let ic = open_in auth_file in
-      let table = input_value ic
-      and time = Unix.time() in
-       Hashtbl.iter
-          (fun spacerealm entry ->
-           entry.auth_lastused <- time;
-           Hashtbl.add authorizations spacerealm entry)
-          table;
-    close_in ic
-    with
-      Sys_error s ->
-       !Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
- else 
-   !Error.default#f (I18n.sprintf "No authorisation file defined")
-@
-
-<<function Auth.init>>=
-let init () =
-  let check () =
-    let remove = ref []
-    and lifetime = float (60 * !lifetime)
-    and time = Unix.time () in
-    Hashtbl.iter 
-      (fun space entry ->
-       let expiration_time = entry.auth_lastused +. lifetime in
-    if time > expiration_time then remove := space :: !remove)
-      authorizations;
-    List.iter (Hashtbl.remove authorizations) !remove
-  in
-  let rec tim () =
-    Timer_.set (!lifetime * 30000) (fun () -> check(); tim ())
-  in
-  tim ()
+<<signature Low.cur_tachy>>=
+val cur_tachy : tachymeter ref
 @
 
 
-
-\chapter{Extra Protocols}
-
-
-\section{[[file://]]}
-
-<<toplevel Protos._7>>=
-let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
-@
-
-
-
-<<signature File.request>>=
-(* file: protocol *)
-val request :  Www.request -> Document.document_continuation -> unit -> unit
-    (* [request wr cont] returns [abort] *)
-@
-
-<<exception File.File_error>>=
-exception File_error of string
-@
-
-
-
-
-
-<<function File.request>>=
-(*
- * Display a file on the local unix file system (file:)
- *  is path really supposed to be absolute ?
- * Note: completely ignores method (GET, POST,...)
- *)
-
-let request wr cont =
-  let path = match wr.www_url.path with
-    Some path -> "/" ^ (Lexurl.remove_dots path)
-  | None -> "/" in
-  if is_cgi path then (fake_cgi wr cont path; (fun () -> ()))
-  else   (* A bit weird, but we don't want to capture errors from the cont *)
-  let st =
-    try stat path 
-    with 
-      _ -> raise (File_error (I18n.sprintf "cannot stat file")) in
-    match st.st_kind with
-    S_REG ->
-      begin
-      (* check if this is an update *)
-        try 
-          let since = get_header "if-modified-since" wr.www_headers in
-          let ht = Lexdate.ht_of_string since 
-          and filet = Http_date.ht_of_stamp st.st_mtime in
-          if Http_date.compare filet ht > 0
-          then raise Not_found (* fall through *)
-          else begin
-        let dh = { 
-          document_id = document_id wr;
-          document_referer = wr.www_link.h_context;
-          document_status = 304;
-          document_headers = [ sprintf "Date: %s" (Date.asc_now())];
-          document_feed = 
-             Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
-          document_fragment = wr.www_fragment;
-          document_logger = tty_logger} in
-       Retype.f dh;
-       cont.document_process dh;
-           (fun () -> ())
-          end
-        with
-          Not_found  (* default case *)
-        | Lexdate.Invalid_date (_,_) ->
-        let s = 
-          try openfile path [O_RDONLY] 0
-          with Unix_error(_,_,_) -> 
-            raise (File_error (I18n.sprintf "cannot open file")) in
-       let dh =
-          {document_id = document_id wr;
-            document_referer = wr.www_link.h_context;
-            document_status = 200;
-            document_headers = 
-            [sprintf "Content-Length: %d" st.st_size;
-              sprintf "Date: %s" (Date.asc_now());
-              sprintf "Last-modified: %s" (Date.asc st.st_mtime)];
-            document_feed = Feed.of_fd s;
-            document_fragment = wr.www_fragment;
-            document_logger = tty_logger} in
-       Retype.f dh;
-       cont.document_process dh;
-           (fun () -> ())
-      end
-      | S_DIR -> 
-      let s = dir path in
-        cont.document_process 
-          {document_id = document_id wr;
-           document_referer = wr.www_link.h_context;
-           document_status = 200;
-           document_headers = ["Content-Type: text/html"];
-           document_feed = Feed.of_fd s;
-           document_fragment = wr.www_fragment;
-              document_logger = tty_logger};
-            (fun () -> ())
-
-      | _ -> raise (File_error (I18n.sprintf "cannot open file"))
-@
-
-
-
-
-
-
-
-
-
-
-
-
-<<function File.isdir>>=
-(* 
- * Simulate directory
- *)
-
-let isdir path f =
-  let fullname = Filename.concat path f in
-    (stat fullname).st_kind = S_DIR
-@
-
-<<function File.d2html>>=
-let d2html path d =
-  (* make sure that when path is used in url, it is / terminated *)
-  let pathurl =
-    let l = String.length path in
-    if l = 0 then path else
-    if path.[l-1] = '/' then path
-    else sprintf "%s/" path
-  in
-  printf 
-"<HTML>
-<HEAD><TITLE>%s</TITLE>
-<BASE HREF=\"file://localhost%s\">
-</HEAD>
-<BODY>
-<H1>Directory list: %s</H1>
-<PRE>" path pathurl path;
-  let entries = ref [] in
-  begin try
-    while true do 
-      entries := (readdir d) :: !entries
-      done      	
-  with 
-      End_of_file -> closedir d
-  end;
-  entries := Sort.list (<=) !entries;
-  List.iter (function
-      "." -> ()
-    | ".." ->
-       printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
-              (Filename.concat (dirname (dirname pathurl)) "")
-    | f ->
-       try
-         let fullname = Filename.concat path f in
-     let st = stat fullname in
-     match st.st_kind with
-       S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
-     | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
-                       f f (st.st_size)
-     | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
-     | _ -> ()
-       with
-     Unix_error(_,_,_) -> ())
-    !entries;
-  printf "</PRE></BODY></HTML>"
-@
-
-<<function File.dir>>=
-(* It's easiest to do it asynchronously anyway *)
-let dir path =
-  try
-    let d = opendir path in
-    let cin, cout = pipe() in
-      match Low.fork() with
-       0 -> 
-      close cin; dup2 cout stdout; close cout;
-      begin
-        try d2html path d 
-        with e ->
-          print_endline (Printexc.to_string e)
-      end;
-      flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
-      exit 0;
-      cin (*duh*)
-      | n -> closedir d; close cout; cin
-  with
-    Unix_error(_,_,_)  -> 
-      raise (File_error (I18n.sprintf "cannot open dir"))
-@
-
-<<function File.document_id>>=
-let document_id wwwr =
-  { document_url = wwwr.www_url; document_stamp = no_stamp}
-@
-
-<<function File.fake_cgi>>=
-(* Not true CGI interface, just a hack *)
-(* TODO: headers ? *)
-let fake_cgi wwwr cont path =
-  try 
-    let (cmd_in, cmd_out) = pipe() in
-    let cmd, args = 
-      try 
-       let pos = String.index path '?' in
-    let cmd = String.sub path 0 pos in
-    if pos + 1 = String.length path then cmd, [| cmd |]
-    else 
-         cmd, [|cmd; String.sub path (pos+1) (String.length path - pos - 1)|]
-      with
-       Not_found -> path, [| path |] in
-    match Low.fork() with
-      0 -> 
-       close cmd_in;
-    dup2 cmd_out stdout; close cmd_out;
-    begin try execvp cmd args 
-    with
-      Unix_error(e, _, _) ->
-       Munix.write_string stdout "HTTP/1.0 404 Not found\r\n";
-       Munix.write_string stdout "Content-Type: text/html\r\n\r\n";
-       Munix.write_string stdout "<H1>Cannot execute local file</H1>";
-       Munix.write_string stdout "Command \"";
-       Munix.write_string stdout cmd;
-       Munix.write_string stdout "\" failed:";
-       Munix.write_string stdout (Unix.error_message e);
-       Munix.write_string stdout "\n";
-       exit 1
-    end
-    | n ->
-         close cmd_out;
-     let dh = {document_id = document_id wwwr;
-           document_referer = wwwr.www_link.h_context;
-           document_status = 0;
-           document_headers = [];
-           document_feed = Feed.of_fd cmd_in;
-           document_fragment = wwwr.www_fragment;
-           document_logger = tty_logger} in
-      dh.document_feed.feed_schedule
-        (fun () ->
-           try
-         if dh.document_headers = [] then begin
-           (* it should be the HTTP Status-Line *)
-            let l = Munix.read_line cmd_in in
-              dh.document_status <- (parse_status l).status_code;
-              dh.document_headers <- [l] (* keep it there *)
-            end
-          else 
-            dh.document_headers <- 
-              read_headers cmd_in dh.document_headers
-           with
-         End_of_headers ->
-           dh.document_feed.feed_unschedule();
-           cont.document_process dh
-           | Not_found -> (* No HTTP/ header *)
-           dh.document_feed.feed_unschedule();
-           dh.document_status <- 200;
-               dh.document_headers <- ["Content-Type: text/plain"];
-           cont.document_process dh
-           | Unix_error(_,_,_) ->
-           dclose true dh;
-               raise (File_error (I18n.sprintf 
-               "Error while reading headers of %s\n%s" path "(read)"))
-           | Invalid_HTTP_header s ->
-           dclose true dh;
-           raise (File_error (I18n.sprintf 
-                  "Error while reading headers of %s\n%s" path s))
-           | End_of_file ->
-           dclose true dh;
-           raise (File_error (I18n.sprintf 
-               "Error while reading headers of %s\n%s" path "eof"))
-          )
-  with Unix_error(_,_,_) -> 
-    raise (File_error (I18n.sprintf "cannot exec file"))
-@
-
-<<constant File.binary_path>>=
-(* Pref stuff *)
-let binary_path = ref ([] : string list)
-@
-
-<<constant File.r>>=
-let r = Str.regexp ":"
-@
-
-
-% ???
-<<signature File.pref_init>>=
-@
-<<signature File.pref_set>>=
-@
-
-
-
-<<function File.pref_init>>=
-@
-
-<<function File.pref_set>>=
-@
-
-<<function File.is_cgi>>=
-let is_cgi file =
-  match !binary_path with
-    [] -> false
-  | path ->
-      let l = String.length file in
-      List.exists (fun dir ->
-    let ldir = String.length dir in
-    l > ldir && String.sub file 0 ldir = dir)
-    path
-(*
- * Display a file on the local unix file system (file:)
- *  is path really supposed to be absolute ?
- * Note: completely ignores method (GET, POST,...)
- *)
-@
-
-
-
-\section{[[mailto://]]}
-% see extra
-
-\section{Proxied protocols}
-
-<<[[Main.main()]] command line options>>=
-"-proxy", Arg.String (fun s -> Http.proxy := s), 
-"<hostname>\tProxy host";
-@
-<<[[Main.main()]] command line options>>=
-"-port", Arg.Int (fun i -> Http.proxy_port := i),
-"<port>\t\tProxy port";
-@
-
-<<global Http.proxy>>=
-(* Default proxy definitions *)
-let proxy = ref "no-proxy-defined"
-@
-
-<<global Http.proxy_port>>=
-let proxy_port = ref 80
-@
-
-
-
-
-
-<<toplevel Protos._1>>=
-let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._3>>=
-let _ = Hashtbl.add protos GOPHER (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._4>>=
-let _ = Hashtbl.add protos NEWS (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._5>>=
-let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._6>>=
-let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
-@
-
-
-<<function Http.prox_req>>=
-and proxy_req wr cont = 
-  let cnx = proxy_request wr cont in
-    (fun () -> cnx#abort)
-@
-
-
-<<function Http.proxy_request>>=
-(* Process an HTTP request using the proxy.
-   We pass on the continuation *)
-and proxy_request wr cont =
-  tcp_connect !proxy !proxy_port wr.www_logging
-          (start_request true wr cont)
-          (failed_request wr cont.document_finish)
-@
 
 
 \chapter{Advanced Topics}
@@ -4895,7 +4295,6 @@ val decode : string -> string
 (* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
 
 let index64 = Array.create 128 0
-(* Init the index *)
 @
 
 <<toplevel Base64._1>>=
@@ -5012,7 +4411,7 @@ let message_file = ref ""
 
 
 
-
+%less: diff with I18n.language?
 <<signature Lang.lang>>=
 val lang : unit -> string
 @
@@ -5258,10 +4657,865 @@ let sprintf (fmt : ('a, unit, string) format) =
 @
 
 
+\section{Gzip decoders}
+
+% for gzip stuff?
+
+<<signature Decoders.insert>>=
+val insert  : Document.handle -> Document.handle
+@
+
+<<signature Decoders.add>>=
+val add : string -> (Document.handle -> Document.handle) -> unit
+@
+
+<<constant Decoders.decoders>>=
+(* Insert a decoding if necessary.
+ * We don't do it in http, since we don't want do decompress when we
+ * save for example.
+ *)
+
+let decoders = Hashtbl.create 37
+@
+
+
+<<toplevel Decoders._1>>=
+let _ =  
+  [ "COMPRESS", gzip;
+    "X-COMPRESS", gzip;
+    "GZIP", gzip;
+    "X-GZIP", gzip
+  ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
+@
+
+
+
+\section{Extra Protocols}
+
+
+\subsection{[[file://]]}
+
+<<toplevel Protos._7>>=
+let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
+@
+
+
+
+<<signature File.request>>=
+(* file: protocol *)
+val request : Www.request -> Document.document_continuation -> 
+   (unit -> unit)
+    (* [request wr cont] returns [abort] *)
+@
+
+<<exception File.File_error>>=
+exception File_error of string
+@
+
+<<function File.document_id>>=
+let document_id wwwr =
+  { document_url = wwwr.www_url; document_stamp = no_stamp}
+@
+
+%less: LP split and distribute in two sections below
+<<function File.request>>=
+(*
+ * Display a file on the local unix file system (file:)
+ *  is path really supposed to be absolute ?
+ * Note: completely ignores method (GET, POST,...)
+ *)
+
+let request wr cont =
+  let path = match wr.www_url.path with
+    Some path -> "/" ^ (Lexurl.remove_dots path)
+  | None -> "/" 
+  in
+  <<[[File.request()]] if CGI path>>
+  else   (* A bit weird, but we don't want to capture errors from the cont *)
+    let st =
+      try 
+        stat path 
+      with _ -> raise (File_error (I18n.sprintf "cannot stat file")) 
+    in
+    match st.st_kind with
+    | S_REG ->
+      begin
+      (* check if this is an update *)
+        try 
+          let since = get_header "if-modified-since" wr.www_headers in
+          let ht = Lexdate.ht_of_string since in
+          let filet = Http_date.ht_of_stamp st.st_mtime in
+          if Http_date.compare filet ht > 0
+          then raise Not_found (* fall through *)
+          else begin
+            let dh = { 
+              document_id = document_id wr;
+              document_referer = wr.www_link.h_context;
+              document_status = 304;
+              document_headers = [ sprintf "Date: %s" (Date.asc_now())];
+              document_feed = 
+                Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
+              document_fragment = wr.www_fragment;
+              document_logger = Document.tty_logger
+            } in
+            Retype.f dh;
+            cont.document_process dh;
+            (fun () -> ())
+          end
+       with
+       | Not_found  (* default case *)
+       | Lexdate.Invalid_date (_,_) ->
+          let s = 
+            try openfile path [O_RDONLY] 0
+            with Unix_error(_,_,_) -> 
+              raise (File_error (I18n.sprintf "cannot open file")) 
+          in
+          let dh =
+            { document_id = document_id wr;
+              document_referer = wr.www_link.h_context;
+              document_status = 200;
+              document_headers = 
+                [sprintf "Content-Length: %d" st.st_size;
+                 sprintf "Date: %s" (Date.asc_now());
+                 sprintf "Last-modified: %s" (Date.asc st.st_mtime)
+                ];
+              document_feed = Feed.of_fd s;
+              document_fragment = wr.www_fragment;
+              document_logger = Document.tty_logger
+            } in
+           Retype.f dh;
+           cont.document_process dh;
+           (fun () -> ())
+    end
+    | S_DIR -> 
+        let s = dir path in
+        cont.document_process 
+          { document_id = document_id wr;
+            document_referer = wr.www_link.h_context;
+            document_status = 200;
+            document_headers = ["Content-Type: text/html"];
+            document_feed = Feed.of_fd s;
+            document_fragment = wr.www_fragment;
+            document_logger = Document.tty_logger
+           };
+         (fun () -> ())
+
+    | _ -> raise (File_error (I18n.sprintf "cannot open file"))
+@
+
+
+\subsubsection{Files}
+
+\subsubsection{Directories}
+
+% File.request (DIR case) ->  <>
+<<function File.dir>>=
+(* It's easiest to do it asynchronously anyway *)
+let dir path =
+  try
+    let d = opendir path in
+    let cin, cout = pipe() in
+    match Low.fork() with
+    | 0 -> 
+        close cin; dup2 cout stdout; close cout;
+        begin
+          try 
+            d2html path d 
+          with e ->
+            print_endline (Printexc.to_string e)
+        end;
+        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
+        exit 0;
+        cin (*duh*)
+     | n -> closedir d; close cout; cin
+  with Unix_error(_,_,_)  -> 
+    raise (File_error (I18n.sprintf "cannot open dir"))
+@
+
+
+
+% File.dir -> <>
+<<function File.d2html>>=
+let d2html path d =
+  (* make sure that when path is used in url, it is / terminated *)
+  let pathurl =
+    let l = String.length path in
+    if l = 0 
+    then path 
+    else
+      if path.[l-1] = '/' 
+      then path
+      else sprintf "%s/" path
+  in
+  Printf.printf 
+"<HTML>
+<HEAD><TITLE>%s</TITLE>
+<BASE HREF=\"file://localhost%s\">
+</HEAD>
+<BODY>
+<H1>Directory list: %s</H1>
+<PRE>" path pathurl path;
+
+  let entries = ref [] in
+  begin 
+   try
+     while true do 
+       entries := (readdir d) :: !entries
+     done      	
+   with  End_of_file -> closedir d
+  end;
+  entries := Sort.list (<=) !entries;
+  !entries |> List.iter (function
+    |  "." -> ()
+    | ".." ->
+       printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
+              (Filename.concat (dirname (dirname pathurl)) "")
+    | f ->
+       try
+         let fullname = Filename.concat path f in
+         let st = stat fullname in
+         match st.st_kind with
+         | S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
+         | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
+                       f f (st.st_size)
+         | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
+         | _ -> ()
+       with Unix_error(_,_,_) -> ()
+    );
+  printf "</PRE></BODY></HTML>"
+@
+
+% ??? -> <>
+<<function File.isdir>>=
+(* 
+ * Simulate directory
+ *)
+let isdir path f =
+  let fullname = Filename.concat path f in
+  (stat fullname).st_kind = S_DIR
+@
+% dead?
+
+
+
+
+
+
+
+\subsection{[[mailto://]]}
+
+% see extra
+
+\subsection{Proxied protocols}
+
+<<[[Main.main()]] command line options>>=
+"-proxy", Arg.String (fun s -> Http.proxy := s), 
+"<hostname>\tProxy host";
+@
+<<[[Main.main()]] command line options>>=
+"-port", Arg.Int (fun i -> Http.proxy_port := i),
+"<port>\t\tProxy port";
+@
+
+<<global Http.proxy>>=
+(* Default proxy definitions *)
+let proxy = ref "no-proxy-defined"
+@
+
+<<global Http.proxy_port>>=
+let proxy_port = ref 80
+@
+
+
+
+
+
+<<toplevel Protos._1>>=
+let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._3>>=
+let _ = Hashtbl.add protos GOPHER (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._4>>=
+let _ = Hashtbl.add protos NEWS (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._5>>=
+let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._6>>=
+let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
+@
+
+
+<<function Http.prox_req>>=
+and proxy_req wr cont = 
+  let cnx = proxy_request wr cont in
+  (fun () -> cnx#abort)
+@
+
+
+<<function Http.proxy_request>>=
+(* Process an HTTP request using the proxy.
+   We pass on the continuation *)
+and proxy_request wr cont =
+  tcp_connect !proxy !proxy_port wr.www_logging
+       (start_request true wr cont)
+       (failed_request wr cont.document_finish)
+@
+
+
+\section{Security}
+
+\subsection{Parsing}
+
+<<signature Lexheaders.challenge>>=
+val challenge : Lexing.lexbuf -> authChallenge
+@
+
+\subsection{Security challenge}
+% auth
+% mv in later chapter? Security?
+
+
+<<signature Http_headers.challenge>>=
+val challenge : header list -> string
+  (* WWW-Authenticate *)
+@
+
+<<signature Http_headers.proxy_challenge>>=
+val proxy_challenge : header list -> string
+  (* Proxy-Authenticate *)
+@
+
+<<signature Http_headers.expires>>=
+val expires : header list -> Http_date.http_time option
+  (* Expires *)
+@
+
+<<type Http_headers.authScheme>>=
+(* Authorisation headers *)
+type authScheme =
+    AuthBasic
+  | AuthExtend of string
+@
+
+<<type Http_headers.authChallenge>>=
+type authChallenge =
+    { challenge_scheme : authScheme;
+      challenge_realm : string;
+      challenge_params: (string * string) list
+    }
+@
+
+
+
+<<type Auth.authSpace>>=
+(* Authorizations are remembered on the base of the directory url and realm
+ * They are kept during the whole MMM session, with expiration
+ *)
+type authSpace = {
+   auth_proxy: bool;
+   auth_host : string;
+   auth_port : int;
+   auth_dir : string;
+   auth_realm : string
+  }
+@
+
+
+
+
+<<signature Auth.lifetime>>=
+val lifetime : int ref
+@
+
+<<signature Auth.auth_file>>=
+val auth_file : string ref
+@
+
+<<signature Auth.edit>>=
+val edit : unit -> unit
+@
+
+<<signature Auth.load>>=
+val load : unit -> unit
+@
+
+<<signature Auth.save>>=
+val save : unit -> unit
+@
+
+<<signature Auth.add>>=
+val add : authSpace -> string -> unit
+@
+
+<<signature Auth.get>>=
+val get : authSpace -> string
+@
+
+
+<<signature Auth.check>>=
+val check : Www.request -> authChallenge -> authSpace ->
+                  (string * bool * authSpace) option
+@
+
+
+
+
+<<type Auth.authEntry>>=
+type authEntry = {
+   auth_cookie : string;
+   mutable auth_lastused : float
+   }
+@
+
+<<constant Auth.authorizations>>=
+let authorizations = Hashtbl.create 37
+@
+
+<<function Auth.get>>=
+let get space = 
+  let entry = Hashtbl.find authorizations space in
+    entry.auth_lastused <- Unix.time();
+    entry.auth_cookie
+@
+
+<<constant Auth.lifetime>>=
+(* Lifetime, in minutes. Default is one hour *)
+let lifetime = ref 60
+@
+
+<<function Auth.lookup>>=
+let rec lookup space = 
+  (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
+  try
+    Hashtbl.find authorizations space
+  with
+    Not_found ->
+     if space.auth_dir = "/" || space.auth_dir = "." 
+     then raise Not_found 
+     else
+      let newdir = Filename.dirname space.auth_dir in
+       lookup {auth_proxy = space.auth_proxy;
+               auth_host = space.auth_host;
+            auth_port = space.auth_port;
+        auth_dir = newdir;
+        auth_realm = space.auth_realm}
+@
+
+<<function Auth.ask_cookie>>=
+let ask_cookie forwhere =
+  try
+    let u,p = !open_passwd_ref forwhere in
+      Base64.encode (u^":"^p)
+  with
+    Failure "cancelled" -> failwith "cancelled"
+  | _ -> (!Error.default)#f (I18n.sprintf "Error in base 64 encoding");
+        failwith "cancelled"
+@
+
+<<function Auth.replace>>=
+let replace kind cookie l =
+  let rec repl acc = function
+    [] -> (kind,cookie)::acc
+  | (k,_)::l when k = kind -> repl (acc) l
+  | p::l -> repl (p::acc) l in
+  repl [] l
+@
+
+<<function Auth.add>>=
+let add space cookie =
+  Log.debug "adding cookie";
+  Hashtbl.add authorizations 
+      space 
+      {auth_cookie = cookie; auth_lastused = Unix.time()}
+@
+
+<<function Auth.check>>=
+(* Kind is either: realm or proxy *)
+let check wwwr challenge authspace =
+  let kind = if authspace.auth_proxy then "proxy" else "realm" in
+  match challenge.challenge_scheme with
+    AuthExtend _ -> (* we don't know how to do this *) 
+       None
+  | AuthBasic -> (* params are gleefully ignored *)
+     try (* if the passwd request is cancelled *)
+      let cookie, isnew =
+        if List.mem_assoc kind wwwr.www_auth then begin
+           (* we already tried, so the authorization is bad ! *)
+           Hashtbl.remove authorizations authspace; (* in case *)
+           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm 
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+           true
+           end
+       else (* ah, it is our first try,  get the authorization *)
+         if authspace.auth_proxy then 
+            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+            true
+         else
+           try 
+             let entry = lookup authspace in
+              entry.auth_lastused <- Unix.time();
+              entry.auth_cookie, false
+           with Not_found ->
+            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+                                             %s:%d/%s" 
+                            kind challenge.challenge_realm
+                            authspace.auth_host authspace.auth_port 
+                            authspace.auth_dir),
+            true
+      in
+      wwwr.www_auth <- replace kind cookie wwwr.www_auth;
+      Some (cookie, isnew, authspace)
+     with
+      Failure "cancelled" -> None
+@
+
+<<function Auth.edit>>=
+(* needs to be refined *)
+let edit () =
+  !edit_backend ()
+@
+
+<<constant Auth.auth_file>>=
+(* Saving authorizations to file *)
+let auth_file = ref ""
+@
+
+<<function Auth.save>>=
+let save () =
+ if !auth_file <> "" then
+  let auth_file = Msys.tilde_subst !auth_file in
+  try
+    let o = openfile auth_file [O_WRONLY; O_CREAT] 0o600 in
+    let oc = out_channel_of_descr o in
+      output_value oc authorizations;
+      flush oc;
+      close o
+  with
+    Unix_error(e,_,_) ->
+      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
+                 (Unix.error_message e))
+  | Sys_error s ->
+      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
+
+ else 
+   !Error.default#f (I18n.sprintf "No authorisation file defined")
+@
+
+<<function Auth.load>>=
+let load () =
+  if !auth_file <> "" then
+    let auth_file = Msys.tilde_subst !auth_file in
+    try
+      let ic = open_in auth_file in
+      let table = input_value ic
+      and time = Unix.time() in
+       Hashtbl.iter
+          (fun spacerealm entry ->
+           entry.auth_lastused <- time;
+           Hashtbl.add authorizations spacerealm entry)
+          table;
+    close_in ic
+    with
+      Sys_error s ->
+       !Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+ else 
+   !Error.default#f (I18n.sprintf "No authorisation file defined")
+@
+
+<<signature Auth.init>>=
+val init : unit -> unit
+@
+% main -> <>
+<<function Auth.init>>=
+let init () =
+  let check () =
+    let remove = ref []
+    and lifetime = float (60 * !lifetime)
+    and time = Unix.time () in
+    Hashtbl.iter 
+      (fun space entry ->
+       let expiration_time = entry.auth_lastused +. lifetime in
+    if time > expiration_time then remove := space :: !remove)
+      authorizations;
+    List.iter (Hashtbl.remove authorizations) !remove
+  in
+  let rec tim () =
+    Timer_.set (!lifetime * 30000) (fun () -> check(); tim ())
+  in
+  tim ()
+@
+
+
+
+\section{Optimisations}
+% could also have an parallel chapter?
+
+\subsection{Caches}
+
+%rappel:
+%let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
+
+<<signature Cache.tobuffer>>=
+val tobuffer: Document.handle -> Document.document_data * cache_fill
+@
+
+<<function Cache.tobuffer>>=
+let tobuffer dh =
+  let b = Ebuffer.create 1024 in
+  MemoryData b, {cache_write = Ebuffer.output b;
+                 cache_close = (fun () -> ())}
+@
+
+
+<<function Cache.add>>=
+(* Add a new entry *)
+let add did doc =
+  if !debug 
+  then Log.f (sprintf  "Adding new cache entry %s(%d) %s"
+                        (Url.string_of did.document_url)
+                        did.document_stamp
+                        (match doc.document_data with
+                        | MemoryData _ -> "in memory"
+                        | FileData (f,true) -> f
+                        | FileData (f,false) -> "fake " ^f));
+
+  (* Kill the previous entry, if any [for update] *)
+  kill did;
+  (* Because of frames (not kept in history), we must make room even
+   * in history mode
+   *)
+  if (*not !history_mode && *)!current >= !max_documents 
+  then make_room()
+  else 
+   if !debug 
+   then Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
+   incr current;
+    memory := (did,
+               { cache_document = doc;
+                 cache_pending = true;
+                 cache_lastused = max_lastused;
+                 cache_condition = Condition.create()
+               }) :: !memory
+@
+
+
+
+\section{Audio}
+
+<<function Audio.fake_embed>>=
+(* Defines embedded viewer for audio types as re-running the document *)
+let fake_embed media_pars w ctx dh =
+  Document.dclose true dh;
+  try 
+    let hlink = {h_uri = Url.string_of dh.document_id.document_url;
+         h_context = None;
+         h_method = GET;
+         h_params = []} in
+    pack [Label.create w [Text "Redispatched externally"]][];
+    ctx#goto hlink
+  with 
+    Not_found (* goto *) -> 
+      pack [Label.create w [Text "No navigation given to us"]][]
+  | e ->
+      pack [Label.create w [Text (Printexc.to_string e)]][]
+@
+
+<<toplevel Audio._1>>=
+let _ =
+  Mmm.add_embedded_viewer ("audio", "*") fake_embed
+@
+
+
+
+\section{[[mmm_remote]]}
+
+\subsection{Server}
+
+<<[[Main.main()]] references>>=
+let accept_external = ref false in
+@
+<<[[Main.main()]] command line options>>=
+"-external", Arg.Unit (fun () -> accept_external := true),
+"\t\tAccept remote command (mmm_remote <url>)";
+@
+
+<<[[Main.main()]] mmm server initialisation>>=
+(* This must occur after most initialisations *)
+if !accept_external 
+then Cci.init();
+@
+
+\subsection{Client}
+
+<<function Main_remote.request>>=
+let request sock cmd url =
+  if cmd <> "" 
+  then write sock cmd 0 (String.length cmd) |> ignore;
+  write sock url 0 (String.length url) |> ignore;
+  write sock "\n" 0 1 |> ignore;
+  let buf = String.create 1024 in
+  try
+    while true do
+      let n = read sock buf 0 1024 in
+      if n = 0 
+      then raise End_of_file 
+      else ignore (write stdout buf 0 n)
+    done
+  with End_of_file -> close sock
+@
+
+<<function Main_remote.main>>=
+let main () =
+  let file = 
+    Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
+  let cmd = ref "" in
+  
+  let s = socket PF_UNIX SOCK_STREAM 0 in
+  connect s (ADDR_UNIX file);
+  Arg.parse [ 
+  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
+  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
+  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
+  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
+  ]
+    (fun url -> request s !cmd url)
+    "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
+     The default is -show."
+@
+
+<<toplevel Main_remote._1>>=
+let _ = Printexc.catch main ()
+@
+
+
+
+\section{Fake CGI}
+
+<<[[File.request()]] if CGI path>>=
+if is_cgi path 
+then (fake_cgi wr cont path; (fun () -> ()))
+@
+
+<<constant File.binary_path>>=
+(* Pref stuff *)
+let binary_path = ref ([] : string list)
+@
+
+<<function File.is_cgi>>=
+let is_cgi file =
+  match !binary_path with
+    [] -> false
+  | path ->
+      let l = String.length file in
+      List.exists (fun dir ->
+    let ldir = String.length dir in
+    l > ldir && String.sub file 0 ldir = dir)
+    path
+(*
+ * Display a file on the local unix file system (file:)
+ *  is path really supposed to be absolute ?
+ * Note: completely ignores method (GET, POST,...)
+ *)
+@
+
+
+<<function File.fake_cgi>>=
+(* Not true CGI interface, just a hack *)
+(* TODO: headers ? *)
+let fake_cgi wwwr cont path =
+  try 
+    let (cmd_in, cmd_out) = pipe() in
+    let cmd, args = 
+      try 
+       let pos = String.index path '?' in
+    let cmd = String.sub path 0 pos in
+    if pos + 1 = String.length path then cmd, [| cmd |]
+    else 
+         cmd, [|cmd; String.sub path (pos+1) (String.length path - pos - 1)|]
+      with
+       Not_found -> path, [| path |] in
+    match Low.fork() with
+      0 -> 
+       close cmd_in;
+    dup2 cmd_out stdout; close cmd_out;
+    begin try execvp cmd args 
+    with
+      Unix_error(e, _, _) ->
+       Munix.write_string stdout "HTTP/1.0 404 Not found\r\n";
+       Munix.write_string stdout "Content-Type: text/html\r\n\r\n";
+       Munix.write_string stdout "<H1>Cannot execute local file</H1>";
+       Munix.write_string stdout "Command \"";
+       Munix.write_string stdout cmd;
+       Munix.write_string stdout "\" failed:";
+       Munix.write_string stdout (Unix.error_message e);
+       Munix.write_string stdout "\n";
+       exit 1
+    end
+    | n ->
+         close cmd_out;
+     let dh = {document_id = document_id wwwr;
+           document_referer = wwwr.www_link.h_context;
+           document_status = 0;
+           document_headers = [];
+           document_feed = Feed.of_fd cmd_in;
+           document_fragment = wwwr.www_fragment;
+           document_logger = Document.tty_logger} in
+      dh.document_feed.feed_schedule
+        (fun () ->
+           try
+         if dh.document_headers = [] then begin
+           (* it should be the HTTP Status-Line *)
+            let l = Munix.read_line cmd_in in
+              dh.document_status <- (parse_status l).status_code;
+              dh.document_headers <- [l] (* keep it there *)
+            end
+          else 
+            dh.document_headers <- 
+              read_headers cmd_in dh.document_headers
+           with
+         End_of_headers ->
+           dh.document_feed.feed_unschedule();
+           cont.document_process dh
+           | Not_found -> (* No HTTP/ header *)
+           dh.document_feed.feed_unschedule();
+           dh.document_status <- 200;
+               dh.document_headers <- ["Content-Type: text/plain"];
+           cont.document_process dh
+           | Unix_error(_,_,_) ->
+           dclose true dh;
+               raise (File_error (I18n.sprintf 
+               "Error while reading headers of %s\n%s" path "(read)"))
+           | Invalid_HTTP_header s ->
+           dclose true dh;
+           raise (File_error (I18n.sprintf 
+                  "Error while reading headers of %s\n%s" path s))
+           | End_of_file ->
+           dclose true dh;
+           raise (File_error (I18n.sprintf 
+               "Error while reading headers of %s\n%s" path "eof"))
+          )
+  with Unix_error(_,_,_) -> 
+    raise (File_error (I18n.sprintf "cannot exec file"))
+@
+
+
 \section{Applets}
 
 <<[[Http_headers.suffixes]] elements>>=
-"cmo",    ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+"cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
 @
 
 <<[[Main.main()]] applet system initialisation>>=
@@ -5277,7 +5531,6 @@ let sprintf (fmt : ('a, unit, string) format) =
 <<[[Main.main()]] references>>=
 let modules = ref true in
 @
-
 <<[[Main.main()]] command line options>>=
 "-nomodule", Arg.Unit (fun () -> modules := false),
 "\t\tDon't load initial modules";
@@ -5311,29 +5564,33 @@ Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 <<signature Log.debug_mode>>=
 val debug_mode : bool ref
 @
-
-<<signature Log.f>>=
-val f : string -> unit
-@
-
-<<signature Log.debug>>=
-val debug : string -> unit
-@
-
 <<constant Log.debug_mode>>=
 let debug_mode = ref false
 @
 
+\section{Logging}
+
+<<signature Log.f>>=
+val f : string -> unit
+@
+% ??
 <<function Log.f>>=
 (* flushes ! *)
-let f s = try prerr_endline s with _ -> ()
+let f s = 
+  try prerr_endline s with _ -> ()
 @
 
+
+
+
+<<signature Log.debug>>=
+val debug : string -> unit
+@
 <<function Log.debug>>=
-let debug s = if !debug_mode then f s 
+let debug s = 
+  if !debug_mode 
+  then f s 
 @
-
-
 
 
 \section{Postmortem}
@@ -5368,24 +5625,49 @@ let postmortem () =
 
 
 
+<<signature Cache.postmortem>>=
+val postmortem : unit -> unit
+@
+
+<<function Cache.postmortem>>=
+(* Debugging *)
+let postmortem () =
+  Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
+  !memory |> List.iter (fun (did, entry) ->
+    Log.f (sprintf "%s(%d) %s"
+            (Url.string_of did.document_url)
+            did.document_stamp
+            (match entry.cache_document.document_data with
+             | MemoryData _ -> "in memory"
+             | FileData (f,true) -> f
+             | FileData (f,false) -> "fake " ^f)
+             );
+    entry.cache_document.document_info
+    |> List.rev
+    |> List.iter (fun h -> Log.f (sprintf "%s" h));
+
+    if entry.cache_pending 
+    then Log.f "pending ";
+    Log.f (sprintf "Last used: %f" entry.cache_lastused);
+    Log.f ""
+  )
+@
+
+
 \section{Subsystems}
 
-\subsection{Tty}
+\subsection{Documents}
 
-<<signature type logger>>=
+<<signature type Document.logger>>=
+(* pad: exported for tk_document, but normally should be abstract *)
 type logger = {
   logger_destroy : bool -> unit;
   logger_progress : int -> unit;
   logger_msg : string -> unit;
   logger_end : string -> unit
 }
-(* pad: exported for tk_document, but normally should be abstract *)
 @
-
-<<signature Document.tty_logger>>=
-val tty_logger : logger
-@
-
+\ifallcode
 <<type Document.logger>>=
 type logger = {
   logger_destroy : bool -> unit;
@@ -5393,6 +5675,11 @@ type logger = {
   logger_msg : string -> unit;
   logger_end : string -> unit
 }
+@
+\fi
+
+<<signature Document.tty_logger>>=
+val tty_logger : logger
 @
 
 <<constant Document.tty_logger>>=
@@ -5403,6 +5690,8 @@ let tty_logger =
     logger_end = Log.f
    }
 @
+
+% who sets something more complex?
 
 \subsection{HTML}
 
@@ -5425,7 +5714,6 @@ let warning s (Loc(n,m)) =
 
 <<signature Html_eval.debug>>=
 (* HTML Evaluation *)
-
 val debug : bool ref
 @
 
@@ -5433,16 +5721,19 @@ val debug : bool ref
 let debug = ref false
 @
 
+% code using that? can be set via command line?
+
 \subsection{Caches}
 
 <<signature Cache.debug>>=
 (* Configurable settings *)
 val debug : bool ref
 @
-
 <<constant Cache.debug>>=
 let debug = ref false
 @
+
+% code using that? can be set via command line?
 
 \subsection{Scheduler}
 
@@ -5465,13 +5756,20 @@ let debug = ref false
 
 \subsection{GUI}
 
+% main -> <>
 <<function Debug.init>>=
 let init () =
   Frx_rpc.register "cb" active_cb;
   Frx_rpc.register "cache"
-     (fun _ -> Cache.postmortem(); Gcache.postmortem(); flush stderr);
-  Frx_rpc.register "images" (fun _ -> Img.ImageData.dump(); flush stderr);
-  Frx_rpc.register "camltkdb" (fun _ -> Protocol.debug := not !Protocol.debug)
+     (fun _ -> 
+       Cache.postmortem();  
+       Gcache.postmortem(); 
+       flush stderr);
+  Frx_rpc.register "images" (fun _ -> 
+    Img.ImageData.dump(); 
+    flush stderr);
+  Frx_rpc.register "camltkdb" (fun _ -> 
+    Protocol.debug := not !Protocol.debug)
 @
 
 <<function Debug.active_cb>>=
@@ -5481,7 +5779,8 @@ let active_cb _ =
     (fun w id ->
       incr cnter;
       Printf.fprintf stdout "%s %s %b\n"
-        (Widget.name w) (string_of_cbid id) (Winfo.exists w))
+        (Widget.name w) (string_of_cbid id) (Winfo.exists w)  
+    )
     callback_memo_table;
   Printf.fprintf stdout "Memo cb: %d\n" !cnter;
   cnter := 0;
@@ -5500,12 +5799,6 @@ val string_of_protocol: protocol -> string
   (* maps FTP to "ftp", etc... *)
 @
 
-<<signature Url.string_of>>=
-(* These are used to get "normalized urls" *)
-val string_of: t -> string
-@
-
-
 <<function Url.string_of_protocol>>=
 let string_of_protocol = function
    FTP -> "ftp"
@@ -5521,44 +5814,52 @@ let string_of_protocol = function
  | OtherProtocol s -> s
 @
 
+<<signature Url.string_of>>=
+(* These are used to get "normalized urls" *)
+val string_of: t -> string
+@
+
 
 <<function Url.string_of>>=
 let string_of p =
   let buf = Ebuffer.create 128 in
-  let ws = Ebuffer.output_string buf
-  and wc = Ebuffer.output_char buf in
+  let ws x = Ebuffer.output_string buf x in
+  let wc x = Ebuffer.output_char buf x in
   let write_userpass () =
       match p.user, p.password with
-        None, None -> ()
+         None, None -> ()
        | Some u, Some p -> ws u; wc ':'; ws p; wc '@'
        | Some u, None ->   ws u; wc ':'; wc '@'
        | None, Some _ -> failwith "url_of_parsed"
+  in
   (* hostname is always put in lowercase *)
-  and write_hostport def =
+  let write_hostport def =
       match p.host, p.port with
-        None, None -> ()
+         None, None -> ()
        | Some h, None -> ws (String.lowercase h)
        | Some h, Some p when p = def -> ws (String.lowercase h)
        | Some h, Some p -> 
-      ws (String.lowercase h); wc ':'; ws (string_of_int p)
+           ws (String.lowercase h); wc ':'; ws (string_of_int p)
        | None, Some _ -> failwith "url_of_parsed"	    
-
-  and write_pathsearch () =
+  in
+  let write_pathsearch () =
       match p.path, p.search with
-       None, None -> wc '/'
+        None, None -> wc '/'
       | Some p, Some s -> wc '/'; ws p; wc '?'; ws s
       | Some p, None -> wc '/'; ws p
       | None, Some _ -> failwith "url_of_parsed"	    
-
-  and write_slashpath () =
+  in
+  let write_slashpath () =
       match p.path with
        None -> ()
       | Some p -> wc '/'; ws p
-  and write_path () =
+  in
+  let write_path () =
       match p.path with
        None -> ()
       | Some p -> ws p
-  and write_fhost () =
+  in
+  let write_fhost () =
       match p.host with
        None -> ws "localhost"
       | Some h -> ws (String.lowercase h)
@@ -5614,14 +5915,14 @@ val dump : t -> unit
 
 <<function Dtd.dump>>=
 let dump dtd =
-  Hashtbl.iter (fun s contents -> 
+  dtd.contents |> Hashtbl.iter (fun s contents -> 
       printf "Element %s %s %s\n" s 
              (if Elements.mem s dtd.open_omitted then "O" else "-")
              (if Elements.mem s dtd.close_omitted then "O" else "-");
       printf "Contains:";
-      Elements.iter (fun e -> printf " %s" e) contents;
-      printf "\n")
-    dtd.contents
+      contents |> Elements.iter (fun e -> printf " %s" e);
+      printf "\n"
+  )
 @
 
 \subsection{HTML}
@@ -5652,6 +5953,24 @@ let print = function
 
 \section{[[Error.t]]}
 
+<<signature Error.f>>=
+val f : string -> unit
+@
+<<signature Error.ok>>=
+val ok : string -> unit
+@
+<<signature Error.choose>>=
+val choose : string -> bool
+@
+<<signature Error.ari>>=
+val ari : string -> int
+@
+
+%todo: should actually use those functions
+% instead of those !Error.default#xxx everywhere. How better to use oo
+% for that?
+
+
 <<signature class Error.t>>=
 class virtual t : object
  method virtual f : string -> unit
@@ -5667,21 +5986,6 @@ val default : t ref
 @
 <<constant Error.default>>=
 let default = ref (new x)
-@
-
-
-
-<<signature Error.f>>=
-val f : string -> unit
-@
-<<signature Error.ok>>=
-val ok : string -> unit
-@
-<<signature Error.choose>>=
-val choose : string -> bool
-@
-<<signature Error.ari>>=
-val ari : string -> int
 @
 
 <<functions Error.xxx>>=
@@ -5706,15 +6010,16 @@ exception Invalid_url of t * string
 
 \section{Links}
 
+<<exception Hyper.Invalid_link>>=
+exception Invalid_link of link_error
+@
+
 <<type Hyper.link_error>>=
 type link_error =
     LinkResolve of string
   | UrlLexing of string * int
 @
 
-<<exception Hyper.Invalid_link>>=
-exception Invalid_link of link_error
-@
 
 \section{Requests}
 
@@ -5740,6 +6045,10 @@ val warning : string -> location -> unit
 
 <<exception Http_headers.Invalid_HTTP_header>>=
 exception Invalid_HTTP_header of string
+@
+
+<<exception Http.HTTP_error>>=
+exception HTTP_error of string
 @
 
 
@@ -6267,6 +6576,7 @@ HTTP =
 WWW  = World Wide Web
 MIME = ??
 \end{verbatim}
+
 
 \chapter*{Indexes}
 \addcontentsline{toc}{section}{Index}

@@ -33,8 +33,8 @@ let error name find_line (Loc(n,n')) msg =
 (* pos: start at 0 as in caml *)
 let line_reporting ic =
   let lines = ref [] 
-  and current_line = ref 1
-  and current_pos = ref 0 in
+  let current_line = ref 1 in
+  let current_pos = ref 0 in
   let read = 
     (*
     if !Lang.japan 

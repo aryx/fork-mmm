@@ -4,18 +4,19 @@ open Unix
 
 (*s: function Main_remote.request *)
 let request sock cmd url =
-  if cmd <> "" then ignore (write sock cmd 0 (String.length cmd));
-  ignore (write sock url 0 (String.length url));
-  ignore (write sock "\n" 0 1);
+  if cmd <> "" 
+  then write sock cmd 0 (String.length cmd) |> ignore;
+  write sock url 0 (String.length url) |> ignore;
+  write sock "\n" 0 1 |> ignore;
   let buf = String.create 1024 in
   try
     while true do
       let n = read sock buf 0 1024 in
-      if n = 0 then raise End_of_file else
-      ignore (write stdout buf 0 n)
+      if n = 0 
+      then raise End_of_file 
+      else ignore (write stdout buf 0 n)
     done
-  with
-    End_of_file -> close sock
+  with End_of_file -> close sock
 (*e: function Main_remote.request *)
     
 (*s: function Main_remote.main *)
@@ -31,7 +32,7 @@ let main () =
   "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
   "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
   "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
-]
+  ]
     (fun url -> request s !cmd url)
     "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
      The default is -show."

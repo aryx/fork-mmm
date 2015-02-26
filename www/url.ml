@@ -56,40 +56,43 @@ exception Invalid_url of t * string
 (*s: function Url.string_of *)
 let string_of p =
   let buf = Ebuffer.create 128 in
-  let ws = Ebuffer.output_string buf
-  and wc = Ebuffer.output_char buf in
+  let ws x = Ebuffer.output_string buf x in
+  let wc x = Ebuffer.output_char buf x in
   let write_userpass () =
       match p.user, p.password with
-        None, None -> ()
+         None, None -> ()
        | Some u, Some p -> ws u; wc ':'; ws p; wc '@'
        | Some u, None ->   ws u; wc ':'; wc '@'
        | None, Some _ -> failwith "url_of_parsed"
+  in
   (* hostname is always put in lowercase *)
-  and write_hostport def =
+  let write_hostport def =
       match p.host, p.port with
-        None, None -> ()
+         None, None -> ()
        | Some h, None -> ws (String.lowercase h)
        | Some h, Some p when p = def -> ws (String.lowercase h)
        | Some h, Some p -> 
-      ws (String.lowercase h); wc ':'; ws (string_of_int p)
+           ws (String.lowercase h); wc ':'; ws (string_of_int p)
        | None, Some _ -> failwith "url_of_parsed"	    
-
-  and write_pathsearch () =
+  in
+  let write_pathsearch () =
       match p.path, p.search with
-       None, None -> wc '/'
+        None, None -> wc '/'
       | Some p, Some s -> wc '/'; ws p; wc '?'; ws s
       | Some p, None -> wc '/'; ws p
       | None, Some _ -> failwith "url_of_parsed"	    
-
-  and write_slashpath () =
+  in
+  let write_slashpath () =
       match p.path with
        None -> ()
       | Some p -> wc '/'; ws p
-  and write_path () =
+  in
+  let write_path () =
       match p.path with
        None -> ()
       | Some p -> ws p
-  and write_fhost () =
+  in
+  let write_fhost () =
       match p.host with
        None -> ws "localhost"
       | Some h -> ws (String.lowercase h)

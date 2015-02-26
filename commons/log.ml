@@ -7,11 +7,14 @@ let debug_mode = ref false
 
 (*s: function Log.f *)
 (* flushes ! *)
-let f s = try prerr_endline s with _ -> ()
+let f s = 
+  try prerr_endline s with _ -> ()
 (*e: function Log.f *)
 
 (*s: function Log.debug *)
-let debug s = if !debug_mode then f s 
+let debug s = 
+  if !debug_mode 
+  then f s 
 (*e: function Log.debug *)
 
 (*e: ./commons/log.ml *)

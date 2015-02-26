@@ -11,22 +11,22 @@ exception Invalid_HTTP_header of string
 (*s: function Http_headers.parse_status *)
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
 let parse_status s =
- if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
- try
-  match Str.bounded_split (regexp "[ ]") s 3 with
-    [v;c;m] ->
-         { status_version = v;
-           status_code = int_of_string c;
-           status_message = m }
-  (* it happened once with Server: Netscape-Commerce/1.1 *)
-  (* where the Status Line was: HTTP/1.0 302 *)
-  | [v;c] ->
-         { status_version = v;
-           status_code = int_of_string c;
-           status_message = "empty" }
-  | _ -> raise (Invalid_HTTP_header "Status-Line")
- with
-   Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
+ if String.length s > 5 & String.sub s 0 5 = "HTTP/" 
+ then
+   try
+    match Str.bounded_split (regexp "[ ]") s 3 with
+      [v;c;m] ->
+           { status_version = v;
+             status_code = int_of_string c;
+             status_message = m }
+    (* it happened once with Server: Netscape-Commerce/1.1 *)
+    (* where the Status Line was: HTTP/1.0 302 *)
+    | [v;c] ->
+           { status_version = v;
+             status_code = int_of_string c;
+             status_message = "empty" }
+    | _ -> raise (Invalid_HTTP_header "Status-Line")
+   with Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
  else (* 0.9, dammit *)
    raise Not_found
 (*e: function Http_headers.parse_status *)
@@ -39,16 +39,16 @@ let parse_request s =
   match Str.bounded_split (regexp "[ ]") s 3 with
     [m;r;v] ->
          { request_version = v;
-       request_method = m;
-       request_uri = r }
+           request_method = m;
+           request_uri = r }
   | ["GET"; uri] ->
          { request_version = "HTTP/0.9";
            request_method = "GET";
-       request_uri = uri }
+           request_uri = uri }
   | [m;s] -> (* uri omitted ? *)
          { request_version = s;
            request_method = m;
-       request_uri = "/" }
+           request_uri = "/" }
   | _ -> raise (Invalid_HTTP_header "Request-Line")
  with
    Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
@@ -286,8 +286,9 @@ let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 
   "asc",	ContentEncoding  "Content-Encoding: pgp";
   "pgp",	ContentEncoding  "Content-Encoding: pgp";
+
    (*s: [[Http_headers.suffixes]] elements *)
-   "cmo",    ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+   "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
    (*e: [[Http_headers.suffixes]] elements *)
 ]
 (*e: toplevel Http_headers._1 *)
@@ -329,8 +330,7 @@ let hints path =
 let status_messages = Hashtbl.create 101
 (*e: constant Http_headers.status_messages *)
 (*s: toplevel Http_headers._2 *)
-let _ = List.iter (function (code, msg) ->
-                     Hashtbl.add status_messages code msg)
+let _ = 
   [ 200, "OK";
 
     201, "Created";
@@ -353,7 +353,7 @@ let _ = List.iter (function (code, msg) ->
 
     (* These are proposed for HTTP1.1 *)
     407, "Proxy Authentication Required"
-  ]
+  ] |> List.iter (function (code, msg) -> Hashtbl.add status_messages code msg)
 (*e: toplevel Http_headers._2 *)
 
 (*s: function Http_headers.status_message *)

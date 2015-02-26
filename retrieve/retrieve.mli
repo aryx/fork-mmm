@@ -32,6 +32,6 @@ type behaviour =
 
 (*s: signature Retrieve.add_http_processor *)
 val add_http_processor : 
-  int -> (Www.request -> handle -> behaviour) -> unit
+  int -> (Www.request -> Document.handle -> behaviour) -> unit
 (*e: signature Retrieve.add_http_processor *)
 (*e: ./retrieve/retrieve.mli *)

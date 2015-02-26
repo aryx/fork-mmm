@@ -8,7 +8,8 @@ let active_cb _ =
     (fun w id ->
       incr cnter;
       Printf.fprintf stdout "%s %s %b\n"
-        (Widget.name w) (string_of_cbid id) (Winfo.exists w))
+        (Widget.name w) (string_of_cbid id) (Winfo.exists w)  
+    )
     callback_memo_table;
   Printf.fprintf stdout "Memo cb: %d\n" !cnter;
   cnter := 0;
@@ -21,9 +22,15 @@ let active_cb _ =
 let init () =
   Frx_rpc.register "cb" active_cb;
   Frx_rpc.register "cache"
-     (fun _ -> Cache.postmortem(); Gcache.postmortem(); flush stderr);
-  Frx_rpc.register "images" (fun _ -> Img.ImageData.dump(); flush stderr);
-  Frx_rpc.register "camltkdb" (fun _ -> Protocol.debug := not !Protocol.debug)
+     (fun _ -> 
+       Cache.postmortem();  
+       Gcache.postmortem(); 
+       flush stderr);
+  Frx_rpc.register "images" (fun _ -> 
+    Img.ImageData.dump(); 
+    flush stderr);
+  Frx_rpc.register "camltkdb" (fun _ -> 
+    Protocol.debug := not !Protocol.debug)
 (*e: function Debug.init *)
 
 (*e: ./gui/debug.ml *)

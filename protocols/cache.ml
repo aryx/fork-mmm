@@ -45,7 +45,9 @@ type cache_fill = {
 type entry = {
   mutable cache_document : document;
   mutable cache_pending : bool;
+
   cache_condition : Condition.t;
+
   mutable cache_lastused : float
       (* cache_lastused is specified as max_int (0x3fffffff) when we don't
        * want the entry to be flushed. This will break around
@@ -59,28 +61,31 @@ exception DontCache
 (*e: exception Cache.DontCache (./protocols/cache.ml) *)
 
 (*s: constant Cache.memory *)
-let memory = ref ([] : (document_id * entry) list)
+let memory = ref ([] : (Document.document_id * entry) list)
 (*e: constant Cache.memory *)
 
 (*s: function Cache.postmortem *)
 (* Debugging *)
 let postmortem () =
   Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
-  List.iter 
-    (fun (did, entry) ->
-      Log.f (sprintf "%s(%d) %s"
-           (Url.string_of did.document_url)
-           did.document_stamp
-           (match entry.cache_document.document_data with
-         MemoryData _ -> "in memory"
-           | FileData (f,true) -> f
-           | FileData (f,false) -> "fake " ^f));
-      List.iter	(fun h -> Log.f (sprintf "%s" h))
-  (List.rev entry.cache_document.document_info);
-      if entry.cache_pending then Log.f "pending ";
-      Log.f (sprintf "Last used: %f" entry.cache_lastused);
-      Log.f "")
-    !memory
+  !memory |> List.iter (fun (did, entry) ->
+    Log.f (sprintf "%s(%d) %s"
+            (Url.string_of did.document_url)
+            did.document_stamp
+            (match entry.cache_document.document_data with
+             | MemoryData _ -> "in memory"
+             | FileData (f,true) -> f
+             | FileData (f,false) -> "fake " ^f)
+             );
+    entry.cache_document.document_info
+    |> List.rev
+    |> List.iter (fun h -> Log.f (sprintf "%s" h));
+
+    if entry.cache_pending 
+    then Log.f "pending ";
+    Log.f (sprintf "Last used: %f" entry.cache_lastused);
+    Log.f ""
+  )
 (*e: function Cache.postmortem *)
 
 
@@ -88,9 +93,10 @@ let postmortem () =
 (* Find a document*)
 let find did =
   let entry = List.assoc did !memory in
-    entry.cache_lastused <- Unix.time();
-    if entry.cache_pending then Condition.wait entry.cache_condition;
-    entry.cache_document
+  entry.cache_lastused <- Unix.time();
+  if entry.cache_pending 
+  then Condition.wait entry.cache_condition;
+  entry.cache_document
 (*e: function Cache.find *)
 
 (*s: function Cache.internal_kill *)
@@ -172,29 +178,32 @@ let kill did =
 (*s: function Cache.add *)
 (* Add a new entry *)
 let add did doc =
-  if !debug then
-     Log.f (sprintf  "Adding new cache entry %s(%d) %s"
-                    (Url.string_of did.document_url)
-                 did.document_stamp
-             (match doc.document_data with
-            MemoryData _ -> "in memory"
-              | FileData (f,true) -> f
-              | FileData (f,false) -> "fake " ^f));
+  if !debug 
+  then Log.f (sprintf  "Adding new cache entry %s(%d) %s"
+                        (Url.string_of did.document_url)
+                        did.document_stamp
+                        (match doc.document_data with
+                        | MemoryData _ -> "in memory"
+                        | FileData (f,true) -> f
+                        | FileData (f,false) -> "fake " ^f));
+
   (* Kill the previous entry, if any [for update] *)
   kill did;
   (* Because of frames (not kept in history), we must make room even
    * in history mode
    *)
-  if (*not !history_mode && *)!current >= !max_documents then make_room()
-  else if !debug then
-    Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
-  incr current;
-  memory :=(did,
-        {cache_document = doc;
-         cache_pending = true;
-         cache_lastused = max_lastused;
-         cache_condition = Condition.create()})
-        :: !memory
+  if (*not !history_mode && *)!current >= !max_documents 
+  then make_room()
+  else 
+   if !debug 
+   then Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
+   incr current;
+    memory := (did,
+               { cache_document = doc;
+                 cache_pending = true;
+                 cache_lastused = max_lastused;
+                 cache_condition = Condition.create()
+               }) :: !memory
 (*e: function Cache.add *)
 
 
@@ -242,18 +251,28 @@ let patch did headers =
 (*s: function Cache.init *)
 let init () =
   let initurl = Lexurl.make (Version.initurl (Lang.lang ())) in
+
   let b = Ebuffer.create 128 in
   Ebuffer.output_string b (Version.html (Lang.lang ()));
-  memory := [
-    {document_url = initurl;
-     document_stamp = no_stamp}, 
-    {
-    cache_document = {document_address = initurl;
-                     document_data = MemoryData b;
-              document_info = ["Content-Type: text/html"]};
+
+  let docid = { 
+    document_url = initurl;
+    document_stamp = Document.no_stamp
+  } in
+  let doc = { 
+    document_address = initurl;
+    document_data = MemoryData b;
+    document_info = ["Content-Type: text/html"]
+  } in
+  let docentry = { 
+    cache_document = doc;
     cache_pending = false;
     cache_condition = Condition.create();
-    cache_lastused = max_lastused}];
+    cache_lastused = max_lastused;
+  }
+  in
+
+  memory := [docid, docentry];
   current := 1
 (*e: function Cache.init *)
 
@@ -271,8 +290,8 @@ let tofile dh =
 (*s: function Cache.tobuffer *)
 let tobuffer dh =
   let b = Ebuffer.create 1024 in
-    MemoryData b, {cache_write = Ebuffer.output b;
-                  cache_close = (fun () -> ())}
+  MemoryData b, {cache_write = Ebuffer.output b;
+                 cache_close = (fun () -> ())}
 (*e: function Cache.tobuffer *)
 
 (*s: constant Cache.discard *)

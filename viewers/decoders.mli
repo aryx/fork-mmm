@@ -3,10 +3,10 @@
 open Document
 
 (*s: signature Decoders.insert *)
-val insert  : handle -> handle
+val insert  : Document.handle -> Document.handle
 (*e: signature Decoders.insert *)
 (*s: signature Decoders.add *)
-val add : string -> (handle -> handle) -> unit
+val add : string -> (Document.handle -> Document.handle) -> unit
 (*e: signature Decoders.add *)
 
 (*e: ./viewers/decoders.mli *)

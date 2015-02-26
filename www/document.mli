@@ -17,15 +17,15 @@ val no_stamp : int
 val new_stamp : unit -> int
 (*e: signature Document.new_stamp *)
 
-(*s: signature type logger *)
+(*s: signature type Document.logger *)
+(* pad: exported for tk_document, but normally should be abstract *)
 type logger = {
   logger_destroy : bool -> unit;
   logger_progress : int -> unit;
   logger_msg : string -> unit;
   logger_end : string -> unit
 }
-(* pad: exported for tk_document, but normally should be abstract *)
-(*e: signature type logger *)
+(*e: signature type Document.logger *)
 (*s: signature Document.tty_logger *)
 val tty_logger : logger
 (*e: signature Document.tty_logger *)
@@ -36,16 +36,20 @@ val tty_logger : logger
 type handle = {
   document_id : document_id;
 
-  document_referer : string option;
-    (* URL of refering document, if any *)
   mutable document_status : int;
     (* Status code of response *)
-  mutable document_headers : string list;
-    (* HTTP headers of document, or faked ones *)
+
   document_feed : Feed.t;
     (* where to get the data *)
+
+  document_referer : string option;
+    (* URL of refering document, if any *)
+  mutable document_headers : string list;
+    (* HTTP headers of document, or faked ones *)
   document_fragment : string option;
     (* fragment (#foo) if any *)
+
+
   mutable document_logger : logger
     (* how to log information relative to this document processing *)
 }

@@ -18,16 +18,17 @@ type t = {
 (*s: function Feed.of_fd *)
 (* We should distinguish internal/external connections *)
 let of_fd fd =
-  let is_open = ref true
-  and action = ref None
-  and condition = Condition.create()
-  and first_read = ref false
-  in
+  let is_open = ref true in
+  let action = ref None in
+  let condition = Condition.create() in
+  let first_read = ref false in
+
   (* ASSUMES: this is the first read on the fileevent *)
   let safe_read buf offs len =
     first_read := false;
     if !is_open then Low.read fd buf offs len else 0
   in
+
   (* In other cases : this is non blocking but not fully threaded. *)
   let special_read buf ofs len =
      (* remove the normal handler *)
@@ -54,12 +55,13 @@ let of_fd fd =
      (* and return *)
      n
   in {
-   feed_read =
-    (fun buf ofs len -> 
+
+   feed_read = (fun buf ofs len -> 
        if !first_read then safe_read buf ofs len
-       else special_read buf ofs len);
-   feed_schedule = 
-    (function f ->
+       else special_read buf ofs len
+   );
+
+   feed_schedule = (function f ->
        if not !is_open then
      Log.f "ERROR: feed is closed, can't schedule"
        else match !action with
@@ -68,19 +70,21 @@ let of_fd fd =
        | None -> begin
         action := Some f;
         Low.add_fileinput fd (fun () -> first_read := true; f())
-      end);
-   feed_unschedule = 
-    (function () -> 
+      end
+   );
+
+   feed_unschedule = (function () -> 
        match !action with
      Some f -> Low.remove_fileinput fd; action := None
        | None -> (* this happens quite often (for all action codes which
             do not process the body of the document, the feed got
             unscheduled as the end of headers) *)
-       ());
+       ()
+   );
 
    (* feed_close must be called only if the feed it *not* scheduled *)
-   feed_close =
-    (function () -> 
+
+   feed_close = (function () -> 
        (* if we abort during a state when we are waiting on the condition,
           the feed is unscheduled but we never get out. So always change
       the state *)
@@ -91,9 +95,11 @@ let of_fd fd =
       | None -> Unix.close fd;
                 is_open := false;
             (* Condition.free condition RACE CONDITION HERE *)
-       end);
-   feed_internal = fd
-     }
+       end 
+    );
+
+    feed_internal = fd
+   }
 (*e: function Feed.of_fd *)
  
 (*s: function Feed.internal *)

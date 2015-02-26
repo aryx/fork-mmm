@@ -257,7 +257,8 @@ let extern dh ctype =
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> Widget.widget -> 
-    context -> handle -> display_info option
+     context -> Document.handle -> 
+     display_info option
 (*e: type Viewers.t *)
 
 (*s: type Viewers.spec *)
@@ -390,8 +391,10 @@ let add_builtin t v =
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
+
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
+
   (* Preference settings *)
   let l = Tkresource.stringlist "externalViewers" [] in
   List.iter (fun ctype -> 

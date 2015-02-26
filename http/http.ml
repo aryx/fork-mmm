@@ -399,8 +399,8 @@ and start_request09 proxy_mode wwwr cont cnx =
    We pass on the continuation *)
 and proxy_request wr cont =
   tcp_connect !proxy !proxy_port wr.www_logging
-          (start_request true wr cont)
-          (failed_request wr cont.document_finish)
+       (start_request true wr cont)
+       (failed_request wr cont.document_finish)
 (*e: function Http.proxy_request *)
  
 
@@ -465,11 +465,11 @@ and request09 wr cont =
 (*s: function Http.req *)
 let req wr cont =
   let cnx = request wr cont in
-    (fun () -> cnx#abort)
+  (fun () -> cnx#abort)
 (*e: function Http.req *)
 (*s: function Http.prox_req *)
 and proxy_req wr cont = 
   let cnx = proxy_request wr cont in
-    (fun () -> cnx#abort)
+  (fun () -> cnx#abort)
 (*e: function Http.prox_req *)
 (*e: ./http/http.ml *)

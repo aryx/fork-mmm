@@ -55,7 +55,7 @@ exception DontCache
 val tofile : handle -> document_data * cache_fill
 (*e: signature Cache.tofile *)
 (*s: signature Cache.tobuffer *)
-val tobuffer: handle -> document_data * cache_fill
+val tobuffer: Document.handle -> Document.document_data * cache_fill
 (*e: signature Cache.tobuffer *)
 (*s: signature Cache.dummy *)
 val dummy : handle  -> document_data * cache_fill

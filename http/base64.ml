@@ -18,7 +18,6 @@
 (* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
 
 let index64 = Array.create 128 0
-(* Init the index *)
 (*e: constant Base64.index64 *)
 (*s: toplevel Base64._1 *)
 (* Init the index *)

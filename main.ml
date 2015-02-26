@@ -112,8 +112,11 @@ let main () =
    "-suffixes", Arg.String (fun s -> sufxfile := s),
    "<file>\tSuffix file";
    (*x: [[Main.main()]] command line options *)
-   "-external", Arg.Unit (fun () -> accept_external := true),
-   "\t\tAccept remote command (mmm_remote <url>)";
+   "-lang", Arg.String (fun s -> I18n.language := s),
+   "<lang>\t\tI18n language";
+   (*x: [[Main.main()]] command line options *)
+   "-msgfile", Arg.String (fun s -> I18n.message_file := s),
+   "<file>\tI18n message file";
    (*x: [[Main.main()]] command line options *)
    "-proxy", Arg.String (fun s -> Http.proxy := s), 
    "<hostname>\tProxy host";
@@ -121,11 +124,8 @@ let main () =
    "-port", Arg.Int (fun i -> Http.proxy_port := i),
    "<port>\t\tProxy port";
    (*x: [[Main.main()]] command line options *)
-   "-lang", Arg.String (fun s -> I18n.language := s),
-   "<lang>\t\tI18n language";
-   (*x: [[Main.main()]] command line options *)
-   "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-   "<file>\tI18n message file";
+   "-external", Arg.Unit (fun () -> accept_external := true),
+   "\t\tAccept remote command (mmm_remote <url>)";
    (*x: [[Main.main()]] command line options *)
    "-nomodule", Arg.Unit (fun () -> modules := false),
    "\t\tDon't load initial modules";

@@ -1,7 +1,6 @@
 (*s: ./html/html_eval.mli *)
 (*s: signature Html_eval.debug *)
 (* HTML Evaluation *)
-
 val debug : bool ref
 (*e: signature Html_eval.debug *)
 

@@ -192,8 +192,8 @@ let _ =
 (*s: function Img.get *)
 let get did link cont prog =
   let wr = Www.make link in
-   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-   ImageScheduler.add_request wr did cont prog
+  wr.www_headers <- "Accept: image/*" :: wr.www_headers;
+  ImageScheduler.add_request wr did cont prog
 (*e: function Img.get *)
 
 (*s: function Img.update *)

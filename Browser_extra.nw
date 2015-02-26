@@ -1026,22 +1026,7 @@ val busy : ('a -> 'b) -> 'a -> 'b
   (* Busy feedback during this application *)
 @
 
-<<signature Low.global_time>>=
-val global_time : int ref
-@
 
-<<signature Low.add_task>>=
-val add_task : (unit -> unit) -> unit
-  (* regular tasks *)
-@
-
-<<signature Low.cur_tachy>>=
-val cur_tachy : tachymeter ref
-@
-
-<<signature Low.init>>=
-val init : unit -> unit
-@
 
 <<signature Low.update_idletasks>>=
 val update_idletasks : unit -> unit
@@ -1153,36 +1138,17 @@ let busy f x =
       raise e
 @
 
-<<constant Low.global_time>>=
-let global_time = ref 0
-@
 
 <<constant Low.tick_duration>>=
 let tick_duration = 500
 @
 
-<<constant Low.tasks>>=
-(* There is only a default task *)
-let tasks = ref [
-  (fun () -> !cur_tachy#report_traffic tick_duration !bytes_read !sample_read)
-  ]
-@
 
-<<function Low.refresh>>=
-let rec refresh() =
-  incr global_time;
-  List.iter (fun f -> f ()) !tasks;
-  sample_read := 0;
-  Timer_.add tick_duration refresh
-@
 
 <<function Low.add_task>>=
 let add_task f = tasks := f :: !tasks
 @
 
-<<function Low.init>>=
-let init () = refresh ()
-@
 
 <<constant Low.last_update>>=
 (* We need manual refresh for progressive display (?), but we don't
@@ -1198,6 +1164,9 @@ let update_idletasks () =
   end
 @
 
+<<global Low.pending_read>>=
+let pending_read = ref 0
+@
 
 %-------------------------------------------------------------
 
@@ -1229,13 +1198,13 @@ end
 <<constant Low.cur_tachy>>
 
 (* for the tachymeter *)
-let bytes_read = ref 0
-and sample_read = ref 0
+<<global Low.bytes_read>>
+<<global Low.sample_read>>
 
 <<function Low.read>>
 
-let pending_read = ref 0
-and action = ref (fun _ -> ())
+<<global Low.pending_read>>
+let action = ref (fun _ -> ())
 
 <<function Low.add_fileinput>>
 
@@ -2213,7 +2182,7 @@ open Url
 <<signature Document.no_stamp>>
 <<signature Document.new_stamp>>
 
-<<signature type logger>>
+<<signature type Document.logger>>
 <<signature Document.tty_logger>>
 
 <<type Document.handle>>
@@ -3023,9 +2992,6 @@ open Date
 
 
 
-
-
-
 <<signature Http_headers.location>>=
 val location : header list -> string
   (* Location *)
@@ -3060,12 +3026,6 @@ type media_parameter = string * string
 type media_type = string * string
 @
 
-<<type Http_headers.hint>>=
-(* Associating MIME type or Content-Encoding with file/URI suffix *)
-type hint =
-    ContentType of header
-  | ContentEncoding of header
-@
 
 <<signature Http_headers.hints>>=
 val hints : string -> header list
@@ -3705,42 +3665,15 @@ and request09 wr cont =
 <<signature Cache.history_mode>>=
 val history_mode : bool ref
 @
-
 <<signature Cache.max_documents>>=
 val max_documents : int ref
 @
-
 <<signature Cache.cleann>>=
 val cleann : int ref
 @
 
-<<signature Cache.init>>=
-val init : unit -> unit
-@
 
-<<signature Cache.add>>=
-val add : document_id -> document -> unit
-@
 
-<<signature Cache.find>>=
-val find : document_id -> document
-@
-
-<<signature Cache.finished>>=
-val finished : document_id -> unit
-@
-
-<<signature Cache.touch>>=
-val touch : document_id -> unit
-@
-
-<<signature Cache.kill>>=
-val kill : document_id -> unit
-@
-
-<<signature Cache.postmortem>>=
-val postmortem : unit -> unit
-@
 
 <<type Cache.cache_fill>>=
 type cache_fill = {
@@ -3757,9 +3690,6 @@ exception DontCache
 val tofile : handle -> document_data * cache_fill
 @
 
-<<signature Cache.tobuffer>>=
-val tobuffer: handle -> document_data * cache_fill
-@
 
 <<signature Cache.dummy>>=
 val dummy : handle  -> document_data * cache_fill
@@ -3862,57 +3792,13 @@ type cache_fill = {
  }
 @
 
-<<type Cache.entry>>=
-(* A cache entry *)
-type entry = {
-  mutable cache_document : document;
-  mutable cache_pending : bool;
-  cache_condition : Condition.t;
-  mutable cache_lastused : float
-      (* cache_lastused is specified as max_int (0x3fffffff) when we don't
-       * want the entry to be flushed. This will break around
-       * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
-       *) (* JPF: it is now float! max_int -> max_float *)
-  }
-@
 
 <<exception Cache.DontCache (./protocols/cache.ml)>>=
 exception DontCache
 @
 
-<<constant Cache.memory>>=
-let memory = ref ([] : (document_id * entry) list)
-@
 
-<<function Cache.postmortem>>=
-(* Debugging *)
-let postmortem () =
-  Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
-  List.iter 
-    (fun (did, entry) ->
-      Log.f (sprintf "%s(%d) %s"
-           (Url.string_of did.document_url)
-           did.document_stamp
-           (match entry.cache_document.document_data with
-         MemoryData _ -> "in memory"
-           | FileData (f,true) -> f
-           | FileData (f,false) -> "fake " ^f));
-      List.iter	(fun h -> Log.f (sprintf "%s" h))
-  (List.rev entry.cache_document.document_info);
-      if entry.cache_pending then Log.f "pending ";
-      Log.f (sprintf "Last used: %f" entry.cache_lastused);
-      Log.f "")
-    !memory
-@
 
-<<function Cache.find>>=
-(* Find a document*)
-let find did =
-  let entry = List.assoc did !memory in
-    entry.cache_lastused <- Unix.time();
-    if entry.cache_pending then Condition.wait entry.cache_condition;
-    entry.cache_document
-@
 
 <<function Cache.internal_kill>>=
 (* Kills a document: stop and destroy all its dinfo
@@ -3989,33 +3875,6 @@ let kill did =
     Not_found -> ()
 @
 
-<<function Cache.add>>=
-(* Add a new entry *)
-let add did doc =
-  if !debug then
-     Log.f (sprintf  "Adding new cache entry %s(%d) %s"
-                    (Url.string_of did.document_url)
-                 did.document_stamp
-             (match doc.document_data with
-            MemoryData _ -> "in memory"
-              | FileData (f,true) -> f
-              | FileData (f,false) -> "fake " ^f));
-  (* Kill the previous entry, if any [for update] *)
-  kill did;
-  (* Because of frames (not kept in history), we must make room even
-   * in history mode
-   *)
-  if (*not !history_mode && *)!current >= !max_documents then make_room()
-  else if !debug then
-    Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
-  incr current;
-  memory :=(did,
-        {cache_document = doc;
-         cache_pending = true;
-         cache_lastused = max_lastused;
-         cache_condition = Condition.create()})
-        :: !memory
-@
 
 <<function Cache.finished>>=
 (* since they have lu = max_lastused *)
@@ -4056,23 +3915,6 @@ let patch did headers =
     Not_found -> () (* is this an error ? *)
 @
 
-<<function Cache.init>>=
-let init () =
-  let initurl = Lexurl.make (Version.initurl (Lang.lang ())) in
-  let b = Ebuffer.create 128 in
-  Ebuffer.output_string b (Version.html (Lang.lang ()));
-  memory := [
-    {document_url = initurl;
-     document_stamp = no_stamp}, 
-    {
-    cache_document = {document_address = initurl;
-                     document_data = MemoryData b;
-              document_info = ["Content-Type: text/html"]};
-    cache_pending = false;
-    cache_condition = Condition.create();
-    cache_lastused = max_lastused}];
-  current := 1
-@
 
 <<function Cache.tofile>>=
 (* Cache savers *)
@@ -4084,12 +3926,6 @@ let tofile dh =
        cache_close = (fun () -> close_out oc)}
 @
 
-<<function Cache.tobuffer>>=
-let tobuffer dh =
-  let b = Ebuffer.create 1024 in
-    MemoryData b, {cache_write = Ebuffer.output b;
-                  cache_close = (fun () -> ())}
-@
 
 <<constant Cache.discard>>=
 let discard =
@@ -4351,6 +4187,23 @@ val binary_path: string list ref
 
 \subsection*{[[./protocols/file.ml]]}
 
+
+% ???
+<<signature File.pref_init>>=
+@
+<<signature File.pref_set>>=
+@
+
+
+<<function File.pref_init>>=
+@
+
+<<function File.pref_set>>=
+@
+
+<<constant File.r>>=
+let r = Str.regexp ":"
+@
 
 %-------------------------------------------------------------
 

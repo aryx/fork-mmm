@@ -249,6 +249,7 @@ let get_entity = Hashtbl.find ampersand_table
 (* Attribute values *)
 let default_attributes = [ 
   ("isindex", "prompt"), "Document is indexed/searchable: ";
+
   ("a", "methods"), "GET";              (* <A METHODS=GET> *)
   ("ol", "type"), "1";			(* <OL TYPE=1 *)
   ("embed", "methods"), "GET";		(* <EMBED METHODS=GET> *)
@@ -265,6 +266,7 @@ let default_attributes = [
   ("area", "shape"), "rect";
   ("div", "align"), "left";
   ("basefont", "size"), "3";
+
   (* frames *)
   ("frame", "frameborder"), "0";
   ("frame", "scrolling"), "auto";

@@ -28,8 +28,12 @@ let cur_tachy = ref (new no_tachy :> tachymeter)
 (*e: constant Low.cur_tachy *)
 
 (* for the tachymeter *)
+(*s: global Low.bytes_read *)
 let bytes_read = ref 0
-and sample_read = ref 0
+(*e: global Low.bytes_read *)
+(*s: global Low.sample_read *)
+let sample_read = ref 0
+(*e: global Low.sample_read *)
 
 (*s: function Low.read *)
 let read fd buf offs l =
@@ -39,8 +43,10 @@ let read fd buf offs l =
     n
 (*e: function Low.read *)
 
+(*s: global Low.pending_read *)
 let pending_read = ref 0
-and action = ref (fun _ -> ())
+(*e: global Low.pending_read *)
+let action = ref (fun _ -> ())
 
 (*s: function Low.add_fileinput *)
 let add_fileinput fd f =

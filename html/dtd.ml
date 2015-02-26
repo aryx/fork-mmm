@@ -241,14 +241,14 @@ let dtd20 =
 
 (*s: function Dtd.dump *)
 let dump dtd =
-  Hashtbl.iter (fun s contents -> 
+  dtd.contents |> Hashtbl.iter (fun s contents -> 
       printf "Element %s %s %s\n" s 
              (if Elements.mem s dtd.open_omitted then "O" else "-")
              (if Elements.mem s dtd.close_omitted then "O" else "-");
       printf "Contains:";
-      Elements.iter (fun e -> printf " %s" e) contents;
-      printf "\n")
-    dtd.contents
+      contents |> Elements.iter (fun e -> printf " %s" e);
+      printf "\n"
+  )
 (*e: function Dtd.dump *)
 
 

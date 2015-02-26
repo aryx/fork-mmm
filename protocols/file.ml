@@ -21,10 +21,9 @@ exception File_error of string
 (* 
  * Simulate directory
  *)
-
 let isdir path f =
   let fullname = Filename.concat path f in
-    (stat fullname).st_kind = S_DIR
+  (stat fullname).st_kind = S_DIR
 (*e: function File.isdir *)
 
 (*s: function File.d2html *)
@@ -32,11 +31,14 @@ let d2html path d =
   (* make sure that when path is used in url, it is / terminated *)
   let pathurl =
     let l = String.length path in
-    if l = 0 then path else
-    if path.[l-1] = '/' then path
-    else sprintf "%s/" path
+    if l = 0 
+    then path 
+    else
+      if path.[l-1] = '/' 
+      then path
+      else sprintf "%s/" path
   in
-  printf 
+  Printf.printf 
 "<HTML>
 <HEAD><TITLE>%s</TITLE>
 <BASE HREF=\"file://localhost%s\">
@@ -44,33 +46,33 @@ let d2html path d =
 <BODY>
 <H1>Directory list: %s</H1>
 <PRE>" path pathurl path;
+
   let entries = ref [] in
-  begin try
-    while true do 
-      entries := (readdir d) :: !entries
-      done      	
-  with 
-      End_of_file -> closedir d
+  begin 
+   try
+     while true do 
+       entries := (readdir d) :: !entries
+     done      	
+   with  End_of_file -> closedir d
   end;
   entries := Sort.list (<=) !entries;
-  List.iter (function
-      "." -> ()
+  !entries |> List.iter (function
+    |  "." -> ()
     | ".." ->
        printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
               (Filename.concat (dirname (dirname pathurl)) "")
     | f ->
        try
          let fullname = Filename.concat path f in
-     let st = stat fullname in
-     match st.st_kind with
-       S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
-     | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
+         let st = stat fullname in
+         match st.st_kind with
+         | S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
+         | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
                        f f (st.st_size)
-     | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
-     | _ -> ()
-       with
-     Unix_error(_,_,_) -> ())
-    !entries;
+         | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
+         | _ -> ()
+       with Unix_error(_,_,_) -> ()
+    );
   printf "</PRE></BODY></HTML>"
 (*e: function File.d2html *)
 
@@ -80,21 +82,21 @@ let dir path =
   try
     let d = opendir path in
     let cin, cout = pipe() in
-      match Low.fork() with
-       0 -> 
-      close cin; dup2 cout stdout; close cout;
-      begin
-        try d2html path d 
-        with e ->
-          print_endline (Printexc.to_string e)
-      end;
-      flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
-      exit 0;
-      cin (*duh*)
-      | n -> closedir d; close cout; cin
-  with
-    Unix_error(_,_,_)  -> 
-      raise (File_error (I18n.sprintf "cannot open dir"))
+    match Low.fork() with
+    | 0 -> 
+        close cin; dup2 cout stdout; close cout;
+        begin
+          try 
+            d2html path d 
+          with e ->
+            print_endline (Printexc.to_string e)
+        end;
+        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
+        exit 0;
+        cin (*duh*)
+     | n -> closedir d; close cout; cin
+  with Unix_error(_,_,_)  -> 
+    raise (File_error (I18n.sprintf "cannot open dir"))
 (*e: function File.dir *)
   
 
@@ -143,7 +145,7 @@ let fake_cgi wwwr cont path =
            document_headers = [];
            document_feed = Feed.of_fd cmd_in;
            document_fragment = wwwr.www_fragment;
-           document_logger = tty_logger} in
+           document_logger = Document.tty_logger} in
       dh.document_feed.feed_schedule
         (fun () ->
            try
@@ -220,71 +222,81 @@ let is_cgi file =
 let request wr cont =
   let path = match wr.www_url.path with
     Some path -> "/" ^ (Lexurl.remove_dots path)
-  | None -> "/" in
-  if is_cgi path then (fake_cgi wr cont path; (fun () -> ()))
+  | None -> "/" 
+  in
+  (*s: [[File.request()]] if CGI path *)
+  if is_cgi path 
+  then (fake_cgi wr cont path; (fun () -> ()))
+  (*e: [[File.request()]] if CGI path *)
   else   (* A bit weird, but we don't want to capture errors from the cont *)
-  let st =
-    try stat path 
-    with 
-      _ -> raise (File_error (I18n.sprintf "cannot stat file")) in
+    let st =
+      try 
+        stat path 
+      with _ -> raise (File_error (I18n.sprintf "cannot stat file")) 
+    in
     match st.st_kind with
-    S_REG ->
+    | S_REG ->
       begin
       (* check if this is an update *)
         try 
           let since = get_header "if-modified-since" wr.www_headers in
-          let ht = Lexdate.ht_of_string since 
-          and filet = Http_date.ht_of_stamp st.st_mtime in
+          let ht = Lexdate.ht_of_string since in
+          let filet = Http_date.ht_of_stamp st.st_mtime in
           if Http_date.compare filet ht > 0
           then raise Not_found (* fall through *)
           else begin
-        let dh = { 
-          document_id = document_id wr;
-          document_referer = wr.www_link.h_context;
-          document_status = 304;
-          document_headers = [ sprintf "Date: %s" (Date.asc_now())];
-          document_feed = 
-             Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
-          document_fragment = wr.www_fragment;
-          document_logger = tty_logger} in
-       Retype.f dh;
-       cont.document_process dh;
-           (fun () -> ())
+            let dh = { 
+              document_id = document_id wr;
+              document_referer = wr.www_link.h_context;
+              document_status = 304;
+              document_headers = [ sprintf "Date: %s" (Date.asc_now())];
+              document_feed = 
+                Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
+              document_fragment = wr.www_fragment;
+              document_logger = Document.tty_logger
+            } in
+            Retype.f dh;
+            cont.document_process dh;
+            (fun () -> ())
           end
-        with
-          Not_found  (* default case *)
-        | Lexdate.Invalid_date (_,_) ->
-        let s = 
-          try openfile path [O_RDONLY] 0
-          with Unix_error(_,_,_) -> 
-            raise (File_error (I18n.sprintf "cannot open file")) in
-       let dh =
-          {document_id = document_id wr;
+       with
+       | Not_found  (* default case *)
+       | Lexdate.Invalid_date (_,_) ->
+          let s = 
+            try openfile path [O_RDONLY] 0
+            with Unix_error(_,_,_) -> 
+              raise (File_error (I18n.sprintf "cannot open file")) 
+          in
+          let dh =
+            { document_id = document_id wr;
+              document_referer = wr.www_link.h_context;
+              document_status = 200;
+              document_headers = 
+                [sprintf "Content-Length: %d" st.st_size;
+                 sprintf "Date: %s" (Date.asc_now());
+                 sprintf "Last-modified: %s" (Date.asc st.st_mtime)
+                ];
+              document_feed = Feed.of_fd s;
+              document_fragment = wr.www_fragment;
+              document_logger = Document.tty_logger
+            } in
+           Retype.f dh;
+           cont.document_process dh;
+           (fun () -> ())
+    end
+    | S_DIR -> 
+        let s = dir path in
+        cont.document_process 
+          { document_id = document_id wr;
             document_referer = wr.www_link.h_context;
             document_status = 200;
-            document_headers = 
-            [sprintf "Content-Length: %d" st.st_size;
-              sprintf "Date: %s" (Date.asc_now());
-              sprintf "Last-modified: %s" (Date.asc st.st_mtime)];
+            document_headers = ["Content-Type: text/html"];
             document_feed = Feed.of_fd s;
             document_fragment = wr.www_fragment;
-            document_logger = tty_logger} in
-       Retype.f dh;
-       cont.document_process dh;
-           (fun () -> ())
-      end
-      | S_DIR -> 
-      let s = dir path in
-        cont.document_process 
-          {document_id = document_id wr;
-           document_referer = wr.www_link.h_context;
-           document_status = 200;
-           document_headers = ["Content-Type: text/html"];
-           document_feed = Feed.of_fd s;
-           document_fragment = wr.www_fragment;
-              document_logger = tty_logger};
-            (fun () -> ())
+            document_logger = Document.tty_logger
+           };
+         (fun () -> ())
 
-      | _ -> raise (File_error (I18n.sprintf "cannot open file"))
+    | _ -> raise (File_error (I18n.sprintf "cannot open file"))
 (*e: function File.request *)
 (*e: ./protocols/file.ml *)

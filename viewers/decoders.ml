@@ -66,11 +66,12 @@ let gzip dh =
   
 
 (*s: toplevel Decoders._1 *)
-let _ =  List.iter (fun (s,t) -> Hashtbl.add decoders s t)
+let _ =  
   [ "COMPRESS", gzip;
     "X-COMPRESS", gzip;
     "GZIP", gzip;
-    "X-GZIP", gzip]
+    "X-GZIP", gzip
+  ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
 (*e: toplevel Decoders._1 *)
 
 (*s: constant Decoders.add *)
