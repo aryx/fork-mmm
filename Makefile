@@ -334,6 +334,7 @@ SRC_VIEWS= \
   html/html.mli\
   html/html.ml\
   html/lexhtml.mli\
+  html/lexhtml.mll\
   html/html_eval.mli\
   html/html_eval.ml\
   html/htparse.ml\

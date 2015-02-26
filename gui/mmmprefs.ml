@@ -138,7 +138,6 @@ let html top =
 (*s: function Mmmprefs.i18n *)
 let i18n top =
   family top (I18n.sprintf "Internationalization (Japanese)") [
-    (* bool_pref "Japanese mode" Version.japan; *)
     bool_pref "Ignore META charset" Htmlw.ignore_meta_charset
   ] 
 (*e: function Mmmprefs.i18n *)

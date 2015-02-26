@@ -4,12 +4,10 @@
 (* Internationalization (translation of error messages) *)
 
 let fprintf x = 
-  (* if !Lang.japan then I18nprintf.fprintf x else *)
   Printf.fprintf x
 (*e: function I18n.fprintf *)
 (*s: function I18n.sprintf *)
 let sprintf x = 
-  (* if !Lang.japan then I18nprintf.sprintf x else *)
   Printf.sprintf x
 (*e: function I18n.sprintf *)
 

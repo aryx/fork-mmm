@@ -8203,40 +8203,6 @@ let rec compute_tag fd =
           xlfd.family^xlfd.weight^xlfd.slant^(string_of_int pxlsz), latin_f
         in
     
-        (*    
-        (* japanese mode, search jp fonts *)
-        if !Lang.japan then begin
-         (*
-          let pattern = { Jpf_font.empty_pattern with
-                          registry= Some "jisx0208.1983";
-                          pixelSize= Some pxlsz } in
-          *)
-          let retry pattern =
-            let xlfd = Jpf_font.nearest_pixel_size display (pxlsz > 20) 
-            pattern 
-            in
-            let japan_f = Jpf_font.string_of_valid_xlfd xlfd in
-            fontid, [Font (Font.create [Compound [ fontname; japan_f ]])]
-          in
-    
-          (* fst retry *)
-          let pattern = { fd.pattern with
-                          foundry= None;
-                          family= None;
-                          registry= Some "jisx0208.1983";
-                          pixelSize= Some pxlsz } 
-          in
-          try retry pattern with _ ->
-          
-              (* snd retry *)
-          let pattern = { pattern with slant= None } in
-          try retry pattern with _ ->
-            
-              Log.f (I18n.sprintf "Japanese font for %s is not available" (Jpf_font.string_of_pattern pattern));
-          fontid, [Font fontname] (* we should do more... *)
-        end else 
-          *)
-
         fontid, [Font fontname]
       with (* Invalid_argument f *) _ ->  (* font is not available *)
         Log.f (I18n.sprintf "Font for %s is not available" 
@@ -8248,6 +8214,40 @@ let rec compute_tag fd =
      Hashtbl.add tags font_key tagdesc;
      tagdesc
 @
+%        (*    
+%        (* japanese mode, search jp fonts *)
+%        if !Lang.japan then begin
+%         (*
+%          let pattern = { Jpf_font.empty_pattern with
+%                          registry= Some "jisx0208.1983";
+%                          pixelSize= Some pxlsz } in
+%          *)
+%          let retry pattern =
+%            let xlfd = Jpf_font.nearest_pixel_size display (pxlsz > 20) 
+%            pattern 
+%            in
+%            let japan_f = Jpf_font.string_of_valid_xlfd xlfd in
+%            fontid, [Font (Font.create [Compound [ fontname; japan_f ]])]
+%          in
+%    
+%          (* fst retry *)
+%          let pattern = { fd.pattern with
+%                          foundry= None;
+%                          family= None;
+%                          registry= Some "jisx0208.1983";
+%                          pixelSize= Some pxlsz } 
+%          in
+%          try retry pattern with _ ->
+%          
+%              (* snd retry *)
+%          let pattern = { pattern with slant= None } in
+%          try retry pattern with _ ->
+%            
+%              Log.f (I18n.sprintf "Japanese font for %s is not available" (Jpf_font.string_of_pattern pattern));
+%          fontid, [Font fontname] (* we should do more... *)
+%        end else 
+%          *)
+
 
 <<function Fonts.reset>>=
 (* Mapping with preferences : *fontPixels is also used to define our array 
@@ -8716,56 +8716,6 @@ let view attach did redisplay errors annotations coding =
      let tmpfile = Msys.mktemp "buf" in
      (* load *)
      (fun t ->
-        (*
-        if !Lang.japan then begin
-          (* In Japanese mode, We must insert line by line. *) 
-         let ic = open_in fname 
-         and buf = String.create 2048
-         and prevbuf = ref ""
-         in
-          try
-             while true do
-               let n = input ic buf 0 2048 in
-                   let txt = 
-                     if n = 2048 then begin
-                       (* try to find last newline *)
-                       let pos = 
-                     try String.rindex buf '\n' + 1 
-                     with Not_found -> 0
-                       in
-                       let txt = !prevbuf ^ (String.sub buf 0 pos) in
-                       prevbuf := String.sub buf pos 
-                          (String.length buf - pos);
-                       txt
-                     end else begin
-                       let txt = !prevbuf ^ (String.sub buf 0 n) in
-                       prevbuf := "";
-                       txt
-                     end
-                   in
-                   (* if coding = ISO8859 or JIS, the chars > \127
-                    * must be preceded with esc sequence 
-                    *)
-                   let txt =
-                     if coding = Japan.Code Japan.ISO8859 || 
-                        coding = Japan.Code Japan.JIS then
-                       let buf = Ebuffer.create (String.length txt * 2) in
-                       for i = 0 to String.length txt - 1 do
-                     if txt.[i] > '\127' then 
-                       (* sorry for hard coding *)
-                       Ebuffer.output_string buf "\027\040\066";
-                     Ebuffer.output_char buf txt.[i]
-                       done;
-                       Ebuffer.get buf
-                     else txt
-                   in
-                   Text.insert t textEnd txt [];
-                   (* Then EOF check *)
-                   if n = 0 then raise End_of_file
-             done
-       with End_of_file -> close_in ic
-     end else 
-     *)
      begin
          let ic = open_in fname 
          and buf = String.create 2048
@@ -8928,6 +8878,58 @@ let view attach did redisplay errors annotations coding =
     Not_found ->
      !Error.default#f "document not in cache"
 @
+
+
+%        (*
+%        if !Lang.japan then begin
+%          (* In Japanese mode, We must insert line by line. *) 
+%         let ic = open_in fname 
+%         and buf = String.create 2048
+%         and prevbuf = ref ""
+%         in
+%          try
+%             while true do
+%               let n = input ic buf 0 2048 in
+%                   let txt = 
+%                     if n = 2048 then begin
+%                       (* try to find last newline *)
+%                       let pos = 
+%                     try String.rindex buf '\n' + 1 
+%                     with Not_found -> 0
+%                       in
+%                       let txt = !prevbuf ^ (String.sub buf 0 pos) in
+%                       prevbuf := String.sub buf pos 
+%                          (String.length buf - pos);
+%                       txt
+%                     end else begin
+%                       let txt = !prevbuf ^ (String.sub buf 0 n) in
+%                       prevbuf := "";
+%                       txt
+%                     end
+%                   in
+%                   (* if coding = ISO8859 or JIS, the chars > \127
+%                    * must be preceded with esc sequence 
+%                    *)
+%                   let txt =
+%                     if coding = Japan.Code Japan.ISO8859 || 
+%                        coding = Japan.Code Japan.JIS then
+%                       let buf = Ebuffer.create (String.length txt * 2) in
+%                       for i = 0 to String.length txt - 1 do
+%                     if txt.[i] > '\127' then 
+%                       (* sorry for hard coding *)
+%                       Ebuffer.output_string buf "\027\040\066";
+%                     Ebuffer.output_char buf txt.[i]
+%                       done;
+%                       Ebuffer.get buf
+%                     else txt
+%                   in
+%                   Text.insert t textEnd txt [];
+%                   (* Then EOF check *)
+%                   if n = 0 then raise End_of_file
+%             done
+%       with End_of_file -> close_in ic
+%     end else 
+%     *)
 
 
 %-------------------------------------------------------------
@@ -10434,11 +10436,6 @@ class  virtual html_parse (dh) =
   method parse_init =
     red <- 0;
     feed_read <-
-       (*
-       if !Lang.japan 
-       then Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
-       else 
-       *)
        Japan.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
     lexer <- sgml_lexer !Dtd.current;
@@ -10898,6 +10895,13 @@ end
 <<toplevel Htmlw._1>>
 
 @
+
+
+%       (*
+%       if !Lang.japan 
+%       then Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
+%       else 
+%       *)
 
 
 \subsection*{[[./display/form.mli]]}
@@ -16887,10 +16891,10 @@ let html top =
 <<function Mmmprefs.i18n>>=
 let i18n top =
   family top (I18n.sprintf "Internationalization (Japanese)") [
-    (* bool_pref "Japanese mode" Version.japan; *)
     bool_pref "Ignore META charset" Htmlw.ignore_meta_charset
   ] 
 @
+%    (* bool_pref "Japanese mode" Version.japan; *)
 
 <<function Mmmprefs.images>>=
 let images top =

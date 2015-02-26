@@ -235,7 +235,6 @@ let latin1_normal = [
 
 (*s: function Html.init *)
 let init _lang =
-  (* (if japan then latin1_japan else latin1_normal)  *)
   latin1_normal |> List.iter (fun (str, c) -> 
     Hashtbl.add ampersand_table str c) 
 (*e: function Html.init *)

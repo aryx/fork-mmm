@@ -306,11 +306,6 @@ class  virtual html_parse (dh) =
   method parse_init =
     red <- 0;
     feed_read <-
-       (*
-       if !Lang.japan 
-       then Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
-       else 
-       *)
        Japan.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
     lexer <- sgml_lexer !Dtd.current;

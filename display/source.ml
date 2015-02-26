@@ -36,56 +36,6 @@ let view attach did redisplay errors annotations coding =
      let tmpfile = Msys.mktemp "buf" in
      (* load *)
      (fun t ->
-        (*
-        if !Lang.japan then begin
-          (* In Japanese mode, We must insert line by line. *) 
-         let ic = open_in fname 
-         and buf = String.create 2048
-         and prevbuf = ref ""
-         in
-          try
-             while true do
-               let n = input ic buf 0 2048 in
-                   let txt = 
-                     if n = 2048 then begin
-                       (* try to find last newline *)
-                       let pos = 
-                     try String.rindex buf '\n' + 1 
-                     with Not_found -> 0
-                       in
-                       let txt = !prevbuf ^ (String.sub buf 0 pos) in
-                       prevbuf := String.sub buf pos 
-                          (String.length buf - pos);
-                       txt
-                     end else begin
-                       let txt = !prevbuf ^ (String.sub buf 0 n) in
-                       prevbuf := "";
-                       txt
-                     end
-                   in
-                   (* if coding = ISO8859 or JIS, the chars > \127
-                    * must be preceded with esc sequence 
-                    *)
-                   let txt =
-                     if coding = Japan.Code Japan.ISO8859 || 
-                        coding = Japan.Code Japan.JIS then
-                       let buf = Ebuffer.create (String.length txt * 2) in
-                       for i = 0 to String.length txt - 1 do
-                     if txt.[i] > '\127' then 
-                       (* sorry for hard coding *)
-                       Ebuffer.output_string buf "\027\040\066";
-                     Ebuffer.output_char buf txt.[i]
-                       done;
-                       Ebuffer.get buf
-                     else txt
-                   in
-                   Text.insert t textEnd txt [];
-                   (* Then EOF check *)
-                   if n = 0 then raise End_of_file
-             done
-       with End_of_file -> close_in ic
-     end else 
-     *)
      begin
          let ic = open_in fname 
          and buf = String.create 2048
