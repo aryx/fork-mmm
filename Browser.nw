@@ -15,7 +15,8 @@
 % - deadcode?
 
 %thx to codemap/codegraph/scheck:
-% - use cg to reduce backward deps (ocaml linker enforces that)
+% - use cg to reduce backward deps (ocaml linker enforces that),
+%   and to reduce dependencies to graphic toolkit
 %   (harder to understand non layered code)
 % - TODO use scheck to remove deadcode, dead prototypes, useless export
 %   or mv as forward decl
@@ -34,8 +35,8 @@
 %    * function, global, struct, enum, constant, macro(actually function)
 %    * TODO ctor/dtor, dumper
 %    * TODO [[xxx]] other fields, [[xxx]] extra fields
-% - TODO read Extra section, identify concepts, first TOC
-% - TODO distribute parts of the Extra section in the main file
+% - SEMI read Extra section, identify concepts, first TOC
+% - SEMI distribute parts of the Extra section in the main file
 % - TODO understand main(), LP split main, improve TOC
 % - TODO understand main functions, LP split, cluster, improve TOC
 % - TODO LP split the structures, use datalog for flow to field info
@@ -156,8 +157,10 @@ Here are other candidates that were considered but ultimately discarded:
 \item mosaic
 % maybe good. LOC?
 \item gecko (firefox)
+% descendant of mosaic, netscape
 % huge
 \item khtml/webkit/blink (kconqueror, chrome, safari)
+% started from scratch by kde people originally, now used by google/apple
 % huge
 \item netsurf
 % with subprojects like hubhub, libcss, libdom, etc
@@ -174,11 +177,9 @@ Here are other candidates that were considered but ultimately discarded:
 %todo:
 %https://github.com/servo/servo/wiki/Relevant-spec-links
 
-%good:
-%http://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
-
-%todo: 
-%http://www.html5rocks.com/en/tutorials/internals/howbrowserswork/
+%good: http://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
+%todo: http://www.html5rocks.com/en/tutorials/internals/howbrowserswork/
+% HBW
 
 %todo: look at ocamlnet? more up to date web components?
 
@@ -193,8 +194,6 @@ Here are other candidates that were considered but ultimately discarded:
 
 Most of this document is actually source code from MMM, so
 those parts are copyright by INRIA.
-The prose is mine and is licensed under the GNU Free Documentation
-License.
 
 <<copyright header v6>>=
 (***********************************************************************)
@@ -209,9 +208,12 @@ License.
 (***********************************************************************)
 @
 
+The prose is mine and is licensed under the GNU Free Documentation
+License.
+
 \section{Acknowledgments}
 
-I would like to thank of course Francois Rouaix,
+I would like to thank of course Francois Rouaix
 the main author of MMM.
 
 
@@ -221,10 +223,10 @@ the main author of MMM.
 
 % before seing the browser, first expose web principles: world wide web.
 % a "web" of interconnected machines with:
-%  - html documents (and associated pictures sometimes)
-%  - URL to reference a document, a document containing itself possible links
-%    to other documents
-%  - http protocol to fetch the document
+%  - "resources": html documents, images
+%  - URL to reference a resource; an html document containing itself
+%    possible links to other documents or resources (e.g. images)
+%  - http protocol to fetch the resources
 %  - client/server around this protocol
 
 % a web browser is then a special kind of interface on top of that:
@@ -242,6 +244,14 @@ the main author of MMM.
 
 \section{[[mmm]] services}
 
+
+<<signature Version.http>>=
+val http : string              (* the version in User-Agent field *)
+@
+<<constant Version.http>>=
+(* User-Agent field *)
+let http = "MMM/0." ^ string_of_int number
+@
 
 
 
@@ -268,15 +278,6 @@ Francois.Rouaix@inria.fr
 http://pauillac.inria.fr/~rouaix/
 "
   | _ -> assert false
-@
-
-
-<<signature Version.http>>=
-val http : string              (* the version in User-Agent field *)
-@
-<<constant Version.http>>=
-(* User-Agent field *)
-let http = "MMM/0." ^ string_of_int number
 @
 
 
@@ -343,7 +344,7 @@ get an updated copy.
 </BODY>
 </HTML>
 "
-  |  _ -> assert false
+  |  s -> failwith (Printf.sprintf "language %s not supported here")
 @
 %$
 
@@ -361,13 +362,13 @@ get an updated copy.
 % commons/: utilities
 % globals/: config
 % www/: url
-% html/: html format
-% http/: protocol
+% html/: html parsing
+% http/: http protocol
 % protocols/: more protocols
-% retrieve/: fetching stuff
-% viewers/: viewing embedded stuff
-% display/: html display engine
-% gui/: interface
+% retrieve/: networking stuff
+% viewers/: viewing stuff
+% display/: rendering engine
+% gui/: chrome
 
 % skipped for now: 
 % i18n/japan/ 
@@ -391,7 +392,7 @@ get an updated copy.
 \section{Request}
 
 \subsection{URIs}
-% =~ /path/elements/
+% =~ /path/elements/foo.html#fragment
 
 <<type Uri.abs_uri>>=
 (* URI utilities. RFC 1630 *)
@@ -401,8 +402,9 @@ type abs_uri = {
    uri_frag : string option
  }
 @
-% frag?
-% arg, uri_url, hmmm should be uri_path no?
+% abs for absolute! we want those URI to have been "resolved"
+% fragment is for the #xxx I think
+% less: uri_url, hmmm should be uri_path no?
 
 <<signature Uri.is_absolute>>=
 val is_absolute : string -> bool
@@ -447,6 +449,7 @@ type t =
   }
 @
 % search?
+% "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
 
 <<type Url.protocol>>=
 type protocol =
@@ -462,6 +465,7 @@ type protocol =
 (* For http. The thing we have to send in the request *)
 val distant_path : t -> string
 @
+% ???
 
 <<function Url.distant_path>>=
 (* For http only *)
@@ -520,18 +524,11 @@ type request =  {
 @
 %less: merge www_url in link?
 %less: fragment??
+%todo: LP split fields
 
 <<signature Www.make>>=
 val make : Hyper.link -> request
-  (* raises: 
-      Url_Lexing
-      Invalid_link
-   *)
-@
-
-
-<<constant Www.sp>>=
-let sp = Str.regexp "[ \t\n]"
+  (* raises: Url_Lexing | Invalid_link *)
 @
 
 <<function Www.make>>=
@@ -539,7 +536,8 @@ let make hlink =
   let absuri = Hyper.resolve hlink in 
   let url = Lexurl.make absuri.uri_url in
   try (* search for space in network URI *)
-    if List.mem url.protocol [FILE; MAILTO] then raise Not_found
+    if List.mem url.protocol [FILE; MAILTO] 
+    then raise Not_found
     else
       let n = Str.search_forward sp absuri.uri_url 0 in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
@@ -548,12 +546,20 @@ let make hlink =
       www_link = hlink;
       www_url = url; (* should not fail ? *)
       www_fragment = absuri.uri_frag;
+
       www_auth = [];
       www_headers = [];
       www_logging = (fun _ -> ());
       www_error = !Error.default
     }
 @
+% so URI is also an URL? 
+%todo: ugly try, and does nto handle http protocol here?
+
+<<constant Www.sp>>=
+let sp = Str.regexp "[ \t\n]"
+@
+
 
 
 \section{Document}
@@ -572,20 +578,19 @@ type document_id = {
 <<signature Document.no_stamp>>=
 val no_stamp : int
 @
-
-<<signature Document.new_stamp>>=
-val new_stamp : unit -> int
+<<constant Document.no_stamp>>=
+let no_stamp = 0
 @
+
 
 
 <<constant Document.stamp_counter>>=
 let stamp_counter = ref 0
 @
 
-<<constant Document.no_stamp>>=
-let no_stamp = 0
+<<signature Document.new_stamp>>=
+val new_stamp : unit -> int
 @
-
 <<function Document.new_stamp>>=
 let new_stamp () =
   incr stamp_counter; !stamp_counter
@@ -631,6 +636,7 @@ type handle = {
     (* how to log information relative to this document processing *)
 }
 @
+%less: typedef for document_status int?
 
 % important one
 <<type Document.document_continuation>>=
@@ -663,6 +669,12 @@ type tag = {
   attributes: attributes
 }
 @
+
+%concepts:
+% - tags
+% - attributes
+% - entities
+% - ???
 
 <<type Html.attributes>>=
 type attributes = (attribute_name * attribute_value) list
@@ -711,17 +723,6 @@ let default_attributes = [
 @
 
 
-<<signature Html.get_entity>>=
-val get_entity : string -> string
-  (* [get_entity "amp"] returns "&" *)
-@
-
-<<constant Html.get_entity>>=
-let get_entity = Hashtbl.find ampersand_table
-@
-
-
-
 <<signature Html.get_attribute>>=
 val get_attribute : tag -> string -> string
   (* [get_attribute tag attrib_name] *)
@@ -749,11 +750,20 @@ let has_attribute tag attr =
 @
 
 
+
+
+
 \subsection{CSS}
 
 \subsection{Javascript}
 
 \section{Protocols}
+
+<<signature Protos.get>>=
+val get: Url.protocol ->
+  (Www.request -> Document.document_continuation -> unit -> unit) *
+  (Document.handle -> Document.document_data * Cache.cache_fill)
+@
 
 <<constant Protos.protos>>=
 let protos = Hashtbl.create 11
@@ -1124,8 +1134,6 @@ let reset () =
 
 \section{Back and forward}
 
-\section{Refresh and stop}
-
 \section{Home}
 
 <<signature Version.home>>=
@@ -1141,6 +1149,8 @@ let home = function
 \section{Bookmarks}
 
 \section{History}
+
+\section{Refresh and stop}
 
 \chapter{Parsing}
 % www/ html/ 
@@ -1576,6 +1586,17 @@ val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 
 \subsubsection{Doctype}
 
+\subsubsection{Entities}
+
+
+<<signature Html.get_entity>>=
+val get_entity : string -> string
+  (* [get_entity "amp"] returns "&" *)
+@
+
+<<constant Html.get_entity>>=
+let get_entity = Hashtbl.find ampersand_table
+@
 
 \subsection{Parsing, the DTD}
 

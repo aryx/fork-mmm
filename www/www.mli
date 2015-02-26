@@ -23,10 +23,7 @@ exception Invalid_request of request * string
 
 (*s: signature Www.make *)
 val make : Hyper.link -> request
-  (* raises: 
-      Url_Lexing
-      Invalid_link
-   *)
+  (* raises: Url_Lexing | Invalid_link *)
 (*e: signature Www.make *)
 
 (*s: signature module Www.UrlSet *)

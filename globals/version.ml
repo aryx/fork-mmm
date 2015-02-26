@@ -100,7 +100,7 @@ get an updated copy.
 </BODY>
 </HTML>
 "
-  |  _ -> assert false
+  |  s -> failwith (Printf.sprintf "language %s not supported here" s)
 (*e: function Version.html *)
 
 (*s: constant Version.applet_init *)

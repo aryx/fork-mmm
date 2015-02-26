@@ -4495,6 +4495,15 @@ let internal_backend = ref (fun _ _ -> failwith "no Mailto.internal defined")
 @
 
 
+\subsection*{[[./protocols/protos.mli]]}
+
+%-------------------------------------------------------------
+
+<<./protocols/protos.mli>>=
+
+<<signature Protos.get>>
+@
+
 \subsection*{[[./protocols/protos.ml]]}
 
 %todo: no protos.mli?

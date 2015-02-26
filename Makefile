@@ -356,6 +356,7 @@ SRC_VIEWS= \
   protocols/file.mli\
   protocols/file.ml\
   protocols/mailto.ml\
+  protocols/protos.mli\
   protocols/protos.ml\
   \
   retrieve/progress.mli\

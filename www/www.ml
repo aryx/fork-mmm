@@ -33,7 +33,8 @@ let make hlink =
   let absuri = Hyper.resolve hlink in 
   let url = Lexurl.make absuri.uri_url in
   try (* search for space in network URI *)
-    if List.mem url.protocol [FILE; MAILTO] then raise Not_found
+    if List.mem url.protocol [FILE; MAILTO] 
+    then raise Not_found
     else
       let n = Str.search_forward sp absuri.uri_url 0 in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
@@ -42,6 +43,7 @@ let make hlink =
       www_link = hlink;
       www_url = url; (* should not fail ? *)
       www_fragment = absuri.uri_frag;
+
       www_auth = [];
       www_headers = [];
       www_logging = (fun _ -> ());
