@@ -70,7 +70,8 @@ let network top =
     int_pref "Timeout on headers (seconds)" Http.timeout;
     int_pref "Password lifetime (minutes)" Auth.lifetime;
     string_pref "Password save file" Auth.auth_file;
-    abstract_string_pref "Local binaries path" File.pref_init File.pref_set
+    abstract_string_pref "Local binaries path" 
+      Tk_file.pref_init Tk_file.pref_set
     ]
 (*e: function Mmmprefs.network *)
 

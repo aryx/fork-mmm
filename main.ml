@@ -58,6 +58,7 @@ let main () =
   Maps.broadcast_backend := Frx_synth.broadcast;
   Auth.open_passwd_ref := Frx_req.open_passwd;
   Auth.edit_backend := Tk_auth.edit;
+  Mailto.internal_backend := Tk_mailto.internal;
 
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")

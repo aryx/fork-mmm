@@ -14,7 +14,7 @@ LIBS=
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
  $(TOP)/www $(TOP)/http
 
-SYSINCLUDES=$(TKCOMPFLAGS)
+SYSINCLUDES=
 
 ##############################################################################
 # Generic variables
@@ -39,7 +39,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

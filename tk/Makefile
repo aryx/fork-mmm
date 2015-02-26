@@ -12,6 +12,8 @@ SRC= tkresource.ml\
   tk_i18n.ml\
   tk_document.ml\
   tk_auth.ml\
+  tk_file.ml\
+  tk_mailto.ml\
   glevents.ml\
 
 SYSLIBS= str.cma unix.cma 
@@ -20,6 +22,7 @@ INCLUDEDIRS=\
  $(TOP)/commons\
  $(TOP)/www\
  $(TOP)/http\
+ $(TOP)/protocols\
 
 
 SYSINCLUDES=$(TKCOMPFLAGS)

@@ -190,13 +190,8 @@ let binary_path = ref ([] : string list)
 let r = Str.regexp ":"
 (*e: constant File.r *)
 (*s: function File.pref_init *)
-let pref_init v =
-  Textvariable.set v (String.concat ":" !binary_path)
 (*e: function File.pref_init *)
 (*s: function File.pref_set *)
-let pref_set v = 
-  binary_path :=
-     List.map Msys.tilde_subst (Str.split r (Textvariable.get v))
 (*e: function File.pref_set *)
 
 (*s: function File.is_cgi *)
