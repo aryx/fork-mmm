@@ -1102,7 +1102,6 @@ end
 <<signature Low.init>>
 
 
-val timer_add_backend: (int -> (unit -> unit) -> unit) ref
 val update_idletasks_backend: (unit -> unit) ref
 
 <<signature Low.update_idletasks>>
@@ -1127,14 +1126,14 @@ let read fd buf offs l =
 let add_fileinput fd f =
   incr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  File_event.add_fileinput fd f
+  Fileevent_.add_fileinput fd f
 @
 
 <<function Low.remove_fileinput>>=
 let remove_fileinput fd =
   decr pending_read;
   !cur_tachy#report_cnx !pending_read;
-  File_event.remove_fileinput fd
+  Fileevent_.remove_fileinput fd
 @
 
 <<function Low.fork>>=
@@ -1195,7 +1194,7 @@ let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
-  !timer_add_backend tick_duration refresh
+  Timer_.add tick_duration refresh
 @
 
 <<function Low.add_task>>=
@@ -1278,9 +1277,6 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 <<constant Low.tick_duration>>
 
 <<constant Low.tasks>>
-
-let timer_add_backend = 
-  ref (fun _ _ -> failwith "no time_add defined")
 
 <<function Low.refresh>>
 
@@ -2061,6 +2057,8 @@ open Url
 
 <<signature Maps.parse_coords>>
 <<signature Maps.get>>
+
+val broadcast_backend: (string -> unit) ref
 <<signature Maps.add>>
 @
 
@@ -2102,6 +2100,8 @@ open Printf
 
 <<constant Maps.coord_sep>>
 <<function Maps.parse_coords>>
+
+let broadcast_backend = ref (fun _ev -> failwith "no broadcast defined")
 
 <<function Maps.add>>
 
@@ -2186,6 +2186,8 @@ module DocumentIDSet : Set.S with type elt = document_id
 
 <<signature Document.dclose>>
 
+val add_log_backend: (handle -> string -> (unit -> unit) -> unit) ref
+
 <<signature Document.add_log>>
 <<signature Document.put_log>>
 <<signature Document.progress_log>>
@@ -2202,7 +2204,6 @@ module DocumentIDSet : Set.S with type elt = document_id
 %-------------------------------------------------------------
 
 <<./www/document.ml>>=
-open Tk
 open Feed
 open Www
 open Hyper
@@ -2233,6 +2234,8 @@ open Hyper
 
 
 <<constant Document.tty_logger>>
+
+let add_log_backend = ref (fun _ _ _ -> failwith "no add_log defined")
   
 <<function Document.add_log>>
 <<functions Document.xxx_log>>
@@ -3422,6 +3425,15 @@ open Http_headers
 <<signature Auth.lifetime>>
 <<signature Auth.auth_file>>
 
+val edit_backend: (unit -> unit) ref
+
+(* pad: only for edit_backend *)
+type authEntry = {
+   auth_cookie : string;
+   mutable auth_lastused : float
+   }
+val authorizations: (authSpace, authEntry) Hashtbl.t
+
 <<signature Auth.edit>>
 <<signature Auth.load>>
 <<signature Auth.save>>
@@ -3430,6 +3442,8 @@ open Http_headers
 <<signature Auth.get>>
 
 <<signature Auth.init>>
+
+val open_passwd_ref: (string -> string * string) ref
 
 <<signature Auth.check>>
 @
@@ -3444,7 +3458,6 @@ open Http_headers
 <<./http/auth.ml>>=
 (* HTTP Basic Authentication *)
 open Printf
-open Tk
 open Unix
 open Http_headers
 open Url
@@ -3464,7 +3477,7 @@ open Www
 
 <<function Auth.lookup>>
 
-
+let open_passwd_ref = ref (fun _ -> failwith "no Auth.open_passswd defined")
 <<function Auth.ask_cookie>>
 
 <<function Auth.replace>>
@@ -3474,6 +3487,7 @@ open Www
 
 <<function Auth.check>>
 
+let edit_backend = ref (fun _ -> failwith "no Auth.edit defined") 
 
 (* Authorisation control *)
 <<function Auth.edit>>
@@ -3604,7 +3618,7 @@ class cnx (sock,finish) =
      if not aborted then begin
        aborted <- true;
        match status with
-     Writing -> Fileevent.remove_fileoutput fd; self#close; finish true
+     Writing -> Fileevent_.remove_fileoutput fd; self#close; finish true
        | Reading dh -> dclose true dh; finish true
        | Discharged -> ()
      end
@@ -3648,7 +3662,7 @@ let rec process_response wwwr cont cnx =
   cnx#set_status (Reading dh);
   (* set up a timer to abort if server is too far/slow *)
   let rec timout () =
-     Timer.set (1000 * !timeout) 
+     Timer_.set (1000 * !timeout) 
       (fun () -> 
     if not cnx#aborted && !stuck then
       match wwwr.www_error#ari
@@ -3726,11 +3740,11 @@ and async_request proxy_mode wwwr cont cnx =
   and len = Ebuffer.used b in
   let curpos = ref 0 in
     wwwr.www_logging (I18n.sprintf "Writing request...");
-    Fileevent.add_fileoutput cnx#fd (fun _ ->
+    Fileevent_.add_fileoutput cnx#fd (fun _ ->
       let n = write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
        curpos := !curpos  + n;
     if !curpos = len then begin
-         Fileevent.remove_fileoutput cnx#fd;
+         Fileevent_.remove_fileoutput cnx#fd;
       if !verbose then Log.f req;
          cont cnx
          end)
@@ -4454,6 +4468,9 @@ and current = ref 0
 <<signature File.request>>
 <<exception File.File_error>>
 
+(* pad: for tk_file.ml *)
+val binary_path: string list ref
+
 <<signature File.pref_init>>
 <<signature File.pref_set>>
 @
@@ -4551,40 +4568,7 @@ let sendmail msg =
 
 <<function Mailto.internal>>=
 let internal address referer =
-  let top = 
-    Toplevel.create Widget.default_toplevel [Class "MMMMail"] in
-  let dest = Textvariable.create_temporary top
-  and subject = Textvariable.create_temporary top in
-     Textvariable.set dest address;
-     Textvariable.set subject referer;
-  let fto,eto = Frx_entry.new_labelm_entry top "To:" dest
-  and fsub, esub = Frx_entry.new_labelm_entry top "Subject:" subject
-  and fbody, tbody = new_scrollable_text top [] false in
-
-    pack [fto; fsub][Fill Fill_X];
-
-  let fbut = Frame.create top [] in
-  let bok = Button.create fbut 
-      [Text (I18n.sprintf "Send"); 
-       Command 
-        (fun () -> 
-       let msg = 
-            {dest = Textvariable.get dest;
-          (* Japanese e-mails must be in JIS code, but they must be *)
-          (* already in JIS --- JPF *)
-          subject = Textvariable.get subject; 
-          body = Text.get tbody (TextIndex(LineChar(0,0), [])) textEnd
-            } in
-       sendmail msg;
-          destroy top)]
-  and bdismiss = Button.create fbut 
-      [Text (I18n.sprintf "Dismiss"); Command (fun () -> destroy top)] in
-    pack [bok] [Side Side_Left];
-    pack [bdismiss] [Side Side_Right];
-    pack [fbut][Side Side_Bottom; Fill Fill_X];
-
-    (* last for resizing *)
-    pack [fbody][Expand true; Fill Fill_Both]
+  !internal_backend address referer
 @
 
 <<function Mailto.get>>=
@@ -4630,9 +4614,7 @@ let f wr =
 <<./protocols/mailto.ml>>=
 (* mailto: *)
 open Sys
-open Tk
 open Unix
-open Frx_text
 open Www
 open Hyper
 open Url
@@ -4645,6 +4627,7 @@ open Url
 
 <<function Mailto.sendmail>>
 
+let internal_backend = ref (fun _ _ -> failwith "no Mailto.internal defined")
 <<function Mailto.internal>>
 
 
@@ -4703,14 +4686,6 @@ open Url
 %-------------------------------------------------------------
 
 <<./retrieve/progress.ml>>=
-open Tk
-
-(* Progress meter
- * JPF + cleanup by FRX with lazy
- *)
-let okcolor = NamedColor "#3cb371"
-let kocolor = NamedColor "#dc5c5c"
-
 <<constant Progress.no_meter>>
 
 <<function Progress.meter>>
@@ -5057,6 +5032,7 @@ open Document
 
 module ImageData : sig
   type t = Tkanim.imageType
+
   val gamma : float ref
   val jpeg_converter : string ref
   val verbose : bool ref
@@ -5981,7 +5957,7 @@ let add ({ embed_hlink = link;
      (* Add to our table/notify *)
      add_embed emb;
      viewer parms frame embed_ctx doc)
-       (Progress.meter frame)
+       (Tk_progress.meter frame)
    with
      Not_found -> (* no viewer for this *)
       let t = 
@@ -6004,7 +5980,7 @@ let add ({ embed_hlink = link;
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
      (fun url doc -> embedded_viewer frame embed_ctx doc)
-     (Progress.meter frame)
+     (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
        let t = I18n.sprintf "Embed Error: %s\n(%s)"
@@ -6060,7 +6036,7 @@ let update frame embed_ctx doc notchanged =
                         ["Content-Type: " ^ given_type]
        }  in
      smart_viewer (viewer parms) frame embed_ctx doc)
-       (Progress.meter frame)
+       (Tk_progress.meter frame)
       with
       Not_found -> (* no viewer for this *)
       let t = 
@@ -6083,7 +6059,7 @@ let update frame embed_ctx doc notchanged =
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
         (fun url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
-        (Progress.meter frame)
+        (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
         let t = I18n.sprintf "Embed Error: %s\n(%s)"
@@ -7405,7 +7381,7 @@ let bullet_table = Hashtbl.create 11
 
 <<function Attrs.init>>=
 let init bg =
-  let bg = Background (NamedColor bg) in
+  let _bgTODO = Background (NamedColor bg) in
   Hashtbl.add bullet_table
      "circle" (ImageBitmap(Imagebitmap.create [Data circle_data]));
   Hashtbl.add bullet_table
@@ -9965,7 +9941,7 @@ class loader () =
         (fun url i -> 
       display emb i;
       self#add_loaded url)
-        (Progress.meter emb.embed_frame)
+        (Tk_progress.meter emb.embed_frame)
     with
       e -> Log.f (sprintf "Can't load image (%s)" (Printexc.to_string e))
 
@@ -9997,7 +9973,7 @@ class auto () =
      wr
      emb.embed_context#base
      (fun url i -> display emb i; self#add_loaded url)
-     (Progress.meter emb.embed_frame)
+     (Tk_progress.meter emb.embed_frame)
      with
        e -> Log.f (sprintf "Can't compute image link (%s)"
                    (Printexc.to_string e))
@@ -10382,7 +10358,7 @@ let progress_report top ctx =
          hyper_func = (fun _ h -> pointsto "")
            });
   
-  f, Progress.meter fprog
+  f, Tk_progress.meter fprog
 @
 
 <<function Htmlw.html_head_ui>>=
@@ -17060,7 +17036,8 @@ let network top =
     int_pref "Timeout on headers (seconds)" Http.timeout;
     int_pref "Password lifetime (minutes)" Auth.lifetime;
     string_pref "Password save file" Auth.auth_file;
-    abstract_string_pref "Local binaries path" File.pref_init File.pref_set
+    abstract_string_pref "Local binaries path" 
+      Tk_file.pref_init Tk_file.pref_set
     ]
 @
 

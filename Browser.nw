@@ -883,12 +883,18 @@ let main () =
 
   Error.default := new Tk_error.t Widget.default_toplevel;
   Condition.backend := Tk_condition.backend ();
-  Low.timer_add_backend := (fun a b -> Timer.add a b |> ignore);
+  Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
+  Timer_.set_ref := Timer.set;
   Low.update_idletasks_backend := Tk.update_idletasks;
-  File_event.add_fileinput_ref := Fileevent.add_fileinput;
-  File_event.remove_fileinput_ref := Fileevent.remove_fileinput;
-  File_event.add_fileoutput_ref := Fileevent.add_fileoutput;
-  File_event.remove_fileoutput_ref := Fileevent.remove_fileoutput;
+  Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
+  Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
+  Fileevent_.add_fileoutput_ref := Fileevent.add_fileoutput;
+  Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
+  Document.add_log_backend := Tk_document.add_log;
+  Maps.broadcast_backend := Frx_synth.broadcast;
+  Auth.open_passwd_ref := Frx_req.open_passwd;
+  Auth.edit_backend := Tk_auth.edit;
+  Mailto.internal_backend := Tk_mailto.internal;
 
  (* As always, we must parse argument first, using references... *)
   let sufxfile = ref (Mmm.user_file "mime.types")
@@ -2729,7 +2735,7 @@ let table = (Hashtbl.create 37 : (string, map_status) Hashtbl.t)
         or comma with possible surrounding whitespace
  *)
 (* let coord_sep = Str.regexp "," *)
-let coord_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
+let coord_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
 @
 
 <<function Maps.parse_coords>>=
@@ -2746,7 +2752,7 @@ let add name map =
     | RequestedMap event ->
        Hashtbl.remove table name; (* remove it *)
        Hashtbl.add table name (KnownMap map); (* add its value *)
-       Frx_synth.broadcast event (* trigger all waiting people *)
+       !broadcast_backend event (* trigger all waiting people *)
   with
     Not_found -> (* nobody requested it *)
       Hashtbl.add table name (KnownMap map)
@@ -3127,17 +3133,17 @@ let tcp_connect server_name port log cont error =
     log (I18n.sprintf "connection established");
     Log.debug "Connect returned without error !";
     (* because we need to return cnx *)
-    Timer.set 10 (fun () -> cont cnx);
+    Timer_.set 10 (fun () -> cont cnx);
         cnx
       with
        Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
          (* that is ok, we are starting something *)
       let stuck = ref true in
-      Fileevent.add_fileoutput sock
+      Fileevent_.add_fileoutput sock
           (* we are called when the cnx is established *)
          (fun () -> 
          stuck := false;
-         Fileevent.remove_fileoutput sock;
+         Fileevent_.remove_fileoutput sock;
          Unix.clear_nonblock sock; (* return to blocking mode *)
         begin try (* But has there been a cnx actually *)
            let _ = getpeername sock in
@@ -3151,10 +3157,10 @@ let tcp_connect server_name port log cont error =
              end);
      (* but also start the timer if nothing happens now
          * the kernel has a timeout, but it might be too long (linux) *)
-         Timer.set (1000 * !timeout) 
+         Timer_.set (1000 * !timeout) 
         (fun () -> 
           if not cnx#aborted && !stuck then begin
-           Fileevent.remove_fileoutput sock;
+           Fileevent_.remove_fileoutput sock;
            cnx#close;
            error (I18n.sprintf "Timeout during connect to %s" server_name)
                  false
@@ -3299,7 +3305,7 @@ exception End_of_headers
 let read_headers fd previous =
   let l = Munix.read_line fd in
    if String.length l = 0 then raise End_of_headers (* end of headers *)
-   else if l.[0] = ' ' or l.[0] = '\t' then  (* continuation *)
+   else if l.[0] = ' ' || l.[0] = '\t' then  (* continuation *)
        match previous with
      [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
        | s :: rest -> (s^l) :: rest
@@ -3432,10 +3438,10 @@ let of_fd fd =
   (* In other cases : this is non blocking but not fully threaded. *)
   let special_read buf ofs len =
      (* remove the normal handler *)
-     File_event.remove_fileinput fd; 
+     Fileevent_.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
-     File_event.add_fileinput fd (fun () ->
-     File_event.remove_fileinput fd; (* remove myself *)
+     Fileevent_.add_fileinput fd (fun () ->
+     Fileevent_.remove_fileinput fd; (* remove myself *)
      Condition.set condition);
      (* wait for the condition to happen *)
      Condition.wait condition;
@@ -3450,7 +3456,7 @@ let of_fd fd =
         call the event loop, otherwise we loose sequentiality of reads *)
      (match !action with
         Some f ->
-      File_event.add_fileinput fd (fun () -> first_read := true; f())
+      Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
       | None -> ());
      (* and return *)
      n
@@ -3617,47 +3623,7 @@ let dclose remactive dh =
 
 <<function Document.add_log>>=
 let add_log dh initmsg abort =
-  let t = 
-    Toplevel.create Widget.default_toplevel [Class "MMMLog"] in
-  Wm.withdraw t;
-  Wm.title_set t 
-      (I18n.sprintf "Document log %s" 
-         (Url.string_of dh.document_id.document_url)); 
-  let l = Label.create t 
-    [Text initmsg; Justify Justify_Left; WrapLength (Pixels 600)]
-  and fprog, set_progress = Frx_fillbox.new_horizontal t 200 10 
-  and b = Button.create t 
-      [Text (I18n.sprintf "Abort"); 
-       Command (fun () -> dclose true dh; abort(); destroy t)] in
-    pack [l;fprog;b][];
-  let putmsg txt = 
-    Label.configure l [Text txt] in
-  let finished msg =
-    putmsg msg;
-    Button.configure b 
-       [Text (I18n.sprintf "Ok"); 
-         Command (fun () -> if Winfo.exists t then destroy t)] in
-  let iconified = ref true in
-  let logger = {
-    logger_destroy =
-      (fun delayed ->
-    if Winfo.exists t then
-      if !iconified then (* that was fast *)
-        destroy t
-      else if not delayed then destroy t
-      else
-              Timer.set 5000 (fun () -> if Winfo.exists t then destroy t));
-    logger_progress = 
-      (fun n -> if Winfo.exists t then set_progress n);
-    logger_msg =
-      (fun msg -> if Winfo.exists t then putmsg msg);
-    logger_end = 
-      (fun msg -> if Winfo.exists t then finished msg) } in
-
-   dh.document_logger <- logger;
-   (* The logger appears only after a given delay *)
-     Timer.set 3000
-      (fun () -> if Winfo.exists t then (Wm.deiconify t; iconified := false))
+  !add_log_backend dh initmsg abort
 @
 
 <<function Document.end_log>>=
@@ -3741,7 +3707,6 @@ val no_meter : Scheduler.progress_func
 @
 
 <<signature Progress.meter>>=
-val meter : Widget.widget -> Scheduler.progress_func
 @
 
 <<constant Progress.no_meter>>=
@@ -3750,55 +3715,6 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 
 
 <<function Progress.meter>>=
-let meter frame =
-  (* expected name of "alt" widget *)
-  let altw = Widget.atom frame "alt" in
-  if Winfo.exists altw then
-    (* the progress widget is created on the first call *)
-    let bw = lazy (int_of_string (cget frame CBorderWidth)) in
-    let width = lazy (Winfo.reqwidth frame - Lazy.force bw * 2)
-    and height = lazy (Winfo.reqheight frame - Lazy.force bw * 2) in
-    let canv = 
-      lazy (
-      let c = 
-    Canvas.create_named frame "gauge" [ 
-    Width (Pixels (Lazy.force width - 2)); (* a kind of magic... *)
-    Height (Pixels 3);
-    BorderWidth (Pixels 1);
-    Relief Sunken ]
-      in
-      place c [X (Pixels 0); Y (Pixels (Lazy.force height)); Anchor SW];
-      c)
-    in
-    let rect = lazy
-      (Canvas.create_rectangle (Lazy.force canv)
-     (Pixels 0) (Pixels 0) (Pixels 0) (Pixels 0) 
-     [ FillColor okcolor; Outline okcolor])
-    in
-    let rotate = ref 0 in
-    (fun total cur ->
-      (* always check that alt widget is still there *)
-      if Winfo.exists altw then
-    if cur = -1 then
-      Canvas.configure_rectangle (Lazy.force canv) (Lazy.force rect)
-        [ FillColor kocolor; Outline kocolor]
-    else match total with
-    | Some cont -> (* expected length is known *)
-        let x = 
-          if cont = 0 then (Lazy.force width - 2)
-          else cur * (Lazy.force width - 2) / cont + 1 in
-        Canvas.coords_set (Lazy.force canv) (Lazy.force rect)
-          [ Pixels 1; Pixels 1; Pixels x; Pixels 4 ]
-    | None -> (* expected length is unknown *)
-        if cur <> 0 then begin
-          let w = Lazy.force width / 16 in
-          Canvas.coords_set (Lazy.force canv) (Lazy.force rect)
-           [ Pixels (1 + w * !rotate); Pixels 1; 
-          Pixels (1 + w * (!rotate + 2)); Pixels 4 ];
-          rotate := (!rotate + 1) mod 15
-        end)
-  else
-    no_meter
 @
 
 
@@ -4311,7 +4227,7 @@ let rec lookup space =
     Hashtbl.find authorizations space
   with
     Not_found ->
-     if space.auth_dir = "/" or space.auth_dir = "." 
+     if space.auth_dir = "/" || space.auth_dir = "." 
      then raise Not_found 
      else
       let newdir = Filename.dirname space.auth_dir in
@@ -4325,7 +4241,7 @@ let rec lookup space =
 <<function Auth.ask_cookie>>=
 let ask_cookie forwhere =
   try
-    let u,p = Frx_req.open_passwd forwhere in
+    let u,p = !open_passwd_ref forwhere in
       Base64.encode (u^":"^p)
   with
     Failure "cancelled" -> failwith "cancelled"
@@ -4400,26 +4316,7 @@ let check wwwr challenge authspace =
 <<function Auth.edit>>=
 (* needs to be refined *)
 let edit () =
-  let top =
-    Toplevel.create Widget.default_toplevel 
-         [Class "MMMAuthorizations"] in
-    Wm.title_set top (I18n.sprintf "Authorizations");
-    let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
-      Hashtbl.iter (fun space cookie ->
-       Listbox.insert lb End
-      [Printf.sprintf "(%s) http://%s:%d/%s" 
-         space.auth_realm space.auth_host space.auth_port space.auth_dir])
-       authorizations;
-    let buts = Frame.create top [] in
-    let clearb = Button.create_named buts "clear"
-       [Text (I18n.sprintf "Clear"); 
-       Command (fun _ -> Hashtbl.clear authorizations; destroy top)]
-    and dismissb = Button.create_named buts "dismiss"
-       [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] in
-      pack [clearb] [Side Side_Left; Expand true];
-      pack [dismissb] [Side Side_Right; Expand true];
-      pack [buts][Side Side_Bottom; Fill Fill_X];
-      pack [f][Side Side_Top; Fill Fill_Both; Expand true]
+  !edit_backend ()
 @
 
 <<constant Auth.auth_file>>=
@@ -4483,7 +4380,7 @@ let init () =
     List.iter (Hashtbl.remove authorizations) !remove
   in
   let rec tim () =
-    Timer.set (!lifetime * 30000) (fun () -> check(); tim ())
+    Timer_.set (!lifetime * 30000) (fun () -> check(); tim ())
   in
   tim ()
 @
@@ -4780,23 +4677,16 @@ let r = Str.regexp ":"
 
 % ???
 <<signature File.pref_init>>=
-val pref_init : Textvariable.textVariable -> unit
 @
 <<signature File.pref_set>>=
-val pref_set  : Textvariable.textVariable -> unit
 @
 
 
 
 <<function File.pref_init>>=
-let pref_init v =
-  Textvariable.set v (String.concat ":" !binary_path)
 @
 
 <<function File.pref_set>>=
-let pref_set v = 
-  binary_path :=
-     List.map Msys.tilde_subst (Str.split r (Textvariable.get v))
 @
 
 <<function File.is_cgi>>=
@@ -5315,7 +5205,13 @@ let debug s = if !debug_mode then f s
 \subsection{Tty}
 
 <<signature type logger>>=
-type logger
+type logger = {
+  logger_destroy : bool -> unit;
+  logger_progress : int -> unit;
+  logger_msg : string -> unit;
+  logger_end : string -> unit
+}
+(* pad: exported for tk_document, but normally should be abstract *)
 @
 
 <<signature Document.tty_logger>>=

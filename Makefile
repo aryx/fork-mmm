@@ -362,8 +362,8 @@ SRC_VIEWS= \
   retrieve/progress.ml\
   retrieve/retrieve.mli\
   retrieve/retrieve.ml\
-  retrieve/img.mli\
-  retrieve/img.ml\
+  tk/img.mli\
+  tk/img.ml\
   retrieve/scheduler.mli\
   retrieve/scheduler.ml\
   \
