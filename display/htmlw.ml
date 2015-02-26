@@ -75,7 +75,7 @@ let progress_report top ctx =
          hyper_func = (fun _ h -> pointsto "")
            });
   
-  f, Progress.meter fprog
+  f, Tk_progress.meter fprog
 (*e: function Htmlw.progress_report *)
 
 (*s: function Htmlw.html_head_ui *)

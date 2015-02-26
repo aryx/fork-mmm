@@ -6,6 +6,7 @@ val gif_anim_load : bool ref
 
 module ImageData : sig
   type t = Tkanim.imageType
+
   val gamma : float ref
   val jpeg_converter : string ref
   val verbose : bool ref

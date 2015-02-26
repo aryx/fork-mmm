@@ -177,7 +177,7 @@ let add ({ embed_hlink = link;
      (* Add to our table/notify *)
      add_embed emb;
      viewer parms frame embed_ctx doc)
-       (Progress.meter frame)
+       (Tk_progress.meter frame)
    with
      Not_found -> (* no viewer for this *)
       let t = 
@@ -200,7 +200,7 @@ let add ({ embed_hlink = link;
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
      (fun url doc -> embedded_viewer frame embed_ctx doc)
-     (Progress.meter frame)
+     (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
        let t = I18n.sprintf "Embed Error: %s\n(%s)"
@@ -257,7 +257,7 @@ let update frame embed_ctx doc notchanged =
                         ["Content-Type: " ^ given_type]
        }  in
      smart_viewer (viewer parms) frame embed_ctx doc)
-       (Progress.meter frame)
+       (Tk_progress.meter frame)
       with
       Not_found -> (* no viewer for this *)
       let t = 
@@ -280,7 +280,7 @@ let update frame embed_ctx doc notchanged =
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
         (fun url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
-        (Progress.meter frame)
+        (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
         let t = I18n.sprintf "Embed Error: %s\n(%s)"

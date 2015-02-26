@@ -289,7 +289,7 @@ class loader () =
         (fun url i -> 
       display emb i;
       self#add_loaded url)
-        (Progress.meter emb.embed_frame)
+        (Tk_progress.meter emb.embed_frame)
     with
       e -> Log.f (sprintf "Can't load image (%s)" (Printexc.to_string e))
 
@@ -321,7 +321,7 @@ class auto () =
      wr
      emb.embed_context#base
      (fun url i -> display emb i; self#add_loaded url)
-     (Progress.meter emb.embed_frame)
+     (Tk_progress.meter emb.embed_frame)
      with
        e -> Log.f (sprintf "Can't compute image link (%s)"
                    (Printexc.to_string e))

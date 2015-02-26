@@ -364,7 +364,7 @@ let bullet_table = Hashtbl.create 11
 (*e: constant Attrs.bullet_table *)
 (*s: function Attrs.init *)
 let init bg =
-  let bg = Background (NamedColor bg) in
+  let _bgTODO = Background (NamedColor bg) in
   Hashtbl.add bullet_table
      "circle" (ImageBitmap(Imagebitmap.create [Data circle_data]));
   Hashtbl.add bullet_table

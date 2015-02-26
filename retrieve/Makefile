@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= retrieve.ml scheduler.ml progress.ml img.ml
+SRC= retrieve.ml scheduler.ml progress.ml 
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
@@ -15,7 +15,7 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
  $(TOP)/www $(TOP)/http \
  $(TOP)/protocols
 
-SYSINCLUDES=$(TKCOMPFLAGS)
+SYSINCLUDES=
 
 ##############################################################################
 # Generic variables
@@ -40,7 +40,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
