@@ -2792,7 +2792,7 @@ open Printf
 <<./html/lexhtml.mli>>=
 <<signature Lexhtml.strict>>
 
-type t
+<<signature type Lexhtml.t>>
 <<signature Lexhtml.new_data>>
 
 <<type Lexhtml.warnings>>

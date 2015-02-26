@@ -6,7 +6,9 @@ val strict : bool ref
      *)
 (*e: signature Lexhtml.strict *)
 
+(*s: signature type Lexhtml.t *)
 type t
+(*e: signature type Lexhtml.t *)
 (*s: signature Lexhtml.new_data *)
 val new_data : unit -> t
     (* instance data for a lexer; must be allocated for each instance, in

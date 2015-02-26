@@ -3,11 +3,14 @@
 {
 open Html
 
+(*s: type Lexhtml.tagtoken *)
 type tagtoken =
    Attribute of string * string
  | Closetag of int
  | Bogus of string * int   (* Bogus(s,n) == bug at pos [n] for reason [s] *)
+(*e: type Lexhtml.tagtoken *)
 
+(*s: type Lexhtml.t *)
 (* Smart hack to make lexers reentrant.
  * Make each action a function taking "private" data as argument.
  * Invoke each action with additionnal argument.
@@ -15,172 +18,144 @@ type tagtoken =
  * This works only because calls to actions in csllex generated code
  * are terminal.
  *)
-
 type t = {
   buffer : Ebuffer.t;
   mutable start : int;
   mutable pos_fix : int
 }
+(*e: type Lexhtml.t *)
 
+(*s: function Lexhtml.new_data *)
 let new_data () = {
   buffer = Ebuffer.create 512;
   start = 0;
   pos_fix = 0 
 }
+(*e: function Lexhtml.new_data *)
 
+(*s: global Lexhtml.strict *)
 let strict = ref false
+(*e: global Lexhtml.strict *)
 
+(*s: type Lexhtml.warnings *)
 type warnings = (string * int) list
+(*e: type Lexhtml.warnings *)
+
+(*s: helper functions Lexhtml.xxx *)
+let noerr = []
+(*x: helper functions Lexhtml.xxx *)
+let mk_start lexbuf lexdata =
+  Lexing.lexeme_start lexbuf - lexdata.pos_fix
+let mk_end lexbuf lexdata =
+  Lexing.lexeme_end lexbuf - lexdata.pos_fix
+let mk_loc lexbuf lexdata =
+  Loc (mk_start lexbuf lexdata, mk_end lexbuf lexdata)
+(*e: helper functions Lexhtml.xxx *)
 }
 
+(*s: function Html.html *)
 rule html = parse
- | '\n'? "</"
+(*s: [[Html.html()]] rule cases *)
+| "<!>" 
     { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     closetag lexbuf lexdata
-      )}
- | '<' 
-    { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     opentag lexbuf lexdata
-      )}
- | "<!>" 
-    { (fun lexdata ->
-           [],
-       Comment "",
-           Loc (Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix)
-       )}
+       noerr, Comment "", mk_loc lexbuf lexdata)}
+(*x: [[Html.html()]] rule cases *)
 (* If you think it is possible to deal with malformed comments adaptatively,
    that is switching to lenient mode only after we detected an error
    in comment syntax, then ponder the following example: <!-- -- --> *)
  | "<!--"
     { (fun lexdata ->
-      lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-      Ebuffer.reset lexdata.buffer;
-      if !strict then comment lexbuf lexdata
-      else lenient_end_comment lexbuf lexdata)
+       lexdata.start <- mk_start lexbuf lexdata;
+       Ebuffer.reset lexdata.buffer;
+       if !strict 
+       then comment lexbuf lexdata
+       else lenient_end_comment lexbuf lexdata
+       )
     } 
+(*x: [[Html.html()]] rule cases *)
+| '<' 
+    { (fun lexdata ->
+       lexdata.start <- mk_start lexbuf lexdata;
+       opentag lexbuf lexdata
+     )}
+(*x: [[Html.html()]] rule cases *)
+| '\n'? "</"
+    { (fun lexdata ->
+       lexdata.start <- mk_start lexbuf lexdata;
+       closetag lexbuf lexdata
+      )}
+(*x: [[Html.html()]] rule cases *)
  | "<!" ['D' 'd']['O' 'o']['C' 'c']['T' 't']['Y' 'y']['P' 'p']['E' 'e'] 
          [^ '>']* '>'
     { (fun lexdata ->
-       [],
-       Doctype (Lexing.lexeme lexbuf),
-       Loc (Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix) )}
-
- | eof 
-    { (fun lexdata -> 
-       [],
-       EOF,
-       Loc (Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix) )}
+       noerr, Doctype (Lexing.lexeme lexbuf), mk_loc lexbuf lexdata )}
+(*x: [[Html.html()]] rule cases *)
  | '&' 
     { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     Ebuffer.reset lexdata.buffer;
-     Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
-     text lexbuf lexdata )}
+       lexdata.start <- mk_start lexbuf lexdata;
+       Ebuffer.reset lexdata.buffer;
+       Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
+       text lexbuf lexdata )}
+(*e: [[Html.html()]] rule cases *)
  | "\r\n" 
     { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     Ebuffer.reset lexdata.buffer;
-     Ebuffer.output_char lexdata.buffer '\n'; 
-     text lexbuf lexdata )}
+       lexdata.start <- mk_start lexbuf lexdata;
+       Ebuffer.reset lexdata.buffer;
+       Ebuffer.output_char lexdata.buffer '\n'; 
+       text lexbuf lexdata )}
  | "\r" 
     { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     Ebuffer.reset lexdata.buffer;
-     Ebuffer.output_char lexdata.buffer '\n'; 
-     text lexbuf lexdata )}
- | "\027\040\066" (* ASCII *)
-     { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     lexdata.pos_fix <- lexdata.pos_fix + 3;
-     Ebuffer.reset lexdata.buffer;
-     text lexbuf lexdata )}
-(*
- | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
-     {(fun lexdata ->
-       let lexeme = Lexing.lexeme lexbuf in
-       let len = String.length lexeme in
-       lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-       lexdata.pos_fix <- lexdata.pos_fix + len;
+       lexdata.start <- mk_start lexbuf lexdata;
        Ebuffer.reset lexdata.buffer;
-       Ebuffer.output_string lexdata.buffer lexeme;
-       let c = Lexing.lexeme_char lexbuf (len - 1) in
-       if !Lang.japan then kanji lexbuf lexdata c;
+       Ebuffer.output_char lexdata.buffer '\n'; 
        text lexbuf lexdata )}
-*)
- | _ { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     Ebuffer.reset lexdata.buffer;
-     Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0); 
-     text lexbuf lexdata )}
+| eof 
+    { (fun lexdata -> 
+        (noerr, EOF, mk_loc lexbuf lexdata)) }
+| _ { (fun lexdata ->
+       lexdata.start <- mk_start lexbuf lexdata;
+       Ebuffer.reset lexdata.buffer;
+       Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0); 
+       text lexbuf lexdata )}
+(*e: function Html.html *)
 
 
-
+(*s: function Html.lenient_end_comment *)
 (* call this ONLY if we are not in strict mode *)
 and lenient_end_comment = parse
-    "-->"
+| "-->"
     {(fun lexdata -> 
-      [],
-      Comment (Ebuffer.get lexdata.buffer),
-      Loc(lexdata.start, Lexing.lexeme_end lexbuf - lexdata.pos_fix))}
-  | "\027\040\066" (* ASCII *)
-      { (fun lexdata ->
-    lexdata.pos_fix <- lexdata.pos_fix + 3;
-    Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
-    lenient_end_comment lexbuf lexdata )}
-(*
-  | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
-      {(fun lexdata ->
-    let lexeme = Lexing.lexeme lexbuf in
-    Ebuffer.output_string lexdata.buffer lexeme;
-    let len = String.length lexeme in
-    lexdata.pos_fix <- lexdata.pos_fix + len; 
-    let c = Lexing.lexeme_char lexbuf (len - 1) in
-    if !Lang.japan then kanji lexbuf lexdata c; 
-    lenient_end_comment lexbuf lexdata )}
-*)
-  | _
-     {(fun lexdata ->
-       Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0);
-       lenient_end_comment lexbuf lexdata )}
-  | ""
-    { (fun lexdata ->
-   raise (Html_Lexing ("unterminated comment", Lexing.lexeme_start lexbuf - lexdata.pos_fix))
+      noerr, Comment (Ebuffer.get lexdata.buffer),
+      Loc(lexdata.start, mk_end lexbuf lexdata))}
+| _
+    {(fun lexdata ->
+      Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0);
+      lenient_end_comment lexbuf lexdata )}
+| ""
+    {(fun lexdata ->
+       raise (Html_Lexing ("unterminated comment", mk_start lexbuf lexdata))
     )}
+(*e: function Html.lenient_end_comment *)
 
+(*s: function Html.comment *)
 (* we're looking for the end of a comment : skip all characters until next   *)
 (*  -- included, and then look for next -- or > *)
 and comment = parse
-    (* normal case *)
-    "--"
-    { (fun lexdata -> next_comment lexbuf lexdata)}
-  | "\027\040\066" (* ASCII *)
-      { (fun lexdata ->
-    Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
-    lexdata.pos_fix <- lexdata.pos_fix + 3;
-        (* do nothing except position fix *)
-    comment lexbuf lexdata )}
-(*
-  | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
-      {(fun lexdata ->
-    let lexeme = Lexing.lexeme lexbuf in
-    Ebuffer.output_string lexdata.buffer lexeme;
-    let len = String.length lexeme in
-    lexdata.pos_fix <- lexdata.pos_fix + len; 
-    let c = Lexing.lexeme_char lexbuf (len - 1) in
-    if !Lang.japan then kanji lexbuf lexdata c; 
-    comment lexbuf lexdata )}
-*)
-  | _  
+  (* normal case *)
+| "--"
+    { (fun lexdata -> 
+       next_comment lexbuf lexdata)}
+| _  
     { (fun lexdata ->
        Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0);
        comment lexbuf lexdata )}
-  | ""
+| ""
     { (fun lexdata ->
-   raise (Html_Lexing ("unterminated comment", Lexing.lexeme_start lexbuf - lexdata.pos_fix))
+       raise (Html_Lexing ("unterminated comment", mk_start lexbuf lexdata))
     )}
+(*e: function Html.comment *)
 
+(*s: function Html.next_comment *)
 (* the normal next comment search *)      
 and next_comment = parse
     [' ' '\t' '\r' '\n']* "--"
@@ -189,85 +164,68 @@ and next_comment = parse
     { (fun lexdata ->
       [],
       Comment (Ebuffer.get lexdata.buffer),
-      Loc(lexdata.start, Lexing.lexeme_end lexbuf - lexdata.pos_fix))}
+      Loc(lexdata.start, mk_end lexbuf lexdata))}
   | "" 
     { (fun lexdata ->
-      raise (Html_Lexing ("invalid comment", Lexing.lexeme_start lexbuf - lexdata.pos_fix)))
+      raise (Html_Lexing ("invalid comment", mk_start lexbuf lexdata)))
      }
+(*e: function Html.next_comment *)
 
+
+(*s: function Html.text *)
 and text = parse
- | "\027\040\066" (* ASCII *)
-     { (fun lexdata ->
-     lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-     lexdata.pos_fix <- lexdata.pos_fix + 3;
-     Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
-     text lexbuf lexdata )}
-(*
- | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
-     {(fun lexdata ->
-       let lexeme = Lexing.lexeme lexbuf in
-       let len = String.length lexeme in
-       lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
-       lexdata.pos_fix <- lexdata.pos_fix + len;
-       Ebuffer.output_string lexdata.buffer lexeme;
-       let c = Lexing.lexeme_char lexbuf (len - 1) in
-       if !Lang.japan then kanji lexbuf lexdata c;
-       text lexbuf lexdata )}
-*)
- | [^ '<' '&' '\r' '\027']+
+| [^ '<' '&' '\r' '\027']+
     { (fun lexdata ->
       let _sTODO = Lexing.lexeme lexbuf in
       Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);  
       text lexbuf lexdata )}
- | [^ '<' '&' '\r' '\027']* '&'
+| [^ '<' '&' '\r' '\027']* '&'
     { (fun lexdata ->
        let lexeme = Lexing.lexeme lexbuf in
-         Ebuffer.output lexdata.buffer lexeme 0 (String.length lexeme -1) ;
-     Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata); 
-         text lexbuf lexdata )}
- | [^ '<' '&' '\r' '\027']* '\r' '\n'
+       Ebuffer.output lexdata.buffer lexeme 0 (String.length lexeme -1) ;
+       Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata); 
+       text lexbuf lexdata )}
+| [^ '<' '&' '\r' '\027']* '\r' '\n'
     { (fun lexdata ->
-        let lexeme = Lexing.lexeme lexbuf in
-         Ebuffer.output lexdata.buffer lexeme 0 (String.length lexeme - 2);
-         Ebuffer.output_char lexdata.buffer '\n';
-         text lexbuf lexdata )}
- | [^ '<' '&' '\r' '\027']* '\r'
+       let lexeme = Lexing.lexeme lexbuf in
+       Ebuffer.output lexdata.buffer lexeme 0 (String.length lexeme - 2);
+       Ebuffer.output_char lexdata.buffer '\n';
+       text lexbuf lexdata )}
+| [^ '<' '&' '\r' '\027']* '\r'
     { (fun lexdata ->
-        let lexeme = Lexing.lexeme lexbuf in
-         Ebuffer.output lexdata.buffer lexeme 0 (String.length lexeme - 1);
-         Ebuffer.output_char lexdata.buffer '\n';
-         text lexbuf lexdata )}
- | ""
+       let lexeme = Lexing.lexeme lexbuf in
+       Ebuffer.output lexdata.buffer lexeme 0 (String.length lexeme - 1);
+       Ebuffer.output_char lexdata.buffer '\n';
+       text lexbuf lexdata )}
+| ""
     { (fun lexdata ->    
-      [],
-      PCData (Ebuffer.get lexdata.buffer), 
-      Loc(lexdata.start, Lexing.lexeme_end lexbuf - lexdata.pos_fix)
+       noerr, 
+       PCData (Ebuffer.get lexdata.buffer), 
+       Loc(lexdata.start, mk_end lexbuf lexdata)
       )}
  (* no default case needed *)
+(*e: function Html.text *)
 
+(*s: function Html.ampersand *)
 and ampersand = parse
    '#' ['0'-'9']+ ';' 
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 2) in
-    try 
-      (*if !Lang.japan then
-        "\027\040\066" ^ String.make 1 (Char.chr (int_of_string code))
-      else
-      *)
-      String.make 1 (Char.chr (int_of_string code))
-    with (* #350 ... *) Invalid_argument _ -> " "
+        try 
+          String.make 1 (Char.chr (int_of_string code))
+        with (* #350 ... *) Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let entity = String.sub lexeme 0 (String.length lexeme - 1) in
-      begin try 
-        get_entity entity
-      with (* 4.2.1 undeclared markup error handling *)
-        Not_found ->
-          ("&" ^ lexeme)
-          end
+        begin 
+         try get_entity entity
+         with (* 4.2.1 undeclared markup error handling *)
+            Not_found ->
+              ("&" ^ lexeme)
+               end
       )}
   (* terminating ; is not required if next character could not be 
      part of the lexeme *)
@@ -276,10 +234,6 @@ and ampersand = parse
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 1) in
     try 
-      (*if !Lang.japan then
-        "\027\040\066" ^ String.make 1 (Char.chr (int_of_string code))
-      else
-      *)
       String.make 1 (Char.chr (int_of_string code))
     with Invalid_argument _ -> " "
       )}
@@ -293,38 +247,46 @@ and ampersand = parse
   (* Tolerance ... *)
   | ""
     { (fun lexdata -> "&" )}
+(*e: function Html.ampersand *)
 
 
+(*s: function Html.opentag *)
 (* TODO 2.0: 
  *   syntax for SHORTTAG YES (need to know the DTD for this !).
  *
  *)
 and opentag = parse
-   ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
+| ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
-         let tagname = String.lowercase (Lexing.lexeme lexbuf)
-         and attribs = ref []
-     and bugs = ref [] in
-     let rec read_attribs () =
-       match attrib lexbuf lexdata with
-         Closetag n -> n
-       | Attribute(p1, p2) ->
-               attribs := (p1, p2) :: !attribs; read_attribs()
-       | Bogus (reason,pos) ->
-           bugs := (reason,pos) :: !bugs; read_attribs() in
-     let e = read_attribs() in
-      !bugs,
-          OpenTag {tag_name = tagname; attributes = List.rev !attribs },
-      Loc(lexdata.start, e)
-        )}
+       let tagname = String.lowercase (Lexing.lexeme lexbuf) in
+       let attribs = ref [] in
+       let bugs = ref [] in
+       let rec read_attribs () =
+         match attrib lexbuf lexdata with
+         | Closetag n -> n
+         | Attribute(p1, p2) ->
+             attribs := (p1, p2) :: !attribs; 
+             read_attribs()
+         | Bogus (reason,pos) ->
+             bugs := (reason,pos) :: !bugs; 
+             read_attribs() 
+       in
+       let e = read_attribs() in
+       (!bugs, 
+       OpenTag {tag_name = tagname; attributes = List.rev !attribs },
+       Loc(lexdata.start, e)
+       )
+      )}
   
 (* Tolerance *)
-  | ""  
+| ""  
     { (fun lexdata ->
-          Ebuffer.reset lexdata.buffer;
-          Ebuffer.output_char lexdata.buffer '<';
-          text lexbuf lexdata)}
+       Ebuffer.reset lexdata.buffer;
+       Ebuffer.output_char lexdata.buffer '<';
+       text lexbuf lexdata )}
+(*e: function Html.opentag *)
 
+(*s: function Html.closetag *)
 and closetag = parse
   | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
@@ -338,192 +300,153 @@ and closetag = parse
           Ebuffer.reset lexdata.buffer;
           Ebuffer.output_string lexdata.buffer "</";
           text lexbuf lexdata)}
+(*e: function Html.closetag *)
 
+(*s: function Html.attrib *)
 and attrib = parse
-    [' ' '\t' '\n' '\r']+ 
+| [' ' '\t' '\n' '\r']+ 
     { (fun lexdata -> attrib lexbuf lexdata )}
-  | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
+| ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
     { (fun lexdata ->
         let name = String.lowercase(Lexing.lexeme lexbuf) in
-    try
+        try
           match tagattrib lexbuf lexdata with
-            Some s -> Attribute (name, s)
+          | Some s -> Attribute (name, s)
           | None -> Attribute (name, name)
-    with
-      Html_Lexing(reason,pos) -> 
-        if !strict then raise (Html_Lexing(reason,pos))
-        else Bogus(reason,pos)
+        with Html_Lexing(reason,pos) -> 
+          if !strict 
+          then raise (Html_Lexing(reason,pos));
+          Bogus(reason,pos)
       )}
-   (* added '_' so we can parse Netscape bookmark files, 
+  (* added '_' so we can parse Netscape bookmark files, 
       but it should NOT be there *)
-  | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-' '_']+ 
+| ['a'-'z' 'A'-'Z' '0'-'9' '.' '-' '_']+ 
     { (fun lexdata ->
        let name = String.lowercase(Lexing.lexeme lexbuf) in
-         if !strict then
-          raise (Html_Lexing ("illegal attribute name: " ^ name,
-                                Lexing.lexeme_start lexbuf - lexdata.pos_fix))
-     else
-       try
-         match tagattrib lexbuf lexdata with
-           Some s -> Attribute (name, s)
-         | None -> Attribute (name, name)
-       with
-         Html_Lexing(reason,pos) -> Bogus(reason,pos)
+       if !strict 
+       then raise (Html_Lexing ("illegal attribute name: " ^ name,
+                                 mk_start lexbuf lexdata))
+       else
+         try
+           match tagattrib lexbuf lexdata with
+           | Some s -> Attribute (name, s)
+           | None -> Attribute (name, name)
+         with Html_Lexing(reason,pos) -> Bogus(reason,pos)
       )}
-  | '>' '\n'?
-    { (fun lexdata -> Closetag (Lexing.lexeme_end lexbuf - lexdata.pos_fix) )}
-  | eof 
+| '>' '\n'?
+    { (fun lexdata -> Closetag (mk_end lexbuf lexdata) )}
+| eof 
     { (fun lexdata -> raise (Html_Lexing ("unclosed tag",
-                               Lexing.lexeme_start lexbuf - lexdata.pos_fix)))}
-  (* tolerance: we are expecting an attribute name, but can't get any *)
-  (* skip the char and try again. (The char cannot be > !) *)
-  | _
-    { (fun lexdata ->
-        if !strict then
-      raise (Html_Lexing ("invalid attribute name",
-                   Lexing.lexeme_start lexbuf - lexdata.pos_fix))
-    else Bogus ("invalid attribute name", Lexing.lexeme_start lexbuf - lexdata.pos_fix)
-    )}
+                               mk_start lexbuf lexdata)))}
 
+(* tolerance: we are expecting an attribute name, but can't get any *)
+(* skip the char and try again. (The char cannot be > !) *)
+| _
+    { (fun lexdata ->
+        if !strict 
+        then raise (Html_Lexing ("invalid attribute name",
+                                  mk_start lexbuf lexdata));
+        Bogus ("invalid attribute name", mk_start lexbuf lexdata)
+    )}
+(*e: function Html.attrib *)
+
+(*s: function Html.tagattrib *)
 and tagattrib = parse
-    [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
+| [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
     { (fun lexdata -> Some (attribvalue lexbuf lexdata) )}
-  | "" 
+| "" 
     { (fun lexdata -> None )}
-  
+(*e: function Html.tagattrib *)
+
+(*s: function Html.attribvalue *)
 (* This should be dependent on the attribute name *)
 (* people often forget to quote, so try to do something about it *)
 (* but if a quote is not closed, you are dead *)
 and attribvalue = parse
-    ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
+| ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
     { (fun lexdata -> Lexing.lexeme lexbuf )}
-  | '"' 
+| '"' 
     { (fun lexdata ->
-       Ebuffer.reset lexdata.buffer; inquote lexbuf lexdata )}
-  | '\''
+       Ebuffer.reset lexdata.buffer; 
+       inquote lexbuf lexdata )}
+| '\''
     { (fun lexdata ->
-       Ebuffer.reset lexdata.buffer; insingle lexbuf lexdata )}
-  | ("\027\036" '\040'? ['\064' - '\068'] (* remove control codes *)
-        ['\033' - '\126']+ | (* suppose we have no empty KANJI seq *)
-     [^ '"' '\'' '>' '\027']) 
-    ("\027\036" '\040'? ['\064' - '\068'] ['\033' - '\126']+ |
-     "\027\040\066" |
-     [^ ' ' '\t' '\n' '\r' '>' '\027']*)
-    { (fun lexdata ->
-       let lexeme = Lexing.lexeme lexbuf in
-       lexdata.pos_fix <- String.length lexeme - Lexkanji.length lexeme;
-       lexeme )}
-  | "" 
+       Ebuffer.reset lexdata.buffer; 
+       insingle lexbuf lexdata )}
+| "" 
     { (fun lexdata ->
         raise (Html_Lexing ("illegal attribute val",
                               Lexing.lexeme_start lexbuf)) )}
+(*e: function Html.attribvalue *)
 
+
+(*s: function Html.inquote *)
 and inquote = parse
-    [^ '"' '&' '\027']+
+| [^ '"' '&' '\027']+
     { (fun lexdata ->
-         Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
-         inquote lexbuf lexdata )}
-  | "\027\040\066" (* ASCII *)
-      { (fun lexdata ->
-    lexdata.pos_fix <- lexdata.pos_fix + 3;
-    Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
-    inquote lexbuf lexdata )}
-(*
-  | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
-      {(fun lexdata ->
-    let lexeme = Lexing.lexeme lexbuf in
-    Ebuffer.output_string lexdata.buffer lexeme;
-    let len = String.length lexeme in
-    lexdata.pos_fix <- lexdata.pos_fix + len; 
-    let c = Lexing.lexeme_char lexbuf (len - 1) in
-    if !Lang.japan then kanji lexbuf lexdata c;
-    inquote lexbuf lexdata )}
-*)
-  | '"'
+       Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
+       inquote lexbuf lexdata )}
+| '"'
     { (fun lexdata ->
-         beautify true (Ebuffer.get lexdata.buffer) )}
-  | '&'
+       beautify true (Ebuffer.get lexdata.buffer) )}
+| '&'
     { (fun lexdata ->
-        Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
-        inquote lexbuf lexdata )}
-  | ""
+       Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
+       inquote lexbuf lexdata )}
+| ""
     { (fun lexdata ->
-     raise (Html_Lexing ("unclosed \"", Lexing.lexeme_start lexbuf - lexdata.pos_fix))
+       raise (Html_Lexing ("unclosed \"", mk_start lexbuf lexdata))
      )}
-  
-and insingle = parse
-    [^ '\'' '&']+
-    { (fun lexdata ->
-        Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
-        insingle lexbuf lexdata )}
-  | '\''
-    { (fun lexdata -> beautify true (Ebuffer.get lexdata.buffer) )}
-  | '&'
-    { (fun lexdata ->
-        Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
-        insingle lexbuf lexdata )}
-  | ""
-    { (fun lexdata ->
-    raise (Html_Lexing ("unclosed '", Lexing.lexeme_start lexbuf - lexdata.pos_fix))
-    )}
+(*e: function Html.inquote *)
 
+(*s: function Html.insingle *)
+and insingle = parse
+| [^ '\'' '&']+
+    { (fun lexdata ->
+       Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
+       insingle lexbuf lexdata )}
+| '\''
+    { (fun lexdata -> 
+       beautify true (Ebuffer.get lexdata.buffer) )}
+| '&'
+    { (fun lexdata ->
+       Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
+       insingle lexbuf lexdata )}
+| ""
+    { (fun lexdata ->
+       raise (Html_Lexing ("unclosed '", mk_start lexbuf lexdata))
+    )}
+(*e: function Html.insingle *)
+
+(*s: function Html.skip_to_close *)
 and skip_to_close = parse
-   [^'>']* '>' { (fun lexdata -> Lexing.lexeme_end lexbuf - lexdata.pos_fix)}
+   [^'>']* '>' { (fun lexdata -> mk_end lexbuf lexdata)}
   | "" { (fun lexdata -> 
       raise (Html_Lexing ("unterminated tag", 
-              Lexing.lexeme_start lexbuf - lexdata.pos_fix)) )}
+              mk_start lexbuf lexdata)) )}
+(*e: function Html.skip_to_close *)
 
+(*s: function Html.cdata *)
 and cdata = parse
-   [^ '<']* (['<']+ [^ '/']) ? { 
-      (fun lexdata ->
-        [],
-        CData(Lexing.lexeme lexbuf),
-        Loc(Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix))}
+| [^ '<']* (['<']+ [^ '/']) ? 
+    { (fun lexdata ->
+        noerr, CData(Lexing.lexeme lexbuf), mk_loc lexbuf lexdata)}
       
-  | "</" ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
+| "</" ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-    let _eTODO = skip_to_close lexbuf lexdata in
-     [],
-     CloseTag (String.lowercase 
+        let _eTODO = skip_to_close lexbuf lexdata in
+        noerr,
+        CloseTag (String.lowercase 
                       (String.sub lexeme 2 (String.length lexeme - 2))),
-        Loc(Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix))}
-  | "</" {
-      (fun lexdata ->
-        [],
-        CData(Lexing.lexeme lexbuf),
-        Loc(Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix)) }
-
-  | eof
+        mk_loc lexbuf lexdata)}
+| "</" 
     { (fun lexdata ->
-        [],
-        EOF,
-        Loc(Lexing.lexeme_start lexbuf - lexdata.pos_fix, Lexing.lexeme_end lexbuf - lexdata.pos_fix)) }
-    
-and kanji = parse
-  | ['\033' - '\126']+ 
-    { (fun lexdata charset ->
-      match charset with
-    '\064' | '\066' | '\068' (* JISX0208/JISX0212 *) ->
-      let lexeme = Lexing.lexeme lexbuf in
-      let rawlength = String.length lexeme in
-      if rawlength mod 2 = 1 then 
-        Log.f ("Warning: Lexhtml: Odd bytes Kanji string length");
-      let klength = rawlength / 2 in
-      lexdata.pos_fix <- lexdata.pos_fix + klength;
-      Ebuffer.output_string lexdata.buffer lexeme;
-      kanji lexbuf lexdata charset
-      | _ -> raise (Failure (Printf.sprintf "Lexhtml: Unknown charset %d" 
-                   (Char.code charset))) 
-    )}
-  | ['\000' - '\026' '\028' - '\032' '\127'] (* Control codes *) 
-    { (fun lexdata charset ->
-      Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0);
-      kanji lexbuf lexdata charset )}
-  | ['\128' - '\255'] (* Right side *)
-    { (fun lexdata charset ->
-        raise (Failure "Lexhtml: Unexpected right side character") )}
-  | "" (* Must be escape *)
-    { (fun lexdata charset -> () )}
+        noerr, CData(Lexing.lexeme lexbuf), mk_loc lexbuf lexdata) }
+
+| eof
+    { (fun lexdata ->
+        noerr, EOF, mk_loc lexbuf lexdata) }
+(*e: function Html.cdata *)
 
 (*e: html/lexhtml.mll *)

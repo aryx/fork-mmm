@@ -22,12 +22,10 @@ type tag = {
 
 (*s: type Html.token *)
 type token =
-   PCData of string
- | CData of string
-
  | OpenTag of tag
  | CloseTag of string
-
+ | PCData of string
+ | CData of string
  | Comment of string
  | Doctype of string
  | EOF
