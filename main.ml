@@ -42,9 +42,15 @@ let localize file =
 (* Main entry point *)
 (*****************************************************************************)
 
+(*s: constant Main.usage_str *)
+let usage_str =
+  "Usage: meuh <opts> <initial url>"
+(*e: constant Main.usage_str *)
+
 (*s: function Main.main *)
 let main () =
 
+  (*s: [[Main.main()]] tk backends setup *)
   Error.default := new Tk_error.t Widget.default_toplevel;
   Condition.backend := Tk_condition.backend ();
   Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
@@ -59,71 +65,92 @@ let main () =
   Auth.open_passwd_ref := Frx_req.open_passwd;
   Auth.edit_backend := Tk_auth.edit;
   Mailto.internal_backend := Tk_mailto.internal;
+  (*e: [[Main.main()]] tk backends setup *)
 
  (* As always, we must parse argument first, using references... *)
-  let sufxfile = ref (Mmm.user_file "mime.types")
-  and display = ref (try Sys.getenv("DISPLAY") with Not_found -> "")
-  and preffile = ref (Mmm.user_file "MMM.ad")
-  and init_urls = ref [] 
-  and accept_external = ref false
-  and palette = ref None
-  and modules = ref true
-  and clicktofocus = ref false
-  in
+  (*s: [[Main.main()]] references *)
+  let init_urls = ref [] in
+  (*x: [[Main.main()]] references *)
+  let preffile = ref (Mmm.user_file "MMM.ad") in
+  (*x: [[Main.main()]] references *)
+  let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
+  (*x: [[Main.main()]] references *)
+  let clicktofocus = ref false in
+  (*x: [[Main.main()]] references *)
+  let palette = ref None in
+  (*x: [[Main.main()]] references *)
+  let sufxfile = ref (Mmm.user_file "mime.types") in
+  (*x: [[Main.main()]] references *)
+  let accept_external = ref false in
+  (*x: [[Main.main()]] references *)
+  let modules = ref true in
+  (*e: [[Main.main()]] references *)
+
   Arg.parse [
-  "-proxy", Arg.String (fun s -> Http.proxy := s), 
-  "<hostname>\tProxy host";
-  "-port", Arg.Int (fun i -> Http.proxy_port := i),
-  "<port>\t\tProxy port";
-  "-d", Arg.String (fun s -> display := s),
-  "<foo:0>\t\tDisplay";
-  "-display", Arg.String (fun s -> display := s),
-  "<foo:0>\tDisplay";
-  "-suffixes", Arg.String (fun s -> sufxfile := s),
-  "<file>\tSuffix file";
-  "-external", Arg.Unit (fun () -> accept_external := true),
-  "\t\tAccept remote command (mmm_remote <url>)";
-  "-lang", Arg.String (fun s -> I18n.language := s),
-  "<lang>\t\tI18n language";
-  "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-  "<file>\tI18n message file";
-  "-prefs", Arg.String (fun s -> preffile := s),
-  "<file>\t\tPreference File";
-  "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-  "<url>\tHelp URL";
-  "-palette", Arg.String (fun s -> palette := Some s),
-  "<color>\tTk Palette";
-  "-nomodule", Arg.Unit (fun () -> modules := false),
-  "\t\tDon't load initial modules";
-  "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-  "\tClick to Focus mode (default is Focus Follows Mouse)";
-  "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-  "<wxh+x+y>\tInitial geometry for the first navigator"
+   (*s: [[Main.main()]] command line options *)
+   "-prefs", Arg.String (fun s -> preffile := s),
+   "<file>\t\tPreference File";
+   (*x: [[Main.main()]] command line options *)
+   "-d", Arg.String (fun s -> display := s),
+   "<foo:0>\t\tDisplay";
+   (*x: [[Main.main()]] command line options *)
+   "-display", Arg.String (fun s -> display := s),
+   "<foo:0>\tDisplay";
+   (*x: [[Main.main()]] command line options *)
+   "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
+   "<wxh+x+y>\tInitial geometry for the first navigator";
+   (*x: [[Main.main()]] command line options *)
+   "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
+   "\tClick to Focus mode (default is Focus Follows Mouse)";
+   (*x: [[Main.main()]] command line options *)
+   "-palette", Arg.String (fun s -> palette := Some s),
+   "<color>\tTk Palette";
+   (*x: [[Main.main()]] command line options *)
+   "-suffixes", Arg.String (fun s -> sufxfile := s),
+   "<file>\tSuffix file";
+   (*x: [[Main.main()]] command line options *)
+   "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
+   "<url>\tHelp URL";
+   (*x: [[Main.main()]] command line options *)
+   "-external", Arg.Unit (fun () -> accept_external := true),
+   "\t\tAccept remote command (mmm_remote <url>)";
+   (*x: [[Main.main()]] command line options *)
+   "-proxy", Arg.String (fun s -> Http.proxy := s), 
+   "<hostname>\tProxy host";
+   (*x: [[Main.main()]] command line options *)
+   "-port", Arg.Int (fun i -> Http.proxy_port := i),
+   "<port>\t\tProxy port";
+   (*x: [[Main.main()]] command line options *)
+   "-lang", Arg.String (fun s -> I18n.language := s),
+   "<lang>\t\tI18n language";
+   (*x: [[Main.main()]] command line options *)
+   "-msgfile", Arg.String (fun s -> I18n.message_file := s),
+   "<file>\tI18n message file";
+   (*x: [[Main.main()]] command line options *)
+   "-nomodule", Arg.Unit (fun () -> modules := false),
+   "\t\tDon't load initial modules";
+   (*e: [[Main.main()]] command line options *)
   ]
     (fun s -> init_urls := s :: !init_urls)
-    "Usage: meuh <opts> <initial url>";
+    usage_str
+   ;
 
+  (*s: [[Main.main()]] signal handling *)
   Sys.catch_break true;
   (* Avoid SIGPIPE completely, in favor of write() errors *)
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  (*e: [[Main.main()]] signal handling *)
 
+  (*s: [[Main.main()]] initialisation *)
+  (*s: [[Main.main()]] tk initialisation *)
   let top = Tk.openTkDisplayClass !display "mmm" in
 
-(*
-  (* Just after the init. of Tk, we have to detect the Tk is under
-   * Latin or Japanese mode at first. 
-   *)
-  Lang.japan := Jtk.is_japanese_mode () && Lang.is_japanese ();
-  (* Run Tcl in JIS (ISO2022-jp) Mode *)
-  if !Lang.japan 
-  then Jtk.Kanji.internal_code_set Jtk.JIS;
-*)
-
   Wm.withdraw top;
-  
+
   if not !clicktofocus 
   then Focus.follows_mouse();
-
+  (*e: [[Main.main()]] tk initialisation *)
+  (*s: [[Main.main()]] resource initialisation *)
   (* Default values for navigator window *)
   Resource.add "*MMM.Width" "640" Tk.WidgetDefault;
   Resource.add "*MMM.Height" "480" Tk.WidgetDefault;
@@ -131,7 +158,7 @@ let main () =
   (* Resources *)
   let site_resfile =
     localize (Filename.concat (Filename.dirname Sys.argv.(0)) "MMM.ad") in
-  (* Site specific resource file usually in $INSTALLDIR=/usr/local/lib/mmm *)
+  (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
   if Sys.file_exists site_resfile 
   then Tkresource.readfile site_resfile Tk.StartupFile;
 
@@ -139,7 +166,8 @@ let main () =
   | None -> ()
   | Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
   end;
-
+  (*e: [[Main.main()]] resource initialisation *)
+  (*s: [[Main.main()]] tk libs initialisation *)
   (* Initialisations in frx library : kbd navigation, search 
    * No prerequisite except Tk *)
   Frx_text.init ();
@@ -147,24 +175,28 @@ let main () =
   Balloon.init ();
   (* Initialisations in jpf's GIF ANIMATION library *)
   Tkaniminit.f ();
-
+  (*e: [[Main.main()]] tk libs initialisation *)
+  (*s: [[Main.main()]] local initialisation *)
   (* Local initialisations *)
   Low.init();                         (* start regular tasks *)
   Cache.init();                       (* builtin document *)
   Auth.init();                        (* start expiration timer *)
   Debug.init();                       (* debugging RPC *)
-  
+
   (* Suffix mapping to Content-Type and Content-Encoding *)
   if Sys.file_exists !sufxfile 
   then Http_headers.read_suffix_file !sufxfile;
-  
+  (*e: [[Main.main()]] local initialisation *)
+  (*s: [[Main.main()]] misc initialisation *)
   (* Various stuff for the HTML viewer, needing Tk *)
   Ctext.init();
   Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
-
+  (*e: [[Main.main()]] misc initialisation *)
+  (*s: [[Main.main()]] html entities initialisation *)
   (* Initialization of HTML entities *)
   Html.init (Lang.lang());
-
+  (*e: [[Main.main()]] html entities initialisation *)
+  (*s: [[Main.main()]] applet system initialisation *)
   (* The applet system.
    * This loads the local modules also, so any setup that might be
    * overriden by a local module should happen before here.
@@ -172,21 +204,31 @@ let main () =
    * of the applet system
    *)
   !Version.applet_init !modules;
-
+  (*e: [[Main.main()]] applet system initialisation *)
+  (*s: [[Main.main()]] mmm server initialisation *)
   (* This must occur after most initialisations *)
   if !accept_external 
   then Cci.init();
+  (*e: [[Main.main()]] mmm server initialisation *)
+  (*e: [[Main.main()]] initialisation *)
 
+  let url_opt = 
+    match !init_urls with 
+    | [] -> None 
+    | x :: l -> Some x
+  in
   (* Start the initial navigator *)
-  ignore
-    (Mmm.initial_navigator 
-        (localize !preffile)
-        (match !init_urls with | [] -> None | x :: l -> Some x));
+  Mmm.initial_navigator (localize !preffile) url_opt |> ignore;
+
   safe_loop();
+
+  (*s: [[Main.main()]] after event loop, if debug mode *)
   if !Log.debug_mode then begin
     Cache.postmortem();
     Gcache.postmortem()
-  end
+  end;
+  (*e: [[Main.main()]] after event loop, if debug mode *)
+  ()
 (*e: function Main.main *)
       
 (*s: function Main.postmortem *)
@@ -197,10 +239,12 @@ let postmortem () =
   | Dynlink.Error err ->
       failwith (spf "dynlink error = %s" (Dynlink.error_message err))
   | e -> 
+      (*s: [[Main.main()]] after event loop, if debug mode *)
       if !Log.debug_mode then begin
         Cache.postmortem();
-        Gcache.postmortem();
+        Gcache.postmortem()
       end;
+      (*e: [[Main.main()]] after event loop, if debug mode *)
       raise e
 (*e: function Main.postmortem *)
 

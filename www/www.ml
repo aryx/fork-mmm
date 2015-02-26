@@ -54,6 +54,7 @@ let make hlink =
 
 
 (*s: module Www.UrlSet *)
+(* Table of unresolved active connexions *)
 (* We need to keep a trace of pending connections, since there is a race
    condition when the user clicks twice rapidly on an anchor. If the second
    click occurs before the document is added to the cache, (e.g. because we

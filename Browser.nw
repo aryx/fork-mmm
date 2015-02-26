@@ -244,6 +244,11 @@ the main author of MMM.
 
 \section{[[mmm]] services}
 
+<<constant Main.usage_str>>=
+let usage_str =
+  "Usage: meuh <opts> <initial url>"
+@
+% meuh :)
 
 <<signature Version.http>>=
 val http : string              (* the version in User-Agent field *)
@@ -344,7 +349,7 @@ get an updated copy.
 </BODY>
 </HTML>
 "
-  |  s -> failwith (Printf.sprintf "language %s not supported here")
+  |  s -> failwith (Printf.sprintf "language %s not supported here" s)
 @
 %$
 
@@ -389,7 +394,10 @@ get an updated copy.
 
 \chapter{Core Data Structures}
 
-\section{Request}
+\section{URLs}
+
+% URLs are URIs? who is more general?
+% URL is uniform, URIs is universal, so maybe URI is more general
 
 \subsection{URIs}
 % =~ /path/elements/foo.html#fragment
@@ -405,6 +413,8 @@ type abs_uri = {
 % abs for absolute! we want those URI to have been "resolved"
 % fragment is for the #xxx I think
 % less: uri_url, hmmm should be uri_path no?
+%   "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
+
 
 <<signature Uri.is_absolute>>=
 val is_absolute : string -> bool
@@ -562,7 +572,7 @@ let sp = Str.regexp "[ \t\n]"
 
 
 
-\section{Document}
+\section{Documents}
 
 <<type Document.document_id>>=
 (* Document Id is a reference to a document in the browser.
@@ -617,11 +627,13 @@ module DocumentIDSet =
   Set.Make(struct type t = document_id let compare = compare end)
 @
 
+% used by Protos.get
 <<type Document.handle>>=
 (* This is passed around by request continuations. It represents a handle
    on a connexion for retrieving a document *)
 type handle = {
   document_id : document_id;
+
   document_referer : string option;
     (* URL of refering document, if any *)
   mutable document_status : int;
@@ -637,8 +649,9 @@ type handle = {
 }
 @
 %less: typedef for document_status int?
+%todo: LP split!
 
-% important one
+% used by Protos.get
 <<type Document.document_continuation>>=
 type document_continuation = {
   document_process : handle -> unit;
@@ -646,6 +659,20 @@ type document_continuation = {
   document_finish :  bool -> unit
     (* What to do if a request does not yield a document *)
 }
+@
+
+
+% used by Protos.get
+<<type Document.document_data>>=
+(*
+ * Information on a document, as could be requested by "other" clients,
+ * that is clients not directly on the chain of processes dealing with
+ * the handle
+ *)
+
+type document_data =
+   MemoryData of Ebuffer.t
+ | FileData of string * bool (* flag is true if file is temporary *)
 @
 
 
@@ -781,18 +808,60 @@ let get = Hashtbl.find protos
 
 
 \section{HTTP}
-% 1.0.
-% 2.0 just got published recently
+% apparently mmm handles http 1.0.
+% there is also 1.1.
+% 2.0 just got published I think
 
+
+%(* HTTP messages: requests and responses
+% *  What a client sends to a server is called a request 
+% *  What a server answers is called a response
+% *)
+
+\subsection{Requests}
+
+
+<<type Messages.request_message>>=
+(* HTTP-Message *)
+type request_message = {
+  request : request;
+
+  request_headers : header list;
+  request_auth : (string * string) option;
+           (* have we authentified the emitter (authtype, authuser) *)
+
+  request_body : string;
+  }
+@
+%less: aspectize security
+% diff with Www.request? it also has _headers and _auth
 
 <<type Messages.request>>=
 (* Request-Line of a Request *)
 type request = {
   request_version: string;	(* HTTP/1.0 *)
   request_method : string;	(* GET, POST, etc... *)
+
   request_uri : string		(* the uri *)
   }
 @
+
+<<type Messages.header>>=
+(* Other headers *)
+type header = string
+@
+
+
+\subsection{Responses}
+
+<<type Messages.response_message>>=
+type response_message = {
+  status : status;
+  response_headers : header list;
+  response_body : string;        (* responde body is *not* the document body *)
+  }
+@
+
 
 <<type Messages.status>>=
 (* Status-Line of a Response *)
@@ -803,186 +872,281 @@ type status =  {
  }
 @
 
-<<type Messages.header>>=
-(* Other headers *)
-type header = string
-@
 
-%(* HTTP messages: requests and responses
-% *  What a client sends to a server is called a request 
-% *  What a server answers is called a response
-% *)
 
-<<type Messages.request_message>>=
-(* HTTP-Message *)
-type request_message = {
-  request : request;
-  request_headers : header list;
-  request_body : string;
-  request_auth : (string * string) option 
-           (* have we authentified the emitter (authtype, authuser) *)
-  }
-@
 
-<<type Messages.response_message>>=
-type response_message = {
-  status : status;
-  response_headers : header list;
-  response_body : string        (* responde body is *not* the document body *)
-  }
-@
 
 
 \chapter{[[main()]]}
 
+<<[[Main.main()]] references>>=
+let init_urls = ref [] in
+@
 
+% _ -> Main.postmortem -> <>
 <<function Main.main>>=
 let main () =
 
-  Error.default := new Tk_error.t Widget.default_toplevel;
-  Condition.backend := Tk_condition.backend ();
-  Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
-  Timer_.set_ref := Timer.set;
-  Low.update_idletasks_backend := Tk.update_idletasks;
-  Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
-  Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
-  Fileevent_.add_fileoutput_ref := Fileevent.add_fileoutput;
-  Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
-  Document.add_log_backend := Tk_document.add_log;
-  Maps.broadcast_backend := Frx_synth.broadcast;
-  Auth.open_passwd_ref := Frx_req.open_passwd;
-  Auth.edit_backend := Tk_auth.edit;
-  Mailto.internal_backend := Tk_mailto.internal;
+  <<[[Main.main()]] tk backends setup>>
 
  (* As always, we must parse argument first, using references... *)
-  let sufxfile = ref (Mmm.user_file "mime.types")
-  and display = ref (try Sys.getenv("DISPLAY") with Not_found -> "")
-  and preffile = ref (Mmm.user_file "MMM.ad")
-  and init_urls = ref [] 
-  and accept_external = ref false
-  and palette = ref None
-  and modules = ref true
-  and clicktofocus = ref false
-  in
+  <<[[Main.main()]] references>>
+
   Arg.parse [
-  "-proxy", Arg.String (fun s -> Http.proxy := s), 
-  "<hostname>\tProxy host";
-  "-port", Arg.Int (fun i -> Http.proxy_port := i),
-  "<port>\t\tProxy port";
-  "-d", Arg.String (fun s -> display := s),
-  "<foo:0>\t\tDisplay";
-  "-display", Arg.String (fun s -> display := s),
-  "<foo:0>\tDisplay";
-  "-suffixes", Arg.String (fun s -> sufxfile := s),
-  "<file>\tSuffix file";
-  "-external", Arg.Unit (fun () -> accept_external := true),
-  "\t\tAccept remote command (mmm_remote <url>)";
-  "-lang", Arg.String (fun s -> I18n.language := s),
-  "<lang>\t\tI18n language";
-  "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-  "<file>\tI18n message file";
-  "-prefs", Arg.String (fun s -> preffile := s),
-  "<file>\t\tPreference File";
-  "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-  "<url>\tHelp URL";
-  "-palette", Arg.String (fun s -> palette := Some s),
-  "<color>\tTk Palette";
-  "-nomodule", Arg.Unit (fun () -> modules := false),
-  "\t\tDon't load initial modules";
-  "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-  "\tClick to Focus mode (default is Focus Follows Mouse)";
-  "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-  "<wxh+x+y>\tInitial geometry for the first navigator"
+   <<[[Main.main()]] command line options>>
   ]
     (fun s -> init_urls := s :: !init_urls)
-    "Usage: meuh <opts> <initial url>";
+    usage_str
+   ;
 
-  Sys.catch_break true;
-  (* Avoid SIGPIPE completely, in favor of write() errors *)
-  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  <<[[Main.main()]] signal handling>>
 
-  let top = Tk.openTkDisplayClass !display "mmm" in
+  <<[[Main.main()]] initialisation>>
 
-(*
-  (* Just after the init. of Tk, we have to detect the Tk is under
-   * Latin or Japanese mode at first. 
-   *)
-  Lang.japan := Jtk.is_japanese_mode () && Lang.is_japanese ();
-  (* Run Tcl in JIS (ISO2022-jp) Mode *)
-  if !Lang.japan 
-  then Jtk.Kanji.internal_code_set Jtk.JIS;
-*)
-
-  Wm.withdraw top;
-  
-  if not !clicktofocus 
-  then Focus.follows_mouse();
-
-  (* Default values for navigator window *)
-  Resource.add "*MMM.Width" "640" Tk.WidgetDefault;
-  Resource.add "*MMM.Height" "480" Tk.WidgetDefault;
-
-  (* Resources *)
-  let site_resfile =
-    localize (Filename.concat (Filename.dirname Sys.argv.(0)) "MMM.ad") in
-  (* Site specific resource file usually in $INSTALLDIR=/usr/local/lib/mmm *)
-  if Sys.file_exists site_resfile 
-  then Tkresource.readfile site_resfile Tk.StartupFile;
-
-  begin match !palette with
-  | None -> ()
-  | Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
-  end;
-
-  (* Initialisations in frx library : kbd navigation, search 
-   * No prerequisite except Tk *)
-  Frx_text.init ();
-  (* Initialisations in jpf's balloon library *)
-  Balloon.init ();
-  (* Initialisations in jpf's GIF ANIMATION library *)
-  Tkaniminit.f ();
-
-  (* Local initialisations *)
-  Low.init();                         (* start regular tasks *)
-  Cache.init();                       (* builtin document *)
-  Auth.init();                        (* start expiration timer *)
-  Debug.init();                       (* debugging RPC *)
-  
-  (* Suffix mapping to Content-Type and Content-Encoding *)
-  if Sys.file_exists !sufxfile 
-  then Http_headers.read_suffix_file !sufxfile;
-  
-  (* Various stuff for the HTML viewer, needing Tk *)
-  Ctext.init();
-  Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
-
-  (* Initialization of HTML entities *)
-  Html.init (Lang.lang());
-
-  (* The applet system.
-   * This loads the local modules also, so any setup that might be
-   * overriden by a local module should happen before here.
-   * However, preference initialisation must happen *after* initialisation
-   * of the applet system
-   *)
-  !Version.applet_init !modules;
-
-  (* This must occur after most initialisations *)
-  if !accept_external 
-  then Cci.init();
-
+  let url_opt = 
+    match !init_urls with 
+    | [] -> None 
+    | x :: l -> Some x
+  in
   (* Start the initial navigator *)
-  ignore
-    (Mmm.initial_navigator 
-        (localize !preffile)
-        (match !init_urls with | [] -> None | x :: l -> Some x));
+  Mmm.initial_navigator (localize !preffile) url_opt |> ignore;
+
   safe_loop();
-  if !Log.debug_mode then begin
-    Cache.postmortem();
-    Gcache.postmortem()
-  end
+
+  <<[[Main.main()]] after event loop, if debug mode>>
+  ()
 @
 %$
+
+<<[[Main.main()]] references>>=
+let preffile = ref (Mmm.user_file "MMM.ad") in
+@
+<<[[Main.main()]] command line options>>=
+"-prefs", Arg.String (fun s -> preffile := s),
+"<file>\t\tPreference File";
+@
+% .ad?
+% preferences of navigator
+
+<<function Main.localize>>=
+let localize file =
+  let localized = spf "%s.%s" file !I18n.language in
+  if Sys.file_exists localized 
+  then localized 
+  else file
+@
+% see more later in language chapter
+
+
+
+
+\ifallcode
+<<[[Main.main()]] tk backends setup>>=
+Error.default := new Tk_error.t Widget.default_toplevel;
+Condition.backend := Tk_condition.backend ();
+Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
+Timer_.set_ref := Timer.set;
+Low.update_idletasks_backend := Tk.update_idletasks;
+Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
+Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
+Fileevent_.add_fileoutput_ref := Fileevent.add_fileoutput;
+Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
+Document.add_log_backend := Tk_document.add_log;
+Maps.broadcast_backend := Frx_synth.broadcast;
+Auth.open_passwd_ref := Frx_req.open_passwd;
+Auth.edit_backend := Tk_auth.edit;
+Mailto.internal_backend := Tk_mailto.internal;
+@
+\fi
+
+
+
+\section{Initialisations}
+
+<<[[Main.main()]] initialisation>>=
+<<[[Main.main()]] tk initialisation>>
+<<[[Main.main()]] resource initialisation>>
+<<[[Main.main()]] tk libs initialisation>>
+<<[[Main.main()]] local initialisation>>
+<<[[Main.main()]] misc initialisation>>
+<<[[Main.main()]] html entities initialisation>>
+<<[[Main.main()]] applet system initialisation>>
+<<[[Main.main()]] mmm server initialisation>>
+@
+
+
+\subsection{Graphics initialisation}
+
+<<[[Main.main()]] tk initialisation>>=
+let top = Tk.openTkDisplayClass !display "mmm" in
+
+Wm.withdraw top;
+
+if not !clicktofocus 
+then Focus.follows_mouse();
+@
+%(*
+%(* Just after the init. of Tk, we have to detect the Tk is under
+% * Latin or Japanese mode at first. 
+% *)
+%Lang.japan := Jtk.is_japanese_mode () && Lang.is_japanese ();
+%(* Run Tcl in JIS (ISO2022-jp) Mode *)
+%if !Lang.japan 
+%then Jtk.Kanji.internal_code_set Jtk.JIS;
+%*)
+
+
+<<[[Main.main()]] references>>=
+let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
+@
+<<[[Main.main()]] command line options>>=
+"-d", Arg.String (fun s -> display := s),
+"<foo:0>\t\tDisplay";
+@
+<<[[Main.main()]] command line options>>=
+"-display", Arg.String (fun s -> display := s),
+"<foo:0>\tDisplay";
+@
+
+<<[[Main.main()]] command line options>>=
+"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
+"<wxh+x+y>\tInitial geometry for the first navigator";
+@
+
+
+
+<<[[Main.main()]] references>>=
+let clicktofocus = ref false in
+@
+<<[[Main.main()]] command line options>>=
+"-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
+"\tClick to Focus mode (default is Focus Follows Mouse)";
+@
+
+
+\subsection{Resources initialisation}
+
+<<[[Main.main()]] resource initialisation>>=
+(* Default values for navigator window *)
+Resource.add "*MMM.Width" "640" Tk.WidgetDefault;
+Resource.add "*MMM.Height" "480" Tk.WidgetDefault;
+
+(* Resources *)
+let site_resfile =
+  localize (Filename.concat (Filename.dirname Sys.argv.(0)) "MMM.ad") in
+(* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
+if Sys.file_exists site_resfile 
+then Tkresource.readfile site_resfile Tk.StartupFile;
+
+begin match !palette with
+| None -> ()
+| Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
+end;
+@
+
+<<[[Main.main()]] references>>=
+let palette = ref None in
+@
+<<[[Main.main()]] command line options>>=
+"-palette", Arg.String (fun s -> palette := Some s),
+"<color>\tTk Palette";
+@
+
+\subsection{Graphics libraries initialisation}
+
+<<[[Main.main()]] tk libs initialisation>>=
+(* Initialisations in frx library : kbd navigation, search 
+ * No prerequisite except Tk *)
+Frx_text.init ();
+(* Initialisations in jpf's balloon library *)
+Balloon.init ();
+(* Initialisations in jpf's GIF ANIMATION library *)
+Tkaniminit.f ();
+@
+
+\subsection{Local initialisation}
+
+<<[[Main.main()]] local initialisation>>=
+(* Local initialisations *)
+Low.init();                         (* start regular tasks *)
+Cache.init();                       (* builtin document *)
+Auth.init();                        (* start expiration timer *)
+Debug.init();                       (* debugging RPC *)
+
+(* Suffix mapping to Content-Type and Content-Encoding *)
+if Sys.file_exists !sufxfile 
+then Http_headers.read_suffix_file !sufxfile;
+@
+
+<<[[Main.main()]] references>>=
+let sufxfile = ref (Mmm.user_file "mime.types") in
+@
+<<[[Main.main()]] command line options>>=
+"-suffixes", Arg.String (fun s -> sufxfile := s),
+"<file>\tSuffix file";
+@
+
+\subsection{Misc initialisation}
+
+<<[[Main.main()]] misc initialisation>>=
+(* Various stuff for the HTML viewer, needing Tk *)
+Ctext.init();
+Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
+@
+% ???
+
+\subsection{HTML initialisation}
+
+<<[[Main.main()]] html entities initialisation>>=
+(* Initialization of HTML entities *)
+Html.init (Lang.lang());
+@
+
+<<signature Html.init>>=
+val init : string -> unit 
+@
+
+<<function Html.init>>=
+let init _lang =
+  (* (if japan then latin1_japan else latin1_normal)  *)
+  latin1_normal |> List.iter (fun (str, c) -> 
+    Hashtbl.add ampersand_table str c) 
+@
+
+
+\section{[[Mmm.initial_navigator()]]}
+
+\subsection{XXX}
+
+<<signature Version.initurl>>=
+val initurl : string -> string (* fake initial url *)
+@
+<<function Version.initurl>>=
+(* MUST BE NORMALIZED *)
+let initurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
+  | _ -> assert false
+@
+
+
+<<[[Main.main()]] command line options>>=
+"-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
+"<url>\tHelp URL";
+@
+
+<<signature Version.helpurl>>=
+val helpurl : string -> string (* help url *)
+@
+<<function Version.helpurl>>=
+let helpurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
+  | _ -> assert false
+@
+
+
+\section{The event loop}
 
 <<function Main.safe_loop>>=
 let rec safe_loop() =
@@ -997,133 +1161,6 @@ let rec safe_loop() =
       safe_loop()
 @
 
-
-
-
-<<toplevel Main._1>>=
-let _ = 
-  Printexc.catch postmortem ()
-@
-
-<<function Main.postmortem>>=
-let postmortem () =
-  try 
-    main ()
-  with
-  | Dynlink.Error err ->
-      failwith (spf "dynlink error = %s" (Dynlink.error_message err))
-  | e -> 
-      if !Log.debug_mode then begin
-        Cache.postmortem();
-        Gcache.postmortem();
-      end;
-      raise e
-@
-
-
-\section{XXX}
-<<signature Version.initurl>>=
-val initurl : string -> string (* fake initial url *)
-@
-
-<<signature Version.helpurl>>=
-val helpurl : string -> string (* help url *)
-@
-
-
-
-<<function Version.initurl>>=
-(* MUST BE NORMALIZED *)
-let initurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
-  | _ -> assert false
-@
-
-<<function Version.helpurl>>=
-let helpurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
-  | _ -> assert false
-@
-
-\section{[[Html.init()]]}
-
-<<signature Html.init>>=
-val init : string -> unit 
-@
-
-<<function Html.init>>=
-let init _lang =
-  (* (if japan then latin1_japan else latin1_normal)  *)
-  latin1_normal |> List.iter (fun (str, c) -> 
-    Hashtbl.add ampersand_table str c) 
-@
-
-\section{Preferences}
-
-\section{The event loop}
-
-\subsection{[[Glevents]]}
-
-<<signature Glevents.get>>=
-val get : string -> (modifier list * xEvent) list 
-@
-
-<<signature Glevents.reset>>=
-val reset : unit -> unit
-@
-
-<<constant Glevents.events>>=
-(* A global table for describing events
- * TODO: use virtual events because here we don't change bindings in 
- * place after a preference reload
- *)
-
-let events = Hashtbl.create 37
-@
-
-<<constant Glevents.builtin_defaults>>=
-let builtin_defaults = [
-
-  (* tachymeter bindings *)
-  "tachy_about", [[], ButtonPressDetail 3];
-  "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
-  "tachy_new", [[], ButtonPressDetail 1];
-  "tachy_sel", [[], ButtonPressDetail 2];
-
-  (* bindings on inlined images *)
-  "loadimage", [[Control], ButtonPressDetail 1];
-  "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
-  "stopanim",  [[], ButtonPressDetail 2];
-  "restartanim", [[Shift], ButtonPressDetail 2];
-  "copyimgurl", [[], ButtonPressDetail 2];
-  "updateimage", [[Shift], ButtonPressDetail 2];
-
-  (* anchor bindings *)
-  "goto", [[], ButtonPressDetail 1];
-  "save", [[Shift], ButtonPressDetail 1];
-  "gotonew", [[], ButtonPressDetail 3];
-  "hypermenu", [[Control], ButtonPressDetail 1];
-]
-@
-% ???
-
-<<constant Glevents.get>>=
-let get = Hashtbl.find events
-@
-
-<<function Glevents.reset>>=
-(* This is for preferences *)
-let reset () =
-  Hashtbl.clear events;
-  (* Now: for all names defined in defaults, check a possible overriding value
-     in resources *)
-  List.iter (fun (name,default) ->
-    Hashtbl.add events 
-      name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
-    builtin_defaults
-@
 
 
 \chapter{Navigator Interface}
@@ -1604,9 +1641,6 @@ let get_entity = Hashtbl.find ampersand_table
 % html 4.0 and 5.0 has been published
 % TODO: add 4.0 with span element
 
-<<signature module Dtd.Elements>>=
-module Elements : Set.S with type elt = string
-@
 
 <<module Dtd.elements>>=
 module Elements = Set.Make(struct type t = string let compare = compare end)
@@ -3479,6 +3513,7 @@ let internal {feed_internal = fd} = fd
 \section{Active}
 
 <<module Www.UrlSet>>=
+(* Table of unresolved active connexions *)
 (* We need to keep a trace of pending connections, since there is a race
    condition when the user clicks twice rapidly on an anchor. If the second
    click occurs before the document is added to the cache, (e.g. because we
@@ -3495,10 +3530,6 @@ module UrlSet =
 @
 
 
-<<signature module Www.UrlSet>>=
-(* Table of unresolved active connexions *)
-module UrlSet : Set.S with type elt = Url.t
-@
 
 <<constant Www.active_connexions>>=
 let active_connexions = ref UrlSet.empty
@@ -3526,17 +3557,6 @@ let rem_active_cnx url =
 \section{Documents}
 
 
-<<type Document.document_data>>=
-(*
- * Information on a document, as could be requested by "other" clients,
- * that is clients not directly on the chain of processes dealing with
- * the handle
- *)
-
-type document_data =
-   MemoryData of Ebuffer.t
- | FileData of string * bool (* flag is true if file is temporary *)
-@
 
 <<type Document.document>>=
 type document = {
@@ -4010,8 +4030,26 @@ let _ =
 
 
 
-\section{[[mmm_remove]]}
+\section{[[mmm_remote]]}
 
+\subsection{Server}
+
+<<[[Main.main()]] references>>=
+let accept_external = ref false in
+@
+
+<<[[Main.main()]] command line options>>=
+"-external", Arg.Unit (fun () -> accept_external := true),
+"\t\tAccept remote command (mmm_remote <url>)";
+@
+
+<<[[Main.main()]] mmm server initialisation>>=
+(* This must occur after most initialisations *)
+if !accept_external 
+then Cci.init();
+@
+
+\subsection{Client}
 <<function Main_remote.request>>=
 let request sock cmd url =
   if cmd <> "" then ignore (write sock cmd 0 (String.length cmd));
@@ -4681,6 +4719,28 @@ let is_cgi file =
 
 \section{Proxied protocols}
 
+<<[[Main.main()]] command line options>>=
+"-proxy", Arg.String (fun s -> Http.proxy := s), 
+"<hostname>\tProxy host";
+@
+<<[[Main.main()]] command line options>>=
+"-port", Arg.Int (fun i -> Http.proxy_port := i),
+"<port>\t\tProxy port";
+@
+
+<<global Http.proxy>>=
+(* Default proxy definitions *)
+let proxy = ref "no-proxy-defined"
+@
+
+<<global Http.proxy_port>>=
+let proxy_port = ref 80
+@
+
+
+
+
+
 <<toplevel Protos._1>>=
 let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
 @
@@ -4718,14 +4778,6 @@ and proxy_request wr cont =
           (failed_request wr cont.document_finish)
 @
 
-<<global Http.proxy>>=
-(* Default proxy definitions *)
-let proxy = ref "no-proxy-defined"
-@
-
-<<global Http.proxy_port>>=
-let proxy_port = ref 80
-@
 
 \chapter{Advanced Topics}
 
@@ -4837,13 +4889,32 @@ let encode s =
 
 \section{i18n}
 
-<<function Main.localize>>=
-let localize file =
-  let localized = spf "%s.%s" file !I18n.language in
-  if Sys.file_exists localized 
-  then localized 
-  else file
+<<signature I18n.language>>=
+val language : string ref
 @
+<<constant I18n.language>>=
+let language = ref ""
+@
+<<[[Main.main()]] command line options>>=
+"-lang", Arg.String (fun s -> I18n.language := s),
+"<lang>\t\tI18n language";
+@
+
+
+<<signature I18n.message_file>>=
+val message_file : string ref
+@
+<<constant I18n.message_file>>=
+let message_file = ref ""
+@
+<<[[Main.main()]] command line options>>=
+"-msgfile", Arg.String (fun s -> I18n.message_file := s),
+"<file>\tI18n message file";
+@
+
+
+
+
 
 
 
@@ -4852,7 +4923,6 @@ let localize file =
 <<signature Lang.lang>>=
 val lang : unit -> string
 @
-
 <<function Lang.lang>>=
 let lang () =
   (* if !japan then "ja" else *)
@@ -4860,13 +4930,7 @@ let lang () =
 @
 
 
-<<signature I18n.message_file>>=
-val message_file : string ref
-@
 
-<<signature I18n.language>>=
-val language : string ref
-@
 
 <<signature I18n.sprintf>>=
 val sprintf: ('a, unit, string) format -> 'a
@@ -4874,10 +4938,9 @@ val sprintf: ('a, unit, string) format -> 'a
 
 <<signature I18n.menu_option>>=
 @
-
 <<signature I18n.menu_pattern>>=
 @
-
+% dead anyway?
 
 
 
@@ -4896,13 +4959,7 @@ let sprintf x =
   Printf.sprintf x
 @
 
-<<constant I18n.language>>=
-let language = ref ""
-@
 
-<<constant I18n.message_file>>=
-let message_file = ref ""
-@
 
 <<function I18n.read_transl_file>>=
 let read_transl_file msgfile =
@@ -5125,6 +5182,27 @@ let latin1_normal = [
 
 \section{Applets}
 
+<<[[Main.main()]] applet system initialisation>>=
+(* The applet system.
+ * This loads the local modules also, so any setup that might be
+ * overriden by a local module should happen before here.
+ * However, preference initialisation must happen *after* initialisation
+ * of the applet system
+ *)
+!Version.applet_init !modules;
+@
+
+<<[[Main.main()]] references>>=
+let modules = ref true in
+@
+
+<<[[Main.main()]] command line options>>=
+"-nomodule", Arg.Unit (fun () -> modules := false),
+"\t\tDon't load initial modules";
+@
+
+
+
 <<signature Version.applet_init>>=
 (*-*)
 val applet_init : (bool -> unit) ref
@@ -5134,6 +5212,13 @@ val applet_init : (bool -> unit) ref
 let applet_init = ref (fun _ -> ())
 @
 
+\section{Signals}
+
+<<[[Main.main()]] signal handling>>=
+Sys.catch_break true;
+(* Avoid SIGPIPE completely, in favor of write() errors *)
+Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+@
 
 \chapter{Conclusion}
 
@@ -5167,6 +5252,37 @@ let debug s = if !debug_mode then f s
 @
 
 
+
+
+\section{Postmortem}
+
+
+<<[[Main.main()]] after event loop, if debug mode>>=
+if !Log.debug_mode then begin
+  Cache.postmortem();
+  Gcache.postmortem()
+end;
+@
+%less: could put that outside main actually,
+% and below do main(); and this code. cleaner.
+
+
+<<toplevel Main._1>>=
+let _ = 
+  Printexc.catch postmortem ()
+@
+
+<<function Main.postmortem>>=
+let postmortem () =
+  try 
+    main ()
+  with
+  | Dynlink.Error err ->
+      failwith (spf "dynlink error = %s" (Dynlink.error_message err))
+  | e -> 
+      <<[[Main.main()]] after event loop, if debug mode>>
+      raise e
+@
 
 
 

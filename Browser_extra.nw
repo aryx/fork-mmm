@@ -1706,6 +1706,69 @@ open Unix
 
 \subsection*{[[./commons/glevents.mli]]}
 
+%\subsection{[[Glevents]]}
+
+<<signature Glevents.get>>=
+val get : string -> (modifier list * xEvent) list 
+@
+
+<<signature Glevents.reset>>=
+val reset : unit -> unit
+@
+
+<<constant Glevents.events>>=
+(* A global table for describing events
+ * TODO: use virtual events because here we don't change bindings in 
+ * place after a preference reload
+ *)
+
+let events = Hashtbl.create 37
+@
+
+<<constant Glevents.builtin_defaults>>=
+let builtin_defaults = [
+
+  (* tachymeter bindings *)
+  "tachy_about", [[], ButtonPressDetail 3];
+  "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
+  "tachy_new", [[], ButtonPressDetail 1];
+  "tachy_sel", [[], ButtonPressDetail 2];
+
+  (* bindings on inlined images *)
+  "loadimage", [[Control], ButtonPressDetail 1];
+  "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
+  "stopanim",  [[], ButtonPressDetail 2];
+  "restartanim", [[Shift], ButtonPressDetail 2];
+  "copyimgurl", [[], ButtonPressDetail 2];
+  "updateimage", [[Shift], ButtonPressDetail 2];
+
+  (* anchor bindings *)
+  "goto", [[], ButtonPressDetail 1];
+  "save", [[Shift], ButtonPressDetail 1];
+  "gotonew", [[], ButtonPressDetail 3];
+  "hypermenu", [[Control], ButtonPressDetail 1];
+]
+@
+% ???
+
+<<constant Glevents.get>>=
+let get = Hashtbl.find events
+@
+
+<<function Glevents.reset>>=
+(* This is for preferences *)
+let reset () =
+  Hashtbl.clear events;
+  (* Now: for all names defined in defaults, check a possible overriding value
+     in resources *)
+  List.iter (fun (name,default) ->
+    Hashtbl.add events 
+      name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
+    builtin_defaults
+@
+
+
+
 
 
 %-------------------------------------------------------------
@@ -2091,6 +2154,10 @@ let broadcast_backend = ref (fun _ev -> failwith "no broadcast defined")
 \subsection*{[[./www/www.mli]]}
 
 
+<<signature module Www.UrlSet>>=
+(* Table of unresolved active connexions *)
+module UrlSet : Set.S with type elt = Url.t
+@
 
 %-------------------------------------------------------------
 
@@ -2239,6 +2306,10 @@ val dtd32f : t
 @
 % with frame?
 
+
+<<signature module Dtd.Elements>>=
+module Elements : Set.S with type elt = string
+@
 
 %-------------------------------------------------------------
 
@@ -18098,6 +18169,8 @@ open Common
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
+
+<<constant Main.usage_str>>
 
 <<function Main.main>>
       

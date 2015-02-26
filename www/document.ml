@@ -33,6 +33,7 @@ module DocumentIDSet =
    on a connexion for retrieving a document *)
 type handle = {
   document_id : document_id;
+
   document_referer : string option;
     (* URL of refering document, if any *)
   mutable document_status : int;

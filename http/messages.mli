@@ -19,6 +19,7 @@
 type request = {
   request_version: string;	(* HTTP/1.0 *)
   request_method : string;	(* GET, POST, etc... *)
+
   request_uri : string		(* the uri *)
   }
 (*e: type Messages.request *)
@@ -47,10 +48,12 @@ type header = string
 (* HTTP-Message *)
 type request_message = {
   request : request;
+
   request_headers : header list;
-  request_body : string;
-  request_auth : (string * string) option 
+  request_auth : (string * string) option;
            (* have we authentified the emitter (authtype, authuser) *)
+
+  request_body : string;
   }
 (*e: type Messages.request_message *)
 
@@ -58,7 +61,7 @@ type request_message = {
 type response_message = {
   status : status;
   response_headers : header list;
-  response_body : string        (* responde body is *not* the document body *)
+  response_body : string;        (* responde body is *not* the document body *)
   }
 (*e: type Messages.response_message *)
 
