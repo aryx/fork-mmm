@@ -11,6 +11,8 @@ val view:
   Document.document_id ->
   (unit -> unit) ->
   (Html.location * string) list ref ->
-  (Tk.textTag * Html.location) list ref -> Japan.detected_code -> unit
+  (Tk.textTag * Html.location) list ref -> 
+  Japan.detected_code -> 
+  unit
 (*e: signature Source.view *)
 (*e: ./display/source.mli *)

@@ -109,6 +109,7 @@ let main () =
 
   let top = Tk.openTkDisplayClass !display "mmm" in
 
+(*
   (* Just after the init. of Tk, we have to detect the Tk is under
    * Latin or Japanese mode at first. 
    *)
@@ -116,6 +117,7 @@ let main () =
   (* Run Tcl in JIS (ISO2022-jp) Mode *)
   if !Lang.japan 
   then Jtk.Kanji.internal_code_set Jtk.JIS;
+*)
 
   Wm.withdraw top;
   
@@ -161,7 +163,7 @@ let main () =
   Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 
   (* Initialization of HTML entities *)
-  Html.init !Lang.japan;
+  Html.init (Lang.lang());
 
   (* The applet system.
    * This loads the local modules also, so any setup that might be

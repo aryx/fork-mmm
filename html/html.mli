@@ -43,7 +43,7 @@ exception Invalid_Html of string
 
 
 (*s: signature Html.init *)
-val init : bool -> unit 
+val init : string -> unit 
 (*e: signature Html.init *)
 
 (*s: signature Html.verbose *)

@@ -90,7 +90,6 @@ let internal top =
     bool_pref "Text fit debug" Fit.debug;
     bool_pref "Image loading debug" Img.ImageData.verbose;
     bool_pref "CamlTk Debug" Protocol.debug;
-    bool_pref "Japanese Parsing Debug" Japan.debug
     ]
 (*e: function Mmmprefs.internal *)
 

@@ -30,7 +30,7 @@ let main () =
 
   Wm.withdraw t;
 
-  Lang.japan := Jtk.is_japanese_mode () || Lang.is_japanese ();
+  (* Lang.japan := Jtk.is_japanese_mode () || Lang.is_japanese ();*)
 
   let tree = ref None in
   (* currently only one file *)

@@ -143,8 +143,9 @@ let default = ref
 (*s: function Fonts.compute_tag *)
 (* For a given fontDesc, return the name of the tags and its attributes *)
 let rec compute_tag fd =
-  let font_key = Jpf_font.string_of_pattern fd.pattern ^ 
-    string_of_int fd.pxlsz in
+  let font_key = 
+    Jpf_font.string_of_pattern fd.pattern ^ string_of_int fd.pxlsz 
+  in
   try 
     Hashtbl.find tags font_key
   with Not_found ->
@@ -152,54 +153,61 @@ let rec compute_tag fd =
       let pxlsz = pxlsz fd.pxlsz in
       let pattern = {fd.pattern with pixelSize= Some pxlsz} in
       try
-    let display = 
-      match Protocol.default_display () with
-        "" -> None | x -> Some x
-    in
-    let fontid, fontname =
-          (* find latin font *)
-      let xlfd = Jpf_font.nearest_pixel_size display true pattern in
-      let latin_f = Jpf_font.string_of_valid_xlfd xlfd in
-      xlfd.family^xlfd.weight^xlfd.slant^(string_of_int pxlsz), latin_f
-    in
-    (* japanese mode, search jp fonts *)
-    if !Lang.japan then begin
-(*
-      let pattern = { Jpf_font.empty_pattern with
-                      registry= Some "jisx0208.1983";
-                      pixelSize= Some pxlsz } in
-*)
-      let retry pattern =
-        let xlfd = Jpf_font.nearest_pixel_size display (pxlsz > 20) 
-        pattern 
+        let display = 
+          match Protocol.default_display () with
+            "" -> None | x -> Some x
         in
-        let japan_f = Jpf_font.string_of_valid_xlfd xlfd in
-        fontid, [Font (Font.create [Compound [ fontname; japan_f ]])]
-      in
+        let fontid, fontname =
+              (* find latin font *)
+          let xlfd = Jpf_font.nearest_pixel_size display true pattern in
+          let latin_f = Jpf_font.string_of_valid_xlfd xlfd in
+          xlfd.family^xlfd.weight^xlfd.slant^(string_of_int pxlsz), latin_f
+        in
+    
+        (*    
+        (* japanese mode, search jp fonts *)
+        if !Lang.japan then begin
+         (*
+          let pattern = { Jpf_font.empty_pattern with
+                          registry= Some "jisx0208.1983";
+                          pixelSize= Some pxlsz } in
+          *)
+          let retry pattern =
+            let xlfd = Jpf_font.nearest_pixel_size display (pxlsz > 20) 
+            pattern 
+            in
+            let japan_f = Jpf_font.string_of_valid_xlfd xlfd in
+            fontid, [Font (Font.create [Compound [ fontname; japan_f ]])]
+          in
+    
+          (* fst retry *)
+          let pattern = { fd.pattern with
+                          foundry= None;
+                          family= None;
+                          registry= Some "jisx0208.1983";
+                          pixelSize= Some pxlsz } 
+          in
+          try retry pattern with _ ->
+          
+              (* snd retry *)
+          let pattern = { pattern with slant= None } in
+          try retry pattern with _ ->
+            
+              Log.f (I18n.sprintf "Japanese font for %s is not available" (Jpf_font.string_of_pattern pattern));
+          fontid, [Font fontname] (* we should do more... *)
+        end else 
+          *)
 
-      (* fst retry *)
-      let pattern = { fd.pattern with
-                      foundry= None;
-                      family= None;
-                      registry= Some "jisx0208.1983";
-                      pixelSize= Some pxlsz } 
-      in
-      try retry pattern with _ ->
-      
-          (* snd retry *)
-      let pattern = { pattern with slant= None } in
-      try retry pattern with _ ->
-        
-          Log.f (I18n.sprintf "Japanese font for %s is not available" (Jpf_font.string_of_pattern pattern));
-      fontid, [Font fontname] (* we should do more... *)
-    end else fontid, [Font fontname]
+        fontid, [Font fontname]
       with (* Invalid_argument f *) _ ->  (* font is not available *)
-    Log.f (I18n.sprintf "Font for %s is not available" (Jpf_font.string_of_pattern pattern));
-    if fd = !default then ("fixedfont", [Font "fixed"])
-    else compute_tag !default
-    in
-    Hashtbl.add tags font_key tagdesc;
-    tagdesc
+        Log.f (I18n.sprintf "Font for %s is not available" 
+                 (Jpf_font.string_of_pattern pattern));
+        if fd = !default 
+        then ("fixedfont", [Font "fixed"])
+        else compute_tag !default
+     in
+     Hashtbl.add tags font_key tagdesc;
+     tagdesc
 (*e: function Fonts.compute_tag *)
 
 

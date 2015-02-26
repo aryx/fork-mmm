@@ -95,6 +95,7 @@ rule html = parse
      lexdata.pos_fix <- lexdata.pos_fix + 3;
      Ebuffer.reset lexdata.buffer;
      text lexbuf lexdata )}
+(*
  | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
      {(fun lexdata ->
        let lexeme = Lexing.lexeme lexbuf in
@@ -106,6 +107,7 @@ rule html = parse
        let c = Lexing.lexeme_char lexbuf (len - 1) in
        if !Lang.japan then kanji lexbuf lexdata c;
        text lexbuf lexdata )}
+*)
  | _ { (fun lexdata ->
      lexdata.start <- Lexing.lexeme_start lexbuf - lexdata.pos_fix;
      Ebuffer.reset lexdata.buffer;
@@ -124,6 +126,7 @@ and lenient_end_comment = parse
 	lexdata.pos_fix <- lexdata.pos_fix + 3;
 	Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
 	lenient_end_comment lexbuf lexdata )}
+(*
   | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
       {(fun lexdata ->
 	let lexeme = Lexing.lexeme lexbuf in
@@ -133,6 +136,7 @@ and lenient_end_comment = parse
  	let c = Lexing.lexeme_char lexbuf (len - 1) in
 	if !Lang.japan then kanji lexbuf lexdata c; 
 	lenient_end_comment lexbuf lexdata )}
+*)
   | _
      {(fun lexdata ->
        Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0);
@@ -154,6 +158,7 @@ and comment = parse
 	lexdata.pos_fix <- lexdata.pos_fix + 3;
         (* do nothing except position fix *)
 	comment lexbuf lexdata )}
+(*
   | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
       {(fun lexdata ->
 	let lexeme = Lexing.lexeme lexbuf in
@@ -163,6 +168,7 @@ and comment = parse
 	let c = Lexing.lexeme_char lexbuf (len - 1) in
  	if !Lang.japan then kanji lexbuf lexdata c; 
 	comment lexbuf lexdata )}
+*)
   | _  
     { (fun lexdata ->
        Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0);
@@ -193,6 +199,7 @@ and text = parse
      lexdata.pos_fix <- lexdata.pos_fix + 3;
      Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
      text lexbuf lexdata )}
+(*
  | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
      {(fun lexdata ->
        let lexeme = Lexing.lexeme lexbuf in
@@ -203,9 +210,10 @@ and text = parse
        let c = Lexing.lexeme_char lexbuf (len - 1) in
        if !Lang.japan then kanji lexbuf lexdata c;
        text lexbuf lexdata )}
+*)
  | [^ '<' '&' '\r' '\027']+
     { (fun lexdata ->
-      let s = Lexing.lexeme lexbuf in
+      let _sTODO = Lexing.lexeme lexbuf in
       Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);	
       text lexbuf lexdata )}
  | [^ '<' '&' '\r' '\027']* '&'
@@ -240,12 +248,12 @@ and ampersand = parse
         let lexeme = Lexing.lexeme lexbuf in
       	let code = String.sub lexeme 1 (String.length lexeme - 2) in
 	try 
-	  if !Lang.japan then
+	  (*if !Lang.japan then
 	    "\027\040\066" ^ String.make 1 (Char.chr (int_of_string code))
 	  else
-	    String.make 1 (Char.chr (int_of_string code))
-        with (* #350 ... *)
-	  Invalid_argument _ -> " "
+      *)
+	  String.make 1 (Char.chr (int_of_string code))
+    with (* #350 ... *) Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
     { (fun lexdata ->
@@ -265,10 +273,11 @@ and ampersand = parse
         let lexeme = Lexing.lexeme lexbuf in
       	let code = String.sub lexeme 1 (String.length lexeme - 1) in
 	try 
-	  if !Lang.japan then
+	  (*if !Lang.japan then
 	    "\027\040\066" ^ String.make 1 (Char.chr (int_of_string code))
 	  else
-	    String.make 1 (Char.chr (int_of_string code))
+      *)
+	  String.make 1 (Char.chr (int_of_string code))
 	with Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
@@ -416,6 +425,7 @@ and inquote = parse
 	lexdata.pos_fix <- lexdata.pos_fix + 3;
 	Ebuffer.output_string lexdata.buffer (Lexing.lexeme lexbuf);
 	inquote lexbuf lexdata )}
+(*
   | "\027\036" '\040'? ['\064' - '\068'] (* KANJI *)
       {(fun lexdata ->
 	let lexeme = Lexing.lexeme lexbuf in
@@ -425,6 +435,7 @@ and inquote = parse
 	let c = Lexing.lexeme_char lexbuf (len - 1) in
  	if !Lang.japan then kanji lexbuf lexdata c;
 	inquote lexbuf lexdata )}
+*)
   | '"'
     { (fun lexdata ->
       	 beautify true (Ebuffer.get lexdata.buffer) )}
@@ -469,7 +480,7 @@ and cdata = parse
   | "</" ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-	let e = skip_to_close lexbuf lexdata in
+	let _eTODO = skip_to_close lexbuf lexdata in
 	 [],
 	 CloseTag (String.lowercase 
                       (String.sub lexeme 2 (String.length lexeme - 2))),

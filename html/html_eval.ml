@@ -126,7 +126,7 @@ let ominimize dtd t stack =
    with
      CantMinimize ->
        (* what the hell, dammit, open it anyway, who cares, duh *)
-       let current = match stack with (x,_)::l -> x | [] -> "" in
+       let _currentTODO = match stack with (x,_)::l -> x | [] -> "" in
        Illegal (sprintf "illegal <%s> in %a, keep it though"
                 t.tag_name dump_stack stack),
        return [] stack
@@ -150,7 +150,7 @@ let cminimize dtd tagname stack =
   (* [attempt_close mods_so_far current_stack] *)
   let rec attempt_close accu = function
      [] -> raise CantMinimize
-   | ((last, _)::l) as stack ->
+   | ((last, _)::l) as _stackTODO ->
        if Elements.mem last dtd.close_omitted then
           (* we can attempt to close the previous element *)
       if goodpos l then 

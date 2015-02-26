@@ -36,9 +36,13 @@ let line_reporting ic =
   and current_line = ref 1
   and current_pos = ref 0 in
   let read = 
-    if !Lang.japan then 
+    (*
+    if !Lang.japan 
+    then 
       (Japan.create_read_japanese (input ic) (Japan.default_config ()))#read
-    else input ic 
+    else 
+    *)
+    input ic 
   in
   Lexing.from_function (fun buf len ->
      let n = read buf 0 len in
@@ -130,8 +134,7 @@ let html_indent name level =
 
 (*s: function Htparse.main *)
 let main () =
-  Lang.japan := Lang.is_japanese ();
-  Html.init !Lang.japan;
+  Html.init (Lang.lang());
 
   Arg.parse [
      "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";

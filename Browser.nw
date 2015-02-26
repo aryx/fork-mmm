@@ -893,6 +893,7 @@ let main () =
 
   let top = Tk.openTkDisplayClass !display "mmm" in
 
+(*
   (* Just after the init. of Tk, we have to detect the Tk is under
    * Latin or Japanese mode at first. 
    *)
@@ -900,6 +901,7 @@ let main () =
   (* Run Tcl in JIS (ISO2022-jp) Mode *)
   if !Lang.japan 
   then Jtk.Kanji.internal_code_set Jtk.JIS;
+*)
 
   Wm.withdraw top;
   
@@ -945,7 +947,7 @@ let main () =
   Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 
   (* Initialization of HTML entities *)
-  Html.init !Lang.japan;
+  Html.init (Lang.lang());
 
   (* The applet system.
    * This loads the local modules also, so any setup that might be
@@ -1038,13 +1040,14 @@ let helpurl = function
 \section{[[Html.init()]]}
 
 <<signature Html.init>>=
-val init : bool -> unit 
+val init : string -> unit 
 @
 
 <<function Html.init>>=
-let init japan =
-  List.iter (fun (str, c) -> Hashtbl.add ampersand_table str c) 
-    (if japan then latin1_japan else latin1_normal) 
+let init _lang =
+  (* (if japan then latin1_japan else latin1_normal)  *)
+  latin1_normal |> List.iter (fun (str, c) -> 
+    Hashtbl.add ampersand_table str c) 
 @
 
 \section{Preferences}
@@ -2029,7 +2032,7 @@ let ominimize dtd t stack =
    with
      CantMinimize ->
        (* what the hell, dammit, open it anyway, who cares, duh *)
-       let current = match stack with (x,_)::l -> x | [] -> "" in
+       let _currentTODO = match stack with (x,_)::l -> x | [] -> "" in
        Illegal (sprintf "illegal <%s> in %a, keep it though"
                 t.tag_name dump_stack stack),
        return [] stack
@@ -2053,7 +2056,7 @@ let cminimize dtd tagname stack =
   (* [attempt_close mods_so_far current_stack] *)
   let rec attempt_close accu = function
      [] -> raise CantMinimize
-   | ((last, _)::l) as stack ->
+   | ((last, _)::l) as _stackTODO ->
        if Elements.mem last dtd.close_omitted then
           (* we can attempt to close the previous element *)
       if goodpos l then 
@@ -2306,8 +2309,7 @@ let mode = ref Check
 
 <<function Htparse.main>>=
 let main () =
-  Lang.japan := Lang.is_japanese ();
-  Html.init !Lang.japan;
+  Html.init (Lang.lang());
 
   Arg.parse [
      "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";
@@ -2373,9 +2375,13 @@ let line_reporting ic =
   and current_line = ref 1
   and current_pos = ref 0 in
   let read = 
-    if !Lang.japan then 
+    (*
+    if !Lang.japan 
+    then 
       (Japan.create_read_japanese (input ic) (Japan.default_config ()))#read
-    else input ic 
+    else 
+    *)
+    input ic 
   in
   Lexing.from_function (fun buf len ->
      let n = read buf 0 len in
@@ -4859,12 +4865,14 @@ val sprintf: ('a, unit, string) format -> 'a
 (* Internationalization (translation of error messages) *)
 
 let fprintf x = 
-  if !Lang.japan then I18nprintf.fprintf x else Printf.fprintf x
+  (* if !Lang.japan then I18nprintf.fprintf x else *)
+  Printf.fprintf x
 @
 
 <<function I18n.sprintf>>=
 let sprintf x = 
-  if !Lang.japan then I18nprintf.sprintf x else Printf.sprintf x
+  (* if !Lang.japan then I18nprintf.sprintf x else *)
+  Printf.sprintf x
 @
 
 <<constant I18n.language>>=

@@ -306,10 +306,12 @@ class  virtual html_parse (dh) =
   method parse_init =
     red <- 0;
     feed_read <-
-       if !Lang.japan then 
-     Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
+       (*
+       if !Lang.japan 
+       then Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
        else 
-     Japan.create_read_native self#dh.document_feed.feed_read;
+       *)
+       Japan.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
     lexer <- sgml_lexer !Dtd.current;
     lexbuf <- 
@@ -601,9 +603,11 @@ class display_html ((top : Widget.widget),
     self#parse_init;
 
     (* I18n encoder for Forms *)
+    (*
     if !Lang.japan then begin
       mach#set_i18n_encoder (fun s -> Japan.encoder feed_read#get_code s)
     end;
+    *)
 
     (* EOF Flags for JP *)
     let eof = ref 0 in
@@ -636,8 +640,8 @@ class display_html ((top : Widget.widget),
           raise End_of_file
         end)
       tokens
-      with 
-       End_of_file ->
+      with End_of_file ->
+      (*
       (* I don't know why but in some cases we have more than 1 EOF *)
       if !Lang.japan && full && !eof = 0 then begin
         (* We should bind for each frames... *)
@@ -697,9 +701,11 @@ class display_html ((top : Widget.widget),
                with
              Not_found -> "???")])
       end;
+      *)
       self#set_progress (Some red) red;
          self#finish false;
       mach#see_frag dh.document_fragment;
+      (*
       if !Lang.japan && !meta_charset <> None then begin
         match !meta_charset with
             | None -> assert false
@@ -717,6 +723,7 @@ class display_html ((top : Widget.widget),
                     self#redisplay
                   end
       end;
+      *)
       incr eof
       | Html_Lexing (s,n) ->
           (* this should not happen if Lexhtml was debugged *)

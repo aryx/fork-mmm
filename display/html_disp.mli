@@ -45,7 +45,7 @@ class  virtual machine : (unit) -> object
   method virtual embedded : Embed.embobject list
   method virtual see_frag : string option -> unit
     
-  (* For Japanese (or other langs) *)
+  (* For other languages) *)
   (* encode the internal i18n strings to corresponding encodings *)
   method virtual i18n_encoder : string -> string
   method virtual set_i18n_encoder : (string -> string) -> unit

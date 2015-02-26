@@ -920,51 +920,30 @@ end
 
 %todo: remove?
 
-<<signature Lang.japan>>=
-val japan : bool ref
-@
-
-<<signature Lang.is_japanese>>=
-val is_japanese : unit -> bool
-@
-
-
 %-------------------------------------------------------------
 
 <<./commons/lang.mli>>=
-<<signature Lang.japan>>
 <<signature Lang.lang>>
-<<signature Lang.is_japanese>>
 
 @
 
 
 \subsection*{[[./commons/lang.ml]]}
 
-<<constant Lang.japan>>=
-(* Version *)
 
-let japan = ref false
-@
-
-
-<<function Lang.is_japanese>>=
-(* mmm uses this function and Jtk.is_japanse_mode also. *)
-let is_japanese () =
-  let lang = try Sys.getenv "LANG" with _ -> "" in
-  String.length lang >= 2 && String.sub lang 0 2 = "ja"
-@
+%(* mmm uses this function and Jtk.is_japanse_mode also. *)
+%let is_japanese () =
+%  let lang = try Sys.getenv "LANG" with _ -> "" in
+%  String.length lang >= 2 && String.sub lang 0 2 = "ja"
 
 
 %-------------------------------------------------------------
 
 <<./commons/lang.ml>>=
-<<constant Lang.japan>>
 
 <<function Lang.lang>>
 
 (* detect and set LANG information *)
-<<function Lang.is_japanese>>
 
 @
 
@@ -2660,124 +2639,6 @@ let issp s =
 @
 
 
-<<constant Html.latin1_japan>>=
-let latin1_japan = [
-  "amp", 	"&";
-  "gt", 	">";
-  "lt" , 	"<";
-  "quot", 	"\"";
-  "nbsp", 	" "; (* non-breaking space *)
-  "iexcl",	"!"; (* ¡ inverted exclamation mark *)
-  "cent", 	"ct"; (* ¢ cent sign*)
-  "pound",	"Lb"; (* £ pound sterling sign*)
-  "curren",	"$"; (* ¤ general currency sign*)
-  "yen",	"\\"; (* ¥ yen sign*)
-  "brvbar",	"|"; (* ¦ broken (vertical) bar *)
-  "sect",	"S"; (* § section sign *)
-  "uml",	"\""; (* ¨ umlaut (dieresis) *)
-  "copy",	"(c)"; (* © copyright sign *)
-  "ordf",	"^a"; (* ª ordinal indicator, feminine *)
-  "laquo",	"<<"; (* « angle quotation mark, left *)
-  "not",	"\\"; (* ¬ not sign *)
-  "shy",	"-"; (* ­ soft hyphen *)
-  "reg",	"(r)"; (* ® registered sign *)
-  "macr",	"-"; (* ¯ macron *)
-  "deg",	"^o"; (* ° degree sign *)
-  "plusmn",	"+-"; (* ± plus-or-minus sign *)
-  "sup2",	"^2"; (* ² superscript two *)
-  "sup3",	"^3"; (* ³ superscript three *)
-  "acute",	"'"; (* ´ acute accent *)
-  "micro",	"m"; (* µ micro sign *)
-  "para",	"$"; (* ¶ pilcrow (paragraph sign) *)
-  "middot",	"."; (* · middle dot *)
-  "cedil",	","; (* ¸ cedilla *)
-  "sup1",	"^1"; (* ¹ superscript one *)
-  "ordm",	"^o"; (* º ordinal indicator, masculine *)
-  "raquo",	">>"; (* » angle quotation mark, right *)
-  "frac14",	"1/4"; (* ¼ fraction one-quarter *)
-  "frac12",	"1/2"; (* ½ fraction one-half *)
-  "frac34",	"3/4"; (* ¾ fraction three-quarters *)
-  "iquest",	"?"; (* ¿ inverted question mark *)
-  "Agrave", 	"A`";	(* À capital A, grave accent *)
-  "Aacute", 	"A'";	(* Á capital A, acute accent *)
-  "Acirc", 	"A";	(* Â capital A, circumflex accent *)
-  "Atilde", 	"A~";	(* Ã capital A, tilde *)
-  "Auml", 	"A\"";	(* Ä capital A, dieresis or umlaut mark *)
-  "Aring", 	"A";	(* Å capital A, ring *)
-  "AElig", 	"AE";	(* Æ capital AE diphthong (ligature) *)
-  "Ccedil", 	"C,";	(* Ç capital C, cedilla *)
-  "Egrave", 	"E`";	(* È capital E, grave accent *)
-  "Eacute", 	"E'";	(* É capital E, acute accent *)
-  "Ecirc", 	"E";	(* Ê capital E, circumflex accent *)
-  "Euml", 	"E\"";	(* Ë capital E, dieresis or umlaut mark *)
-  "Igrave", 	"I`";	(* Ì capital I, grave accent *)
-  "Iacute", 	"I'";	(* Í capital I, acute accent *)
-  "Icirc", 	"I";	(* Î capital I, circumflex accent *)
-  "Iuml", 	"I\"";	(* Ï capital I, dieresis or umlaut mark *)
-  "ETH", 	"D";	(* Ð capital Eth, Icelandic *)
-  "Ntilde", 	"N~";	(* Ñ capital N, tilde *)
-  "Ograve", 	"O`";	(* Ò capital O, grave accent *)
-  "Oacute", 	"O'";	(* Ó capital O, acute accent *)
-  "Ocirc", 	"O";	(* Ô capital O, circumflex accent *)
-  "Otilde", 	"O~";	(* Õ capital O, tilde *)
-  "Ouml", 	"O\"";	(* Ö capital O, dieresis or umlaut mark *)
-  "times",	"x"; (* × multiply sign*)
-  "Oslash", 	"O";	(* Ø capital O, slash *)
-  "Ugrave", 	"U`";	(* Ù capital U, grave accent *)
-  "Uacute", 	"U'";	(* Ú capital U, acute accent *)
-  "Ucirc", 	"U";	(* Û capital U, circumflex accent *)
-  "Uuml", 	"U\"";	(* Ü capital U, dieresis or umlaut mark *)
-  "Yacute",	"Y'"; (* Ý capital Y, acute accent *)
-  "THORN", 	"D";	(* Þ capital THORN, Icelandic *)
-  "szlig", 	"ss";	(* ß small sharp s, German (sz ligature) *)
-  "agrave", 	"a`";	(* à small a, grave accent *)
-  "aacute", 	"a'";	(* á small a, acute accent *)
-  "acirc", 	"a";	(* â small a, circumflex accent *)
-  "atilde", 	"a~";	(* ã small a, tilde *)
-  "auml", 	"a\"";	(* ä small a, dieresis or umlaut mark *)
-  "aring", 	"a";	(* å small a, ring *)
-  "aelig", 	"a";	(* æ small ae diphthong (ligature) *)
-  "ccedil", 	"c,";	(* ç small c, cedilla *)
-  "egrave", 	"e`";	(* è small e, grave accent *)
-  "eacute", 	"e'";	(* é small e, acute accent *)
-  "ecirc", 	"e^";	(* ê small e, circumflex accent *)
-  "euml", 	"e\"";	(* ë small e, dieresis or umlaut mark *)
-  "igrave", 	"i`";	(* ì small i, grave accent *)
-  "iacute", 	"i'";	(* í small i, acute accent *)
-  "icirc", 	"i^";	(* î small i, circumflex accent *)
-  "iuml", 	"i\"";	(* ï small i, dieresis or umlaut mark *)
-  "eth", 	"o";	(* ð small eth, Icelandic *)
-  "ntilde", 	"n~";	(* ñ small n, tilde *)
-  "ograve", 	"o`";	(* ò small o, grave accent *)
-  "oacute", 	"o'";	(* ó small o, acute accent *)
-  "ocirc", 	"o^";	(* ô small o, circumflex accent *)
-  "otilde", 	"o~";	(* õ small o, tilde *)
-  "ouml", 	"o\"";	(* ö small o, dieresis or umlaut mark *)
-  "divide",	"/"; (* ÷ divide sign *)
-  "oslash", 	"o";	(* ø small o, slash *)
-  "ugrave", 	"u`";	(* ù small u, grave accent *)
-  "uacute", 	"u'";	(* ú small u, acute accent *)
-  "ucirc", 	"u^";	(* û small u, circumflex accent *)
-  "uuml", 	"u\"";	(* ü small u, dieresis or umlaut mark *)
-  "yacute", 	"y'";	(* ý small y, acute accent *)
-  "thorn", 	"b";	(* þ small thorn, Icelandic *)
-  "yuml", 	"y\"" 	(* ÿ small y, dieresis or umlaut mark *)
-  ]
-@
-
-<<constant Html.latin1_japan (./html/html.ml)>>=
-(* To notice Tk that it is not EUC, but ISO8859, we have to put ESC SEQ
-   before these entities. If Tk knows the file is JIS already, of course
-   this seq is not required at all, but I don't want to write the detection
-   code. *)
-
-let latin1_japan = List.map (fun (str,c) ->
-  (str, "\027\040\066" ^ c))  latin1_normal
-@
-
-
-
-
 
 
 <<function Html.length_of_string>>=
@@ -2838,10 +2699,6 @@ open Printf
 <<constant Html.ampersand_table>>
 
 <<constant Html.latin1_normal>>
-
-<<constant Html.latin1_japan>>
-
-<<constant Html.latin1_japan (./html/html.ml)>>
 
 <<function Html.init>>
 
@@ -8417,8 +8274,9 @@ let default = ref
 <<function Fonts.compute_tag>>=
 (* For a given fontDesc, return the name of the tags and its attributes *)
 let rec compute_tag fd =
-  let font_key = Jpf_font.string_of_pattern fd.pattern ^ 
-    string_of_int fd.pxlsz in
+  let font_key = 
+    Jpf_font.string_of_pattern fd.pattern ^ string_of_int fd.pxlsz 
+  in
   try 
     Hashtbl.find tags font_key
   with Not_found ->
@@ -8426,54 +8284,61 @@ let rec compute_tag fd =
       let pxlsz = pxlsz fd.pxlsz in
       let pattern = {fd.pattern with pixelSize= Some pxlsz} in
       try
-    let display = 
-      match Protocol.default_display () with
-        "" -> None | x -> Some x
-    in
-    let fontid, fontname =
-          (* find latin font *)
-      let xlfd = Jpf_font.nearest_pixel_size display true pattern in
-      let latin_f = Jpf_font.string_of_valid_xlfd xlfd in
-      xlfd.family^xlfd.weight^xlfd.slant^(string_of_int pxlsz), latin_f
-    in
-    (* japanese mode, search jp fonts *)
-    if !Lang.japan then begin
-(*
-      let pattern = { Jpf_font.empty_pattern with
-                      registry= Some "jisx0208.1983";
-                      pixelSize= Some pxlsz } in
-*)
-      let retry pattern =
-        let xlfd = Jpf_font.nearest_pixel_size display (pxlsz > 20) 
-        pattern 
+        let display = 
+          match Protocol.default_display () with
+            "" -> None | x -> Some x
         in
-        let japan_f = Jpf_font.string_of_valid_xlfd xlfd in
-        fontid, [Font (Font.create [Compound [ fontname; japan_f ]])]
-      in
+        let fontid, fontname =
+              (* find latin font *)
+          let xlfd = Jpf_font.nearest_pixel_size display true pattern in
+          let latin_f = Jpf_font.string_of_valid_xlfd xlfd in
+          xlfd.family^xlfd.weight^xlfd.slant^(string_of_int pxlsz), latin_f
+        in
+    
+        (*    
+        (* japanese mode, search jp fonts *)
+        if !Lang.japan then begin
+         (*
+          let pattern = { Jpf_font.empty_pattern with
+                          registry= Some "jisx0208.1983";
+                          pixelSize= Some pxlsz } in
+          *)
+          let retry pattern =
+            let xlfd = Jpf_font.nearest_pixel_size display (pxlsz > 20) 
+            pattern 
+            in
+            let japan_f = Jpf_font.string_of_valid_xlfd xlfd in
+            fontid, [Font (Font.create [Compound [ fontname; japan_f ]])]
+          in
+    
+          (* fst retry *)
+          let pattern = { fd.pattern with
+                          foundry= None;
+                          family= None;
+                          registry= Some "jisx0208.1983";
+                          pixelSize= Some pxlsz } 
+          in
+          try retry pattern with _ ->
+          
+              (* snd retry *)
+          let pattern = { pattern with slant= None } in
+          try retry pattern with _ ->
+            
+              Log.f (I18n.sprintf "Japanese font for %s is not available" (Jpf_font.string_of_pattern pattern));
+          fontid, [Font fontname] (* we should do more... *)
+        end else 
+          *)
 
-      (* fst retry *)
-      let pattern = { fd.pattern with
-                      foundry= None;
-                      family= None;
-                      registry= Some "jisx0208.1983";
-                      pixelSize= Some pxlsz } 
-      in
-      try retry pattern with _ ->
-      
-          (* snd retry *)
-      let pattern = { pattern with slant= None } in
-      try retry pattern with _ ->
-        
-          Log.f (I18n.sprintf "Japanese font for %s is not available" (Jpf_font.string_of_pattern pattern));
-      fontid, [Font fontname] (* we should do more... *)
-    end else fontid, [Font fontname]
+        fontid, [Font fontname]
       with (* Invalid_argument f *) _ ->  (* font is not available *)
-    Log.f (I18n.sprintf "Font for %s is not available" (Jpf_font.string_of_pattern pattern));
-    if fd = !default then ("fixedfont", [Font "fixed"])
-    else compute_tag !default
-    in
-    Hashtbl.add tags font_key tagdesc;
-    tagdesc
+        Log.f (I18n.sprintf "Font for %s is not available" 
+                 (Jpf_font.string_of_pattern pattern));
+        if fd = !default 
+        then ("fixedfont", [Font "fixed"])
+        else compute_tag !default
+     in
+     Hashtbl.add tags font_key tagdesc;
+     tagdesc
 @
 
 <<function Fonts.reset>>=
@@ -8894,7 +8759,9 @@ val view:
   Document.document_id ->
   (unit -> unit) ->
   (Html.location * string) list ref ->
-  (Tk.textTag * Html.location) list ref -> Japan.detected_code -> unit
+  (Tk.textTag * Html.location) list ref -> 
+  Japan.detected_code -> 
+  unit
 @
 
 
@@ -8941,73 +8808,74 @@ let view attach did redisplay errors annotations coding =
      let tmpfile = Msys.mktemp "buf" in
      (* load *)
      (fun t ->
+        (*
         if !Lang.japan then begin
           (* In Japanese mode, We must insert line by line. *) 
          let ic = open_in fname 
          and buf = String.create 2048
-          and prevbuf = ref ""
+         and prevbuf = ref ""
          in
           try
-     while true do
-       let n = input ic buf 0 2048 in
-           let txt = 
-             if n = 2048 then begin
-               (* try to find last newline *)
-               let pos = 
-             try String.rindex buf '\n' + 1 
-             with Not_found -> 0
-               in
-               let txt = !prevbuf ^ (String.sub buf 0 pos) in
-               prevbuf := String.sub buf pos 
-                  (String.length buf - pos);
-               txt
-             end else begin
-               let txt = !prevbuf ^ (String.sub buf 0 n) in
-               prevbuf := "";
-               txt
-             end
-           in
-           (* if coding = ISO8859 or JIS, the chars > \127
-            * must be preceded with esc sequence 
-            *)
-           let txt =
-             if coding = Japan.Code Japan.ISO8859 || 
-                coding = Japan.Code Japan.JIS then
-               let buf = Ebuffer.create (String.length txt * 2) in
-               for i = 0 to String.length txt - 1 do
-             if txt.[i] > '\127' then 
-               (* sorry for hard coding *)
-               Ebuffer.output_string buf "\027\040\066";
-             Ebuffer.output_char buf txt.[i]
-               done;
-               Ebuffer.get buf
-             else txt
-           in
-           Text.insert t textEnd txt [];
-           (* Then EOF check *)
-           if n = 0 then raise End_of_file
-     done
-          with
-     End_of_file -> close_in ic
-        end else begin
+             while true do
+               let n = input ic buf 0 2048 in
+                   let txt = 
+                     if n = 2048 then begin
+                       (* try to find last newline *)
+                       let pos = 
+                     try String.rindex buf '\n' + 1 
+                     with Not_found -> 0
+                       in
+                       let txt = !prevbuf ^ (String.sub buf 0 pos) in
+                       prevbuf := String.sub buf pos 
+                          (String.length buf - pos);
+                       txt
+                     end else begin
+                       let txt = !prevbuf ^ (String.sub buf 0 n) in
+                       prevbuf := "";
+                       txt
+                     end
+                   in
+                   (* if coding = ISO8859 or JIS, the chars > \127
+                    * must be preceded with esc sequence 
+                    *)
+                   let txt =
+                     if coding = Japan.Code Japan.ISO8859 || 
+                        coding = Japan.Code Japan.JIS then
+                       let buf = Ebuffer.create (String.length txt * 2) in
+                       for i = 0 to String.length txt - 1 do
+                     if txt.[i] > '\127' then 
+                       (* sorry for hard coding *)
+                       Ebuffer.output_string buf "\027\040\066";
+                     Ebuffer.output_char buf txt.[i]
+                       done;
+                       Ebuffer.get buf
+                     else txt
+                   in
+                   Text.insert t textEnd txt [];
+                   (* Then EOF check *)
+                   if n = 0 then raise End_of_file
+             done
+       with End_of_file -> close_in ic
+     end else 
+     *)
+     begin
          let ic = open_in fname 
          and buf = String.create 2048
          in
           try
-     while true do
-       let n = input ic buf 0 2048 in
-        if n = 0 then raise End_of_file
-        else
-        Text.insert t textEnd (
-          if n = 2048 then buf else String.sub buf 0 n)
-          []
-     done
-          with
-     End_of_file -> close_in ic
-        end
-       ),
-         (* commit *)
-         (fun t ->
+             while true do
+               let n = input ic buf 0 2048 in
+                if n = 0 then raise End_of_file
+                else
+                Text.insert t textEnd (
+                  if n = 2048 then buf else String.sub buf 0 n)
+                  []
+             done
+          with End_of_file -> close_in ic
+     end
+     ),
+     (* commit *)
+      (fun t ->
         let oc = open_out tmpfile in
          output_string oc
           (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
@@ -10658,10 +10526,12 @@ class  virtual html_parse (dh) =
   method parse_init =
     red <- 0;
     feed_read <-
-       if !Lang.japan then 
-     Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
+       (*
+       if !Lang.japan 
+       then Japan.create_read_japanese self#dh.document_feed.feed_read jpn_config
        else 
-     Japan.create_read_native self#dh.document_feed.feed_read;
+       *)
+       Japan.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
     lexer <- sgml_lexer !Dtd.current;
     lexbuf <- 
@@ -10953,9 +10823,11 @@ class display_html ((top : Widget.widget),
     self#parse_init;
 
     (* I18n encoder for Forms *)
+    (*
     if !Lang.japan then begin
       mach#set_i18n_encoder (fun s -> Japan.encoder feed_read#get_code s)
     end;
+    *)
 
     (* EOF Flags for JP *)
     let eof = ref 0 in
@@ -10988,8 +10860,8 @@ class display_html ((top : Widget.widget),
           raise End_of_file
         end)
       tokens
-      with 
-       End_of_file ->
+      with End_of_file ->
+      (*
       (* I don't know why but in some cases we have more than 1 EOF *)
       if !Lang.japan && full && !eof = 0 then begin
         (* We should bind for each frames... *)
@@ -11049,9 +10921,11 @@ class display_html ((top : Widget.widget),
                with
              Not_found -> "???")])
       end;
+      *)
       self#set_progress (Some red) red;
          self#finish false;
       mach#see_frag dh.document_fragment;
+      (*
       if !Lang.japan && !meta_charset <> None then begin
         match !meta_charset with
             | None -> assert false
@@ -11069,6 +10943,7 @@ class display_html ((top : Widget.widget),
                     self#redisplay
                   end
       end;
+      *)
       incr eof
       | Html_Lexing (s,n) ->
           (* this should not happen if Lexhtml was debugged *)
@@ -13434,7 +13309,7 @@ class  virtual machine : (unit) -> object
   method virtual embedded : Embed.embobject list
   method virtual see_frag : string option -> unit
     
-  (* For Japanese (or other langs) *)
+  (* For other languages) *)
   (* encode the internal i18n strings to corresponding encodings *)
   method virtual i18n_encoder : string -> string
   method virtual set_i18n_encoder : (string -> string) -> unit
@@ -13594,7 +13469,7 @@ class  virtual machine (unit : unit) =
   method virtual embedded : embobject list
   method virtual see_frag : string option -> unit
 
-  (* For Japanese (or other langs) *)
+  (* For other languages *)
   (* encode the internal i18n strings to corresponding encodings *)
   method virtual i18n_encoder : string -> string
   method virtual set_i18n_encoder : (string -> string) -> unit
@@ -17056,7 +16931,6 @@ let internal top =
     bool_pref "Text fit debug" Fit.debug;
     bool_pref "Image loading debug" Img.ImageData.verbose;
     bool_pref "CamlTk Debug" Protocol.debug;
-    bool_pref "Japanese Parsing Debug" Japan.debug
     ]
 @
 
