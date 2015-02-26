@@ -1461,104 +1461,138 @@ and any = parse
 
 
 
-\subsection{Paths}
-% need that? mv?
 
-<<signature Lexpath.path_components>>=
-(* Path lexer
-   Deals with "./" and "../"
+
+\subsection{Normalization}
+
+% how this normalize? because make does a few
+<<signature Lexurl.normalize>>=
+val normalize : string -> string
+@
+<<function Lexurl.normalize>>=
+let normalize url =
+  let urlp = make url in
+  Url.string_of urlp
+@
+%less: could rename make to of_string
+
+
+
+
+<<signature Lexurl.maken>>=
+val maken : string -> Url.t
+   (* raise Url_Lexing(msg,pos) *)
+@
+% make normalized
+<<function Lexurl.maken>>=
+(* Extra normalisation at lexing time 
+ *  remove ../ and /. as in RFC 1630
+ *  unquote %
  *)
-
-val path_components : Lexing.lexbuf -> string list
-  (* in normal order: /a/b/c/ -> [a;b;c] *)
+let maken s =
+  let url = make s in
+  (match url.protocol with
+  | HTTP ->  
+      (match url.path with
+      | None -> ()
+      | Some p -> url.path <- Some (Urlenc.unquote (remove_dots p))
+      )
+  | _ -> ()
+  );
+  url
 @
 
-<<signature Lexpath.rev_path_components>>=
-val rev_path_components : Lexing.lexbuf -> string list
-  (* in reverse order: /a/b/c/ -> [c;b;a] *)
-@
 
-<<signature Lexpath.build>>=
-val build : string -> string list -> string
-  (* [build root [a;b;d]] returns path/a/b/c *)
-@
 
-<<signature Lexpath.remove_dots>>=
+\subsubsection{dots}
+
+<<signature Lexurl.remove_dots>>=
 val remove_dots : string -> string
-  (* takes path and removes . and .. *)
+@
+% -> <>??
+<<function Lexurl.remove_dots>>=
+let remove_dots s =
+  let b = Ebuffer.create 32 in
+  rev_do_list 
+    (Ebuffer.output_string b)
+    (pathcomponents (Lexing.from_string s) []);
+  Ebuffer.get b
+@
+
+<<functions Lexurl.xxx>>=
+and pathcomponents = parse
+  [ ^ '/']* '/'
+    { (function l ->
+         let newl = 
+           match Lexing.lexeme lexbuf with
+          | "./" -> l
+           | "../" -> 
+              (match l with 
+              | [] -> [] 
+              | _ :: tl -> tl
+              )
+           | p -> (p :: l)
+          in
+       pathcomponents lexbuf newl)
+     }
+| [ ^ '/']+
+    { (fun l -> 
+     match Lexing.lexeme lexbuf with
+     | "." -> l
+        | ".." -> (match l with [] -> [] | _ :: tl -> tl)
+        | p -> p :: l )
+    }
+| "" { (fun l -> l) }
 @
 
 
 
-
-\subsection{Encoding}
-% unparsing? escaping?
-
-<<signature Urlenc.decode>>=
-(* URL encoding *)
-
-val decode : string -> string
-@
-
-<<signature Urlenc.encode>>=
-val encode : string -> string
-    (* encoding and decoding for an arbitrary string *)
-@
-
-<<signature Urlenc.strict_form_standard>>=
-val strict_form_standard : bool ref
-    (* if true, we take RFC1866 8.2.1 case 1 strictly, and encode any 
-       non-alphanumeric character in the field name
-       else, we encode only values, but not field names *)
-@
-
-<<signature Urlenc.form_encode>>=
-val form_encode : (string * string) list -> string
-@
-
-<<signature Urlenc.form_decode>>=
-val form_decode : string -> (string * string) list
-    (* application/x-www-form-urlencoded encoding *)
-@
+\subsubsection{Percents}
 
 <<signature Urlenc.unquote>>=
 (*-*)
 val unquote : string -> string
 @
 
-
-<<function Urlenc.hexchar>>=
-let hexchar c = 
-  let s = String.make 3 '%'
-  and i = Char.code c in
-  s.[1] <- dec_to_hex (i/16);
-  s.[2] <- dec_to_hex (i mod 16);
-  s
-@
-
-<<function Urlenc.decode>>=
-(* Decode escaped characters *)
-(* Note: beware of order of splitting wrt '&' and decoding *)
-let decode s =
-  let l = String.length s in
-  let target = Ebuffer.create l in
-  let pos = ref 0 in
-  while !pos < l do
-    if s.[!pos] = '%' & !pos + 2 < l  then begin
-      let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
-       Ebuffer.output_char target (Char.chr c);
-    pos := !pos + 3
-    end
-    else if s.[!pos] = '+' then begin
-      Ebuffer.output_char target ' ';
-      incr pos
-      end
-    else begin
-      Ebuffer.output_char target s.[!pos];
-      incr pos
-      end
-  done;
-  Ebuffer.get target
+<<function Urlenc.unquote>>=
+let unquote s =
+  try
+    (* optim *)
+    let _ = String.index s '%' in
+    let l = String.length s in
+    let target = Ebuffer.create l in
+    let pos = ref 0 in
+    (try
+      while !pos < l do
+       let perpos = String.index_from s !pos '%' in
+       if perpos > !pos 
+       then Ebuffer.output target s !pos (perpos - !pos);
+       pos := perpos;
+       if s.[!pos] = '%' & !pos + 2 < l  
+       then begin
+         let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
+         let substc = Char.chr c in
+         if List.mem substc keep_quoted 
+         then
+           for i = 0 to 2 do
+             Ebuffer.output_char target s.[!pos];
+             incr pos
+           done
+         else begin
+             Ebuffer.output_char target (Char.chr c);
+             pos := !pos + 3
+         end
+       end else begin
+        Ebuffer.output_char target s.[!pos];
+        incr pos
+       end
+     done;
+     Ebuffer.get target
+   with Not_found -> (* no more substitutions *)
+     Ebuffer.output target s !pos (l - !pos);
+     Ebuffer.get target
+   )
+  with Not_found -> s
 @
 
 <<constant Urlenc.keep_quoted>>=
@@ -1570,46 +1604,47 @@ let keep_quoted =
   ['/'; '?'; '#'; ' '; '\t'; '\r'; '\n'; ':'; '%'; '&'; '='; '+']
 @
 
-<<function Urlenc.unquote>>=
-let unquote s =
-  try
-    (* optim *)
-    let _ = String.index s '%' in
-    let l = String.length s in
-    let target = Ebuffer.create l in
-    let pos = ref 0 in
-    try
-      while !pos < l do
-    let perpos = String.index_from s !pos '%' in
-    if perpos > !pos then Ebuffer.output target s !pos (perpos - !pos);
-    pos := perpos;
-       if s.[!pos] = '%' & !pos + 2 < l  then begin
-         let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
-      let substc = Char.chr c in
-      if List.mem substc keep_quoted then
-        for i = 0 to 2 do
-             Ebuffer.output_char target s.[!pos];
-             incr pos
-          done
-          else begin
-             Ebuffer.output_char target (Char.chr c);
-          pos := !pos + 3
-       end
-     end
-     else begin
-        Ebuffer.output_char target s.[!pos];
-        incr pos
-     end
-      done;
-      Ebuffer.get target
-    with
-      Not_found -> (* no more substitutions *)
-    Ebuffer.output target s !pos (l - !pos);
-    Ebuffer.get target
-  with
-    Not_found -> s
-@
 
+\subsection{Encoding}
+% unparsing? escaping?
+
+\subsubsection{Decoding}
+% ??? -> <>
+<<signature Urlenc.decode>>=
+(* URL encoding *)
+val decode : string -> string
+@
+<<function Urlenc.decode>>=
+(* Decode escaped characters *)
+(* Note: beware of order of splitting wrt '&' and decoding *)
+let decode s =
+  let l = String.length s in
+  let target = Ebuffer.create l in
+  let pos = ref 0 in
+  while !pos < l do
+    if s.[!pos] = '%' & !pos + 2 < l  then begin
+       let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
+       Ebuffer.output_char target (Char.chr c);
+    pos := !pos + 3
+    end else if s.[!pos] = '+' then begin
+      Ebuffer.output_char target ' ';
+      incr pos
+    end else begin
+      Ebuffer.output_char target s.[!pos];
+      incr pos
+      end
+  done;
+  Ebuffer.get target
+@
+%less: rewrite match ()
+
+\subsubsection{Encoding}
+
+% ??? -> <>
+<<signature Urlenc.encode>>=
+val encode : string -> string
+    (* encoding and decoding for an arbitrary string *)
+@
 <<function Urlenc.encode>>=
 let encode s =
   let target = Ebuffer.create (String.length s) in
@@ -1623,10 +1658,52 @@ let encode s =
   Ebuffer.get target
 @
 
+<<function Urlenc.hexchar>>=
+let hexchar c = 
+  let s = String.make 3 '%'
+  and i = Char.code c in
+  s.[1] <- dec_to_hex (i/16);
+  s.[2] <- dec_to_hex (i mod 16);
+  s
+@
+
+
+\subsubsection{Forms}
+
+
+<<signature Urlenc.strict_form_standard>>=
+val strict_form_standard : bool ref
+    (* if true, we take RFC1866 8.2.1 case 1 strictly, and encode any 
+       non-alphanumeric character in the field name
+       else, we encode only values, but not field names *)
+@
 <<constant Urlenc.strict_form_standard>>=
 let strict_form_standard = ref true
 @
 
+
+
+<<signature Urlenc.form_decode>>=
+val form_decode : string -> (string * string) list
+    (* application/x-www-form-urlencoded encoding *)
+@
+<<constant Urlenc.form_decode>>=
+let form_decode =
+  let ampersand c = c = '&' and equals c = c = '=' in
+  (function  s ->
+     List.map (fun encp ->
+       match split_str equals encp with
+       [x;y] -> (decode x, decode y)
+     | [x] -> (decode x, "")
+     | _ -> invalid_arg "form_decode")
+       (split_str ampersand s))
+@
+
+
+
+<<signature Urlenc.form_encode>>=
+val form_encode : (string * string) list -> string
+@
 <<function Urlenc.form_encode>>=
 let form_encode = function 
   [] -> ""
@@ -1647,24 +1724,20 @@ let form_encode = function
     Ebuffer.get b
 @
 
-<<constant Urlenc.form_decode>>=
-let form_decode =
-  let ampersand c = c = '&' and equals c = c = '=' in
-  (function  s ->
-     List.map (fun encp ->
-       match split_str equals encp with
-       [x;y] -> (decode x, decode y)
-     | [x] -> (decode x, "")
-     | _ -> invalid_arg "form_decode")
-       (split_str ampersand s))
-@
+
+
+
+
+
+
+
 
 \subsection{Links}
 
+% ??? -> <>
 <<signature Hyper.parse_method>>=
 val parse_method : string -> link_method
 @
-
 <<function Hyper.parse_method>>=
 let parse_method = function
    "GET" -> GET
@@ -1677,7 +1750,7 @@ let parse_method = function
 
 
 
-
+% ??? -> <>
 <<signature Hyper.urlconcat>>=
 val urlconcat: Url.t -> string -> string
    (* [urlconcat url relurl] resolves the relative URL [relurl] in the
@@ -1685,13 +1758,6 @@ val urlconcat: Url.t -> string -> string
       Doesn't handle fragments
     *)
 @
-
-<<signature Hyper.resolve>>=
-val resolve : link -> Uri.abs_uri
-  (* raises Invalid_link(msg) *)
-@
-
-
 <<function Hyper.urlconcat>>=
 (* parsed Absolute URL + URL -> Absolute URL *)
 (* NO FRAGMENT HANDLING *)
@@ -1756,6 +1822,11 @@ let urlconcat contextp newuri =
         search = searchpart}
 @
 
+% ??? -> <>
+<<signature Hyper.resolve>>=
+val resolve : link -> Uri.abs_uri
+  (* raises Invalid_link(msg) *)
+@
 <<function Hyper.resolve>>=
 (* Produces an URL *)
 let resolve link =
@@ -1797,86 +1868,6 @@ let resolve link =
      end
 @
 
-
-\subsection{Normalization}
-
-<<signature Lexurl.maken>>=
-val maken : string -> Url.t
-   (* raise Url_Lexing(msg,pos) *)
-@
-% make normalized
-<<function Lexurl.maken>>=
-(* Extra normalisation at lexing time 
- *  remove ../ and /. as in RFC 1630
- *  unquote %
- *)
-let maken s =
-  let url = make s in
-  (match url.protocol with
-  | HTTP ->  
-      (match url.path with
-      | None -> ()
-      | Some p -> url.path <- Some (Urlenc.unquote (remove_dots p))
-      )
-  | _ -> ()
-  );
-  url
-@
-
-
-
-<<signature Lexurl.remove_dots>>=
-val remove_dots : string -> string
-@
-% -> <>??
-<<function Lexurl.remove_dots>>=
-let remove_dots s =
-  let b = Ebuffer.create 32 in
-  rev_do_list 
-    (Ebuffer.output_string b)
-    (pathcomponents (Lexing.from_string s) []);
-  Ebuffer.get b
-@
-
-<<functions Lexurl.xxx>>=
-and pathcomponents = parse
-  [ ^ '/']* '/'
-    { (function l ->
-         let newl = 
-           match Lexing.lexeme lexbuf with
-          | "./" -> l
-           | "../" -> 
-              (match l with 
-              | [] -> [] 
-              | _ :: tl -> tl
-              )
-           | p -> (p :: l)
-          in
-       pathcomponents lexbuf newl)
-     }
-| [ ^ '/']+
-    { (fun l -> 
-     match Lexing.lexeme lexbuf with
-     | "." -> l
-        | ".." -> (match l with [] -> [] | _ :: tl -> tl)
-        | p -> p :: l )
-    }
-| "" { (fun l -> l) }
-@
-
-
-
-
-
-<<signature Lexurl.normalize>>=
-val normalize : string -> string
-@
-<<function Lexurl.normalize>>=
-let normalize url =
-  let urlp = make url in
-  Url.string_of urlp
-@
-%less: could rename make to of_string
 
 \section{HTML}
 
@@ -1931,9 +1922,6 @@ val new_data : unit -> t
        order to get reentrant lexers
      *)
 @
-
-
-
 <<signature Lexhtml.cdata>>=
 val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 @
@@ -2723,7 +2711,7 @@ type mode =
 <<constant Htparse.mode>>=
 let mode = ref Check
 @
-
+% indent? nesting? what for?
 
 <<function Htparse.main>>=
 let main () =
@@ -4530,33 +4518,11 @@ val cur_tachy : tachymeter ref
 
 \subsection{Base 64}
 
-<<signature Base64.encode>>=
-(* Base64 encoding (ONLY for Basic authentication) *)
-val encode : string -> string
-@
+\subsubsection{Decoding}
 
 <<signature Base64.decode>>=
 val decode : string -> string
 @
-
-<<constant Base64.index64>>=
-(* For basic credentials only *)
-(* Encoding is [A-Z][a-z][0-9]+/= *)
-(* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
-
-let index64 = Array.create 128 0
-@
-
-<<toplevel Base64._1>>=
-(* Init the index *)
-let _ =
-  for i = 0 to 25 do index64.(i + Char.code 'A') <- i done;
-  for i = 0 to 25 do index64.(i + Char.code 'a') <- i + 26 done;
-  for i = 0 to 9 do  index64.(i + Char.code '0') <- i + 52 done;
-  index64.(Char.code '+') <- 62;
-  index64.(Char.code '/') <- 63
-@
-
 <<function Base64.decode>>=
 let decode s =
   let rpos = ref 0
@@ -4585,19 +4551,30 @@ let decode s =
   String.sub res 0 (String.length res - cut)
 @
 
-<<constant Base64.char64>>=
-let char64 = Array.create 64 'a'
+<<constant Base64.index64>>=
+(* For basic credentials only *)
+(* Encoding is [A-Z][a-z][0-9]+/= *)
+(* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
+
+let index64 = Array.create 128 0
 @
 
-<<toplevel Base64._2>>=
+<<toplevel Base64._1>>=
+(* Init the index *)
 let _ =
-  for i = 0 to 25 do char64.(i) <- Char.chr (Char.code 'A' + i) done;
-  for i = 0 to 25 do char64.(i+26) <- Char.chr (Char.code 'a' + i) done;
-  for i = 0 to 9 do char64.(i+52) <- Char.chr (Char.code '0' + i) done;
-  char64.(62) <- '+';
-  char64.(63) <- '/'
+  for i = 0 to 25 do index64.(i + Char.code 'A') <- i done;
+  for i = 0 to 25 do index64.(i + Char.code 'a') <- i + 26 done;
+  for i = 0 to 9 do  index64.(i + Char.code '0') <- i + 52 done;
+  index64.(Char.code '+') <- 62;
+  index64.(Char.code '/') <- 63
 @
 
+\subsubsection{Encoding}
+
+<<signature Base64.encode>>=
+(* Base64 encoding (ONLY for Basic authentication) *)
+val encode : string -> string
+@
 <<function Base64.encode>>=
 (* Encoding *)
 let encode s =
@@ -4627,6 +4604,20 @@ let encode s =
   for i = 1 to len - origlen do res.[String.length res - i] <- '=' done;
   res
 @
+
+
+<<constant Base64.char64>>=
+let char64 = Array.create 64 'a'
+@
+<<toplevel Base64._2>>=
+let _ =
+  for i = 0 to 25 do char64.(i) <- Char.chr (Char.code 'A' + i) done;
+  for i = 0 to 25 do char64.(i+26) <- Char.chr (Char.code 'a' + i) done;
+  for i = 0 to 9 do char64.(i+52) <- Char.chr (Char.code '0' + i) done;
+  char64.(62) <- '+';
+  char64.(63) <- '/'
+@
+
 
 
 \section{i18n}

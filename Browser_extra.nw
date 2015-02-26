@@ -951,6 +951,36 @@ end
 \subsection*{[[./commons/lexpath.mli]]}
 
 
+%\subsection{Paths}
+% need that? mv?
+% I think it's dead! subsumed by lexurl.mll
+
+<<signature Lexpath.path_components>>=
+(* Path lexer
+   Deals with "./" and "../"
+ *)
+
+val path_components : Lexing.lexbuf -> string list
+  (* in normal order: /a/b/c/ -> [a;b;c] *)
+@
+
+<<signature Lexpath.rev_path_components>>=
+val rev_path_components : Lexing.lexbuf -> string list
+  (* in reverse order: /a/b/c/ -> [c;b;a] *)
+@
+
+<<signature Lexpath.build>>=
+val build : string -> string list -> string
+  (* [build root [a;b;d]] returns path/a/b/c *)
+@
+
+<<signature Lexpath.remove_dots>>=
+val remove_dots : string -> string
+  (* takes path and removes . and .. *)
+@
+
+
+
 %-------------------------------------------------------------
 
 <<./commons/lexpath.mli>>=

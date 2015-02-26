@@ -14,7 +14,6 @@
 
 (*s: signature Urlenc.decode *)
 (* URL encoding *)
-
 val decode : string -> string
 (*e: signature Urlenc.decode *)
 (*s: signature Urlenc.encode *)
