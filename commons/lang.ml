@@ -7,8 +7,8 @@ let japan = ref false
 
 (*s: function Lang.lang *)
 let lang () =
-  if !japan then "ja"
-  else "iso8859"
+  (* if !japan then "ja" else *)
+  "iso8859"
 (*e: function Lang.lang *)
 
 (* detect and set LANG information *)

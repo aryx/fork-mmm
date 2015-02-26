@@ -36,32 +36,12 @@ France
 Francois.Rouaix@inria.fr
 http://pauillac.inria.fr/~rouaix/
 "
-  | "ja" -> "\027$B$b!A\027(B Version 0." ^ version_number ^
-"\n\027$B:n<T\027(B: Fran\231ois Rouaix
-\027$BF|K\\8l2=<T\027(B: \027$B8E@%\027(B \027$B=_\027(B
-\027$B4sM?\027(B: \027$B2mMx2l\027(B \027$B<f6j\027(B
-O'Caml 3 \027$B$X$N0\\?\"\027(B: \027$B8E@%\027(B \027$B=_!\"\027(B Pierre Weis
-\169 Copyright INRIA
-
-Projet Cristal
-INRIA Rocquencourt
-Domaine de Voluceau
-78153 Le Chesnay Cedex
-France
-
-Francois.Rouaix@inria.fr
-http://pauillac.inria.fr/~rouaix/
-
-Jun.Furuse@inria.fr
-http://pauillac.inria.fr/~furuse/
-"
   | _ -> assert false
 (*e: function Version.about *)
 
 (*s: function Version.home *)
 let home = function 
   | "iso8859" -> "http://pauillac.inria.fr/mmm/"
-  | "ja" -> "http://pauillac.inria.fr/mmm/jmmm/"
   | _ -> assert false
 (*e: function Version.home *)
 
@@ -70,9 +50,6 @@ let home = function
 let initurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
-  | "ja" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/jmmm/v%d/about.html"
-    number
   | _ -> assert false
 (*e: function Version.initurl *)
 
@@ -80,9 +57,6 @@ let initurl = function
 let helpurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
-  | "ja" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex-ja.html"
-    number
   | _ -> assert false
 (*e: function Version.helpurl *)
 
@@ -122,39 +96,6 @@ Join the author by clicking
 <BLOCKQUOTE>
 This document is included in your browser. Click on <TT>Reload</TT> to
 get an updated copy.
-</BLOCKQUOTE>
-</BODY>
-</HTML>
-"
-| "ja" -> "<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
-<BODY>
-<H1> \027$B%J%S%2!<%?\027(B \027$B$b!A\027(B Version 0." ^ version_number ^ "</H1>
-<H2> \027$B:n<T\027(B \027$B!'\027(B Fran&ccedil;ois Rouaix </H2>
-<H2> \027$BF|K\\8l2=<T\027(B \027$B!'\027(B \027$B8E@%\027(B \027$B=_\027(B </H2>
-<H2> \027$B4sM?\027(B \027$B!'\027(B \027$B2mMx2l\027(B \027$B<f6j\027(B </H2>
-<H2> O'Caml 3 \027$B$X$N0\\?\"\027(B: \027$B8E@%\027(B \027$B=_!\"\027(B Pierre Weis </H2>
-<H2> &copy; Copyright INRIA (\027$BJ)9q9qN)>pJs<+F02=8&5f=j\027(B) </H2>
-
-<H3> \027$B;HMQ%=%U%H%&%'%\"\027(B </H3>
-<H3> Objective Caml &copy; Copyright INRIA </H3>
-<H3> Tcl8.0/Tk8.0 (John Ousterhout and al.) &copy; Copyright The Regents of the University of California and Sun Microsystems, Inc </H3>
-<BLOCKQUOTE>
-\027$B$3$N%=%U%H%&%'%\"$K4X$7$F\027(BINRIA \027$B$O$$$+$J$k7A<0$N@UG$$bIi$$$^$;$s!#\027(B
-\027$BFC$K!\"$3$N%=%U%H%&%'%\"$r%f!<%6!<$NI,MW$KJ;$;$k5AL3!\"\027(B
-\027$B$^$?;HMQ$7$F@8$8$?$$$+$J$kD>@\\E*$^$?$O4V@\\E*Ho32$N@UG$$bIi$$$+$M$^$9!#\027(B
-</BLOCKQUOTE>
-<P>
-\027$B$b!A$N%[!<%`%Z!<%8$O\027(B
-<A HREF=\"http://pauillac.inria.fr/mmm/jmmm/\">\027$B$3$3\027(B</A>\027$B!\"\027(B
-\027$B$b!A$N1Q8l$G=q$+$l$?%*%j%8%J%k$N%[!<%`%Z!<%8$O\027(B
-<A HREF=\"http://pauillac.inria.fr/mmm/\">\027$B$3$3\027(B</A>\027$B$G$9!#\027(B
-<BR>
-\027$B6=L#$,$\"$kJ}$O\027(B
-<A HREF=\"mailto:Jun.Furuse@inria.fr\">\027$B$3$3\027(B</A>
-\027$B$r2!$7$F3+H/$K;22C$7$F2<$5$$!#\027(B
-<P>
-<BLOCKQUOTE>
-\027$B$3$NJ8=q$O%V%i%&%6$KFbB\"$5$l$F$$$^$9!#\027(B<TT>\027$B:FFI\027(B</TT> \027$B$r2!$7$F0lHV?7$7$$J*$r<hF@$7$F2<$5$$!#\027(B
 </BLOCKQUOTE>
 </BODY>
 </HTML>
