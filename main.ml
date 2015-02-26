@@ -106,11 +106,11 @@ let main () =
    "-palette", Arg.String (fun s -> palette := Some s),
    "<color>\tTk Palette";
    (*x: [[Main.main()]] command line options *)
-   "-suffixes", Arg.String (fun s -> sufxfile := s),
-   "<file>\tSuffix file";
-   (*x: [[Main.main()]] command line options *)
    "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
    "<url>\tHelp URL";
+   (*x: [[Main.main()]] command line options *)
+   "-suffixes", Arg.String (fun s -> sufxfile := s),
+   "<file>\tSuffix file";
    (*x: [[Main.main()]] command line options *)
    "-external", Arg.Unit (fun () -> accept_external := true),
    "\t\tAccept remote command (mmm_remote <url>)";
@@ -182,11 +182,12 @@ let main () =
   Cache.init();                       (* builtin document *)
   Auth.init();                        (* start expiration timer *)
   Debug.init();                       (* debugging RPC *)
-
+  (*e: [[Main.main()]] local initialisation *)
+  (*s: [[Main.main()]] suffix initialisation *)
   (* Suffix mapping to Content-Type and Content-Encoding *)
   if Sys.file_exists !sufxfile 
   then Http_headers.read_suffix_file !sufxfile;
-  (*e: [[Main.main()]] local initialisation *)
+  (*e: [[Main.main()]] suffix initialisation *)
   (*s: [[Main.main()]] misc initialisation *)
   (* Various stuff for the HTML viewer, needing Tk *)
   Ctext.init();

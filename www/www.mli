@@ -26,10 +26,8 @@ val make : Hyper.link -> request
   (* raises: Url_Lexing | Invalid_link *)
 (*e: signature Www.make *)
 
-(*s: signature module Www.UrlSet *)
 (* Table of unresolved active connexions *)
 module UrlSet : Set.S with type elt = Url.t
-(*e: signature module Www.UrlSet *)
 
 (*s: signature Www.is_active_cnx *)
 val is_active_cnx : Url.t -> bool

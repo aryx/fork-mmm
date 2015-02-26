@@ -148,12 +148,13 @@ let rec status_msg = function
 let contentlength l = 
   let h = get_header "content-length" l in
   try int_of_string h with _ -> raise Not_found
-and location = get_header "location"
-and contentencoding = get_header "content-encoding"
-and contenttype = get_header "content-type"
-and challenge = get_header "www-authenticate"
-and proxy_challenge = get_header "proxy-authenticate"
-and expires hs =
+
+let location = get_header "location"
+let contentencoding = get_header "content-encoding"
+let contenttype = get_header "content-type"
+let challenge = get_header "www-authenticate"
+let proxy_challenge = get_header "proxy-authenticate"
+let expires hs =
   try Some (Lexdate.ht_of_string (get_header "expires" hs))
   with
      Not_found -> None
@@ -198,7 +199,6 @@ type authChallenge =
 
 (*s: type Http_headers.media_parameter *)
 (* Media types *)
-
 type media_parameter = string * string
 (*e: type Http_headers.media_parameter *)
 (*s: type Http_headers.media_type *)
@@ -258,28 +258,37 @@ let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 [ 
   "html",	ContentType  "Content-Type: text/html";
   "htm",	ContentType  "Content-Type: text/html";
+
   "txt",  	ContentType  "Content-Type: text/plain";
+
   "ps",  	ContentType  "Content-Type: application/postscript";
   "dvi",  	ContentType  "Content-Type: application/x-dvi";
+
   "gif",	ContentType  "Content-Type: image/gif";
   "jpeg",	ContentType  "Content-Type: image/jpeg";
   "jpg",	ContentType  "Content-Type: image/jpeg";
   "tiff",	ContentType  "Content-Type: image/tiff";
   "tif",	ContentType  "Content-Type: image/tiff";
+
   "au",		ContentType  "Content-Type: audio/basic";
   "snd",	ContentType  "Content-Type: audio/basic";
   "wav",	ContentType  "Content-Type: audio/x-wav";
   "mid",	ContentType  "Content-Type: audio/midi";
+
   "mpeg",	ContentType  "Content-Type: video/mpeg";
   "mpg",	ContentType  "Content-Type: video/mpeg";
   "avi",	ContentType  "Content-Type: video/avi";
   "fli",	ContentType  "Content-Type: video/fli";
   "flc",	ContentType  "Content-Type: video/fli";
+
   "gz",		ContentEncoding  "Content-Encoding: gzip";
   "Z",		ContentEncoding  "Content-Encoding: compress";
+
   "asc",	ContentEncoding  "Content-Encoding: pgp";
   "pgp",	ContentEncoding  "Content-Encoding: pgp";
-  "cmo",        ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+   (*s: [[Http_headers.suffixes]] elements *)
+   "cmo",    ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+   (*e: [[Http_headers.suffixes]] elements *)
 ]
 (*e: toplevel Http_headers._1 *)
 

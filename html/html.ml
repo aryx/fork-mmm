@@ -131,6 +131,8 @@ let latin1_normal = [
   "gt", 	">";
   "lt" , 	"<";
   "quot", 	"\"";
+
+  (*s: [[latin1_normal]] elements *)
   "nbsp", 	"\160"; (* non-breaking space *)
   "iexcl",	"\161"; (* ¡ inverted exclamation mark *)
   "cent", 	"\162"; (* ¢ cent sign*)
@@ -227,7 +229,8 @@ let latin1_normal = [
   "yacute", 	"\253";	(* ı small y, acute accent *)
   "thorn", 	"\254";	(* ş small thorn, Icelandic *)
   "yuml", 	"\255" 	(* ÿ small y, dieresis or umlaut mark *)
-  ]
+  (*e: [[latin1_normal]] elements *)
+]
 (*e: constant Html.latin1_normal *)
 
 (*s: function Html.init *)

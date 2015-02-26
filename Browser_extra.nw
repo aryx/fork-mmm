@@ -1704,7 +1704,7 @@ open Unix
 @
 
 
-\subsection*{[[./commons/glevents.mli]]}
+\subsection*{[[./tk/glevents.mli]]}
 
 %\subsection{[[Glevents]]}
 
@@ -1781,7 +1781,7 @@ open Tk
 @
 
 
-\subsection*{[[./commons/glevents.ml]]}
+\subsection*{[[./tk/glevents.ml]]}
 
 
 %-------------------------------------------------------------
@@ -2154,11 +2154,6 @@ let broadcast_backend = ref (fun _ev -> failwith "no broadcast defined")
 \subsection*{[[./www/www.mli]]}
 
 
-<<signature module Www.UrlSet>>=
-(* Table of unresolved active connexions *)
-module UrlSet : Set.S with type elt = Url.t
-@
-
 %-------------------------------------------------------------
 
 <<./www/www.mli>>=
@@ -2168,7 +2163,8 @@ module UrlSet : Set.S with type elt = Url.t
 
 <<signature Www.make>>
 
-<<signature module Www.UrlSet>>
+(* Table of unresolved active connexions *)
+module UrlSet : Set.S with type elt = Url.t
 
 <<signature Www.is_active_cnx>>
 <<signature Www.add_active_cnx>>
@@ -2307,14 +2303,11 @@ val dtd32f : t
 % with frame?
 
 
-<<signature module Dtd.Elements>>=
-module Elements : Set.S with type elt = string
-@
 
 %-------------------------------------------------------------
 
 <<./html/dtd.mli>>=
-<<signature module Dtd.Elements>>
+module Elements : Set.S with type elt = string
 
 <<type Dtd.t>>
 
@@ -2664,7 +2657,7 @@ val length_of_string : string -> length
 
 \subsection*{[[./html/html.ml]]}
 
-
+%?? -> <> 
 <<function Html.beautify>>=
 (*
  * Remove sequences of white
@@ -2686,6 +2679,7 @@ let beautify remove_leading s =
   String.sub s 0 !j
 @
 
+%?? -> <> 
 <<function Html.beautify2>>=
 (* Remove also trailing space. Used for OPTION tags and TITLE *)
 let beautify2 s =
@@ -3026,9 +3020,6 @@ open Date
 
 \subsection*{[[./http/http_headers.mli]]}
 
-<<exception Http_headers.Invalid_HTTP_header>>=
-exception Invalid_HTTP_header of string
-@
 
 
 
@@ -3052,11 +3043,6 @@ val status_msg : header list -> string
 
 
 
-<<signature Http_headers.http_status>>=
-(* Common headers *)
-val http_status : int -> status
-  (* [http_status n] returns Status-Line for code [n] *)
-@
 
 <<signature Http_headers.status_message>>=
 val status_message : int -> string
@@ -3067,7 +3053,6 @@ val status_message : int -> string
 
 <<type Http_headers.media_parameter>>=
 (* Media types *)
-
 type media_parameter = string * string
 @
 
@@ -3084,10 +3069,6 @@ type hint =
 
 <<signature Http_headers.hints>>=
 val hints : string -> header list
-@
-
-<<signature Http_headers.read_suffix_file>>=
-val read_suffix_file : string -> unit
 @
 
 
@@ -3181,44 +3162,7 @@ let rec rem_contentencoding = function
 
 
 
-<<constant Http_headers.suffixes>>=
-let suffixes = (Hashtbl.create 101 : (string, hint) Hashtbl.t)
-@
 
-<<function Http_headers.read_suffix_file>>=
-(* In the file, we select ContentType if there is a slash,
-   ContentEncoding otherwise *)
-let read_suffix_file f =
- try
-  let ic = open_in f in
-  try while true do
-    let l = input_line ic in
-    if l <> "" & l.[0] <> '#' then
-      let tokens = 
-    split_str (function ' '|'\t' -> true | _ -> false) l in
-    match tokens with
-      [] -> ()
-    | x::l ->
-       try 
-        let _ = String.index x '/' in
-        List.iter 
-          (function sufx -> 
-               Hashtbl.add suffixes sufx 
-                  (ContentType ("Content-Type: "^x)))
-
-        l
-       with
-         Not_found ->
-        List.iter 
-          (function sufx ->
-               Hashtbl.add suffixes sufx 
-                   (ContentEncoding ("Content-Encoding: "^x)))
-          l
-
-    done
-  with End_of_file -> close_in ic
- with Sys_error _ ->  ()
-@
 
 
 <<function Http_headers.hints>>=
@@ -3285,12 +3229,13 @@ open Messages
 let contentlength l = 
   let h = get_header "content-length" l in
   try int_of_string h with _ -> raise Not_found
-and location = get_header "location"
-and contentencoding = get_header "content-encoding"
-and contenttype = get_header "content-type"
-and challenge = get_header "www-authenticate"
-and proxy_challenge = get_header "proxy-authenticate"
-and expires hs =
+
+let location = get_header "location"
+let contentencoding = get_header "content-encoding"
+let contenttype = get_header "content-type"
+let challenge = get_header "www-authenticate"
+let proxy_challenge = get_header "proxy-authenticate"
+let expires hs =
   try Some (Lexdate.ht_of_string (get_header "expires" hs))
   with
      Not_found -> None

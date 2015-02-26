@@ -831,7 +831,7 @@ type request_message = {
            (* have we authentified the emitter (authtype, authuser) *)
 
   request_body : string;
-  }
+}
 @
 %less: aspectize security
 % diff with Www.request? it also has _headers and _auth
@@ -843,7 +843,7 @@ type request = {
   request_method : string;	(* GET, POST, etc... *)
 
   request_uri : string		(* the uri *)
-  }
+}
 @
 
 <<type Messages.header>>=
@@ -857,9 +857,10 @@ type header = string
 <<type Messages.response_message>>=
 type response_message = {
   status : status;
+
   response_headers : header list;
   response_body : string;        (* responde body is *not* the document body *)
-  }
+}
 @
 
 
@@ -869,7 +870,7 @@ type status =  {
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
- }
+}
 @
 
 
@@ -968,6 +969,7 @@ Mailto.internal_backend := Tk_mailto.internal;
 <<[[Main.main()]] resource initialisation>>
 <<[[Main.main()]] tk libs initialisation>>
 <<[[Main.main()]] local initialisation>>
+<<[[Main.main()]] suffix initialisation>>
 <<[[Main.main()]] misc initialisation>>
 <<[[Main.main()]] html entities initialisation>>
 <<[[Main.main()]] applet system initialisation>>
@@ -1072,19 +1074,8 @@ Low.init();                         (* start regular tasks *)
 Cache.init();                       (* builtin document *)
 Auth.init();                        (* start expiration timer *)
 Debug.init();                       (* debugging RPC *)
-
-(* Suffix mapping to Content-Type and Content-Encoding *)
-if Sys.file_exists !sufxfile 
-then Http_headers.read_suffix_file !sufxfile;
 @
 
-<<[[Main.main()]] references>>=
-let sufxfile = ref (Mmm.user_file "mime.types") in
-@
-<<[[Main.main()]] command line options>>=
-"-suffixes", Arg.String (fun s -> sufxfile := s),
-"<file>\tSuffix file";
-@
 
 \subsection{Misc initialisation}
 
@@ -1095,23 +1086,6 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 @
 % ???
 
-\subsection{HTML initialisation}
-
-<<[[Main.main()]] html entities initialisation>>=
-(* Initialization of HTML entities *)
-Html.init (Lang.lang());
-@
-
-<<signature Html.init>>=
-val init : string -> unit 
-@
-
-<<function Html.init>>=
-let init _lang =
-  (* (if japan then latin1_japan else latin1_normal)  *)
-  latin1_normal |> List.iter (fun (str, c) -> 
-    Hashtbl.add ampersand_table str c) 
-@
 
 
 \section{[[Mmm.initial_navigator()]]}
@@ -1625,7 +1599,6 @@ val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 
 \subsubsection{Entities}
 
-
 <<signature Html.get_entity>>=
 val get_entity : string -> string
   (* [get_entity "amp"] returns "&" *)
@@ -1633,6 +1606,49 @@ val get_entity : string -> string
 
 <<constant Html.get_entity>>=
 let get_entity = Hashtbl.find ampersand_table
+@
+
+
+<<constant Html.ampersand_table>>=
+(* 
+ * HTML encoding of ISO-latin1 characters
+ *  cf Appendix B - Proposed Entities
+ *)
+
+let ampersand_table = (Hashtbl.create 101: (string , string) Hashtbl.t)
+@
+
+
+
+
+
+%\subsection{HTML initialisation}
+
+<<[[Main.main()]] html entities initialisation>>=
+(* Initialization of HTML entities *)
+Html.init (Lang.lang());
+@
+
+<<signature Html.init>>=
+val init : string -> unit 
+@
+
+<<function Html.init>>=
+let init _lang =
+  (* (if japan then latin1_japan else latin1_normal)  *)
+  latin1_normal |> List.iter (fun (str, c) -> 
+    Hashtbl.add ampersand_table str c) 
+@
+
+<<constant Html.latin1_normal>>=
+let latin1_normal = [
+  "amp", 	"&";
+  "gt", 	">";
+  "lt" , 	"<";
+  "quot", 	"\"";
+
+  <<[[latin1_normal]] elements>>
+]
 @
 
 \subsection{Parsing, the DTD}
@@ -2860,7 +2876,14 @@ let remove_headers hs names =
 
 
 
-\section{Content}
+\section{Suffixes}
+
+
+
+
+<<constant Http_headers.suffixes>>=
+let suffixes = (Hashtbl.create 101 : (string, hint) Hashtbl.t)
+@
 
 <<toplevel Http_headers._1>>=
 (* If the suffix file says otherwise, it will have priority *)
@@ -2868,30 +2891,94 @@ let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 [ 
   "html",	ContentType  "Content-Type: text/html";
   "htm",	ContentType  "Content-Type: text/html";
+
   "txt",  	ContentType  "Content-Type: text/plain";
+
   "ps",  	ContentType  "Content-Type: application/postscript";
   "dvi",  	ContentType  "Content-Type: application/x-dvi";
+
   "gif",	ContentType  "Content-Type: image/gif";
   "jpeg",	ContentType  "Content-Type: image/jpeg";
   "jpg",	ContentType  "Content-Type: image/jpeg";
   "tiff",	ContentType  "Content-Type: image/tiff";
   "tif",	ContentType  "Content-Type: image/tiff";
+
   "au",		ContentType  "Content-Type: audio/basic";
   "snd",	ContentType  "Content-Type: audio/basic";
   "wav",	ContentType  "Content-Type: audio/x-wav";
   "mid",	ContentType  "Content-Type: audio/midi";
+
   "mpeg",	ContentType  "Content-Type: video/mpeg";
   "mpg",	ContentType  "Content-Type: video/mpeg";
   "avi",	ContentType  "Content-Type: video/avi";
   "fli",	ContentType  "Content-Type: video/fli";
   "flc",	ContentType  "Content-Type: video/fli";
+
   "gz",		ContentEncoding  "Content-Encoding: gzip";
   "Z",		ContentEncoding  "Content-Encoding: compress";
+
   "asc",	ContentEncoding  "Content-Encoding: pgp";
   "pgp",	ContentEncoding  "Content-Encoding: pgp";
-  "cmo",        ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+   <<[[Http_headers.suffixes]] elements>>
 ]
 @
+% cmo, hehe :)
+
+<<[[Main.main()]] references>>=
+let sufxfile = ref (Mmm.user_file "mime.types") in
+@
+<<[[Main.main()]] command line options>>=
+"-suffixes", Arg.String (fun s -> sufxfile := s),
+"<file>\tSuffix file";
+@
+
+<<signature Http_headers.read_suffix_file>>=
+val read_suffix_file : string -> unit
+@
+
+<<[[Main.main()]] suffix initialisation>>=
+(* Suffix mapping to Content-Type and Content-Encoding *)
+if Sys.file_exists !sufxfile 
+then Http_headers.read_suffix_file !sufxfile;
+@
+
+<<function Http_headers.read_suffix_file>>=
+(* In the file, we select ContentType if there is a slash,
+   ContentEncoding otherwise *)
+let read_suffix_file f =
+ try
+  let ic = open_in f in
+  try while true do
+    let l = input_line ic in
+    if l <> "" & l.[0] <> '#' then
+      let tokens = 
+    split_str (function ' '|'\t' -> true | _ -> false) l in
+    match tokens with
+      [] -> ()
+    | x::l ->
+       try 
+        let _ = String.index x '/' in
+        List.iter 
+          (function sufx -> 
+               Hashtbl.add suffixes sufx 
+                  (ContentType ("Content-Type: "^x)))
+
+        l
+       with
+         Not_found ->
+        List.iter 
+          (function sufx ->
+               Hashtbl.add suffixes sufx 
+                   (ContentEncoding ("Content-Encoding: "^x)))
+          l
+
+    done
+  with End_of_file -> close_in ic
+ with Sys_error _ ->  ()
+@
+
+
+\section{Content}
 
 \subsection{Content type}
 
@@ -2946,6 +3033,12 @@ let _ = List.iter (function (code, msg) ->
   ]
 @
 %404!!
+
+<<signature Http_headers.http_status>>=
+(* Common headers *)
+val http_status : int -> status
+  (* [http_status n] returns Status-Line for code [n] *)
+@
 
 <<function Http_headers.http_status>>=
 (* A typical status line *)
@@ -5063,124 +5156,113 @@ let sprintf (fmt : ('a, unit, string) format) =
 <<function I18n.menu_pattern>>=
 @
 
-\subsection{Accents}
+\subsection{Special characters}
 
-<<constant Html.ampersand_table>>=
-(* 
- * HTML encoding of ISO-latin1 characters
- *  cf Appendix B - Proposed Entities
- *)
-
-let ampersand_table = (Hashtbl.create 101: (string , string) Hashtbl.t)
-@
-
-<<constant Html.latin1_normal>>=
-let latin1_normal = [
-  "amp", 	"&";
-  "gt", 	">";
-  "lt" , 	"<";
-  "quot", 	"\"";
-  "nbsp", 	"\160"; (* non-breaking space *)
-  "iexcl",	"\161"; (* ¡ inverted exclamation mark *)
-  "cent", 	"\162"; (* ¢ cent sign*)
-  "pound",	"\163"; (* £ pound sterling sign*)
-  "curren",	"\164"; (* ¤ general currency sign*)
-  "yen",	"\165"; (* ¥ yen sign*)
-  "brvbar",	"\166"; (* ¦ broken (vertical) bar *)
-  "sect",	"\167"; (* § section sign *)
-  "uml",	"\168"; (* ¨ umlaut (dieresis) *)
-  "copy",	"\169"; (* © copyright sign *)
-  "ordf",	"\170"; (* ª ordinal indicator, feminine *)
-  "laquo",	"\171"; (* « angle quotation mark, left *)
-  "not",	"\172"; (* ¬ not sign *)
-  "shy",	"\173"; (* ­ soft hyphen *)
-  "reg",	"\174"; (* ® registered sign *)
-  "macr",	"\175"; (* ¯ macron *)
-  "deg",	"\176"; (* ° degree sign *)
-  "plusmn",	"\177"; (* ± plus-or-minus sign *)
-  "sup2",	"\178"; (* ² superscript two *)
-  "sup3",	"\179"; (* ³ superscript three *)
-  "acute",	"\180"; (* ´ acute accent *)
-  "micro",	"\181"; (* µ micro sign *)
-  "para",	"\182"; (* ¶ pilcrow (paragraph sign) *)
-  "middot",	"\183"; (* · middle dot *)
-  "cedil",	"\184"; (* ¸ cedilla *)
-  "sup1",	"\185"; (* ¹ superscript one *)
-  "ordm",	"\186"; (* º ordinal indicator, masculine *)
-  "raquo",	"\187"; (* » angle quotation mark, right *)
-  "frac14",	"\188"; (* ¼ fraction one-quarter *)
-  "frac12",	"\189"; (* ½ fraction one-half *)
-  "frac34",	"\190"; (* ¾ fraction three-quarters *)
-  "iquest",	"\191"; (* ¿ inverted question mark *)
-  "Agrave", 	"\192";	(* À capital A, grave accent *)
-  "Aacute", 	"\193";	(* Á capital A, acute accent *)
-  "Acirc", 	"\194";	(* Â capital A, circumflex accent *)
-  "Atilde", 	"\195";	(* Ã capital A, tilde *)
-  "Auml", 	"\196";	(* Ä capital A, dieresis or umlaut mark *)
-  "Aring", 	"\197";	(* Å capital A, ring *)
-  "AElig", 	"\198";	(* Æ capital AE diphthong (ligature) *)
-  "Ccedil", 	"\199";	(* Ç capital C, cedilla *)
-  "Egrave", 	"\200";	(* È capital E, grave accent *)
-  "Eacute", 	"\201";	(* É capital E, acute accent *)
-  "Ecirc", 	"\202";	(* Ê capital E, circumflex accent *)
-  "Euml", 	"\203";	(* Ë capital E, dieresis or umlaut mark *)
-  "Igrave", 	"\204";	(* Ì capital I, grave accent *)
-  "Iacute", 	"\205";	(* Í capital I, acute accent *)
-  "Icirc", 	"\206";	(* Î capital I, circumflex accent *)
-  "Iuml", 	"\207";	(* Ï capital I, dieresis or umlaut mark *)
-  "ETH", 	"\208";	(* Ð capital Eth, Icelandic *)
-  "Ntilde", 	"\209";	(* Ñ capital N, tilde *)
-  "Ograve", 	"\210";	(* Ò capital O, grave accent *)
-  "Oacute", 	"\211";	(* Ó capital O, acute accent *)
-  "Ocirc", 	"\212";	(* Ô capital O, circumflex accent *)
-  "Otilde", 	"\213";	(* Õ capital O, tilde *)
-  "Ouml", 	"\214";	(* Ö capital O, dieresis or umlaut mark *)
-  "times",	"\215"; (* × multiply sign*)
-  "Oslash", 	"\216";	(* Ø capital O, slash *)
-  "Ugrave", 	"\217";	(* Ù capital U, grave accent *)
-  "Uacute", 	"\218";	(* Ú capital U, acute accent *)
-  "Ucirc", 	"\219";	(* Û capital U, circumflex accent *)
-  "Uuml", 	"\220";	(* Ü capital U, dieresis or umlaut mark *)
-  "Yacute",	"\221"; (* Ý capital Y, acute accent *)
-  "THORN", 	"\222";	(* Þ capital THORN, Icelandic *)
-  "szlig", 	"\223";	(* ß small sharp s, German (sz ligature) *)
-  "agrave", 	"\224";	(* à small a, grave accent *)
-  "aacute", 	"\225";	(* á small a, acute accent *)
-  "acirc", 	"\226";	(* â small a, circumflex accent *)
-  "atilde", 	"\227";	(* ã small a, tilde *)
-  "auml", 	"\228";	(* ä small a, dieresis or umlaut mark *)
-  "aring", 	"\229";	(* å small a, ring *)
-  "aelig", 	"\230";	(* æ small ae diphthong (ligature) *)
-  "ccedil", 	"\231";	(* ç small c, cedilla *)
-  "egrave", 	"\232";	(* è small e, grave accent *)
-  "eacute", 	"\233";	(* é small e, acute accent *)
-  "ecirc", 	"\234";	(* ê small e, circumflex accent *)
-  "euml", 	"\235";	(* ë small e, dieresis or umlaut mark *)
-  "igrave", 	"\236";	(* ì small i, grave accent *)
-  "iacute", 	"\237";	(* í small i, acute accent *)
-  "icirc", 	"\238";	(* î small i, circumflex accent *)
-  "iuml", 	"\239";	(* ï small i, dieresis or umlaut mark *)
-  "eth", 	"\240";	(* ð small eth, Icelandic *)
-  "ntilde", 	"\241";	(* ñ small n, tilde *)
-  "ograve", 	"\242";	(* ò small o, grave accent *)
-  "oacute", 	"\243";	(* ó small o, acute accent *)
-  "ocirc", 	"\244";	(* ô small o, circumflex accent *)
-  "otilde", 	"\245";	(* õ small o, tilde *)
-  "ouml", 	"\246";	(* ö small o, dieresis or umlaut mark *)
-  "divide",	"\247"; (* ÷ divide sign *)
-  "oslash", 	"\248";	(* ø small o, slash *)
-  "ugrave", 	"\249";	(* ù small u, grave accent *)
-  "uacute", 	"\250";	(* ú small u, acute accent *)
-  "ucirc", 	"\251";	(* û small u, circumflex accent *)
-  "uuml", 	"\252";	(* ü small u, dieresis or umlaut mark *)
-  "yacute", 	"\253";	(* ý small y, acute accent *)
-  "thorn", 	"\254";	(* þ small thorn, Icelandic *)
-  "yuml", 	"\255" 	(* ÿ small y, dieresis or umlaut mark *)
-  ]
+<<[[latin1_normal]] elements>>=
+"nbsp", 	"\160"; (* non-breaking space *)
+"iexcl",	"\161"; (* ¡ inverted exclamation mark *)
+"cent", 	"\162"; (* ¢ cent sign*)
+"pound",	"\163"; (* £ pound sterling sign*)
+"curren",	"\164"; (* ¤ general currency sign*)
+"yen",	"\165"; (* ¥ yen sign*)
+"brvbar",	"\166"; (* ¦ broken (vertical) bar *)
+"sect",	"\167"; (* § section sign *)
+"uml",	"\168"; (* ¨ umlaut (dieresis) *)
+"copy",	"\169"; (* © copyright sign *)
+"ordf",	"\170"; (* ª ordinal indicator, feminine *)
+"laquo",	"\171"; (* « angle quotation mark, left *)
+"not",	"\172"; (* ¬ not sign *)
+"shy",	"\173"; (* ­ soft hyphen *)
+"reg",	"\174"; (* ® registered sign *)
+"macr",	"\175"; (* ¯ macron *)
+"deg",	"\176"; (* ° degree sign *)
+"plusmn",	"\177"; (* ± plus-or-minus sign *)
+"sup2",	"\178"; (* ² superscript two *)
+"sup3",	"\179"; (* ³ superscript three *)
+"acute",	"\180"; (* ´ acute accent *)
+"micro",	"\181"; (* µ micro sign *)
+"para",	"\182"; (* ¶ pilcrow (paragraph sign) *)
+"middot",	"\183"; (* · middle dot *)
+"cedil",	"\184"; (* ¸ cedilla *)
+"sup1",	"\185"; (* ¹ superscript one *)
+"ordm",	"\186"; (* º ordinal indicator, masculine *)
+"raquo",	"\187"; (* » angle quotation mark, right *)
+"frac14",	"\188"; (* ¼ fraction one-quarter *)
+"frac12",	"\189"; (* ½ fraction one-half *)
+"frac34",	"\190"; (* ¾ fraction three-quarters *)
+"iquest",	"\191"; (* ¿ inverted question mark *)
+"Agrave", 	"\192";	(* À capital A, grave accent *)
+"Aacute", 	"\193";	(* Á capital A, acute accent *)
+"Acirc", 	"\194";	(* Â capital A, circumflex accent *)
+"Atilde", 	"\195";	(* Ã capital A, tilde *)
+"Auml", 	"\196";	(* Ä capital A, dieresis or umlaut mark *)
+"Aring", 	"\197";	(* Å capital A, ring *)
+"AElig", 	"\198";	(* Æ capital AE diphthong (ligature) *)
+"Ccedil", 	"\199";	(* Ç capital C, cedilla *)
+"Egrave", 	"\200";	(* È capital E, grave accent *)
+"Eacute", 	"\201";	(* É capital E, acute accent *)
+"Ecirc", 	"\202";	(* Ê capital E, circumflex accent *)
+"Euml", 	"\203";	(* Ë capital E, dieresis or umlaut mark *)
+"Igrave", 	"\204";	(* Ì capital I, grave accent *)
+"Iacute", 	"\205";	(* Í capital I, acute accent *)
+"Icirc", 	"\206";	(* Î capital I, circumflex accent *)
+"Iuml", 	"\207";	(* Ï capital I, dieresis or umlaut mark *)
+"ETH", 	"\208";	(* Ð capital Eth, Icelandic *)
+"Ntilde", 	"\209";	(* Ñ capital N, tilde *)
+"Ograve", 	"\210";	(* Ò capital O, grave accent *)
+"Oacute", 	"\211";	(* Ó capital O, acute accent *)
+"Ocirc", 	"\212";	(* Ô capital O, circumflex accent *)
+"Otilde", 	"\213";	(* Õ capital O, tilde *)
+"Ouml", 	"\214";	(* Ö capital O, dieresis or umlaut mark *)
+"times",	"\215"; (* × multiply sign*)
+"Oslash", 	"\216";	(* Ø capital O, slash *)
+"Ugrave", 	"\217";	(* Ù capital U, grave accent *)
+"Uacute", 	"\218";	(* Ú capital U, acute accent *)
+"Ucirc", 	"\219";	(* Û capital U, circumflex accent *)
+"Uuml", 	"\220";	(* Ü capital U, dieresis or umlaut mark *)
+"Yacute",	"\221"; (* Ý capital Y, acute accent *)
+"THORN", 	"\222";	(* Þ capital THORN, Icelandic *)
+"szlig", 	"\223";	(* ß small sharp s, German (sz ligature) *)
+"agrave", 	"\224";	(* à small a, grave accent *)
+"aacute", 	"\225";	(* á small a, acute accent *)
+"acirc", 	"\226";	(* â small a, circumflex accent *)
+"atilde", 	"\227";	(* ã small a, tilde *)
+"auml", 	"\228";	(* ä small a, dieresis or umlaut mark *)
+"aring", 	"\229";	(* å small a, ring *)
+"aelig", 	"\230";	(* æ small ae diphthong (ligature) *)
+"ccedil", 	"\231";	(* ç small c, cedilla *)
+"egrave", 	"\232";	(* è small e, grave accent *)
+"eacute", 	"\233";	(* é small e, acute accent *)
+"ecirc", 	"\234";	(* ê small e, circumflex accent *)
+"euml", 	"\235";	(* ë small e, dieresis or umlaut mark *)
+"igrave", 	"\236";	(* ì small i, grave accent *)
+"iacute", 	"\237";	(* í small i, acute accent *)
+"icirc", 	"\238";	(* î small i, circumflex accent *)
+"iuml", 	"\239";	(* ï small i, dieresis or umlaut mark *)
+"eth", 	"\240";	(* ð small eth, Icelandic *)
+"ntilde", 	"\241";	(* ñ small n, tilde *)
+"ograve", 	"\242";	(* ò small o, grave accent *)
+"oacute", 	"\243";	(* ó small o, acute accent *)
+"ocirc", 	"\244";	(* ô small o, circumflex accent *)
+"otilde", 	"\245";	(* õ small o, tilde *)
+"ouml", 	"\246";	(* ö small o, dieresis or umlaut mark *)
+"divide",	"\247"; (* ÷ divide sign *)
+"oslash", 	"\248";	(* ø small o, slash *)
+"ugrave", 	"\249";	(* ù small u, grave accent *)
+"uacute", 	"\250";	(* ú small u, acute accent *)
+"ucirc", 	"\251";	(* û small u, circumflex accent *)
+"uuml", 	"\252";	(* ü small u, dieresis or umlaut mark *)
+"yacute", 	"\253";	(* ý small y, acute accent *)
+"thorn", 	"\254";	(* þ small thorn, Icelandic *)
+"yuml", 	"\255" 	(* ÿ small y, dieresis or umlaut mark *)
 @
 
 
 \section{Applets}
+
+<<[[Http_headers.suffixes]] elements>>=
+"cmo",    ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+@
 
 <<[[Main.main()]] applet system initialisation>>=
 (* The applet system.
@@ -5653,6 +5735,13 @@ exception Invalid_Html of string
 <<signature Html.warning>>=
 val warning : string -> location -> unit
 @
+
+\section{HTTP}
+
+<<exception Http_headers.Invalid_HTTP_header>>=
+exception Invalid_HTTP_header of string
+@
+
 
 \chapter{A Preferences Library}
 

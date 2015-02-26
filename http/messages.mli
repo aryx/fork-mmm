@@ -21,7 +21,7 @@ type request = {
   request_method : string;	(* GET, POST, etc... *)
 
   request_uri : string		(* the uri *)
-  }
+}
 (*e: type Messages.request *)
 
 (*s: type Messages.status *)
@@ -30,7 +30,7 @@ type status =  {
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
- }
+}
 (*e: type Messages.status *)
 
 (*s: type Messages.header *)
@@ -54,15 +54,16 @@ type request_message = {
            (* have we authentified the emitter (authtype, authuser) *)
 
   request_body : string;
-  }
+}
 (*e: type Messages.request_message *)
 
 (*s: type Messages.response_message *)
 type response_message = {
   status : status;
+
   response_headers : header list;
   response_body : string;        (* responde body is *not* the document body *)
-  }
+}
 (*e: type Messages.response_message *)
 
 (*e: ./http/messages.mli *)
