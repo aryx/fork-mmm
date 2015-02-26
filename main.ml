@@ -71,11 +71,11 @@ let main () =
   (*s: [[Main.main()]] references *)
   let init_urls = ref [] in
   (*x: [[Main.main()]] references *)
-  let preffile = ref (Mmm.user_file "MMM.ad") in
-  (*x: [[Main.main()]] references *)
   let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
   (*x: [[Main.main()]] references *)
   let clicktofocus = ref false in
+  (*x: [[Main.main()]] references *)
+  let preffile = ref (Mmm.user_file "MMM.ad") in
   (*x: [[Main.main()]] references *)
   let palette = ref None in
   (*x: [[Main.main()]] references *)
@@ -88,9 +88,6 @@ let main () =
 
   Arg.parse [
    (*s: [[Main.main()]] command line options *)
-   "-prefs", Arg.String (fun s -> preffile := s),
-   "<file>\t\tPreference File";
-   (*x: [[Main.main()]] command line options *)
    "-d", Arg.String (fun s -> display := s),
    "<foo:0>\t\tDisplay";
    (*x: [[Main.main()]] command line options *)
@@ -102,6 +99,9 @@ let main () =
    (*x: [[Main.main()]] command line options *)
    "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
    "\tClick to Focus mode (default is Focus Follows Mouse)";
+   (*x: [[Main.main()]] command line options *)
+   "-prefs", Arg.String (fun s -> preffile := s),
+   "<file>\t\tPreference File";
    (*x: [[Main.main()]] command line options *)
    "-palette", Arg.String (fun s -> palette := Some s),
    "<color>\tTk Palette";
@@ -161,7 +161,7 @@ let main () =
   (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
   if Sys.file_exists site_resfile 
   then Tkresource.readfile site_resfile Tk.StartupFile;
-
+  (*x: [[Main.main()]] resource initialisation *)
   begin match !palette with
   | None -> ()
   | Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
@@ -218,8 +218,13 @@ let main () =
     | [] -> None 
     | x :: l -> Some x
   in
+  let user_preferences_file =
+    (*s: [[Main.main()]] user preferences file *)
+    localize !preffile
+    (*e: [[Main.main()]] user preferences file *)
+  in
   (* Start the initial navigator *)
-  Mmm.initial_navigator (localize !preffile) url_opt |> ignore;
+  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
 
   safe_loop();
 

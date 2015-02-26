@@ -319,6 +319,7 @@ SRC_VIEWS= \
   www/urlenc.mli\
   www/urlenc.ml\
   www/lexurl.mli\
+  www/lexurl.mll\
   www/hyper.mli\
   www/hyper.ml\
   www/maps.mli\

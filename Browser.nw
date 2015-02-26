@@ -253,6 +253,7 @@ let usage_str =
 <<signature Version.http>>=
 val http : string              (* the version in User-Agent field *)
 @
+% ??? -> <>
 <<constant Version.http>>=
 (* User-Agent field *)
 let http = "MMM/0." ^ string_of_int number
@@ -309,6 +310,7 @@ let version_number =
 <<signature Version.html>>=
 val html : string -> string    (* fake initial document *)
 @
+%less: type language = string
 <<function Version.html>>=
 let html = function
   | "iso8859" ->
@@ -423,7 +425,6 @@ val is_absolute : string -> bool
    (* [is_absolute uri] determines if [uri] is absolute according to
       rules of RFC 1630 *)
 @
-
 <<function Uri.is_absolute>>=
 (* RFC 1630, partial forms *)
 let is_absolute uri =
@@ -439,7 +440,9 @@ let is_absolute uri =
 @
 
 \subsection{URLs and protocols, [[Url.t]]}
-% =~ protocol://host@user:port/paths?search
+% =~ protocol://user:pass@host:port/paths?search
+
+% not too bad syntax.
 
 <<type Url.t>>=
 (* URLs as defined by RFC 1738 *)
@@ -473,21 +476,6 @@ type protocol =
 @
 
 
-<<signature Url.distant_path>>=
-(* For http. The thing we have to send in the request *)
-val distant_path : t -> string
-@
-% ???
-
-<<function Url.distant_path>>=
-(* For http only *)
-let distant_path urlp =
-  match urlp.path, urlp.search with
-     None, None -> "/"
-   | Some p, None -> "/"^p
-   | Some p, Some s -> "/"^p^"?"^s
-   | None, Some s -> "/?" ^ s (* ??? *)
-@
 
 \subsection{Hypertext Links, [[Hyper.link]]}
 %=~ <a href="...">
@@ -521,7 +509,6 @@ type link_method =
 (*
  * Requests
  *)
-
 type request =  { 
     www_link : Hyper.link;        (* the link that produced this request *)
     www_url : Url.t;	          (* parsed version *)
@@ -542,7 +529,6 @@ type request =  {
 val make : Hyper.link -> request
   (* raises: Url_Lexing | Invalid_link *)
 @
-
 <<function Www.make>>=
 let make hlink =
   let absuri = Hyper.resolve hlink in 
@@ -581,7 +567,7 @@ type document = {
   document_address : Url.t;
   mutable document_data : document_data;
   document_info : string list
-  }
+}
 @
 
 % used by Protos.get
@@ -607,7 +593,7 @@ type document_data =
 type document_id = {
   document_url : Url.t;
   document_stamp : int
-  }
+}
 @
 
 <<signature Document.no_stamp>>=
@@ -660,9 +646,12 @@ val add : document_id -> document -> unit
 <<signature Cache.find>>=
 val find : document_id -> document
 @
+% see below
 <<signature Cache.finished>>=
 val finished : document_id -> unit
 @
+% will see add and finished later in optimisation section.
+
 <<signature Cache.touch>>=
 val touch : document_id -> unit
 @
@@ -679,7 +668,7 @@ let memory = ref ([] : (Document.document_id * entry) list)
 <<type Cache.entry>>=
 (* A cache entry *)
 type entry = {
-  mutable cache_document : document;
+  mutable cache_document : Document.document;
   mutable cache_pending : bool;
 
   cache_condition : Condition.t;
@@ -927,13 +916,6 @@ let default_attributes = [
 val get_attribute : tag -> string -> string
   (* [get_attribute tag attrib_name] *)
 @
-
-<<signature Html.has_attribute>>=
-val has_attribute : tag -> string -> bool
-  (* [has_attribute tag attrib_name] *)
-@
-
-
 <<function Html.get_attribute>>=
 let get_attribute tag attr =
   try
@@ -943,6 +925,11 @@ let get_attribute tag attr =
      List.assoc (tag.tag_name, attr) default_attributes
 @
 
+
+<<signature Html.has_attribute>>=
+val has_attribute : tag -> string -> bool
+  (* [has_attribute tag attrib_name] *)
+@
 <<function Html.has_attribute>>=
 let has_attribute tag attr =
      List.mem_assoc attr tag.attributes
@@ -988,8 +975,11 @@ let main () =
     | [] -> None 
     | x :: l -> Some x
   in
+  let user_preferences_file =
+    <<[[Main.main()]] user preferences file>>
+  in
   (* Start the initial navigator *)
-  Mmm.initial_navigator (localize !preffile) url_opt |> ignore;
+  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
 
   safe_loop();
 
@@ -997,26 +987,6 @@ let main () =
   ()
 @
 %$
-
-<<[[Main.main()]] references>>=
-let preffile = ref (Mmm.user_file "MMM.ad") in
-@
-<<[[Main.main()]] command line options>>=
-"-prefs", Arg.String (fun s -> preffile := s),
-"<file>\t\tPreference File";
-@
-% .ad?
-% preferences of navigator
-
-<<function Main.localize>>=
-let localize file =
-  let localized = spf "%s.%s" file !I18n.language in
-  if Sys.file_exists localized 
-  then localized 
-  else file
-@
-% see more later in language chapter
-
 
 
 
@@ -1118,7 +1088,9 @@ Tkaniminit.f ();
 
 
 \subsection{Resources initialisation}
+% and localization
 
+% site file
 <<[[Main.main()]] resource initialisation>>=
 (* Default values for navigator window *)
 Resource.add "*MMM.Width" "640" Tk.WidgetDefault;
@@ -1130,12 +1102,43 @@ let site_resfile =
 (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
 if Sys.file_exists site_resfile 
 then Tkresource.readfile site_resfile Tk.StartupFile;
+@
 
+% user (localized) file
+<<[[Main.main()]] user preferences file>>=
+localize !preffile
+@
+
+<<[[Main.main()]] references>>=
+let preffile = ref (Mmm.user_file "MMM.ad") in
+@
+<<[[Main.main()]] command line options>>=
+"-prefs", Arg.String (fun s -> preffile := s),
+"<file>\t\tPreference File";
+@
+% .ad?
+% preferences of navigator
+% diff with code using MMM.ad below?
+
+<<function Main.localize>>=
+let localize file =
+  let localized = spf "%s.%s" file !I18n.language in
+  if Sys.file_exists localized 
+  then localized 
+  else file
+@
+% see more later in i18n chapter
+
+
+
+
+<<[[Main.main()]] resource initialisation>>=
 begin match !palette with
 | None -> ()
 | Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
 end;
 @
+% ??
 
 <<[[Main.main()]] references>>=
 let palette = ref None in
@@ -1291,19 +1294,175 @@ val f : Lexing.lexbuf -> Url.t
 val make : string -> Url.t
    (* raise Url_Lexing(msg,pos) *)
 @
-
-<<signature Lexurl.maken>>=
-val maken : string -> Url.t
-   (* raise Url_Lexing(msg,pos) *)
+<<function Lexurl.make>>=
+let make s = 
+  f (Lexing.from_string s)
 @
-% diff?
 
 
 
+% =~ protocol://user@host:port/paths?search
 
-%todo: lexurl.mll?
+% could be in Extra
+<<www/lexurl.mll>>=
+{
+open Lexing
+
+open Mstring
+open Mlist
+
+open Url
+
+<<function Lexurl.normalize_port>>
+
+<<function Lexurl.normalize_host>>
+
+}
+
+<<function Lexurl.f>>
+
+<<function Lexurl.slashslash>>
+	
+<<function Lexurl.userpass>>
+
+<<function Lexurl.hostport>>
+
+<<function Lexurl.pathsearch>>
+
+<<functions Lexurl.xxx>>
+
+{
+
+<<function Lexurl.make>>
+
+
+
+<<function Lexurl.remove_dots>>
+
+<<function Lexurl.maken>>
+
+<<function Lexurl.normalize>>
+
+}
+@
+
+\subsection{Protocol}
+
+<<function Lexurl.f>>=
+(* We don't actually need all of this *)
+rule f = parse
+  [ 'a'-'z' 'A'-'Z' '0'-'9' '+' '.' '-' ]+ ":" 	(* absolute url *)
+    { let lexeme = Lexing.lexeme lexbuf in
+      let result =
+        { protocol = HTTP;
+          user = None; 
+          password = None;
+       host = None; port = None;
+       path = None; search = None
+         } in
+      let protocol =
+        String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
+   (match protocol with
+      <<[[Lexurl.f]] protocol cases>>
+      | s ->
+          result.protocol <- OtherProtocol s;
+          result.path <- any lexbuf
+      );
+      result
+    }
+ | _ { raise (Url_Lexing ("not an URL", Lexing.lexeme_start lexbuf)) }
+@
+% less: use as of ocamllex
+
+
+<<[[Lexurl.f]] protocol cases>>=
+| "HTTP" ->
+   slashslash lexbuf;
+   let h, po = hostport lexbuf in
+   let pa, se = pathsearch lexbuf in
+   result.protocol <- HTTP;
+   result.host <- h;
+   result.port <- normalize_port (HTTP, po);
+   result.path <- pa;
+   result.search <- se
+@
+% no user?
+% can see other protocols in section in advanced topics
+
+<<function Lexurl.slashslash>>=
+and slashslash =  parse
+    "//" { () } 
+   | "" { raise (Url_Lexing ("// expected", Lexing.lexeme_start lexbuf)) }
+@
+
+<<function Lexurl.normalize_port>>=
+let normalize_port = function
+  | HTTP, Some 80 -> None
+  | FTP, Some 21 -> None
+  (* incomplete, but we don't care yet *)
+  | _, p -> p
+@
+
+\subsection{Host, port}
+
+<<function Lexurl.hostport>>=
+(* _ is not legal in hostnames, but some people use it. *)
+and hostport = parse
+  ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ ':' ['0'-'9']+
+    { let lexeme = Lexing.lexeme lexbuf in
+      let pos = String.index lexeme ':' in
+      let portstring =
+        String.sub lexeme (succ pos) (String.length lexeme - 1 - pos) in
+   Some (normalize_host (String.sub lexeme 0 pos)),
+   Some (int_of_string portstring)
+    }
+| ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ 
+    { Some (normalize_host (Lexing.lexeme lexbuf)), None }
+|  "" (* file:///home/... *)
+    { None, None }
+@
+%less: use as
+
+<<function Lexurl.normalize_host>>=
+(* lowercase, don't use final . in FQDN *)
+let normalize_host s = 
+  let s = String.lowercase s in
+  let l = String.length s in
+  if s.[l-1] = '.' then String.sub s 0 (l-1)
+  else s
+@
+
+\subsection{Path, search}
+
+
+<<function Lexurl.pathsearch>>=
+(* /<path>?<search> *)
+and pathsearch = parse
+  "/" [^ '?']* '?' 
+    { let lexeme = Lexing.lexeme lexbuf in
+      let search = any lexbuf in
+      Some (String.sub lexeme 1 (String.length lexeme - 2)),
+   search 
+    }
+| "/" [^ '?']*
+    { let lexeme = Lexing.lexeme lexbuf in
+      Some (String.sub lexeme 1 (String.length lexeme - 1)), None 
+    }
+| "" 
+    { None, None }
+@
+
+
+<<functions Lexurl.xxx>>=
+and any = parse
+  [^ '\n']*  { Some (Lexing.lexeme lexbuf) }    (* in fact any char *)
+@
+
+
+
 
 \subsection{Paths}
+% need that? mv?
 
 <<signature Lexpath.path_components>>=
 (* Path lexer
@@ -1328,6 +1487,9 @@ val build : string -> string list -> string
 val remove_dots : string -> string
   (* takes path and removes . and .. *)
 @
+
+
+
 
 \subsection{Encoding}
 % unparsing? escaping?
@@ -1638,13 +1800,83 @@ let resolve link =
 
 \subsection{Normalization}
 
+<<signature Lexurl.maken>>=
+val maken : string -> Url.t
+   (* raise Url_Lexing(msg,pos) *)
+@
+% make normalized
+<<function Lexurl.maken>>=
+(* Extra normalisation at lexing time 
+ *  remove ../ and /. as in RFC 1630
+ *  unquote %
+ *)
+let maken s =
+  let url = make s in
+  (match url.protocol with
+  | HTTP ->  
+      (match url.path with
+      | None -> ()
+      | Some p -> url.path <- Some (Urlenc.unquote (remove_dots p))
+      )
+  | _ -> ()
+  );
+  url
+@
+
+
+
 <<signature Lexurl.remove_dots>>=
 val remove_dots : string -> string
 @
+% -> <>??
+<<function Lexurl.remove_dots>>=
+let remove_dots s =
+  let b = Ebuffer.create 32 in
+  rev_do_list 
+    (Ebuffer.output_string b)
+    (pathcomponents (Lexing.from_string s) []);
+  Ebuffer.get b
+@
+
+<<functions Lexurl.xxx>>=
+and pathcomponents = parse
+  [ ^ '/']* '/'
+    { (function l ->
+         let newl = 
+           match Lexing.lexeme lexbuf with
+          | "./" -> l
+           | "../" -> 
+              (match l with 
+              | [] -> [] 
+              | _ :: tl -> tl
+              )
+           | p -> (p :: l)
+          in
+       pathcomponents lexbuf newl)
+     }
+| [ ^ '/']+
+    { (fun l -> 
+     match Lexing.lexeme lexbuf with
+     | "." -> l
+        | ".." -> (match l with [] -> [] | _ :: tl -> tl)
+        | p -> p :: l )
+    }
+| "" { (fun l -> l) }
+@
+
+
+
+
+
 <<signature Lexurl.normalize>>=
 val normalize : string -> string
 @
-
+<<function Lexurl.normalize>>=
+let normalize url =
+  let urlp = make url in
+  Url.string_of urlp
+@
+%less: could rename make to of_string
 
 \section{HTML}
 
@@ -2796,14 +3028,6 @@ val get_header : string -> header list -> string
      [field_name] is the token is lowercase (e.g. "content-type") *)
 @
 
-<<signature Http_headers.get_multi_header>>=
-val get_multi_header : string -> header list -> string list
-  (* [get_multi_header field_name hs] returns the list of field_value
-     of the headers.
-     [field_name] is the token is lowercase (e.g. "content-type") *)
-@
-
-
 <<function Http_headers.get_header>>=
 (* [get_header field-name headers]
  *   returns, if it exists the field value of the header field-name
@@ -2821,6 +3045,14 @@ let get_header field_name =
     then String.sub s (size + 2) (String.length s - size - 2)
     else search l in
   search
+@
+
+
+<<signature Http_headers.get_multi_header>>=
+val get_multi_header : string -> header list -> string list
+  (* [get_multi_header field_name hs] returns the list of field_value
+     of the headers.
+     [field_name] is the token is lowercase (e.g. "content-type") *)
 @
 
 <<function Http_headers.get_multi_header>>=
@@ -3427,11 +3659,29 @@ let std_request_headers() =
   Printf.sprintf "User-Agent: %s\r\n" !user_agent
 @
 
+<<signature Url.distant_path>>=
+(* For http. The thing we have to send in the request *)
+val distant_path : t -> string
+@
+% ???
+
+<<function Url.distant_path>>=
+(* For http only *)
+let distant_path urlp =
+  match urlp.path, urlp.search with
+     None, None -> "/"
+   | Some p, None -> "/"^p
+   | Some p, Some s -> "/"^p^"?"^s
+   | None, Some s -> "/?" ^ s (* ??? *)
+@
+
 <<function Http.full_request>>=
 let full_request w proxy_mode wwwr = 
   let url = 
-    if proxy_mode then Url.string_of wwwr.www_url
-    else distant_path wwwr.www_url in
+    if proxy_mode 
+    then Url.string_of wwwr.www_url
+    else distant_path wwwr.www_url 
+  in
   let write_referer = match wwwr.www_link.h_context with
      None -> (fun () -> ())
    | Some r ->  (fun () -> if !send_referer then w ("Referer: " ^ r ^ "\r\n"))
@@ -4690,6 +4940,8 @@ let _ =
 
 
 
+\section{Animated GIFs}
+
 \section{Extra Protocols}
 
 
@@ -4697,6 +4949,31 @@ let _ =
 
 <<toplevel Protos._7>>=
 let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
+@
+
+<<[[Lexurl.f]] protocol cases>>=
+(* the spec says file://host/ dammit *)
+| "FILE" ->
+  (try
+     slashslash lexbuf;
+     let h = fhost lexbuf in
+     let p = slashpath lexbuf in
+     result.protocol <- FILE;
+     result.host <- h;
+     result.path <- p
+  with Url_Lexing _ ->
+    let p = slashpath lexbuf in
+    result.protocol <- FILE;
+    result.path <- p
+  )
+@
+
+<<functions Lexurl.xxx>>=
+and fhost = parse
+  ['A'-'Z' 'a'-'z' '0'-'9' '.' '-']+
+     { Some (normalize_host (Lexing.lexeme lexbuf)) }
+| ""
+     { Some "localhost" }
 @
 
 
@@ -4904,6 +5181,13 @@ let isdir path f =
 
 \subsection{[[mailto://]]}
 
+<<[[Lexurl.f]] protocol cases>>=
+| "MAILTO" ->
+    let address = any lexbuf in
+    result.protocol <- MAILTO;
+    result.path <- address
+@
+
 % see extra
 
 \subsection{Proxied protocols}
@@ -4966,6 +5250,112 @@ and proxy_request wr cont =
        (start_request true wr cont)
        (failed_request wr cont.document_finish)
 @
+
+
+
+\subsection{[[ftp://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "FTP" -> (* we don't need the detail of path *)
+   slashslash lexbuf;
+   let u, p = userpass lexbuf in
+   let h, po = hostport lexbuf in
+   let path = slashpath lexbuf in
+   result.protocol <- FTP;
+   result.user <- u;
+   result.password <- p;
+   result.host <- h;
+   result.port <- normalize_port (FTP, po);
+   result.path <- path
+@
+
+
+<<function Lexurl.userpass>>=
+and userpass = parse
+  (* foo:bar@, foo:@ *)
+  [^ ':' '/' '@']+ ':' [^ ':' '/' '@']* '@'
+    { let lexeme = Lexing.lexeme lexbuf in
+      let pos = String.index lexeme ':' in
+      Some (String.sub lexeme 0 pos),
+      Some (String.sub lexeme (succ pos) (String.length lexeme - 2 - pos))
+    }
+  (* foo@, @ *)
+| [^ ':' '/' '@']* '@'
+   { let lexeme = Lexing.lexeme lexbuf in
+     Some (String.sub lexeme 0 (String.length lexeme - 1)), None
+   }
+      
+| ""
+   { None, None }
+@
+
+<<functions Lexurl.xxx>>=
+and slashpath = parse
+  "/" { any lexbuf }
+| ""  { None }
+@
+
+\subsection{[[telnet://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "TELNET" ->
+    slashslash lexbuf;
+    let u,p = userpass lexbuf in
+    let h,po = hostport lexbuf in
+    result.protocol <- TELNET;
+    result.user <- u;
+   result.password <- p;
+    result.host <- h;
+   result.port <- po
+@
+
+\subsection{[[nntp://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "NNTP" ->
+    let h,po = hostport lexbuf in
+    let blah = any lexbuf in
+    result.protocol <- NEWS;
+    result.host <- h;
+    result.port <- po;
+    result.path <- blah
+@
+
+
+\subsection{Old protocols}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "GOPHER" | "GOPHER+" -> (* we don't need the detail of path *)
+    slashslash lexbuf;
+    let h,po = hostport lexbuf in
+    let path = slashpath lexbuf in
+    result.protocol <- GOPHER;
+    result.host <- h;
+    result.port <- po;
+    result.path <- path
+| "NEWS" ->
+    let blah = any lexbuf in
+    result.protocol <- NEWS;
+    result.path <- blah
+| "WAIS" ->
+    slashslash lexbuf;
+    let h,po = hostport lexbuf in
+    let pa,se = pathsearch lexbuf in
+    result.protocol <- WAIS;
+    result.host <- h;
+   result.port <- po;
+    result.path <- pa;
+    result.search <- se
+| "PROSPERO" ->
+    slashslash lexbuf;
+    let h,po = hostport lexbuf in
+    let p = slashpath lexbuf in
+    result.protocol <- PROSPERO;
+    result.host <- h;
+   result.port <- po;
+    result.path <- p
+@
+
 
 
 \section{Security}
@@ -6575,6 +6965,8 @@ JS   = Javascript
 HTTP =
 WWW  = World Wide Web
 MIME = ??
+
+DID  = Document IDentifier
 \end{verbatim}
 
 

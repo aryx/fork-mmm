@@ -3,7 +3,6 @@
 (*
  * Requests
  *)
-
 type request =  { 
     www_link : Hyper.link;        (* the link that produced this request *)
     www_url : Url.t;	          (* parsed version *)

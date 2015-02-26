@@ -7,7 +7,7 @@
 type document_id = {
   document_url : Url.t;
   document_stamp : int
-  }
+}
 (*e: type Document.document_id *)
 
 (*s: signature Document.no_stamp *)
@@ -81,7 +81,7 @@ type document = {
   document_address : Url.t;
   mutable document_data : document_data;
   document_info : string list
-  }
+}
 (*e: type Document.document *)
 
 module DocumentIDSet : Set.S with type elt = document_id

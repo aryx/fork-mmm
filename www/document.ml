@@ -20,7 +20,7 @@ type logger = {
 type document_id = {
   document_url : Url.t;
   document_stamp : int
-  }
+}
 (*e: type Document.document_id *)
 
 (*s: module Document.DocumentIDSet *)
@@ -79,7 +79,7 @@ type document = {
   document_address : Url.t;
   mutable document_data : document_data;
   document_info : string list
-  }
+}
 (*e: type Document.document *)
 
 (*s: constant Document.stamp_counter *)

@@ -161,8 +161,10 @@ let std_request_headers() =
 (*s: function Http.full_request *)
 let full_request w proxy_mode wwwr = 
   let url = 
-    if proxy_mode then Url.string_of wwwr.www_url
-    else distant_path wwwr.www_url in
+    if proxy_mode 
+    then Url.string_of wwwr.www_url
+    else distant_path wwwr.www_url 
+  in
   let write_referer = match wwwr.www_link.h_context with
      None -> (fun () -> ())
    | Some r ->  (fun () -> if !send_referer then w ("Referer: " ^ r ^ "\r\n"))
