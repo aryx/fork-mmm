@@ -146,19 +146,23 @@ module Document : sig
   type handle = {
     document_id : document_id;
       (* identification of the document *)
+
+    mutable document_status : int;
+  
+    document_feed : Feed.t;
+      (* where to get the data *)
+
     document_referer : string option;
       (* URL of refering document, if any *)
-    mutable document_status : int;
     mutable document_headers : string list;
       (* HTTP headers of document, or faked ones.
          In NN3.0, the only possible headers are Content-Type,
          Content-Length (not necessary valid), and 
          Last-Modified (not necessary valid)
        *)
-    document_feed : Feed.t;
-      (* where to get the data *)
     document_fragment : string option;
       (* fragment (#foo) if any *)
+
     mutable document_logger : logger
       (* how to log information relative to this document processing *)
     }

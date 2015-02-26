@@ -2557,7 +2557,7 @@ let error name find_line (Loc(n,n')) msg =
 (* lines: start at 1 *)
 (* pos: start at 0 as in caml *)
 let line_reporting ic =
-  let lines = ref [] 
+  let lines = ref [] in
   let current_line = ref 1 in
   let current_pos = ref 0 in
   let read = 
