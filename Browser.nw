@@ -848,6 +848,27 @@ type status =  {
 
 \subsection{HTML}
 
+<<type Html.token>>=
+type token =
+ | OpenTag of tag
+ | CloseTag of string
+
+ | PCData of string
+ | CData of string
+
+ | Comment of string
+ | Doctype of string
+
+ | EOF
+@
+%less: need doctype? diff PCData and CData?
+% where is the tree? the full AST?
+% token is really the main thing returned
+% by the lexer/parser. You have to rebuild the tree from it
+% but it is easy since the tokens contain Opentag, Closetag, etc
+%less: could do such a dumper, a la pfff
+
+
 %https://html.spec.whatwg.org/multipage/introduction.html#a-quick-introduction-to-html
 
 <<type Html.tag>>=
@@ -876,7 +897,6 @@ type attribute_value = string
 @
 
 
-%todo: where is the tree? the full AST?
 
 
 
@@ -939,10 +959,16 @@ let has_attribute tag attr =
 
 
 
-
 \subsection{CSS}
 
 \subsection{Javascript}
+
+
+
+
+
+
+
 
 \chapter{[[main()]]}
 
@@ -1876,17 +1902,8 @@ let resolve link =
 
 \subsection{Lexing}
 
-<<type Html.token>>=
-type token =
- | OpenTag of tag
- | CloseTag of string
- | PCData of string
- | CData of string
- | Comment of string
- | Doctype of string
- | EOF
-@
-% need doctype? diff PCData and CData?
+% see type Html.token in core DS
+
 
 
 
@@ -1910,7 +1927,7 @@ type warnings = (string * int) list
 % charpos
 
 
-
+% could be in Extra too
 <<html/lexhtml.mll>>=
 (* An HTML lexer *)
 {
@@ -1929,39 +1946,39 @@ open Html
 <<helper functions Lexhtml.xxx>>
 }
 
-<<function Html.html>>
+<<function Lexhtml.html>>
 
 
-<<function Html.lenient_end_comment>>
+<<function Lexhtml.lenient_end_comment>>
 
-<<function Html.comment>>
+<<function Lexhtml.comment>>
 
-<<function Html.next_comment>>
-
-
-<<function Html.text>>
-
-<<function Html.ampersand>>
+<<function Lexhtml.next_comment>>
 
 
-<<function Html.opentag>>
+<<function Lexhtml.text>>
 
-<<function Html.closetag>>
-
-<<function Html.attrib>>
-
-<<function Html.tagattrib>>
-
-<<function Html.attribvalue>>
+<<function Lexhtml.ampersand>>
 
 
-<<function Html.inquote>>
+<<function Lexhtml.opentag>>
 
-<<function Html.insingle>>
+<<function Lexhtml.closetag>>
 
-<<function Html.skip_to_close>>
+<<function Lexhtml.attrib>>
 
-<<function Html.cdata>>
+<<function Lexhtml.tagattrib>>
+
+<<function Lexhtml.attribvalue>>
+
+
+<<function Lexhtml.inquote>>
+
+<<function Lexhtml.insingle>>
+
+<<function Lexhtml.skip_to_close>>
+
+<<function Lexhtml.cdata>>
 
 @
 
@@ -2054,9 +2071,9 @@ let mk_loc lexbuf lexdata =
 %    { (fun lexdata charset -> () )}
 
 
-<<function Html.html>>=
+<<function Lexhtml.html>>=
 rule html = parse
-<<[[Html.html()]] rule cases>>
+<<[[Lexhtml.html()]] rule cases>>
  | "\r\n" 
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
@@ -2102,13 +2119,13 @@ rule html = parse
 
 \subsubsection{Comments}
 
-<<[[Html.html()]] rule cases>>=
+<<[[Lexhtml.html()]] rule cases>>=
 | "<!>" 
     { (fun lexdata ->
        noerr, Comment "", mk_loc lexbuf lexdata)}
 @
 
-<<[[Html.html()]] rule cases>>=
+<<[[Lexhtml.html()]] rule cases>>=
 (* If you think it is possible to deal with malformed comments adaptatively,
    that is switching to lenient mode only after we detected an error
    in comment syntax, then ponder the following example: <!-- -- --> *)
@@ -2124,7 +2141,7 @@ rule html = parse
 @
 
 
-<<function Html.lenient_end_comment>>=
+<<function Lexhtml.lenient_end_comment>>=
 (* call this ONLY if we are not in strict mode *)
 and lenient_end_comment = parse
 | "-->"
@@ -2158,7 +2175,7 @@ and lenient_end_comment = parse
 %*)
 
 
-<<function Html.comment>>=
+<<function Lexhtml.comment>>=
 (* we're looking for the end of a comment : skip all characters until next   *)
 (*  -- included, and then look for next -- or > *)
 and comment = parse
@@ -2194,7 +2211,7 @@ and comment = parse
 %*)
 
 
-<<function Html.next_comment>>=
+<<function Lexhtml.next_comment>>=
 (* the normal next comment search *)      
 and next_comment = parse
     [' ' '\t' '\r' '\n']* "--"
@@ -2222,7 +2239,7 @@ type tagtoken =
 @
 
 % opening tags
-<<[[Html.html()]] rule cases>>=
+<<[[Lexhtml.html()]] rule cases>>=
 | '<' 
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
@@ -2230,7 +2247,7 @@ type tagtoken =
      )}
 @
 
-<<function Html.opentag>>=
+<<function Lexhtml.opentag>>=
 (* TODO 2.0: 
  *   syntax for SHORTTAG YES (need to know the DTD for this !).
  *
@@ -2243,7 +2260,8 @@ and opentag = parse
        let bugs = ref [] in
        let rec read_attribs () =
          match attrib lexbuf lexdata with
-         | Closetag n -> n
+         | Closetag n -> 
+             n
          | Attribute(p1, p2) ->
              attribs := (p1, p2) :: !attribs; 
              read_attribs()
@@ -2269,7 +2287,7 @@ and opentag = parse
 
 % closing tags
 
-<<[[Html.html()]] rule cases>>=
+<<[[Lexhtml.html()]] rule cases>>=
 | '\n'? "</"
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
@@ -2277,7 +2295,7 @@ and opentag = parse
       )}
 @
 
-<<function Html.closetag>>=
+<<function Lexhtml.closetag>>=
 and closetag = parse
   | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
@@ -2293,7 +2311,7 @@ and closetag = parse
           text lexbuf lexdata)}
 @
 
-<<function Html.skip_to_close>>=
+<<function Lexhtml.skip_to_close>>=
 and skip_to_close = parse
    [^'>']* '>' { (fun lexdata -> mk_end lexbuf lexdata)}
   | "" { (fun lexdata -> 
@@ -2304,7 +2322,7 @@ and skip_to_close = parse
 \subsubsection{Attributes}
 
 % opentag -> <>
-<<function Html.attrib>>=
+<<function Lexhtml.attrib>>=
 and attrib = parse
 | [' ' '\t' '\n' '\r']+ 
     { (fun lexdata -> attrib lexbuf lexdata )}
@@ -2353,7 +2371,7 @@ and attrib = parse
 @
 
 % attrib -> <>
-<<function Html.tagattrib>>=
+<<function Lexhtml.tagattrib>>=
 and tagattrib = parse
 | [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
     { (fun lexdata -> Some (attribvalue lexbuf lexdata) )}
@@ -2362,7 +2380,7 @@ and tagattrib = parse
 @  
 
 % opentag -> attrib -> tagattrib -> <>
-<<function Html.attribvalue>>=
+<<function Lexhtml.attribvalue>>=
 (* This should be dependent on the attribute name *)
 (* people often forget to quote, so try to do something about it *)
 (* but if a quote is not closed, you are dead *)
@@ -2394,7 +2412,7 @@ and attribvalue = parse
 %       lexeme )}
 
 
-<<function Html.inquote>>=
+<<function Lexhtml.inquote>>=
 and inquote = parse
 | [^ '"' '&' '\027']+
     { (fun lexdata ->
@@ -2402,7 +2420,7 @@ and inquote = parse
        inquote lexbuf lexdata )}
 | '"'
     { (fun lexdata ->
-       beautify true (Ebuffer.get lexdata.buffer) )}
+       Html.beautify true (Ebuffer.get lexdata.buffer) )}
 | '&'
     { (fun lexdata ->
        Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
@@ -2429,7 +2447,7 @@ and inquote = parse
 %    inquote lexbuf lexdata )}
 %*)
 
-<<function Html.insingle>>=
+<<function Lexhtml.insingle>>=
 and insingle = parse
 | [^ '\'' '&']+
     { (fun lexdata ->
@@ -2437,7 +2455,7 @@ and insingle = parse
        insingle lexbuf lexdata )}
 | '\''
     { (fun lexdata -> 
-       beautify true (Ebuffer.get lexdata.buffer) )}
+       Html.beautify true (Ebuffer.get lexdata.buffer) )}
 | '&'
     { (fun lexdata ->
        Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
@@ -2449,9 +2467,44 @@ and insingle = parse
 @
 
 
+
+<<signature Html.beautify>>=
+val beautify: bool -> string -> string
+  (* [beautify remove_leading_space s] removes sequences of SP *)
+@
+
+% (attrib -> insingle) | ...  -> <> 
+<<function Html.beautify>>=
+(*
+ * Remove sequences of white
+ *   turns out to be faster than global_replace in libstr
+ *   could use String.blit to avoid char copying
+ * NOTE: add \0 detection here (we need it for Tk)
+ *)
+let beautify remove_leading s =
+  let j = ref 0 in
+  let white = ref remove_leading in
+  for i = 0 to String.length s - 1 do
+    match s.[i] with
+    | ' ' | '\t' | '\r' | '\n' | '\000' -> 
+       if not !white 
+       then begin
+         s.[!j] <- ' '; 
+         incr j; 
+         white := true
+       end
+    | c -> 
+       s.[!j] <- c; 
+       white := false; 
+       incr j
+  done;
+  String.sub s 0 !j
+@
+
+
 \subsubsection{Doctype}
 
-<<[[Html.html()]] rule cases>>=
+<<[[Lexhtml.html()]] rule cases>>=
  | "<!" ['D' 'd']['O' 'o']['C' 'c']['T' 't']['Y' 'y']['P' 'p']['E' 'e'] 
          [^ '>']* '>'
     { (fun lexdata ->
@@ -2460,7 +2513,7 @@ and insingle = parse
 
 \subsubsection{Text}
 
-<<function Html.text>>=
+<<function Lexhtml.text>>=
 and text = parse
 | [^ '<' '&' '\r' '\027']+
     { (fun lexdata ->
@@ -2515,7 +2568,7 @@ and text = parse
 \subsubsection{Data}
 
 % ??? -> <>
-<<function Html.cdata>>=
+<<function Lexhtml.cdata>>=
 and cdata = parse
 | [^ '<']* (['<']+ [^ '/']) ? 
     { (fun lexdata ->
@@ -2540,19 +2593,20 @@ and cdata = parse
 
 \subsubsection{Entities, [[&xxx;]]}
 
-<<[[Html.html()]] rule cases>>=
+<<[[Lexhtml.html()]] rule cases>>=
  | '&' 
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
        Ebuffer.reset lexdata.buffer;
-       Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
+       Ebuffer.output_string lexdata.buffer 
+         (ampersand lexbuf lexdata);
        text lexbuf lexdata )}
 @
 
 
-<<function Html.ampersand>>=
+<<function Lexhtml.ampersand>>=
 and ampersand = parse
-   '#' ['0'-'9']+ ';' 
+| '#' ['0'-'9']+ ';' 
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 2) in
@@ -2560,36 +2614,35 @@ and ampersand = parse
           String.make 1 (Char.chr (int_of_string code))
         with (* #350 ... *) Invalid_argument _ -> " "
       )}
- | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
+| ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let entity = String.sub lexeme 0 (String.length lexeme - 1) in
-        begin 
-         try get_entity entity
-         with (* 4.2.1 undeclared markup error handling *)
-            Not_found ->
-              ("&" ^ lexeme)
-               end
+        try 
+          get_entity entity
+        with (* 4.2.1 undeclared markup error handling *) Not_found ->
+          ("&" ^ lexeme)
       )}
   (* terminating ; is not required if next character could not be 
      part of the lexeme *)
- | '#' ['0'-'9']+
+| '#' ['0'-'9']+
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 1) in
-    try 
-      String.make 1 (Char.chr (int_of_string code))
-    with Invalid_argument _ -> " "
+        try 
+          String.make 1 (Char.chr (int_of_string code))
+        with Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-      try get_entity lexeme
-      with (* 4.2.1 undeclared markup error handling *)
-        Not_found -> ("&"^lexeme)
+        try 
+          get_entity lexeme
+        with (* 4.2.1 undeclared markup error handling *) Not_found -> 
+          ("&"^lexeme)
       )}
   (* Tolerance ... *)
-  | ""
+| ""
     { (fun lexdata -> "&" )}
 @
 %        (*if !Lang.japan then
@@ -2607,7 +2660,7 @@ and ampersand = parse
 
 
 
-
+% Lexhtml.html -> ampersand -> <>
 <<signature Html.get_entity>>=
 val get_entity : string -> string
   (* [get_entity "amp"] returns "&" *)
@@ -2624,7 +2677,8 @@ let get_entity = Hashtbl.find ampersand_table
  *  cf Appendix B - Proposed Entities
  *)
 
-let ampersand_table = (Hashtbl.create 101: (string , string) Hashtbl.t)
+let ampersand_table = 
+  (Hashtbl.create 101: (string , string) Hashtbl.t)
 @
 
 
@@ -2659,6 +2713,7 @@ let latin1_normal = [
   <<[[latin1_normal]] elements>>
 ]
 @
+% see more in language or special chars section
 
 \subsubsection{Strict mode}
 
@@ -2672,7 +2727,10 @@ val strict : bool ref
 let strict = ref false
 @
 
-\subsection{Parsing, the DTD}
+%todo: aspectize strict
+
+\subsection{Parsing part 1, the DTD}
+% it's not really parsing though, it's really more adjusted lexing no?
 
 % for 3.2
 % html 4.0 and 5.0 has been published
@@ -2973,7 +3031,51 @@ let _ = add dtd32f
 @
 
 
-\subsection{SGML evaluator}
+\subsection{Parsing part 2, the SGML evaluator}
+
+\subsubsection{[[automat()]]}
+
+% Htparse.html_lex | ... -> <>
+<<signature Html_eval.automat>>=
+val automat : 
+  Dtd.t -> Lexing.lexbuf -> 
+  (Html.location -> Html.token -> unit) -> (* action callback *)
+  (Html.location -> string -> unit) -> (* error callback *)
+  unit
+@
+% main parsing function apparently
+
+<<function Html_eval.automat>>=
+let automat dtd lexbuf action error =
+  try
+    let lexer = sgml_lexer dtd in
+    while true do
+      try 
+        let warnings, correct, tokens, loc = lexer lexbuf in
+        warnings |> List.iter (fun (reason, pos) -> 
+          error (Loc(pos,succ pos)) reason
+        );
+        (match correct with
+        | Legal -> ()
+        | Illegal reason -> error loc reason
+        );
+        tokens |> List.iter (function token -> 
+          (try 
+            (* calling the callback *)
+            action loc token
+          with Invalid_Html s -> error loc s
+          );
+          if token = EOF 
+          then failwith "quit_html_eval"
+        )
+      with Html_Lexing (s,n) -> error (Loc(n,n+1)) s
+    done
+  with Failure "quit_html_eval" -> ()
+@
+
+
+
+\subsubsection{[[sgml_lexer()]]}
 
 <<type Html_eval.minimization>>=
 (* Wrapped up lexer to insert open/close tags in the stream of "normal"
@@ -2984,45 +3086,157 @@ type minimization =
   Legal | Illegal of string
 @
 
-<<signature Html_eval.add_html_filter>>=
-(* test suit *)
-val add_html_filter : ((Html.token -> unit) -> Html.token -> unit) -> unit
-(* [add_html_filter filter] adds an HTML filter between the lexing and
-  displaying of HTML. So, the filters do not affect the source (and
-  the source display), change the content of HTML silently, and affect
-  the display. The filter function [filter pfilter] receives a HTML token
-  for each time, and do some job, and send a token to the parent filter 
-  pfilter if possible. The filters will receive a correct HTML token
-  stream (all the tags are placed and closed correctly due to the DTD),
-  and they must send the correct stream to the parent filter also. 
-*)
-@
-
 <<signature Html_eval.sgml_lexer>>=
 val sgml_lexer :
   Dtd.t -> Lexing.lexbuf -> 
-    ((string * int) list * minimization * Html.token list * Html.location)
-@
-
-<<signature Html_eval.automat>>=
-val automat : Dtd.t -> (Html.location -> Html.token -> unit)
-                    -> Lexing.lexbuf
-                    -> (Html.location -> string -> unit)
-            -> unit
+  (Lexhtml.warnings * minimization * Html.token list * Html.location)
 @
 
 
 
+<<function Html_eval.sgml_lexer>>=
+let sgml_lexer dtd =
+  let current_lex = ref Lexhtml.html in
+  let stack = ref [] in
+  let lexdata = Lexhtml.new_data () in
 
+  (* currently allowed elements *)
+  let allowed () = 
+    match !stack with
+    | [] -> initial
+    | (elem, cts)::_ -> cts 
+  in
+  (* whatever the situation (but close), if the previous element is empty
+     with an omittable close, close it *)
+  let close_empty () = 
+    match !stack with
+    | [] -> []
+    | (elem, ctx)::l ->
+        if Elements.is_empty ctx && Elements.mem elem dtd.close_omitted
+        then (stack := l; [CloseTag elem])
+        else []
+  in  
+  (fun lexbuf ->
+    let warnings, token, loc = !current_lex lexbuf lexdata in
+    if !debug 
+    then begin prerr_string "got "; Html.print token; prerr_newline() end;
+    let status, tokens = 
+      match token with
+      | OpenTag t ->
+          begin try (* first check that we know this element *)
+            let contents = Hashtbl.find dtd.contents t.tag_name in
+            let extraclose = close_empty() in    
+            (* check changing of lexers; this works only if error recovery
+               rules imply that the tag will *always* be open
+             *)
+            if is_cdata contents 
+            then current_lex := Lexhtml.cdata
+            else current_lex := Lexhtml.html;
 
-<<exception Html_eval.CantMinimize>>=
-exception CantMinimize			            (* bogus HTML *)
+            (* is it allowed in here ? *)
+            if Elements.mem t.tag_name (allowed()) then begin
+              (* push on the stack *)
+              stack := (t.tag_name, contents) :: !stack;
+              Legal, extraclose @ [token]
+            end else begin (* minimisation or error *)
+              let flag, (res, l) = ominimize dtd t !stack in
+              stack := l;
+              flag, extraclose @ res
+            end
+          with Not_found -> 
+            (* Not in the DTD ! We return it, but don't change our state
+               or stack. An applet extension to the HTML display machine
+               can attempt to do something with it *)
+            Illegal (sprintf "Element %s not in DTD" t.tag_name),
+            [token]
+         end
+        
+      | CloseTag t ->
+          begin try (* do we know this element *)
+            let _ = Hashtbl.find dtd.contents t in
+            match !stack with
+            | [] -> 
+              Illegal(sprintf "Unmatched closing </%s>" t), []
+            | (elem, cts)::l when elem = t -> (* matching close *)
+                 stack := l; (* pop the stack *)
+                 (* the lexer has to be "normal" again, because CDATA
+                    can't be nested anyway *)
+                 current_lex := Lexhtml.html;
+                 Legal, [token]
+            | (elem, cts)::l -> (* unmatched close ! *)
+                (* if we were in cdata, change the token to cdata *)
+                 if is_cdata cts 
+                 then Legal, [CData (sprintf "</%s>" t)]
+                 else begin
+                   current_lex := Lexhtml.html;
+                   let flag, (res, l) = cminimize dtd t !stack in
+                   stack := l;
+                   flag, res
+                 end
+        with Not_found ->
+          Illegal (sprintf "Element %s not in DTD" t),
+          [token]
+        end
+     | PCData s ->
+         let extraclose = close_empty() in    
+         (* is it allowed in here ? *)
+         if Elements.mem "#pcdata" (allowed()) 
+         then  Legal, extraclose @ [token]
+          (* ignore PCData made of spaces if not relevant to the context *)
+         else 
+           if issp s 
+           then Legal, extraclose
+           else begin	    
+              (* bad hack. make believe that we try to open the #pcdata element *)
+             let flag, (res, l) = 
+             ominimize dtd {tag_name = "#pcdata"; attributes = []} !stack in
+             stack := l;
+             flag,  extraclose @ res @ [token]
+           end
+
+    (* CData never happens with an empty stack *)
+    | CData s ->
+        let extraclose = close_empty() in    
+        if Elements.mem "#cdata" (allowed()) 
+        then Legal, extraclose @ [token]
+        else
+           Illegal(sprintf "Unexpected CDATA in %a" dump_stack !stack),
+           extraclose @ [token]
+        
+    (* See if the stack is empty *)
+    | EOF ->
+       begin 
+        match !stack with
+        | [] -> Legal, [EOF]
+        | l ->
+           (* we must be able to close all remaining tags *)
+           let rec closethem tokens = function
+           | [] -> None, EOF :: tokens
+           | (last,_) :: l ->
+               if Elements.mem last dtd.close_omitted 
+               then closethem (CloseTag last::tokens) l
+               else
+                 let status, tokens = 
+                   closethem (CloseTag last::tokens) l in
+                 let err = sprintf "</%s>" last in
+                 let newstatus = 
+                   match status with
+                   | Some s -> Some (err^s)
+                   | None -> Some err 
+                 in
+                 newstatus, tokens
+         in
+         match closethem [] l with
+         | None, tokens -> Legal, List.rev tokens
+         | Some s, tokens -> Illegal ("Missing "^s), List.rev tokens
+       end
+
+    | _ ->  Legal, [token] (* ignore all other cases *)
+      
+  in
+  warnings, status, tokens, loc)
 @
 
-<<constant Html_eval.initial>>=
-(* initial element of the DTD *)
-let initial = Elements.add "html" Elements.empty
-@
 
 <<function Html_eval.dump_stack>>=
 let dump_stack () = function
@@ -3031,6 +3245,18 @@ let dump_stack () = function
   | [x,_] -> sprintf "<%s>" x
   | [] -> "empty stack"
 @
+
+<<constant Html_eval.initial>>=
+(* initial element of the DTD *)
+let initial = Elements.add "html" Elements.empty
+@
+
+<<function Html_eval.is_cdata>>=
+let is_cdata cts =
+  Elements.cardinal cts = 1 && Elements.mem "#cdata" cts
+@
+
+\subsubsection{Minimizations}
 
 <<function Html_eval.ominimize>>=
 (* open minimize 
@@ -3185,160 +3411,35 @@ let cminimize dtd tagname stack =
            ([], stack) (* just skip the damn thing *)
 @
 
-<<function Html_eval.is_cdata>>=
-let is_cdata cts =
-     Elements.cardinal cts = 1 
-  && Elements.mem "#cdata" cts
+<<exception Html_eval.CantMinimize>>=
+exception CantMinimize			            (* bogus HTML *)
 @
 
-<<function Html_eval.sgml_lexer>>=
-let sgml_lexer dtd =
-  let current_lex = ref Lexhtml.html
-  and stack = ref [] 
-  and lexdata = Lexhtml.new_data ()
-  in
+\subsubsection{Filters}
 
-  (* currently allowed elements *)
-  let allowed () = match !stack with
-      [] -> initial
-    | (elem, cts)::_ -> cts 
-  in
-  (* whatever the situation (but close), if the previous element is empty
-     with an omittable close, close it *)
-  let close_empty () = match !stack with
-      [] -> []
-    | (elem, ctx)::l ->
-    if Elements.is_empty ctx && Elements.mem elem dtd.close_omitted
-    then (stack := l; [CloseTag elem])
-    else []
-  in  
-  (fun lexbuf ->
-    let warnings, token, loc = !current_lex lexbuf lexdata in
-    if !debug then 
-      begin prerr_string "got "; Html.print token; prerr_newline() end;
-    let status, tokens = 
-      match token with
-      | OpenTag t ->
-          begin try (* first check that we know this element *)
-        let contents = Hashtbl.find dtd.contents t.tag_name in
-            let extraclose = close_empty() in    
-        (* check changing of lexers; this works only if error recovery
-           rules imply that the tag will *always* be open
-             *)
-        if is_cdata contents then current_lex := Lexhtml.cdata
-        else current_lex := Lexhtml.html;
-        (* is it allowed in here ? *)
-        if Elements.mem t.tag_name (allowed()) then begin
-              (* push on the stack *)
-              stack := (t.tag_name, contents) :: !stack;
-          Legal, extraclose @ [token]
-              end
-            else begin (* minimisation or error *)
-              let flag, (res, l) = ominimize dtd t !stack in
-        stack := l;
-        flag, extraclose @ res
-              end
-          with
-        Not_found -> 
-          (* Not in the DTD ! We return it, but don't change our state
-         or stack. An applet extension to the HTML display machine
-                 can attempt to do something with it *)
-          Illegal (sprintf "Element %s not in DTD" t.tag_name),
-          [token]
-          end
-        
-      | CloseTag t ->
-      begin try (* do we know this element *)
-            let _ = Hashtbl.find dtd.contents t in
-        match !stack with
-          [] -> 
-        Illegal(sprintf "Unmatched closing </%s>" t),
-        []
-            | (elem, cts)::l when elem = t -> (* matching close *)
-            stack := l; (* pop the stack *)
-                (* the lexer has to be "normal" again, because CDATA
-                   can't be nested anyway *)
-               current_lex := Lexhtml.html;
-        Legal, [token]
-            | (elem, cts)::l -> (* unmatched close ! *)
-        (* if we were in cdata, change the token to cdata *)
-        if is_cdata cts then Legal, [CData (sprintf "</%s>" t)]
-        else begin
-                 current_lex := Lexhtml.html;
-          let flag, (res, l) = cminimize dtd t !stack in
-          stack := l;
-          flag, res
-        end
-          with
-        Not_found ->
-          Illegal (sprintf "Element %s not in DTD" t),
-          [token]
-          end
-
-      | PCData s ->
-          let extraclose = close_empty() in    
-      (* is it allowed in here ? *)
-      if Elements.mem "#pcdata" (allowed()) then
-              Legal, extraclose @ [token]
-          (* ignore PCData made of spaces if not relevant to the context *)
-      else if issp s then Legal, extraclose
-      else
-           begin	    
-          (* bad hack. make believe that we try to open the #pcdata element *)
-        let flag, (res, l) = 
-          ominimize dtd {tag_name = "#pcdata"; attributes = []} !stack in
-          stack := l;
-          flag,  extraclose @ res @ [token]
-       end
-
-      (* CData never happens with an empty stack *)
-      | CData s ->
-          let extraclose = close_empty() in    
-      if Elements.mem "#cdata" (allowed()) then
-        Legal, extraclose @ [token]
-          else
-        Illegal(sprintf "Unexpected CDATA in %a" dump_stack !stack),
-        extraclose @ [token]
-        
-      (* See if the stack is empty *)
-      | EOF ->
-      begin match !stack with
-        [] -> Legal, [EOF]
-          | l ->
-             (* we must be able to close all remaining tags *)
-         let rec closethem tokens = function
-        [] -> None, EOF :: tokens
-          | (last,_) :: l ->
-          if Elements.mem last dtd.close_omitted then
-            closethem (CloseTag last::tokens) l
-          else
-            let status, tokens = 
-              closethem (CloseTag last::tokens) l in
-            let err = sprintf "</%s>" last in
-            let newstatus = match status with
-              Some s -> Some (err^s)
-            | None -> Some err in
-            newstatus, tokens
-         in
-         match closethem [] l with
-           None, tokens -> Legal, List.rev tokens
-         | Some s, tokens -> Illegal ("Missing "^s), List.rev tokens
-          end
-
-      | _ ->  Legal, [token] (* ignore all other cases *)
-      
-      in
-      warnings, status, tokens, loc)
+<<signature Html_eval.add_html_filter>>=
+(* test suit *)
+val add_html_filter : ((Html.token -> unit) -> Html.token -> unit) -> unit
+(* [add_html_filter filter] adds an HTML filter between the lexing and
+  displaying of HTML. So, the filters do not affect the source (and
+  the source display), change the content of HTML silently, and affect
+  the display. The filter function [filter pfilter] receives a HTML token
+  for each time, and do some job, and send a token to the parent filter 
+  pfilter if possible. The filters will receive a correct HTML token
+  stream (all the tags are placed and closed correctly due to the DTD),
+  and they must send the correct stream to the parent filter also. 
+*)
 @
+<<function Html_eval.add_html_filter>>=
+let add_html_filter f =
+  filters := f :: !filters
+@
+
 
 <<constant Html_eval.filters>>=
 let filters = ref []
 @
 
-<<function Html_eval.add_html_filter>>=
-let add_html_filter f =
-  filters := f :: !filters
-@
 
 <<function Html_eval.sgml_lexer (./html/html_eval.ml)>>=
 (* Redefine sgml_lexer with filters *)
@@ -3351,39 +3452,12 @@ let sgml_lexer dtd =
   in
   function lexbuf ->
     let warnings, correct, tokens, loc = org_lexer lexbuf in
-    List.iter allfilter tokens; (* inefficient *)
+    tokens |> List.iter allfilter; (* inefficient *)
     let tokens = !buf in 
     buf := [];
     warnings, correct, tokens, loc
 @
 
-<<function Html_eval.automat>>=
-let automat dtd action lexbuf error =
-  try
-    let lexer = sgml_lexer dtd in
-    while true do
-      try 
-       let warnings, correct, tokens, loc = lexer lexbuf in
-    List.iter (fun (reason, pos) -> error (Loc(pos,succ pos)) reason)
-              warnings;
-    begin match correct with
-      Legal -> ()
-        | Illegal reason -> error loc reason
-        end;
-    List.iter 
-      (function token -> 
-            begin 
-          try action loc token
-              with Invalid_Html s -> error loc s
-            end;
-        if token = EOF then failwith "quit_html_eval")
-       tokens
-      with
-        Html_Lexing (s,n) -> error (Loc(n,n+1)) s
-    done
-  with
-    Failure "quit_html_eval" -> ()
-@
 
 
 \subsection{[[htparse]]}
@@ -3392,8 +3466,13 @@ let automat dtd action lexbuf error =
 
 <<type Htparse.mode>>=
 type mode =
-  Check | Indent of int | Nesting
+ | Check 
+ | Indent of int 
+ | Nesting
 @
+% Check =~ token dump
+% Ident =~ use stack so more balancing parsing
+% Nesting =~ ?
 <<constant Htparse.mode>>=
 let mode = ref Check
 @
@@ -3404,11 +3483,13 @@ let main () =
   Html.init (Lang.lang());
 
   Arg.parse [
+     "-struct", Arg.Int   (function n -> mode := Indent n), "Parse Tree";
+     "-nesting", Arg.Unit (function () -> mode := Nesting), "Check nesting";
+
      "-debug", Arg.Unit (function () -> Html_eval.debug := true), "Debug mode";
      "-strict", Arg.Set Lexhtml.strict, "Strict mode";
      "-v", Arg.Unit (function () -> verbose := true), "Verbose mode";
-     "-struct", Arg.Int (function n -> mode := Indent n), "Parse Tree";
-     "-nesting", Arg.Unit (function () -> mode := Nesting), "Check nesting";
+
      "-dtd", Arg.Unit (function () -> Dtd.dump Dtd.dtd32f), "Dump DTD";
      "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
      ]
@@ -3430,22 +3511,25 @@ let _ = Printexc.catch main ()
 let html_lex name =
   let ic = open_in name in
   let lexbuf, find_line = line_reporting ic in
-  Html_eval.automat Dtd.dtd32f
+  Html_eval.automat Dtd.dtd32f lexbuf
      (fun loc token ->
         match token with
         | EOF -> close_in ic
-        | t -> if !verbose then (Html.print t; flush stdout)
+        | t -> 
+           if !verbose 
+           then begin 
+              Html.print t; 
+              flush stdout
+            end
      )
-     lexbuf
      (error name find_line)
 @
-
+% token dumper
 
 <<toplevel Htparse._1>>=
 let _ = 
   Html.verbose := false (* we do our own error report *)
 @
-
 <<constant Htparse.verbose>>=
 let verbose = ref false
 @
@@ -3498,54 +3582,56 @@ let html_nest name =
   let ic = open_in name in
   let lexbuf = Lexing.from_channel ic in
   let stack = ref [] in
-   Html_eval.automat Dtd.dtd32f
-      (function Loc(n,n') ->
-      function 
-        EOF -> close_in ic
-          | OpenTag t ->
-          stack := t.tag_name :: !stack
-          | CloseTag t ->
-          begin match !stack with
-            hd::tl when hd = t -> stack := tl
-              | hd::tl -> eprintf "Unmatched closing tag %s (expected %s) at 
+  Html_eval.automat Dtd.dtd32f lexbuf
+    (fun (Loc(n,n')) tok ->
+       match tok with
+       | EOF -> close_in ic
+       | OpenTag t ->
+           stack := t.tag_name :: !stack
+       | CloseTag t ->
+           (match !stack with
+            | hd::tl when hd = t -> stack := tl
+            | hd::tl -> eprintf "Unmatched closing tag %s (expected %s) at 
                             pos %d - %d" t hd n n'
-          | [] -> eprintf "Unmatched closing tag %s (Empty stack) at
+            | [] -> eprintf "Unmatched closing tag %s (Empty stack) at
                             pos %d - %d" t n n'
-              end
-          | _ -> ())
-      lexbuf
-      (fun _ _ -> ())
+            )
+       | _ -> ()
+     )
+     (fun _ _ -> ())
 @
 
 <<function Htparse.html_indent>>=
 let html_indent name level =
-  let box = match level with
-     0 -> Format.open_box
-   | 1 -> Format.open_hvbox
-   | n -> Format.open_vbox in
+  let box = 
+    match level with
+    | 0 -> Format.open_box
+    | 1 -> Format.open_hvbox
+    | n -> Format.open_vbox 
+  in
   let ic = open_in name in
   let lexbuf  = Lexing.from_channel ic in
-   box 0;
-   Html_eval.automat Dtd.dtd32f
-      (fun loc token ->
+  box 0;
+  Html_eval.automat Dtd.dtd32f lexbuf
+    (fun loc token ->
       match token with
-        EOF -> 
-        Format.print_newline();
-        close_in ic
-          | OpenTag t ->
-                Format.print_cut();
-        box 0;
-        box 2;
-        Format.print_string (sprintf "<%s>" t.tag_name)
-      | CloseTag t ->
-        Format.close_box();
-                Format.print_cut();
-        Format.print_string (sprintf "</%s>" t);
-                Format.close_box()
-      | PCData _ -> Format.print_string "*"
+      | EOF -> 
+          Format.print_newline();
+          close_in ic
+       | OpenTag t ->
+          Format.print_cut();
+          box 0;
+          box 2;
+          Format.print_string (sprintf "<%s>" t.tag_name)
+       | CloseTag t ->
+          Format.close_box();
+          Format.print_cut();
+          Format.print_string (sprintf "</%s>" t);
+          Format.close_box()
+      | PCData _ -> 
+          Format.print_string "*"
       | _ -> ()
       )
-      lexbuf
       (fun _ msg -> Format.print_string (sprintf "ERROR(%s)" msg))
 @
 

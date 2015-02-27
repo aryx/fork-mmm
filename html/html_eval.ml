@@ -189,148 +189,150 @@ let cminimize dtd tagname stack =
 
 (*s: function Html_eval.is_cdata *)
 let is_cdata cts =
-     Elements.cardinal cts = 1 
-  && Elements.mem "#cdata" cts
+  Elements.cardinal cts = 1 && Elements.mem "#cdata" cts
 (*e: function Html_eval.is_cdata *)
 
 (*s: function Html_eval.sgml_lexer *)
 let sgml_lexer dtd =
-  let current_lex = ref Lexhtml.html
-  and stack = ref [] 
-  and lexdata = Lexhtml.new_data ()
-  in
+  let current_lex = ref Lexhtml.html in
+  let stack = ref [] in
+  let lexdata = Lexhtml.new_data () in
 
   (* currently allowed elements *)
-  let allowed () = match !stack with
-      [] -> initial
+  let allowed () = 
+    match !stack with
+    | [] -> initial
     | (elem, cts)::_ -> cts 
   in
   (* whatever the situation (but close), if the previous element is empty
      with an omittable close, close it *)
-  let close_empty () = match !stack with
-      [] -> []
+  let close_empty () = 
+    match !stack with
+    | [] -> []
     | (elem, ctx)::l ->
-    if Elements.is_empty ctx && Elements.mem elem dtd.close_omitted
-    then (stack := l; [CloseTag elem])
-    else []
+        if Elements.is_empty ctx && Elements.mem elem dtd.close_omitted
+        then (stack := l; [CloseTag elem])
+        else []
   in  
   (fun lexbuf ->
     let warnings, token, loc = !current_lex lexbuf lexdata in
-    if !debug then 
-      begin prerr_string "got "; Html.print token; prerr_newline() end;
+    if !debug 
+    then begin prerr_string "got "; Html.print token; prerr_newline() end;
     let status, tokens = 
       match token with
       | OpenTag t ->
           begin try (* first check that we know this element *)
-        let contents = Hashtbl.find dtd.contents t.tag_name in
+            let contents = Hashtbl.find dtd.contents t.tag_name in
             let extraclose = close_empty() in    
-        (* check changing of lexers; this works only if error recovery
-           rules imply that the tag will *always* be open
+            (* check changing of lexers; this works only if error recovery
+               rules imply that the tag will *always* be open
              *)
-        if is_cdata contents then current_lex := Lexhtml.cdata
-        else current_lex := Lexhtml.html;
-        (* is it allowed in here ? *)
-        if Elements.mem t.tag_name (allowed()) then begin
+            if is_cdata contents 
+            then current_lex := Lexhtml.cdata
+            else current_lex := Lexhtml.html;
+
+            (* is it allowed in here ? *)
+            if Elements.mem t.tag_name (allowed()) then begin
               (* push on the stack *)
               stack := (t.tag_name, contents) :: !stack;
-          Legal, extraclose @ [token]
-              end
-            else begin (* minimisation or error *)
+              Legal, extraclose @ [token]
+            end else begin (* minimisation or error *)
               let flag, (res, l) = ominimize dtd t !stack in
-        stack := l;
-        flag, extraclose @ res
-              end
-          with
-        Not_found -> 
-          (* Not in the DTD ! We return it, but don't change our state
-         or stack. An applet extension to the HTML display machine
-                 can attempt to do something with it *)
-          Illegal (sprintf "Element %s not in DTD" t.tag_name),
-          [token]
-          end
+              stack := l;
+              flag, extraclose @ res
+            end
+          with Not_found -> 
+            (* Not in the DTD ! We return it, but don't change our state
+               or stack. An applet extension to the HTML display machine
+               can attempt to do something with it *)
+            Illegal (sprintf "Element %s not in DTD" t.tag_name),
+            [token]
+         end
         
       | CloseTag t ->
-      begin try (* do we know this element *)
+          begin try (* do we know this element *)
             let _ = Hashtbl.find dtd.contents t in
-        match !stack with
-          [] -> 
-        Illegal(sprintf "Unmatched closing </%s>" t),
-        []
+            match !stack with
+            | [] -> 
+              Illegal(sprintf "Unmatched closing </%s>" t), []
             | (elem, cts)::l when elem = t -> (* matching close *)
-            stack := l; (* pop the stack *)
-                (* the lexer has to be "normal" again, because CDATA
-                   can't be nested anyway *)
-               current_lex := Lexhtml.html;
-        Legal, [token]
-            | (elem, cts)::l -> (* unmatched close ! *)
-        (* if we were in cdata, change the token to cdata *)
-        if is_cdata cts then Legal, [CData (sprintf "</%s>" t)]
-        else begin
+                 stack := l; (* pop the stack *)
+                 (* the lexer has to be "normal" again, because CDATA
+                    can't be nested anyway *)
                  current_lex := Lexhtml.html;
-          let flag, (res, l) = cminimize dtd t !stack in
-          stack := l;
-          flag, res
-        end
-          with
-        Not_found ->
+                 Legal, [token]
+            | (elem, cts)::l -> (* unmatched close ! *)
+                (* if we were in cdata, change the token to cdata *)
+                 if is_cdata cts 
+                 then Legal, [CData (sprintf "</%s>" t)]
+                 else begin
+                   current_lex := Lexhtml.html;
+                   let flag, (res, l) = cminimize dtd t !stack in
+                   stack := l;
+                   flag, res
+                 end
+        with Not_found ->
           Illegal (sprintf "Element %s not in DTD" t),
           [token]
-          end
-
-      | PCData s ->
-          let extraclose = close_empty() in    
-      (* is it allowed in here ? *)
-      if Elements.mem "#pcdata" (allowed()) then
-              Legal, extraclose @ [token]
+        end
+     | PCData s ->
+         let extraclose = close_empty() in    
+         (* is it allowed in here ? *)
+         if Elements.mem "#pcdata" (allowed()) 
+         then  Legal, extraclose @ [token]
           (* ignore PCData made of spaces if not relevant to the context *)
-      else if issp s then Legal, extraclose
-      else
-           begin	    
-          (* bad hack. make believe that we try to open the #pcdata element *)
-        let flag, (res, l) = 
-          ominimize dtd {tag_name = "#pcdata"; attributes = []} !stack in
-          stack := l;
-          flag,  extraclose @ res @ [token]
-       end
+         else 
+           if issp s 
+           then Legal, extraclose
+           else begin	    
+              (* bad hack. make believe that we try to open the #pcdata element *)
+             let flag, (res, l) = 
+             ominimize dtd {tag_name = "#pcdata"; attributes = []} !stack in
+             stack := l;
+             flag,  extraclose @ res @ [token]
+           end
 
-      (* CData never happens with an empty stack *)
-      | CData s ->
-          let extraclose = close_empty() in    
-      if Elements.mem "#cdata" (allowed()) then
-        Legal, extraclose @ [token]
-          else
-        Illegal(sprintf "Unexpected CDATA in %a" dump_stack !stack),
-        extraclose @ [token]
+    (* CData never happens with an empty stack *)
+    | CData s ->
+        let extraclose = close_empty() in    
+        if Elements.mem "#cdata" (allowed()) 
+        then Legal, extraclose @ [token]
+        else
+           Illegal(sprintf "Unexpected CDATA in %a" dump_stack !stack),
+           extraclose @ [token]
         
-      (* See if the stack is empty *)
-      | EOF ->
-      begin match !stack with
-        [] -> Legal, [EOF]
-          | l ->
-             (* we must be able to close all remaining tags *)
-         let rec closethem tokens = function
-        [] -> None, EOF :: tokens
-          | (last,_) :: l ->
-          if Elements.mem last dtd.close_omitted then
-            closethem (CloseTag last::tokens) l
-          else
-            let status, tokens = 
-              closethem (CloseTag last::tokens) l in
-            let err = sprintf "</%s>" last in
-            let newstatus = match status with
-              Some s -> Some (err^s)
-            | None -> Some err in
-            newstatus, tokens
+    (* See if the stack is empty *)
+    | EOF ->
+       begin 
+        match !stack with
+        | [] -> Legal, [EOF]
+        | l ->
+           (* we must be able to close all remaining tags *)
+           let rec closethem tokens = function
+           | [] -> None, EOF :: tokens
+           | (last,_) :: l ->
+               if Elements.mem last dtd.close_omitted 
+               then closethem (CloseTag last::tokens) l
+               else
+                 let status, tokens = 
+                   closethem (CloseTag last::tokens) l in
+                 let err = sprintf "</%s>" last in
+                 let newstatus = 
+                   match status with
+                   | Some s -> Some (err^s)
+                   | None -> Some err 
+                 in
+                 newstatus, tokens
          in
          match closethem [] l with
-           None, tokens -> Legal, List.rev tokens
+         | None, tokens -> Legal, List.rev tokens
          | Some s, tokens -> Illegal ("Missing "^s), List.rev tokens
-          end
+       end
 
-      | _ ->  Legal, [token] (* ignore all other cases *)
+    | _ ->  Legal, [token] (* ignore all other cases *)
       
-      in
-      warnings, status, tokens, loc)
+  in
+  warnings, status, tokens, loc)
 (*e: function Html_eval.sgml_lexer *)
 
 (*s: constant Html_eval.filters *)
@@ -352,7 +354,7 @@ let sgml_lexer dtd =
   in
   function lexbuf ->
     let warnings, correct, tokens, loc = org_lexer lexbuf in
-    List.iter allfilter tokens; (* inefficient *)
+    tokens |> List.iter allfilter; (* inefficient *)
     let tokens = !buf in 
     buf := [];
     warnings, correct, tokens, loc
@@ -360,30 +362,30 @@ let sgml_lexer dtd =
   
   
 (*s: function Html_eval.automat *)
-let automat dtd action lexbuf error =
+let automat dtd lexbuf action error =
   try
     let lexer = sgml_lexer dtd in
     while true do
       try 
-       let warnings, correct, tokens, loc = lexer lexbuf in
-    List.iter (fun (reason, pos) -> error (Loc(pos,succ pos)) reason)
-              warnings;
-    begin match correct with
-      Legal -> ()
+        let warnings, correct, tokens, loc = lexer lexbuf in
+        warnings |> List.iter (fun (reason, pos) -> 
+          error (Loc(pos,succ pos)) reason
+        );
+        (match correct with
+        | Legal -> ()
         | Illegal reason -> error loc reason
-        end;
-    List.iter 
-      (function token -> 
-            begin 
-          try action loc token
-              with Invalid_Html s -> error loc s
-            end;
-        if token = EOF then failwith "quit_html_eval")
-       tokens
-      with
-        Html_Lexing (s,n) -> error (Loc(n,n+1)) s
+        );
+        tokens |> List.iter (function token -> 
+          (try 
+            (* calling the callback *)
+            action loc token
+          with Invalid_Html s -> error loc s
+          );
+          if token = EOF 
+          then failwith "quit_html_eval"
+        )
+      with Html_Lexing (s,n) -> error (Loc(n,n+1)) s
     done
-  with
-    Failure "quit_html_eval" -> ()
+  with Failure "quit_html_eval" -> ()
 (*e: function Html_eval.automat *)
 (*e: ./html/html_eval.ml *)

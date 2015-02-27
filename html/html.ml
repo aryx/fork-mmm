@@ -24,10 +24,13 @@ type tag = {
 type token =
  | OpenTag of tag
  | CloseTag of string
+
  | PCData of string
  | CData of string
+
  | Comment of string
  | Doctype of string
+
  | EOF
 (*e: type Html.token *)
 
@@ -77,15 +80,21 @@ let print = function
  * NOTE: add \0 detection here (we need it for Tk)
  *)
 let beautify remove_leading s =
-  let j = ref 0
-  and white = ref remove_leading in
+  let j = ref 0 in
+  let white = ref remove_leading in
   for i = 0 to String.length s - 1 do
     match s.[i] with
-      ' '|'\t'|'\r'|'\n'|'\000' -> 
-    if not !white then begin
-       s.[!j] <- ' '; incr j; white := true
+    | ' ' | '\t' | '\r' | '\n' | '\000' -> 
+       if not !white 
+       then begin
+         s.[!j] <- ' '; 
+         incr j; 
+         white := true
        end
-    | c -> s.[!j] <- c; white := false; incr j
+    | c -> 
+       s.[!j] <- c; 
+       white := false; 
+       incr j
   done;
   String.sub s 0 !j
 (*e: function Html.beautify *)
@@ -120,7 +129,8 @@ let issp s =
  *  cf Appendix B - Proposed Entities
  *)
 
-let ampersand_table = (Hashtbl.create 101: (string , string) Hashtbl.t)
+let ampersand_table = 
+  (Hashtbl.create 101: (string , string) Hashtbl.t)
 (*e: constant Html.ampersand_table *)
 
 (*s: constant Html.latin1_normal *)

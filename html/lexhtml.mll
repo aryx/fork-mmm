@@ -53,13 +53,13 @@ let mk_loc lexbuf lexdata =
 (*e: helper functions Lexhtml.xxx *)
 }
 
-(*s: function Html.html *)
+(*s: function Lexhtml.html *)
 rule html = parse
-(*s: [[Html.html()]] rule cases *)
+(*s: [[Lexhtml.html()]] rule cases *)
 | "<!>" 
     { (fun lexdata ->
        noerr, Comment "", mk_loc lexbuf lexdata)}
-(*x: [[Html.html()]] rule cases *)
+(*x: [[Lexhtml.html()]] rule cases *)
 (* If you think it is possible to deal with malformed comments adaptatively,
    that is switching to lenient mode only after we detected an error
    in comment syntax, then ponder the following example: <!-- -- --> *)
@@ -72,31 +72,32 @@ rule html = parse
        else lenient_end_comment lexbuf lexdata
        )
     } 
-(*x: [[Html.html()]] rule cases *)
+(*x: [[Lexhtml.html()]] rule cases *)
 | '<' 
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
        opentag lexbuf lexdata
      )}
-(*x: [[Html.html()]] rule cases *)
+(*x: [[Lexhtml.html()]] rule cases *)
 | '\n'? "</"
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
        closetag lexbuf lexdata
       )}
-(*x: [[Html.html()]] rule cases *)
+(*x: [[Lexhtml.html()]] rule cases *)
  | "<!" ['D' 'd']['O' 'o']['C' 'c']['T' 't']['Y' 'y']['P' 'p']['E' 'e'] 
          [^ '>']* '>'
     { (fun lexdata ->
        noerr, Doctype (Lexing.lexeme lexbuf), mk_loc lexbuf lexdata )}
-(*x: [[Html.html()]] rule cases *)
+(*x: [[Lexhtml.html()]] rule cases *)
  | '&' 
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
        Ebuffer.reset lexdata.buffer;
-       Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
+       Ebuffer.output_string lexdata.buffer 
+         (ampersand lexbuf lexdata);
        text lexbuf lexdata )}
-(*e: [[Html.html()]] rule cases *)
+(*e: [[Lexhtml.html()]] rule cases *)
  | "\r\n" 
     { (fun lexdata ->
        lexdata.start <- mk_start lexbuf lexdata;
@@ -117,10 +118,10 @@ rule html = parse
        Ebuffer.reset lexdata.buffer;
        Ebuffer.output_char lexdata.buffer (Lexing.lexeme_char lexbuf 0); 
        text lexbuf lexdata )}
-(*e: function Html.html *)
+(*e: function Lexhtml.html *)
 
 
-(*s: function Html.lenient_end_comment *)
+(*s: function Lexhtml.lenient_end_comment *)
 (* call this ONLY if we are not in strict mode *)
 and lenient_end_comment = parse
 | "-->"
@@ -135,9 +136,9 @@ and lenient_end_comment = parse
     {(fun lexdata ->
        raise (Html_Lexing ("unterminated comment", mk_start lexbuf lexdata))
     )}
-(*e: function Html.lenient_end_comment *)
+(*e: function Lexhtml.lenient_end_comment *)
 
-(*s: function Html.comment *)
+(*s: function Lexhtml.comment *)
 (* we're looking for the end of a comment : skip all characters until next   *)
 (*  -- included, and then look for next -- or > *)
 and comment = parse
@@ -153,9 +154,9 @@ and comment = parse
     { (fun lexdata ->
        raise (Html_Lexing ("unterminated comment", mk_start lexbuf lexdata))
     )}
-(*e: function Html.comment *)
+(*e: function Lexhtml.comment *)
 
-(*s: function Html.next_comment *)
+(*s: function Lexhtml.next_comment *)
 (* the normal next comment search *)      
 and next_comment = parse
     [' ' '\t' '\r' '\n']* "--"
@@ -169,10 +170,10 @@ and next_comment = parse
     { (fun lexdata ->
       raise (Html_Lexing ("invalid comment", mk_start lexbuf lexdata)))
      }
-(*e: function Html.next_comment *)
+(*e: function Lexhtml.next_comment *)
 
 
-(*s: function Html.text *)
+(*s: function Lexhtml.text *)
 and text = parse
 | [^ '<' '&' '\r' '\027']+
     { (fun lexdata ->
@@ -204,11 +205,11 @@ and text = parse
        Loc(lexdata.start, mk_end lexbuf lexdata)
       )}
  (* no default case needed *)
-(*e: function Html.text *)
+(*e: function Lexhtml.text *)
 
-(*s: function Html.ampersand *)
+(*s: function Lexhtml.ampersand *)
 and ampersand = parse
-   '#' ['0'-'9']+ ';' 
+| '#' ['0'-'9']+ ';' 
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 2) in
@@ -216,41 +217,40 @@ and ampersand = parse
           String.make 1 (Char.chr (int_of_string code))
         with (* #350 ... *) Invalid_argument _ -> " "
       )}
- | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
+| ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let entity = String.sub lexeme 0 (String.length lexeme - 1) in
-        begin 
-         try get_entity entity
-         with (* 4.2.1 undeclared markup error handling *)
-            Not_found ->
-              ("&" ^ lexeme)
-               end
+        try 
+          get_entity entity
+        with (* 4.2.1 undeclared markup error handling *) Not_found ->
+          ("&" ^ lexeme)
       )}
   (* terminating ; is not required if next character could not be 
      part of the lexeme *)
- | '#' ['0'-'9']+
+| '#' ['0'-'9']+
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 1) in
-    try 
-      String.make 1 (Char.chr (int_of_string code))
-    with Invalid_argument _ -> " "
+        try 
+          String.make 1 (Char.chr (int_of_string code))
+        with Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
     { (fun lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-      try get_entity lexeme
-      with (* 4.2.1 undeclared markup error handling *)
-        Not_found -> ("&"^lexeme)
+        try 
+          get_entity lexeme
+        with (* 4.2.1 undeclared markup error handling *) Not_found -> 
+          ("&"^lexeme)
       )}
   (* Tolerance ... *)
-  | ""
+| ""
     { (fun lexdata -> "&" )}
-(*e: function Html.ampersand *)
+(*e: function Lexhtml.ampersand *)
 
 
-(*s: function Html.opentag *)
+(*s: function Lexhtml.opentag *)
 (* TODO 2.0: 
  *   syntax for SHORTTAG YES (need to know the DTD for this !).
  *
@@ -263,7 +263,8 @@ and opentag = parse
        let bugs = ref [] in
        let rec read_attribs () =
          match attrib lexbuf lexdata with
-         | Closetag n -> n
+         | Closetag n -> 
+             n
          | Attribute(p1, p2) ->
              attribs := (p1, p2) :: !attribs; 
              read_attribs()
@@ -284,9 +285,9 @@ and opentag = parse
        Ebuffer.reset lexdata.buffer;
        Ebuffer.output_char lexdata.buffer '<';
        text lexbuf lexdata )}
-(*e: function Html.opentag *)
+(*e: function Lexhtml.opentag *)
 
-(*s: function Html.closetag *)
+(*s: function Lexhtml.closetag *)
 and closetag = parse
   | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
@@ -300,9 +301,9 @@ and closetag = parse
           Ebuffer.reset lexdata.buffer;
           Ebuffer.output_string lexdata.buffer "</";
           text lexbuf lexdata)}
-(*e: function Html.closetag *)
+(*e: function Lexhtml.closetag *)
 
-(*s: function Html.attrib *)
+(*s: function Lexhtml.attrib *)
 and attrib = parse
 | [' ' '\t' '\n' '\r']+ 
     { (fun lexdata -> attrib lexbuf lexdata )}
@@ -348,17 +349,17 @@ and attrib = parse
                                   mk_start lexbuf lexdata));
         Bogus ("invalid attribute name", mk_start lexbuf lexdata)
     )}
-(*e: function Html.attrib *)
+(*e: function Lexhtml.attrib *)
 
-(*s: function Html.tagattrib *)
+(*s: function Lexhtml.tagattrib *)
 and tagattrib = parse
 | [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
     { (fun lexdata -> Some (attribvalue lexbuf lexdata) )}
 | "" 
     { (fun lexdata -> None )}
-(*e: function Html.tagattrib *)
+(*e: function Lexhtml.tagattrib *)
 
-(*s: function Html.attribvalue *)
+(*s: function Lexhtml.attribvalue *)
 (* This should be dependent on the attribute name *)
 (* people often forget to quote, so try to do something about it *)
 (* but if a quote is not closed, you are dead *)
@@ -377,10 +378,10 @@ and attribvalue = parse
     { (fun lexdata ->
         raise (Html_Lexing ("illegal attribute val",
                               Lexing.lexeme_start lexbuf)) )}
-(*e: function Html.attribvalue *)
+(*e: function Lexhtml.attribvalue *)
 
 
-(*s: function Html.inquote *)
+(*s: function Lexhtml.inquote *)
 and inquote = parse
 | [^ '"' '&' '\027']+
     { (fun lexdata ->
@@ -388,7 +389,7 @@ and inquote = parse
        inquote lexbuf lexdata )}
 | '"'
     { (fun lexdata ->
-       beautify true (Ebuffer.get lexdata.buffer) )}
+       Html.beautify true (Ebuffer.get lexdata.buffer) )}
 | '&'
     { (fun lexdata ->
        Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
@@ -397,9 +398,9 @@ and inquote = parse
     { (fun lexdata ->
        raise (Html_Lexing ("unclosed \"", mk_start lexbuf lexdata))
      )}
-(*e: function Html.inquote *)
+(*e: function Lexhtml.inquote *)
 
-(*s: function Html.insingle *)
+(*s: function Lexhtml.insingle *)
 and insingle = parse
 | [^ '\'' '&']+
     { (fun lexdata ->
@@ -407,7 +408,7 @@ and insingle = parse
        insingle lexbuf lexdata )}
 | '\''
     { (fun lexdata -> 
-       beautify true (Ebuffer.get lexdata.buffer) )}
+       Html.beautify true (Ebuffer.get lexdata.buffer) )}
 | '&'
     { (fun lexdata ->
        Ebuffer.output_string lexdata.buffer (ampersand lexbuf lexdata);
@@ -416,17 +417,17 @@ and insingle = parse
     { (fun lexdata ->
        raise (Html_Lexing ("unclosed '", mk_start lexbuf lexdata))
     )}
-(*e: function Html.insingle *)
+(*e: function Lexhtml.insingle *)
 
-(*s: function Html.skip_to_close *)
+(*s: function Lexhtml.skip_to_close *)
 and skip_to_close = parse
    [^'>']* '>' { (fun lexdata -> mk_end lexbuf lexdata)}
   | "" { (fun lexdata -> 
       raise (Html_Lexing ("unterminated tag", 
               mk_start lexbuf lexdata)) )}
-(*e: function Html.skip_to_close *)
+(*e: function Lexhtml.skip_to_close *)
 
-(*s: function Html.cdata *)
+(*s: function Lexhtml.cdata *)
 and cdata = parse
 | [^ '<']* (['<']+ [^ '/']) ? 
     { (fun lexdata ->
@@ -447,6 +448,6 @@ and cdata = parse
 | eof
     { (fun lexdata ->
         noerr, EOF, mk_loc lexbuf lexdata) }
-(*e: function Html.cdata *)
+(*e: function Lexhtml.cdata *)
 
 (*e: html/lexhtml.mll *)

@@ -29,13 +29,14 @@ val add_html_filter : ((Html.token -> unit) -> Html.token -> unit) -> unit
 (*s: signature Html_eval.sgml_lexer *)
 val sgml_lexer :
   Dtd.t -> Lexing.lexbuf -> 
-    ((string * int) list * minimization * Html.token list * Html.location)
+  (Lexhtml.warnings * minimization * Html.token list * Html.location)
 (*e: signature Html_eval.sgml_lexer *)
 
 (*s: signature Html_eval.automat *)
-val automat : Dtd.t -> (Html.location -> Html.token -> unit)
-                    -> Lexing.lexbuf
-                    -> (Html.location -> string -> unit)
-            -> unit
+val automat : 
+  Dtd.t -> Lexing.lexbuf -> 
+  (Html.location -> Html.token -> unit) -> (* action callback *)
+  (Html.location -> string -> unit) -> (* error callback *)
+  unit
 (*e: signature Html_eval.automat *)
 (*e: ./html/html_eval.mli *)

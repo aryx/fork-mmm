@@ -2580,10 +2580,6 @@ open Printf
 
 
 
-<<signature Html.beautify>>=
-val beautify: bool -> string -> string
-  (* [beautify remove_leading_space s] removes sequences of SP *)
-@
 
 <<signature Html.beautify2>>=
 val beautify2 : string -> string
@@ -2656,27 +2652,6 @@ val length_of_string : string -> length
 
 \subsection*{[[./html/html.ml]]}
 
-%?? -> <> 
-<<function Html.beautify>>=
-(*
- * Remove sequences of white
- *   turns out to be faster than global_replace in libstr
- *   could use String.blit to avoid char copying
- * NOTE: add \0 detection here (we need it for Tk)
- *)
-let beautify remove_leading s =
-  let j = ref 0
-  and white = ref remove_leading in
-  for i = 0 to String.length s - 1 do
-    match s.[i] with
-      ' '|'\t'|'\r'|'\n'|'\000' -> 
-    if not !white then begin
-       s.[!j] <- ' '; incr j; white := true
-       end
-    | c -> s.[!j] <- c; white := false; incr j
-  done;
-  String.sub s 0 !j
-@
 
 %?? -> <> 
 <<function Html.beautify2>>=

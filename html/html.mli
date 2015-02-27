@@ -21,10 +21,13 @@ type tag = {
 type token =
  | OpenTag of tag
  | CloseTag of string
+
  | PCData of string
  | CData of string
+
  | Comment of string
  | Doctype of string
+
  | EOF
 (*e: type Html.token *)
 

@@ -24,15 +24,17 @@ MAINDIRS= \
   viewers \
   display \
   gui \
-  applets \
-  sandbox \
+
+#  applets \
+#  sandbox \
 
 # dynamically loaded extensions
-MOREDIRS= extensions demos/applets demos/sboard
+#MOREDIRS= extensions demos/applets demos/sboard
 
 MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
 
-INCLUDEDIRS=$(MAINDIRS) sandbox/gen crcs
+INCLUDEDIRS=$(MAINDIRS) 
+#sandbox/gen crcs
 LIBS=$(MAINDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
@@ -89,8 +91,8 @@ depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
 # Exported sandbox libraries
-SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
-CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
+#SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
+#CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(OCAMLC) -custom -ccopt "-L/opt/X11/lib" -o $@ $(LINKFLAGS) \
          $(SYSLIBS) $(TKLIBS) $^
