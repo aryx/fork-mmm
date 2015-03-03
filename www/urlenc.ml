@@ -115,21 +115,23 @@ let strict_form_standard = ref true
 
 (*s: function Urlenc.form_encode *)
 let form_encode = function 
-  [] -> ""
+ | [] -> ""
  | (e,v)::l ->
-  let b = Ebuffer.create 512 in
+    let b = Ebuffer.create 512 in
     Ebuffer.reset b;
     Ebuffer.output_string b (encode e);
     Ebuffer.output_char b '=';
     Ebuffer.output_string b (encode v);
-    List.iter (fun (e,v) ->
+    l |> List.iter (fun (e,v) ->
          Ebuffer.output_char b '&';
-         Ebuffer.output_string b (
-                   if !strict_form_standard then encode e
-           else e);
+         Ebuffer.output_string b 
+            (if !strict_form_standard 
+             then encode e
+             else e
+             );
          Ebuffer.output_char b '=';
-         Ebuffer.output_string b (encode v))
-             l;
+         Ebuffer.output_string b (encode v)
+    ) ;
     Ebuffer.get b
 (*e: function Urlenc.form_encode *)
 

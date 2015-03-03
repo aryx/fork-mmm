@@ -65,12 +65,13 @@ let parse_request s =
 let get_header field_name = 
   let size = String.length field_name in
   let rec search = function
-     [] -> raise Not_found
+   | [] -> raise Not_found
    | s::l ->
-    if   String.length s >= size + 2 (* : SP *)
-       & String.lowercase (String.sub s 0 size) = field_name
-    then String.sub s (size + 2) (String.length s - size - 2)
-    else search l in
+      if String.length s >= size + 2 (* : SP *) && 
+         String.lowercase (String.sub s 0 size) = field_name
+      then String.sub s (size + 2) (String.length s - size - 2)
+      else search l 
+  in
   search
 (*e: function Http_headers.get_header *)
 
@@ -93,7 +94,7 @@ let get_multi_header field_name =
 (*s: function Http_headers.header_type *)
 let header_type s =
   match Str.bounded_split (regexp "[:]") s 2 with
-    [t;_] -> String.lowercase t
+  | [t;_] -> String.lowercase t
   | _ -> raise (Invalid_HTTP_header s)
 (*e: function Http_headers.header_type *)
 
@@ -145,15 +146,26 @@ let rec status_msg = function
          else status_msg l
 (*e: function Http_headers.status_msg *)
 
+
+(*s: functions Http_headers.xxx get_header applications *)
+let contenttype = 
+  get_header "content-type"
+(*x: functions Http_headers.xxx get_header applications *)
 let contentlength l = 
   let h = get_header "content-length" l in
-  try int_of_string h with _ -> raise Not_found
+  try int_of_string h 
+  with _ -> raise Not_found
+(*x: functions Http_headers.xxx get_header applications *)
+let contentencoding = 
+  get_header "content-encoding"
+(*e: functions Http_headers.xxx get_header applications *)
+let location = 
+  get_header "location"
+let challenge = 
+  get_header "www-authenticate"
+let proxy_challenge = 
+  get_header "proxy-authenticate"
 
-let location = get_header "location"
-let contentencoding = get_header "content-encoding"
-let contenttype = get_header "content-type"
-let challenge = get_header "www-authenticate"
-let proxy_challenge = get_header "proxy-authenticate"
 let expires hs =
   try Some (Lexdate.ht_of_string (get_header "expires" hs))
   with
@@ -208,12 +220,13 @@ type media_type = string * string
 (*s: type Http_headers.hint *)
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
-    ContentType of header
+  | ContentType     of header
   | ContentEncoding of header
 (*e: type Http_headers.hint *)
 
 (*s: constant Http_headers.suffixes *)
-let suffixes = (Hashtbl.create 101 : (string, hint) Hashtbl.t)
+let suffixes =
+   (Hashtbl.create 101 : (string, hint) Hashtbl.t)
 (*e: constant Http_headers.suffixes *)
 
 (*s: function Http_headers.read_suffix_file *)
@@ -224,7 +237,7 @@ let read_suffix_file f =
   let ic = open_in f in
   try while true do
     let l = input_line ic in
-    if l <> "" & l.[0] <> '#' then
+    if l <> "" && l.[0] <> '#' then
       let tokens = 
     split_str (function ' '|'\t' -> true | _ -> false) l in
     match tokens with

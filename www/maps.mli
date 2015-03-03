@@ -1,7 +1,11 @@
 (*s: ./www/maps.mli *)
 (*s: type Maps.area_kind *)
 (* The active areas *)
-type area_kind = Rect | Circle | Poly | Default
+type area_kind = 
+ | Rect 
+ | Circle 
+ | Poly 
+ | Default
 (*e: type Maps.area_kind *)
 
 (*s: type Maps.area *)

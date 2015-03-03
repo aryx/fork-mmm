@@ -2019,6 +2019,54 @@ open Mstring
 @
 
 
+
+\subsection*{[[./www/lexurl.mll]]}
+
+%-------------------------------------------------------------
+
+<<www/lexurl.mll>>=
+{
+open Lexing
+
+open Mstring
+open Mlist
+
+open Url
+
+<<function Lexurl.normalize_port>>
+
+<<function Lexurl.normalize_host>>
+
+}
+
+<<function Lexurl.f>>
+
+<<function Lexurl.slashslash>>
+	
+<<function Lexurl.userpass>>
+
+<<function Lexurl.hostport>>
+
+<<function Lexurl.pathsearch>>
+
+<<functions Lexurl.xxx>>
+
+{
+
+<<function Lexurl.make>>
+
+
+
+<<function Lexurl.remove_dots>>
+
+<<function Lexurl.maken>>
+
+<<function Lexurl.normalize>>
+
+}
+@
+
+
 \subsection*{[[./www/hyper.mli]]}
 
 
@@ -2776,6 +2824,63 @@ open Printf
 <<signature Lexhtml.cdata>>
 @
 
+\subsection*{[[./html/lexhtml.mll]]}
+
+<<html/lexhtml.mll>>=
+(* An HTML lexer *)
+{
+open Html
+
+<<type Lexhtml.tagtoken>>
+
+<<type Lexhtml.t>>
+
+<<function Lexhtml.new_data>>
+
+<<global Lexhtml.strict>>
+
+<<type Lexhtml.warnings>>
+
+<<helper functions Lexhtml.xxx>>
+}
+
+<<function Lexhtml.html>>
+
+
+<<function Lexhtml.lenient_end_comment>>
+
+<<function Lexhtml.comment>>
+
+<<function Lexhtml.next_comment>>
+
+
+<<function Lexhtml.text>>
+
+<<function Lexhtml.ampersand>>
+
+
+<<function Lexhtml.opentag>>
+
+<<function Lexhtml.closetag>>
+
+<<function Lexhtml.attrib>>
+
+<<function Lexhtml.tagattrib>>
+
+<<function Lexhtml.attribvalue>>
+
+
+<<function Lexhtml.inquote>>
+
+<<function Lexhtml.insingle>>
+
+<<function Lexhtml.skip_to_close>>
+
+<<function Lexhtml.cdata>>
+
+@
+
+
 
 \subsection*{[[./html/html_eval.mli]]}
 
@@ -3022,16 +3127,6 @@ val status_message : int -> string
 
 
 
-<<type Http_headers.media_parameter>>=
-(* Media types *)
-type media_parameter = string * string
-@
-
-<<type Http_headers.media_type>>=
-type media_type = string * string
-@
-
-
 <<signature Http_headers.hints>>=
 val hints : string -> header list
 @
@@ -3191,15 +3286,15 @@ open Messages
 
 <<function Http_headers.status_msg>>
 
-let contentlength l = 
-  let h = get_header "content-length" l in
-  try int_of_string h with _ -> raise Not_found
 
-let location = get_header "location"
-let contentencoding = get_header "content-encoding"
-let contenttype = get_header "content-type"
-let challenge = get_header "www-authenticate"
-let proxy_challenge = get_header "proxy-authenticate"
+<<functions Http_headers.xxx get_header applications>>
+let location = 
+  get_header "location"
+let challenge = 
+  get_header "www-authenticate"
+let proxy_challenge = 
+  get_header "proxy-authenticate"
+
 let expires hs =
   try Some (Lexdate.ht_of_string (get_header "expires" hs))
   with
@@ -3358,12 +3453,6 @@ open Http_headers
 
 \subsection*{[[./http/retype.mli]]}
 
-<<signature Retype.f>>=
-val f : Document.handle -> unit
-  (* physically modify the headers, adding ContentType/ContentEncoding
-   * from URL suffixes if this information is missing from the headers.
-   *)
-@
 
 
 %-------------------------------------------------------------
@@ -3376,6 +3465,12 @@ val f : Document.handle -> unit
 
 \subsection*{[[./http/retype.ml]]}
 
+<<signature Retype.f>>=
+val f : Document.handle -> unit
+  (* physically modify the headers, adding ContentType/ContentEncoding
+   * from URL suffixes if this information is missing from the headers.
+   *)
+@
 <<function Retype.f>>=
 (* Attempt to find a decent Content-Type *)
 let f dh =
@@ -3433,34 +3528,7 @@ open Url
 
 <<type Http.status>>
 
-class cnx (sock,finish) =
- object (self)
-  val mutable status = Writing
-  val mutable fd = sock
-  (* val finish = finish *)
-  val mutable fdclosed = false		(* protect against double close *)
-  val mutable aborted = false
-
-  method fd = fd
-  method aborted = aborted
-  method set_fd newfd = fd <- newfd
-  method set_status s = status <- s
-
-  method close =
-    if not fdclosed then begin
-      close fd;
-      fdclosed <- true
-      end
-  
-  method abort =
-     if not aborted then begin
-       aborted <- true;
-       match status with
-     Writing -> Fileevent_.remove_fileoutput fd; self#close; finish true
-       | Reading dh -> dclose true dh; finish true
-       | Discharged -> ()
-     end
-end
+<<class Http.cnx>>
 
 
 <<function Http.tcp_connect>>
@@ -3485,71 +3553,7 @@ end
 <<function Http.read_headers>>
 
 
-(* Read headers and run continuation *)
-let rec process_response wwwr cont cnx =
-  let url = Url.string_of wwwr.www_url in
-  wwwr.www_logging (I18n.sprintf "Reading headers...");
-  let dh = {document_id = document_id wwwr;
-        document_referer = wwwr.www_link.h_context;
-            document_status = 0;
-        document_headers = [];
-        document_feed = Feed.of_fd cnx#fd;
-        document_fragment = wwwr.www_fragment;
-        document_logger = tty_logger}
-  and stuck = ref true in
-  cnx#set_status (Reading dh);
-  (* set up a timer to abort if server is too far/slow *)
-  let rec timout () =
-     Timer_.set (1000 * !timeout) 
-      (fun () -> 
-    if not cnx#aborted && !stuck then
-      match wwwr.www_error#ari
-            (I18n.sprintf "Timeout while waiting for headers of %s" url) with
-        0 -> (* abort *) if !stuck then cnx#abort
-      | 1 -> (* retry *) timout ()
-      | 2 -> (* ignore *) ()
-          | _ -> ()
-    ) in
-
-  timout();
-
-  (* reading the headers *)
-  dh.document_feed.feed_schedule
-    (fun () ->
-       stuck := false;
-       try
-     if dh.document_headers = [] then begin
-           (* it should be the HTTP Status-Line *)
-        let l = Munix.read_line cnx#fd in
-          dh.document_status <- (parse_status l).status_code;
-              dh.document_headers <- [l] (* keep it there *)
-            end
-      else 
-            dh.document_headers <- read_headers cnx#fd dh.document_headers
-       with
-     (* each branch must unschedule *)
-     End_of_headers ->
-       dh.document_feed.feed_unschedule();
-       cnx#set_status Discharged;
-       cont.document_process dh
-       | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
-       dclose false dh; (* keep it an active cnx since we are retrying *)
-       let newcnx = request09 wwwr cont in
-         (* the guy up there has the old one !*)
-             cnx#set_fd newcnx#fd
-       | Unix_error(e,_,_) ->
-           cnx#abort;
-       wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url 
-                     (error_message e))
-       | Invalid_HTTP_header s ->
-           cnx#abort;
-       wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url s)
-       | End_of_file ->
-           cnx#abort;
-       wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url "eof"))
+<<function Http.process_response>>
 
 (* The same for HTTP 0.9, so we directly call the continuation *)
 and process_response09  wwwr cont cnx =
@@ -3602,33 +3606,7 @@ and proxy_request09 wr cont =
           (start_request09 true wr cont)
           (failed_request wr cont.document_finish)
 
-(* Issueing request, with the "retry" logic (unless is "always proxy" mode, 
-   we attempt first to connect directly to the host, and if it fails,
-   we retry through the proxy
- *)
-and request wr cont =
-  if !always_proxy then proxy_request wr cont
-  else 
-   let urlp = wr.www_url in
-    if urlp.protocol = HTTP then
-      let host = match urlp.host with
-      Some h -> h 
-    | _ -> raise (HTTP_error (I18n.sprintf "Missing host in url"))
-      and port = match urlp.port with
-      Some p -> p
-    | None -> 80  (* default http port *)
-      in 
-      try 
-    tcp_connect host port wr.www_logging
-            (start_request false wr cont)
-            (failed_request wr cont.document_finish)
-      with
-    HTTP_error _ -> (* direct failed, go through proxy *)
-      tcp_connect !proxy !proxy_port wr.www_logging
-             (start_request true wr cont)
-             (failed_request wr cont.document_finish)
-    else 
-      raise (HTTP_error (I18n.sprintf "INTERNAL ERROR\nHttp.request (not a distant http url): %s" (Url.string_of wr.www_url)))
+<<function Http.request>>
 
 and request09 wr cont =
   if !always_proxy then proxy_request09 wr cont

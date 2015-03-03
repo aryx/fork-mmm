@@ -7,7 +7,7 @@ open Lexing
     CTL  = ['\000'-'\031' '\127']
     CHAR except CTL = ['\032'-'\126']
     tspecials = ['(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' 
-      	       	 ' ' '\t']
+                 ' ' '\t']
 *)
 
 }
@@ -16,16 +16,16 @@ rule challenge = parse
  | [^ ' ' '\t' '\r' '\n']+
     { let scheme_name = String.lowercase (Lexing.lexeme lexbuf) in
       let scheme = 
-	match scheme_name with
-	  "basic" -> AuthBasic
-	| _ -> AuthExtend scheme_name in
+    match scheme_name with
+      "basic" -> AuthBasic
+    | _ -> AuthExtend scheme_name in
       let _ = lws lexbuf in
       let _ = starlws lexbuf in
       let realm = realm lexbuf in
       let params = authparam lexbuf in
-      	{ challenge_scheme = scheme;
-	  challenge_realm = realm;
-	  challenge_params = params}
+        { challenge_scheme = scheme;
+      challenge_realm = realm;
+      challenge_params = params}
     }
 
  | _ { raise (Invalid_HTTP_header "auth-scheme expected")}
@@ -81,7 +81,7 @@ and authparam = parse
       let _ = lit_equal lexbuf in
       let qt = quotedstring lexbuf in
       let _ = starlws lexbuf in
-      	(t,qt) :: authparam lexbuf
+        (t,qt) :: authparam lexbuf
     }
  | "" { [] }
 
@@ -99,11 +99,11 @@ and media_parameters = parse
  | ";" { 
          let _ = starlws lexbuf in
          let attr = String.lowercase (token lexbuf) in
-       	 let _ = lit_equal lexbuf in (* no space allowed *)
-       	 let v = value lexbuf in
-	 let _ = starlws lexbuf in
-	 let rest = media_parameters lexbuf in
-	  (attr,v)::rest
+         let _ = lit_equal lexbuf in (* no space allowed *)
+         let v = value lexbuf in
+     let _ = starlws lexbuf in
+     let rest = media_parameters lexbuf in
+      (attr,v)::rest
        }
 
 and media_type = parse
@@ -131,6 +131,6 @@ let media_type s =
   let lexbuf = Lexing.from_string s in
   let mtyp = media_type lexbuf in
   let l = media_parameters lexbuf in
-    mtyp, l 
+  mtyp, l 
 
 }

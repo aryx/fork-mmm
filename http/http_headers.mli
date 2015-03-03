@@ -130,7 +130,7 @@ type media_type = string * string
 (*s: type Http_headers.hint *)
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
-    ContentType of header
+  | ContentType     of header
   | ContentEncoding of header
 (*e: type Http_headers.hint *)
 

@@ -15,7 +15,7 @@ type request =  {
     mutable www_headers : string list;		  (* additional headers *)
 
     mutable www_logging : string -> unit;	  (* logging *)
-    mutable www_error : Error.t
+    mutable www_error : Error.t;
   }
 (*e: type Www.request *)
 

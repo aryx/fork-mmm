@@ -32,7 +32,7 @@ type link = {
 
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
-  }
+}
 (*e: type Hyper.link *)
 
 (*s: type Hyper.link_error *)

@@ -4,9 +4,10 @@ open Printf
 (*s: type Url.protocol *)
 type protocol =
  | HTTP 
- | FILE | MAILTO | FTP | NNTP
- | TELNET 
+ | FILE | FTP
+ | MAILTO | NNTP
  | GOPHER | NEWS | WAIS | PROSPERO
+ | TELNET 
  | OtherProtocol of string
 (*e: type Url.protocol *)
 

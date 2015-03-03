@@ -85,8 +85,7 @@ rule html = parse
        closetag lexbuf lexdata
       )}
 (*x: [[Lexhtml.html()]] rule cases *)
- | "<!" ['D' 'd']['O' 'o']['C' 'c']['T' 't']['Y' 'y']['P' 'p']['E' 'e'] 
-         [^ '>']* '>'
+| "<!" ['D''d']['O''o']['C''c']['T''t']['Y''y']['P''p']['E''e'] [^ '>']* '>'
     { (fun lexdata ->
        noerr, Doctype (Lexing.lexeme lexbuf), mk_loc lexbuf lexdata )}
 (*x: [[Lexhtml.html()]] rule cases *)

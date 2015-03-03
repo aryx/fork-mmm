@@ -11,7 +11,8 @@ open Auth
 
 (*s: type Retrieve.retrievalStatus *)
 type retrievalStatus =
-  Started of (unit -> unit)  | InUse
+ | Started of (unit -> unit)  
+ | InUse
 (*e: type Retrieve.retrievalStatus *)
 
 (*s: type Retrieve.behaviour *)

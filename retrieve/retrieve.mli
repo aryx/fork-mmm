@@ -4,7 +4,8 @@ open Document
 
 (*s: type Retrieve.retrievalStatus *)
 type retrievalStatus =
-  Started of (unit -> unit)  | InUse
+ | Started of (unit -> unit)  
+ | InUse
 (*e: type Retrieve.retrievalStatus *)
 
 (*s: signature Retrieve.f *)

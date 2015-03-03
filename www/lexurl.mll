@@ -43,14 +43,14 @@ rule f = parse
    (match protocol with
       (*s: [[Lexurl.f]] protocol cases *)
       | "HTTP" ->
-         slashslash lexbuf;
-         let h, po = hostport lexbuf in
-         let pa, se = pathsearch lexbuf in
-         result.protocol <- HTTP;
-         result.host <- h;
-         result.port <- normalize_port (HTTP, po);
-         result.path <- pa;
-         result.search <- se
+          slashslash lexbuf;
+          let h, po = hostport lexbuf in
+          let pa, se = pathsearch lexbuf in
+          result.protocol <- HTTP;
+          result.host <- h;
+          result.port <- normalize_port (HTTP, po);
+          result.path <- pa;
+          result.search <- se
       (*x: [[Lexurl.f]] protocol cases *)
       (* the spec says file://host/ dammit *)
       | "FILE" ->
@@ -143,8 +143,8 @@ rule f = parse
 
 (*s: function Lexurl.slashslash *)
 and slashslash =  parse
-    "//" { () } 
-   | "" { raise (Url_Lexing ("// expected", Lexing.lexeme_start lexbuf)) }
+  "//" { () } 
+| ""   { raise (Url_Lexing ("// expected", Lexing.lexeme_start lexbuf)) }
 (*e: function Lexurl.slashslash *)
 	
 (*s: function Lexurl.userpass *)
@@ -169,7 +169,7 @@ and userpass = parse
 (*s: function Lexurl.hostport *)
 (* _ is not legal in hostnames, but some people use it. *)
 and hostport = parse
-  ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ ':' ['0'-'9']+
+| ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ ':' ['0'-'9']+
     { let lexeme = Lexing.lexeme lexbuf in
       let pos = String.index lexeme ':' in
       let portstring =
@@ -179,14 +179,14 @@ and hostport = parse
     }
 | ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ 
     { Some (normalize_host (Lexing.lexeme lexbuf)), None }
-|  "" (* file:///home/... *)
+| "" (* file:///home/... *)
     { None, None }
 (*e: function Lexurl.hostport *)
 
 (*s: function Lexurl.pathsearch *)
 (* /<path>?<search> *)
 and pathsearch = parse
-  "/" [^ '?']* '?' 
+| "/" [^ '?']* '?' 
     { let lexeme = Lexing.lexeme lexbuf in
       let search = any lexbuf in
       Some (String.sub lexeme 1 (String.length lexeme - 2)),
