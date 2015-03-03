@@ -255,30 +255,31 @@ let get_entity = Hashtbl.find ampersand_table
 (*s: constant Html.default_attributes *)
 (* Attribute values *)
 let default_attributes = [ 
-  ("isindex", "prompt"), "Document is indexed/searchable: ";
+  ("isindex"  , "prompt" ),  "Document is indexed/searchable: ";
+                             
+  ("a"        , "methods"),  "GET";     (* <A METHODS=GET> *)
+  ("embed"    , "methods"),  "GET";		(* <EMBED METHODS=GET> *)
+  ("embed"    , "alt"    ),  "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
+  ("form"     , "method" ),  "GET";		(* <FORM METHOD=GET> *)
+  ("form"     , "enctype"),  "application/x-www-form-urlencoded";
 
-  ("a", "methods"), "GET";              (* <A METHODS=GET> *)
-  ("ol", "type"), "1";			(* <OL TYPE=1 *)
-  ("embed", "methods"), "GET";		(* <EMBED METHODS=GET> *)
-  ("embed", "alt"), "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
-  ("form", "method"), "GET";		(* <FORM METHOD=GET> *)
-  ("form", "enctype"), "application/x-www-form-urlencoded";
-  ("input", "type"), "TEXT";		(* <INPUT TYPE=TEXT> *)
-  ("select", "size"), "5";
-  ("textarea", "align"), "bottom";
-  ("input", "align"), "bottom";
-  ("select", "align"), "bottom";
-  ("img", "align"), "bottom";
-  (* ("img", "alt"), "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
-  ("area", "shape"), "rect";
-  ("div", "align"), "left";
-  ("basefont", "size"), "3";
+  ("ol"       , "type"   ),  "1";       (* <OL TYPE=1 *)
+  ("input"    , "type"   ),  "TEXT";	(* <INPUT TYPE=TEXT> *)
+  ("select"   , "size"   ),  "5";
+  ("textarea" , "align"  ),  "bottom";
+  ("input"    , "align"  ),  "bottom";
+  ("select"   , "align"  ),  "bottom";
+  ("img"      , "align"  ),  "bottom";
+  (* ("img"   , "alt"    ),  "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
+  ("area"     , "shape"  ),  "rect";
+  ("div"      , "align"  ),  "left";
+  ("basefont" , "size"   ),  "3";
 
   (* frames *)
-  ("frame", "frameborder"), "0";
-  ("frame", "scrolling"), "auto";
-  ("frameset", "rows"), "100%";
-  ("frameset", "cols"), "100%";
+  ("frame"    , "frameborder" ), "0";
+  ("frame"    , "scrolling"   ), "auto";
+  ("frameset" , "rows"        ), "100%";
+  ("frameset" , "cols"        ), "100%";
   ]
 (*e: constant Html.default_attributes *)
 

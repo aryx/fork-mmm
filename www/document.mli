@@ -72,14 +72,15 @@ type document_continuation = {
  *)
 
 type document_data =
-   MemoryData of Ebuffer.t
+ | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
 (*e: type Document.document_data *)
 
 (*s: type Document.document *)
 type document = {
-  document_address : Url.t;
   mutable document_data : document_data;
+
+  document_address : Url.t; (* origin? *)
   document_info : string list
 }
 (*e: type Document.document *)

@@ -44,8 +44,8 @@ type cache_fill = {
 (* A cache entry *)
 type entry = {
   mutable cache_document : Document.document;
-  mutable cache_pending : bool;
 
+  mutable cache_pending : bool;
   cache_condition : Condition.t;
 
   mutable cache_lastused : float

@@ -49,9 +49,9 @@ type header = string
 type request_message = {
   request : request;
 
-  request_headers : header list;
   request_auth : (string * string) option;
            (* have we authentified the emitter (authtype, authuser) *)
+  request_headers : header list;
 
   request_body : string;
 }

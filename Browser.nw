@@ -16,7 +16,7 @@
 
 %thx to codemap/codegraph/scheck:
 % - use cg to reduce backward deps (but ocaml linker enforces that),
-%   and to reduce dependencies to graphic toolkit
+%   and to reduce dependencies to graphic toolkit tk
 %   (harder to understand non layered code)
 % - TODO use scheck to remove deadcode, dead prototypes, useless export
 %   or mv as forward decl
@@ -157,8 +157,8 @@ Here are other candidates that were considered but ultimately discarded:
 \item mosaic
 % maybe good. LOC?
 \item gecko (firefox)
-% descendant of mosaic, netscape
-% huge
+% descendant of mosaic, netscape, introduced IMG
+% huge now
 \item khtml/webkit/blink (kconqueror, chrome, safari)
 % started from scratch by kde people originally, now used by google/apple
 % huge
@@ -224,8 +224,8 @@ the main author of MMM.
 % before seing the browser, first expose web principles: world wide web.
 % a "web" of interconnected machines with:
 %  - "resources": html documents, images
-%  - URL to reference a resource; an html document containing itself
-%    possible links to other documents or resources (e.g. images)
+%  - URL to reference a resource; an html document contains itself
+%    possible links to other documents or resources (e.g. images) => a web
 %  - http protocol to fetch the resources
 %  - client/server around this protocol
 
@@ -283,9 +283,9 @@ France
 Francois.Rouaix@inria.fr
 http://pauillac.inria.fr/~rouaix/
 "
-  | _ -> assert false
+  | s -> failwith (Printf.sprintf "language not supported: %s" s)
 @
-
+old: assert false
 
 
 <<signature Version.number>>=
@@ -299,7 +299,7 @@ let number = 418
 
 <<constant Version.version_number>>=
 let version_number = 
-  string_of_int number;;
+  string_of_int number
 @
 
 
@@ -368,11 +368,11 @@ get an updated copy.
 
 % commons/: utilities
 % globals/: config
-% www/: url
+% www/: uri, url, request
 % html/: html parsing
 % http/: http protocol
 % protocols/: more protocols
-% retrieve/: networking stuff
+% retrieve/: networking stuff, connexions
 % viewers/: viewing stuff
 % display/: rendering engine
 % gui/: chrome
@@ -400,15 +400,60 @@ get an updated copy.
 
 \chapter{Core Data Structures}
 
-% url -> request -> document -> data -> ast
+% url -> uri -> link -> request, bigger and bigger structure
+% and then
+% request -> document -> data -> ast
 
-\section{URLs}
+\section{URLs and co}
+
+% url -> uri -> link -> request, bigger and bigger structure
 
 % URLs are URIs? who is more general?
-% URL is uniform, URIs is universal, so maybe URI is more general
+% URL is uniform, URIs is universal, so URI is more general
+
+\subsection{URLs and protocols, [[Url.t]]}
+% =~ protocol://user:pass@host:port/paths?search
+% (not too bad syntax)
+
+<<type Url.t>>=
+(* URLs as defined by RFC 1738 *)
+
+(* Not all components are used for all protocols. See RFC. *)
+type t = 
+  { mutable protocol : protocol;
+
+    mutable user : string option;
+    mutable password: string option;
+
+    mutable host : string option;
+    mutable port : int option;
+
+    mutable path : string option;
+
+    mutable search: string option
+  }
+@
+% search?
+% "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
+% to say that there is no fragment here, anchor = #xxx
+%less: need to be mutable? really?
+
+<<type Url.protocol>>=
+type protocol =
+ | HTTP 
+ | FILE | FTP
+ | MAILTO | NNTP
+ | GOPHER | NEWS | WAIS | PROSPERO
+ | TELNET 
+ | OtherProtocol of string
+@
+
+% will see later parsing function for url
+% Lexurl.make()
 
 \subsection{URIs, [[Uri.abs_uri]]}
-% =~ /path/elements/foo.html#fragment
+% =~ http://..../path/elements/foo.html#fragment
+% =~ URL + fragment
 
 <<type Uri.abs_uri>>=
 (* URI utilities. RFC 1630 *)
@@ -418,10 +463,11 @@ type abs_uri = {
    uri_frag : string option
  }
 @
-% abs for absolute! we want those URI to have been "resolved"
-% fragment is for the #xxx I think
-% less: uri_url, hmmm should be uri_path no?
-%   "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
+%abs for absolute! we want those URI to have been "resolved"
+%fragment is for the #xxx
+%  "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
+%less: uri_url, hmmm should be uri_path no?
+%less: why not parse uri_url and make it a Url.t?
 
 
 <<signature Uri.is_absolute>>=
@@ -442,48 +488,11 @@ let is_absolute uri =
   with
     Not_found -> false (* absolute must have a : *)
 @
-
-\subsection{URLs and protocols, [[Url.t]]}
-% =~ protocol://user:pass@host:port/paths?search
-
-% not too bad syntax.
-
-<<type Url.t>>=
-(* URLs as defined by RFC 1738 *)
-
-(* Relative adressing in anchors, fragments are NOT URLs, but URI *)
-(* Not all components are used for all protocols. See RFC. *)
-type t = 
-  { mutable protocol : protocol;
-
-    mutable user : string option;
-    mutable password: string option;
-
-    mutable host : string option;
-    mutable port : int option;
-
-    mutable path : string option;
-
-    mutable search: string option
-  }
-@
-% search?
-% "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
-
-<<type Url.protocol>>=
-type protocol =
- | HTTP 
- | FILE | FTP
- | MAILTO | NNTP
- | GOPHER | NEWS | WAIS | PROSPERO
- | TELNET 
- | OtherProtocol of string
-@
-
-
+% ?? examples? 
+% unit tests!
 
 \subsection{Hypertext Links, [[Hyper.link]]}
-%=~ <a href="...">
+%=~ <a href="..."> with implicit METHOD=GET
 
 <<type Hyper.link>>=
 (* An hypertext(media) link on the Web *)
@@ -495,8 +504,8 @@ type link = {
   h_params : (string * string) list
 }
 @
-% context?
-% why not parse h_uri? and make it a Url.t?
+% context? useful for relative uri, seems to be a URL too.
+% Why not parse h_uri? and make it a Uri.t?
 
 <<type Hyper.link_method>>=
 (* This is currently for HTTP and derived, but ... *)
@@ -506,9 +515,10 @@ type link_method =
  | HEAD
  | POST of string
 @
+% HEAD?
 
-\subsection{Request, [[Www.request]]}
-% =~ ?
+\subsection{Web requests, [[Www.request]]}
+% =~ url + some state info in the browser (e.g. authentification, cookie?)
 
 <<type Www.request>>=
 (*
@@ -516,6 +526,7 @@ type link_method =
  *)
 type request =  { 
     www_link : Hyper.link;        (* the link that produced this request *)
+
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
 
@@ -526,9 +537,9 @@ type request =  {
     mutable www_error : Error.t;
   }
 @
+% fragment is for the URI, the #xxx
 %less: merge www_url in link?
-%less: fragment??
-%todo: LP split fields
+%less: LP split fields
 
 <<signature Www.make>>=
 val make : Hyper.link -> request
@@ -542,38 +553,43 @@ let make hlink =
     if List.mem url.protocol [FILE; MAILTO] 
     then raise Not_found
     else
+      (* will raise Not_found if no space found *)
       let n = Str.search_forward sp absuri.uri_url 0 in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
-  with
-    Not_found -> {
-      www_link = hlink;
+  with Not_found -> 
+    { www_link = hlink;
+
       www_url = url; (* should not fail ? *)
       www_fragment = absuri.uri_frag;
 
       www_auth = [];
       www_headers = [];
+
       www_logging = (fun _ -> ());
       www_error = !Error.default
     }
 @
-% so URI is also an URL? 
-%todo: ugly try, and does not handle http protocol here?
+%todo: abuse exn too much, the regular flow is actually the exceptional flow
 
 <<constant Www.sp>>=
 let sp = Str.regexp "[ \t\n]"
 @
 
+% will see later Hyper.resolve and Lexurl.make
 
 
 \section{Documents}
 
 <<type Document.document>>=
 type document = {
-  document_address : Url.t;
   mutable document_data : document_data;
+
+  document_address : Url.t; (* origin? *)
   document_info : string list
 }
 @
+%less: LP split document_info?
+%note that it's a mutable field!
 
 % used by Protos.get
 <<type Document.document_data>>=
@@ -584,9 +600,10 @@ type document = {
  *)
 
 type document_data =
-   MemoryData of Ebuffer.t
+ | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
 @
+%less: the comment is enigmatic
 
 \subsection{Document ID}
 
@@ -622,14 +639,15 @@ let new_stamp () =
 @
 
 
+% get a new document_id!
 <<signature Document.document_id>>=
 val document_id : Www.request -> document_id
 @
 <<function Document.document_id>>=
 let document_id wwwr =
   match wwwr.www_link.h_method with
-    POST _  ->
-        { document_url = wwwr.www_url; document_stamp = new_stamp()}
+  | POST _  ->
+         { document_url = wwwr.www_url; document_stamp = new_stamp()}
   | _ -> { document_url = wwwr.www_url; document_stamp = no_stamp}
 @
 
@@ -654,14 +672,16 @@ val find : document_id -> document
 val finished : document_id -> unit
 @
 % will see add and finished later in optimisation section.
-
 <<signature Cache.touch>>=
 val touch : document_id -> unit
 @
+% refresh for cache
+
+
 <<signature Cache.kill>>=
 val kill : document_id -> unit
 @
-% diff with finished?
+%less: diff with finished?
 
 
 <<constant Cache.memory>>=
@@ -672,8 +692,8 @@ let memory = ref ([] : (Document.document_id * entry) list)
 (* A cache entry *)
 type entry = {
   mutable cache_document : Document.document;
-  mutable cache_pending : bool;
 
+  mutable cache_pending : bool;
   cache_condition : Condition.t;
 
   mutable cache_lastused : float
@@ -682,6 +702,12 @@ type entry = {
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
        *) (* JPF: it is now float! max_int -> max_float *)
   }
+@
+%less: LP split?
+%todo: hmm the comment seems to indicate it's a bad thing in 2015 :)
+
+<<constant Cache.max_lastused>>=
+let max_lastused = 100000000000.0
 @
 
 
@@ -697,6 +723,9 @@ let find did =
 
 % add, will see later
 
+% hmm but what is the value of cache_document at first when we
+% don't have the data yet, that the cache is pending?
+% should be document option no?
 
 \section{Protocols}
 
@@ -708,6 +737,8 @@ val get: Url.protocol ->
   (Document.handle -> 
       Document.document_data * Cache.cache_fill)
 @
+% will see below what are those Document.xxx
+%less: define a record type?
 
 <<constant Protos.protos>>=
 let protos = Hashtbl.create 11
@@ -733,6 +764,8 @@ type document_continuation = {
     (* What to do if a request does not yield a document *)
 }
 @
+% to pass to the protocol handler, callback to called
+% when he got the data.
 
 \subsection{Document handle}
 
@@ -764,13 +797,20 @@ type handle = {
 @
 %less: typedef for document_status int?
 %todo: LP split!
+%less: why not take Www.request and put it here? so less need to
+% have document_headers, fragment
+%note: this will be produced by the http_req, and then
+% passed to the document_continuation.document_process,
+% which then will pass it down to the Cache.tobuffer
+
+% TODO: figure with the flow! who is building the handle, who
+%  is consuming it
 
 \section{HTTP}
 
-% apparently mmm handles http 1.0.
+% apparently mmm handles http 1.0 and 0.9
 % there is also 1.1.
 % 2.0 just got published I think
-
 
 %(* HTTP messages: requests and responses
 % *  What a client sends to a server is called a request 
@@ -779,23 +819,26 @@ type handle = {
 
 \subsection{Requests}
 
+%todo: rename messages.mli to http_messages.mli?
 
 <<type Messages.request_message>>=
 (* HTTP-Message *)
 type request_message = {
   request : request;
 
-  request_headers : header list;
   request_auth : (string * string) option;
            (* have we authentified the emitter (authtype, authuser) *)
+  request_headers : header list;
 
   request_body : string;
 }
 @
 %less: aspectize security
 % diff with Www.request? it also has _headers and _auth.
-% but Www.request is the general case, any request, file://, mailto://,
-% here request_message is the Www.request adapted for http://
+% but Www.request is the general case for any request (file://, mailto://)
+% here request_message is the Www.request specialized for http:/
+%what is body? Www.request didn't have that. It's a subpart of
+% Www.www_headers?
 
 <<type Messages.request>>=
 (* Request-Line of a Request *)
@@ -807,6 +850,7 @@ type request = {
 }
 @
 %less: why not use method type for request_method instead of a string?
+
 
 <<type Messages.header>>=
 (* Other headers *)
@@ -825,6 +869,9 @@ type response_message = {
 }
 @
 
+% ok so we will get some response, and then we
+% need to transform that into a document handle that then
+% can be processed by the http independent core of mmm
 
 <<type Messages.status>>=
 (* Status-Line of a Response *)
@@ -904,34 +951,35 @@ type attribute_value = string
 
 
 
-
+% specified where? RFC?
 <<constant Html.default_attributes>>=
 (* Attribute values *)
 let default_attributes = [ 
-  ("isindex", "prompt"), "Document is indexed/searchable: ";
+  ("isindex"  , "prompt" ),  "Document is indexed/searchable: ";
+                             
+  ("a"        , "methods"),  "GET";     (* <A METHODS=GET> *)
+  ("embed"    , "methods"),  "GET";		(* <EMBED METHODS=GET> *)
+  ("embed"    , "alt"    ),  "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
+  ("form"     , "method" ),  "GET";		(* <FORM METHOD=GET> *)
+  ("form"     , "enctype"),  "application/x-www-form-urlencoded";
 
-  ("a", "methods"), "GET";              (* <A METHODS=GET> *)
-  ("ol", "type"), "1";			(* <OL TYPE=1 *)
-  ("embed", "methods"), "GET";		(* <EMBED METHODS=GET> *)
-  ("embed", "alt"), "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
-  ("form", "method"), "GET";		(* <FORM METHOD=GET> *)
-  ("form", "enctype"), "application/x-www-form-urlencoded";
-  ("input", "type"), "TEXT";		(* <INPUT TYPE=TEXT> *)
-  ("select", "size"), "5";
-  ("textarea", "align"), "bottom";
-  ("input", "align"), "bottom";
-  ("select", "align"), "bottom";
-  ("img", "align"), "bottom";
-  (* ("img", "alt"), "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
-  ("area", "shape"), "rect";
-  ("div", "align"), "left";
-  ("basefont", "size"), "3";
+  ("ol"       , "type"   ),  "1";       (* <OL TYPE=1 *)
+  ("input"    , "type"   ),  "TEXT";	(* <INPUT TYPE=TEXT> *)
+  ("select"   , "size"   ),  "5";
+  ("textarea" , "align"  ),  "bottom";
+  ("input"    , "align"  ),  "bottom";
+  ("select"   , "align"  ),  "bottom";
+  ("img"      , "align"  ),  "bottom";
+  (* ("img"   , "alt"    ),  "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
+  ("area"     , "shape"  ),  "rect";
+  ("div"      , "align"  ),  "left";
+  ("basefont" , "size"   ),  "3";
 
   (* frames *)
-  ("frame", "frameborder"), "0";
-  ("frame", "scrolling"), "auto";
-  ("frameset", "rows"), "100%";
-  ("frameset", "cols"), "100%";
+  ("frame"    , "frameborder" ), "0";
+  ("frame"    , "scrolling"   ), "auto";
+  ("frameset" , "rows"        ), "100%";
+  ("frameset" , "cols"        ), "100%";
   ]
 @
 
@@ -1022,20 +1070,20 @@ let main () =
 
 \ifallcode
 <<[[Main.main()]] tk backends setup>>=
-Error.default := new Tk_error.t Widget.default_toplevel;
-Condition.backend := Tk_condition.backend ();
-Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
-Timer_.set_ref := Timer.set;
-Low.update_idletasks_backend := Tk.update_idletasks;
-Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
-Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
-Fileevent_.add_fileoutput_ref := Fileevent.add_fileoutput;
+Error.default                    := new Tk_error.t Widget.default_toplevel;
+Condition.backend                := Tk_condition.backend ();
+Timer_.add_ref                   := (fun a b -> Timer.add a b |> ignore);
+Timer_.set_ref                   := Timer.set;
+Low.update_idletasks_backend     := Tk.update_idletasks;
+Fileevent_.add_fileinput_ref     := Fileevent.add_fileinput;
+Fileevent_.remove_fileinput_ref  := Fileevent.remove_fileinput;
+Fileevent_.add_fileoutput_ref    := Fileevent.add_fileoutput;
 Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
-Document.add_log_backend := Tk_document.add_log;
-Maps.broadcast_backend := Frx_synth.broadcast;
-Auth.open_passwd_ref := Frx_req.open_passwd;
-Auth.edit_backend := Tk_auth.edit;
-Mailto.internal_backend := Tk_mailto.internal;
+Document.add_log_backend         := Tk_document.add_log;
+Maps.broadcast_backend           := Frx_synth.broadcast;
+Auth.open_passwd_ref             := Frx_req.open_passwd;
+Auth.edit_backend                := Tk_auth.edit;
+Mailto.internal_backend          := Tk_mailto.internal;
 @
 \fi
 
@@ -1090,10 +1138,6 @@ let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
 "<foo:0>\tDisplay";
 @
 
-<<[[Main.main()]] command line options>>=
-"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-"<wxh+x+y>\tInitial geometry for the first navigator";
-@
 
 
 
@@ -1223,7 +1267,7 @@ let init () =
   memory := [docid, docentry];
   current := 1
 @
-
+% not pending, it is there!
 
 <<signature Version.initurl>>=
 val initurl : string -> string (* fake initial url *)
@@ -1233,7 +1277,7 @@ val initurl : string -> string (* fake initial url *)
 let initurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
-  | _ -> assert false
+  | s -> failwith (Printf.sprintf "language not supported: %s" s)
 @
 % comment? NORMALIZED?
 
@@ -1249,6 +1293,11 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 
 
 \section{[[Mmm.initial_navigator()]]}
+
+<<[[Main.main()]] command line options>>=
+"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
+"<wxh+x+y>\tInitial geometry for the first navigator";
+@
 
 \subsection{XXX}
 
@@ -1298,7 +1347,6 @@ let rec safe_loop() =
 <<signature Version.home>>=
 val home : string -> string    (* MMM home page *)
 @
-
 <<function Version.home>>=
 let home = function 
   | "iso8859" -> "http://pauillac.inria.fr/mmm/"
@@ -1311,6 +1359,10 @@ let home = function
 
 \section{Refresh and stop}
 
+
+
+
+
 \chapter{Parsing}
 % www/ html/ 
 
@@ -1319,6 +1371,7 @@ let home = function
 <<signature Lexurl.f>>=
 val f : Lexing.lexbuf -> Url.t
 @
+%todo: rename?
 
 <<signature Lexurl.make>>=
 val make : string -> Url.t
@@ -1341,15 +1394,15 @@ rule f = parse
   [ 'a'-'z' 'A'-'Z' '0'-'9' '+' '.' '-' ]+ ":" 	(* absolute url *)
     { let lexeme = Lexing.lexeme lexbuf in
       let result =
-        { protocol = HTTP;
-          user = None; 
-          password = None;
-       host = None; port = None;
-       path = None; search = None
-         } in
+        { protocol = HTTP; (* will be adjusted later *)
+          user = None; password = None;
+          host = None; port = None;
+          path = None; search = None
+         } 
+      in
       let protocol =
         String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
-   (match protocol with
+      (match protocol with
       <<[[Lexurl.f]] protocol cases>>
       | s ->
           result.protocol <- OtherProtocol s;
@@ -1359,8 +1412,8 @@ rule f = parse
     }
  | _ { raise (Url_Lexing ("not an URL", Lexing.lexeme_start lexbuf)) }
 @
-% less: use as of ocamllex
-
+% less: use 'as' of ocamllex so less need String.sub
+% less: could have a Url.default()
 
 <<[[Lexurl.f]] protocol cases>>=
 | "HTTP" ->
@@ -1375,6 +1428,7 @@ rule f = parse
 @
 % no user?
 % can see other protocols in section in advanced topics
+%less: rewrite so less need to use <- and have mutable fields
 
 <<function Lexurl.slashslash>>=
 and slashslash =  parse
@@ -1400,22 +1454,23 @@ and hostport = parse
       let pos = String.index lexeme ':' in
       let portstring =
         String.sub lexeme (succ pos) (String.length lexeme - 1 - pos) in
-   Some (normalize_host (String.sub lexeme 0 pos)),
-   Some (int_of_string portstring)
+      Some (normalize_host (String.sub lexeme 0 pos)),
+      Some (int_of_string portstring)
     }
 | ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ 
     { Some (normalize_host (Lexing.lexeme lexbuf)), None }
 | "" (* file:///home/... *)
     { None, None }
 @
-%less: use as
+%less: use 'as' again
 
 <<function Lexurl.normalize_host>>=
 (* lowercase, don't use final . in FQDN *)
 let normalize_host s = 
   let s = String.lowercase s in
   let l = String.length s in
-  if s.[l-1] = '.' then String.sub s 0 (l-1)
+  if s.[l-1] = '.' 
+  then String.sub s 0 (l-1)
   else s
 @
 
@@ -1428,8 +1483,7 @@ and pathsearch = parse
 | "/" [^ '?']* '?' 
     { let lexeme = Lexing.lexeme lexbuf in
       let search = any lexbuf in
-      Some (String.sub lexeme 1 (String.length lexeme - 2)),
-   search 
+      Some (String.sub lexeme 1 (String.length lexeme - 2)), search 
     }
 | "/" [^ '?']*
     { let lexeme = Lexing.lexeme lexbuf in
@@ -1438,7 +1492,7 @@ and pathsearch = parse
 | "" 
     { None, None }
 @
-
+%less: use 'as'
 
 <<functions Lexurl.xxx>>=
 and any = parse
@@ -1452,7 +1506,8 @@ and any = parse
 
 \subsection{Normalization}
 
-% how this normalize? because make does a few
+% how this normalize? because make() does a few normalization?
+%  like normalize_host, normalize_port?
 <<signature Lexurl.normalize>>=
 val normalize : string -> string
 @
@@ -1462,15 +1517,18 @@ let normalize url =
   Url.string_of urlp
 @
 %less: could rename make to of_string
+%todo: rename normalize_host_and_port?
 
 
 
-
+% make normalize
+% for context parsing?
 <<signature Lexurl.maken>>=
 val maken : string -> Url.t
    (* raise Url_Lexing(msg,pos) *)
 @
-% make normalized
+%todo: rename to make_normalize_host_port_path?
+% Hyper.resolve -> <> (for the h_context for relative URI)
 <<function Lexurl.maken>>=
 (* Extra normalisation at lexing time 
  *  remove ../ and /. as in RFC 1630
@@ -1489,6 +1547,8 @@ let maken s =
   url
 @
 
+% it can not contain '#' because it's the fragment marker
+% so at least need # to be escaped
 
 
 \subsubsection{dots}
@@ -1496,7 +1556,7 @@ let maken s =
 <<signature Lexurl.remove_dots>>=
 val remove_dots : string -> string
 @
-% -> <>??
+% Lexurl.maken -> <>
 <<function Lexurl.remove_dots>>=
 let remove_dots s =
   let b = Ebuffer.create 32 in
@@ -1509,29 +1569,26 @@ let remove_dots s =
 <<functions Lexurl.xxx>>=
 and pathcomponents = parse
   [ ^ '/']* '/'
-    { (function l ->
+    { (fun l ->
          let newl = 
            match Lexing.lexeme lexbuf with
           | "./" -> l
-           | "../" -> 
-              (match l with 
-              | [] -> [] 
-              | _ :: tl -> tl
-              )
+           | "../" -> (match l with | [] -> [] | _ :: tl -> tl)
            | p -> (p :: l)
           in
-       pathcomponents lexbuf newl)
+        pathcomponents lexbuf newl)
      }
 | [ ^ '/']+
     { (fun l -> 
-     match Lexing.lexeme lexbuf with
-     | "." -> l
+        match Lexing.lexeme lexbuf with
+        | "." -> l
         | ".." -> (match l with [] -> [] | _ :: tl -> tl)
-        | p -> p :: l )
+        | p -> p :: l 
+       )
     }
 | "" { (fun l -> l) }
 @
-
+% why want to normalize? anyway the server will resolve no?
 
 
 \subsubsection{Percents}
@@ -1596,6 +1653,7 @@ let keep_quoted =
 % unparsing? escaping?
 
 \subsubsection{Decoding}
+
 % ??? -> <>
 <<signature Urlenc.decode>>=
 (* URL encoding *)
@@ -1717,25 +1775,58 @@ let strict_form_standard = ref true
 
 
 
-\subsection{Links}
+\section{Links}
 
-% ??? -> <>
-<<signature Hyper.parse_method>>=
-val parse_method : string -> link_method
+% Www.make -> <>
+<<signature Hyper.resolve>>=
+val resolve : link -> Uri.abs_uri
+  (* raises Invalid_link(msg) *)
 @
-<<function Hyper.parse_method>>=
-let parse_method = function
-   "GET" -> GET
- | "HEAD" -> HEAD
- | "POST" -> POST ""
- | _ -> raise Not_found (* other cases should be caught by caller ! *)
+<<function Hyper.resolve>>=
+(* Produces an URI *)
+let resolve link =
+  (* First remove the possible fragment of the uri *)
+  let newuri, frag =
+    try
+       let pos = String.index link.h_uri '#' in
+       String.sub link.h_uri 0 pos, 
+       Some (String.sub link.h_uri (succ pos) 
+                        (String.length link.h_uri - pos - 1))
+    with Not_found -> link.h_uri, None 
+  in
+  if Uri.is_absolute newuri 
+  then
+    try
+      { uri_url = Lexurl.normalize newuri;
+        uri_frag = frag 
+      }
+    with Url_Lexing _ ->
+      raise (Invalid_link
+              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
+
+  else begin (* It is a relative uri *)
+    let context =
+      match link.h_context with 
+      | None -> 
+         raise (Invalid_link (LinkResolve (I18n.sprintf 
+                  "no context and not an absolute url")))
+      | Some c -> c 
+    in
+    let contextp = 
+       try Lexurl.maken context
+       with Url_Lexing (err,pos) ->
+             raise (Invalid_link (UrlLexing (err,pos)))
+    in
+    { uri_url = urlconcat contextp newuri;
+      uri_frag = frag
+    }
+  end
 @
+% will se urlconcat later
+%old: (* Produces an URL *) but it's actually really an URI!
 
 
-
-
-
-% ??? -> <>
+% Hyper.resolve -> <> (for relative links)
 <<signature Hyper.urlconcat>>=
 val urlconcat: Url.t -> string -> string
    (* [urlconcat url relurl] resolves the relative URL [relurl] in the
@@ -1807,51 +1898,23 @@ let urlconcat contextp newuri =
         search = searchpart}
 @
 
+
+
 % ??? -> <>
-<<signature Hyper.resolve>>=
-val resolve : link -> Uri.abs_uri
-  (* raises Invalid_link(msg) *)
+<<signature Hyper.parse_method>>=
+val parse_method : string -> link_method
 @
-<<function Hyper.resolve>>=
-(* Produces an URL *)
-let resolve link =
-  (* First remove the possible fragment of the uri *)
-  let newuri, frag =
-    try
-      let pos = String.index link.h_uri '#' in
-       String.sub link.h_uri 0 pos, 
-        Some (String.sub link.h_uri (succ pos) 
-                    (String.length link.h_uri - pos - 1))
-    with
-        Not_found -> link.h_uri, None 
-  in
-  if Uri.is_absolute newuri then
-    try
-     {uri_url = Lexurl.normalize newuri;
-      uri_frag = frag}
-    with
-      Url_Lexing _ ->
-    raise (Invalid_link
-              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
-
-  else begin (* It is a relative uri *)
-    let context =
-      match link.h_context with 
-     None -> 
-      raise (Invalid_link (LinkResolve (I18n.sprintf 
-                  "no context and not an absolute url")))
-       | Some c -> c in
-
-    let contextp = 
-       try Lexurl.maken context
-       with
-    Url_Lexing (err,pos) ->
-     raise (Invalid_link (UrlLexing (err,pos)))
-       in
-    {uri_url = urlconcat contextp newuri;
-     uri_frag = frag}
-     end
+<<function Hyper.parse_method>>=
+let parse_method = function
+   "GET" -> GET
+ | "HEAD" -> HEAD
+ | "POST" -> POST ""
+ | _ -> raise Not_found (* other cases should be caught by caller ! *)
 @
+
+
+
+
 
 
 \section{HTML}
@@ -3542,7 +3605,7 @@ let html_indent name level =
 
 % ??? -> <>
 <<signature Http_headers.parse_request>>=
-val parse_request : string -> request
+val parse_request : string -> Messages.request
   (* Parses a Request-Line
      Request-Line = Method SP Request-URI SP HTTP-Version CRLF
      Raises [Invalid_HTTP_header "Request-Line"] *)
@@ -3572,12 +3635,13 @@ let parse_request s =
    Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
 @
 %less: could call parse_method here no? and have typed request_method
+%less: aspectize http 0.9?
 
 \subsection{Status}
 
 % ??? -> <>
 <<signature Http_headers.parse_status>>=
-val parse_status : string -> status
+val parse_status : string -> Messages.status
   (* Parses a Status-Line
      Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
      Raises [Invalid_HTTP_header "Status-Line"] 
@@ -3607,7 +3671,7 @@ let parse_status s =
    raise Not_found
 @
 
-
+%less: aspectize old stuff once we know it works on most of our websites
 
 
 
@@ -3923,8 +3987,6 @@ let get name =
 % will see http://, main protocol, see also file://, mailto://
 % in extra protocol chapter, later
 
-%todo: no http.mli?
-
 %rappel:
 %<<signature Protos.get>>=
 %val get: Url.protocol ->
@@ -3948,20 +4010,21 @@ val req:
 
 % ??? (via Protos.get HTTP) -> <>
 %(* Wrappers returning the abort callback *)
+% wr = web request, cont = continuation
 <<function Http.req>>=
 let req wr cont =
   let cnx = request wr cont in
   (fun () -> cnx#abort)
 @
 
+%urlp = url parsed?
 <<function Http.request>>=
 (* Issueing request, with the "retry" logic (unless is "always proxy" mode, 
    we attempt first to connect directly to the host, and if it fails,
    we retry through the proxy
  *)
 and request wr cont =
-  if !always_proxy 
-  then proxy_request wr cont
+  <<[[Http.request()]] if always proxy>>
   else 
     let urlp = wr.www_url in
     if urlp.protocol = HTTP 
@@ -3980,10 +4043,9 @@ and request wr cont =
         tcp_connect host port wr.www_logging
             (start_request false wr cont)
             (failed_request wr cont.document_finish)
+
       with HTTP_error _ -> (* direct failed, go through proxy *)
-        tcp_connect !proxy !proxy_port wr.www_logging
-             (start_request true wr cont)
-             (failed_request wr cont.document_finish)
+        <<[[Http.request()]] if http error on tcp_connect, try proxy>>
     else 
       raise (HTTP_error (I18n.sprintf 
              "INTERNAL ERROR\nHttp.request (not a distant http url): %s" 
@@ -3991,15 +4053,6 @@ and request wr cont =
 @
 
 
-<<function Http.failed_request>>=
-(* shared error *)
-let failed_request wr finish s aborted =
-  finish aborted;
-  Www.rem_active_cnx wr.www_url;
-  wr.www_logging (I18n.sprintf "Failed");
-  wr.www_error#f (I18n.sprintf "Request for %s failed\n%s" 
-                   (Url.string_of wr.www_url) s)
-@
 
 \subsection{[[Http.tcp_connect()]]}
 
@@ -4007,7 +4060,7 @@ let failed_request wr finish s aborted =
 <<function Http.tcp_connect>>=
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
-let tcp_connect server_name port log cont error =
+let tcp_connect server_name port  log  cont error =
 
   (*  Find the inet address *)
   let server_addr =
@@ -4287,6 +4340,27 @@ in
  *)
 
 let send_referer = ref false
+@
+
+\subsection{[[Http.start_request()]]}
+
+<<function Http.start_request>>=
+and start_request proxy_mode wwwr cont =
+ fun cnx ->
+  async_request proxy_mode wwwr (process_response wwwr cont) cnx
+@
+
+\subsection{[[Http.failed_request()]]}
+
+<<function Http.failed_request>>=
+(* shared error *)
+let failed_request wr finish =
+ fun s aborted ->
+  finish aborted;
+  Www.rem_active_cnx wr.www_url;
+  wr.www_logging (I18n.sprintf "Failed");
+  wr.www_error#f (I18n.sprintf "Request for %s failed\n%s" 
+                   (Url.string_of wr.www_url) s)
 @
 
 \section{The response}
@@ -5415,6 +5489,67 @@ val cur_tachy : tachymeter ref
 
 \chapter{Advanced Topics}
 
+
+\section{Proxy}
+
+<<signature Http.proxy_xxx>>=
+val proxy: string ref
+val proxy_port: int ref
+@
+<<global Http.proxy>>=
+(* Default proxy definitions *)
+let proxy = ref "no-proxy-defined"
+@
+<<global Http.proxy_port>>=
+let proxy_port = ref 80
+@
+
+<<[[Main.main()]] command line options>>=
+"-proxy", Arg.String (fun s -> Http.proxy := s), 
+"<hostname>\tProxy host";
+@
+<<[[Main.main()]] command line options>>=
+"-port", Arg.Int (fun i -> Http.proxy_port := i),
+"<port>\t\tProxy port";
+@
+
+
+
+
+
+
+<<[[Http.request()]] if http error on tcp_connect, try proxy>>=
+proxy_request wr cont
+@
+%old: but can factorize!
+%tcp_connect !proxy !proxy_port wr.www_logging
+%     (start_request true wr cont)
+%     (failed_request wr cont.document_finish)
+
+<<constant Http.always_proxy>>=
+let always_proxy = ref false
+@
+% it's a preference
+
+<<[[Http.request()]] if always proxy>>=
+if !always_proxy 
+then proxy_request wr cont
+@
+
+
+<<function Http.proxy_request>>=
+(* Process an HTTP request using the proxy.
+   We pass on the continuation *)
+and proxy_request wr cont =
+  tcp_connect !proxy !proxy_port wr.www_logging
+       (start_request true wr cont)
+       (failed_request wr cont.document_finish)
+@
+
+
+
+
+
 \section{Encodings}
 
 % base64, 8859, url encode, etc.
@@ -6084,33 +6219,8 @@ let isdir path f =
 
 % see extra
 
+
 \subsection{Proxied protocols}
-
-<<[[Main.main()]] command line options>>=
-"-proxy", Arg.String (fun s -> Http.proxy := s), 
-"<hostname>\tProxy host";
-@
-<<[[Main.main()]] command line options>>=
-"-port", Arg.Int (fun i -> Http.proxy_port := i),
-"<port>\t\tProxy port";
-@
-
-<<global Http.proxy>>=
-(* Default proxy definitions *)
-let proxy = ref "no-proxy-defined"
-@
-
-<<global Http.proxy_port>>=
-let proxy_port = ref 80
-@
-
-<<signature Http.proxy_xxx>>=
-val proxy: string ref
-val proxy_port: int ref
-@
-
-
-
 
 <<toplevel Protos._1>>=
 let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
@@ -6143,23 +6253,6 @@ and proxy_req wr cont =
   let cnx = proxy_request wr cont in
   (fun () -> cnx#abort)
 @
-
-
-<<function Http.proxy_request>>=
-(* Process an HTTP request using the proxy.
-   We pass on the continuation *)
-and proxy_request wr cont =
-  tcp_connect !proxy !proxy_port wr.www_logging
-       (start_request true wr cont)
-       (failed_request wr cont.document_finish)
-@
-
-
-<<constant Http.always_proxy>>=
-let always_proxy = ref false
-@
-% it's a preference
-
 
 
 \subsection{[[ftp://]]}

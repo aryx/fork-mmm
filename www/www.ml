@@ -8,6 +8,7 @@ open Url
  *)
 type request =  { 
     www_link : Hyper.link;        (* the link that produced this request *)
+
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
 
@@ -35,16 +36,18 @@ let make hlink =
     if List.mem url.protocol [FILE; MAILTO] 
     then raise Not_found
     else
+      (* will raise Not_found if no space found *)
       let n = Str.search_forward sp absuri.uri_url 0 in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
-  with
-    Not_found -> {
-      www_link = hlink;
+  with Not_found -> 
+    { www_link = hlink;
+
       www_url = url; (* should not fail ? *)
       www_fragment = absuri.uri_frag;
 
       www_auth = [];
       www_headers = [];
+
       www_logging = (fun _ -> ());
       www_error = !Error.default
     }

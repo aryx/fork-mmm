@@ -110,44 +110,44 @@ let urlconcat contextp newuri =
 (*e: function Hyper.urlconcat *)
           
 (*s: function Hyper.resolve *)
-(* Produces an URL *)
+(* Produces an URI *)
 let resolve link =
   (* First remove the possible fragment of the uri *)
   let newuri, frag =
     try
-      let pos = String.index link.h_uri '#' in
+       let pos = String.index link.h_uri '#' in
        String.sub link.h_uri 0 pos, 
-        Some (String.sub link.h_uri (succ pos) 
-                    (String.length link.h_uri - pos - 1))
-    with
-        Not_found -> link.h_uri, None 
+       Some (String.sub link.h_uri (succ pos) 
+                        (String.length link.h_uri - pos - 1))
+    with Not_found -> link.h_uri, None 
   in
-  if Uri.is_absolute newuri then
+  if Uri.is_absolute newuri 
+  then
     try
-     {uri_url = Lexurl.normalize newuri;
-      uri_frag = frag}
-    with
-      Url_Lexing _ ->
-    raise (Invalid_link
+      { uri_url = Lexurl.normalize newuri;
+        uri_frag = frag 
+      }
+    with Url_Lexing _ ->
+      raise (Invalid_link
               (LinkResolve (I18n.sprintf "not a legal absolute uri")))
 
   else begin (* It is a relative uri *)
     let context =
       match link.h_context with 
-     None -> 
-      raise (Invalid_link (LinkResolve (I18n.sprintf 
+      | None -> 
+         raise (Invalid_link (LinkResolve (I18n.sprintf 
                   "no context and not an absolute url")))
-       | Some c -> c in
-
+      | Some c -> c 
+    in
     let contextp = 
        try Lexurl.maken context
-       with
-    Url_Lexing (err,pos) ->
-     raise (Invalid_link (UrlLexing (err,pos)))
-       in
-    {uri_url = urlconcat contextp newuri;
-     uri_frag = frag}
-     end
+       with Url_Lexing (err,pos) ->
+             raise (Invalid_link (UrlLexing (err,pos)))
+    in
+    { uri_url = urlconcat contextp newuri;
+      uri_frag = frag
+    }
+  end
 (*e: function Hyper.resolve *)
 
 (*s: function Hyper.string_of *)

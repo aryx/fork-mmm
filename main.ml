@@ -51,20 +51,20 @@ let usage_str =
 let main () =
 
   (*s: [[Main.main()]] tk backends setup *)
-  Error.default := new Tk_error.t Widget.default_toplevel;
-  Condition.backend := Tk_condition.backend ();
-  Timer_.add_ref := (fun a b -> Timer.add a b |> ignore);
-  Timer_.set_ref := Timer.set;
-  Low.update_idletasks_backend := Tk.update_idletasks;
-  Fileevent_.add_fileinput_ref := Fileevent.add_fileinput;
-  Fileevent_.remove_fileinput_ref := Fileevent.remove_fileinput;
-  Fileevent_.add_fileoutput_ref := Fileevent.add_fileoutput;
+  Error.default                    := new Tk_error.t Widget.default_toplevel;
+  Condition.backend                := Tk_condition.backend ();
+  Timer_.add_ref                   := (fun a b -> Timer.add a b |> ignore);
+  Timer_.set_ref                   := Timer.set;
+  Low.update_idletasks_backend     := Tk.update_idletasks;
+  Fileevent_.add_fileinput_ref     := Fileevent.add_fileinput;
+  Fileevent_.remove_fileinput_ref  := Fileevent.remove_fileinput;
+  Fileevent_.add_fileoutput_ref    := Fileevent.add_fileoutput;
   Fileevent_.remove_fileoutput_ref := Fileevent.remove_fileoutput;
-  Document.add_log_backend := Tk_document.add_log;
-  Maps.broadcast_backend := Frx_synth.broadcast;
-  Auth.open_passwd_ref := Frx_req.open_passwd;
-  Auth.edit_backend := Tk_auth.edit;
-  Mailto.internal_backend := Tk_mailto.internal;
+  Document.add_log_backend         := Tk_document.add_log;
+  Maps.broadcast_backend           := Frx_synth.broadcast;
+  Auth.open_passwd_ref             := Frx_req.open_passwd;
+  Auth.edit_backend                := Tk_auth.edit;
+  Mailto.internal_backend          := Tk_mailto.internal;
   (*e: [[Main.main()]] tk backends setup *)
 
  (* As always, we must parse argument first, using references... *)
@@ -94,9 +94,6 @@ let main () =
    "-display", Arg.String (fun s -> display := s),
    "<foo:0>\tDisplay";
    (*x: [[Main.main()]] command line options *)
-   "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-   "<wxh+x+y>\tInitial geometry for the first navigator";
-   (*x: [[Main.main()]] command line options *)
    "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
    "\tClick to Focus mode (default is Focus Follows Mouse)";
    (*x: [[Main.main()]] command line options *)
@@ -106,23 +103,26 @@ let main () =
    "-palette", Arg.String (fun s -> palette := Some s),
    "<color>\tTk Palette";
    (*x: [[Main.main()]] command line options *)
+   "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
+   "<wxh+x+y>\tInitial geometry for the first navigator";
+   (*x: [[Main.main()]] command line options *)
    "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
    "<url>\tHelp URL";
    (*x: [[Main.main()]] command line options *)
    "-suffixes", Arg.String (fun s -> sufxfile := s),
    "<file>\tSuffix file";
    (*x: [[Main.main()]] command line options *)
-   "-lang", Arg.String (fun s -> I18n.language := s),
-   "<lang>\t\tI18n language";
-   (*x: [[Main.main()]] command line options *)
-   "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-   "<file>\tI18n message file";
-   (*x: [[Main.main()]] command line options *)
    "-proxy", Arg.String (fun s -> Http.proxy := s), 
    "<hostname>\tProxy host";
    (*x: [[Main.main()]] command line options *)
    "-port", Arg.Int (fun i -> Http.proxy_port := i),
    "<port>\t\tProxy port";
+   (*x: [[Main.main()]] command line options *)
+   "-lang", Arg.String (fun s -> I18n.language := s),
+   "<lang>\t\tI18n language";
+   (*x: [[Main.main()]] command line options *)
+   "-msgfile", Arg.String (fun s -> I18n.message_file := s),
+   "<file>\tI18n message file";
    (*x: [[Main.main()]] command line options *)
    "-external", Arg.Unit (fun () -> accept_external := true),
    "\t\tAccept remote command (mmm_remote <url>)";

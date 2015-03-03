@@ -70,14 +70,15 @@ type document_continuation = {
  *)
 
 type document_data =
-   MemoryData of Ebuffer.t
+ | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
 (*e: type Document.document_data *)
 
 (*s: type Document.document *)
 type document = {
-  document_address : Url.t;
   mutable document_data : document_data;
+
+  document_address : Url.t; (* origin? *)
   document_info : string list
 }
 (*e: type Document.document *)
@@ -97,8 +98,8 @@ let new_stamp () =
 (*s: function Document.document_id *)
 let document_id wwwr =
   match wwwr.www_link.h_method with
-    POST _  ->
-        { document_url = wwwr.www_url; document_stamp = new_stamp()}
+  | POST _  ->
+         { document_url = wwwr.www_url; document_stamp = new_stamp()}
   | _ -> { document_url = wwwr.www_url; document_stamp = no_stamp}
 (*e: function Document.document_id *)
 

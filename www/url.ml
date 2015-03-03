@@ -30,7 +30,6 @@ let string_of_protocol = function
 (*s: type Url.t *)
 (* URLs as defined by RFC 1738 *)
 
-(* Relative adressing in anchors, fragments are NOT URLs, but URI *)
 (* Not all components are used for all protocols. See RFC. *)
 type t = 
   { mutable protocol : protocol;

@@ -20,7 +20,8 @@ let normalize_port = function
 let normalize_host s = 
   let s = String.lowercase s in
   let l = String.length s in
-  if s.[l-1] = '.' then String.sub s 0 (l-1)
+  if s.[l-1] = '.' 
+  then String.sub s 0 (l-1)
   else s
 (*e: function Lexurl.normalize_host *)
 
@@ -32,15 +33,15 @@ rule f = parse
   [ 'a'-'z' 'A'-'Z' '0'-'9' '+' '.' '-' ]+ ":" 	(* absolute url *)
     { let lexeme = Lexing.lexeme lexbuf in
       let result =
-        { protocol = HTTP;
-          user = None; 
-          password = None;
-       host = None; port = None;
-       path = None; search = None
-         } in
+        { protocol = HTTP; (* will be adjusted later *)
+          user = None; password = None;
+          host = None; port = None;
+          path = None; search = None
+         } 
+      in
       let protocol =
         String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
-   (match protocol with
+      (match protocol with
       (*s: [[Lexurl.f]] protocol cases *)
       | "HTTP" ->
           slashslash lexbuf;
@@ -174,8 +175,8 @@ and hostport = parse
       let pos = String.index lexeme ':' in
       let portstring =
         String.sub lexeme (succ pos) (String.length lexeme - 1 - pos) in
-   Some (normalize_host (String.sub lexeme 0 pos)),
-   Some (int_of_string portstring)
+      Some (normalize_host (String.sub lexeme 0 pos)),
+      Some (int_of_string portstring)
     }
 | ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ 
     { Some (normalize_host (Lexing.lexeme lexbuf)), None }
@@ -189,8 +190,7 @@ and pathsearch = parse
 | "/" [^ '?']* '?' 
     { let lexeme = Lexing.lexeme lexbuf in
       let search = any lexbuf in
-      Some (String.sub lexeme 1 (String.length lexeme - 2)),
-   search 
+      Some (String.sub lexeme 1 (String.length lexeme - 2)), search 
     }
 | "/" [^ '?']*
     { let lexeme = Lexing.lexeme lexbuf in
@@ -206,25 +206,22 @@ and any = parse
 (*x: functions Lexurl.xxx *)
 and pathcomponents = parse
   [ ^ '/']* '/'
-    { (function l ->
+    { (fun l ->
          let newl = 
            match Lexing.lexeme lexbuf with
           | "./" -> l
-           | "../" -> 
-              (match l with 
-              | [] -> [] 
-              | _ :: tl -> tl
-              )
+           | "../" -> (match l with | [] -> [] | _ :: tl -> tl)
            | p -> (p :: l)
           in
-       pathcomponents lexbuf newl)
+        pathcomponents lexbuf newl)
      }
 | [ ^ '/']+
     { (fun l -> 
-     match Lexing.lexeme lexbuf with
-     | "." -> l
+        match Lexing.lexeme lexbuf with
+        | "." -> l
         | ".." -> (match l with [] -> [] | _ :: tl -> tl)
-        | p -> p :: l )
+        | p -> p :: l 
+       )
     }
 | "" { (fun l -> l) }
 (*x: functions Lexurl.xxx *)

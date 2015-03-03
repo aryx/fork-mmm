@@ -88,7 +88,7 @@ end
 (*s: function Http.tcp_connect *)
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
-let tcp_connect server_name port log cont error =
+let tcp_connect server_name port  log  cont error =
 
   (*  Find the inet address *)
   let server_addr =
@@ -305,7 +305,8 @@ let full_request w proxy_mode wwwr =
 
 (*s: function Http.failed_request *)
 (* shared error *)
-let failed_request wr finish s aborted =
+let failed_request wr finish =
+ fun s aborted ->
   finish aborted;
   Www.rem_active_cnx wr.www_url;
   wr.www_logging (I18n.sprintf "Failed");
@@ -453,8 +454,11 @@ and async_request proxy_mode wwwr cont cnx =
          end)
 
 (* wrappers for request/response transaction *)
-and start_request proxy_mode wwwr cont cnx =
+(*s: function Http.start_request *)
+and start_request proxy_mode wwwr cont =
+ fun cnx ->
   async_request proxy_mode wwwr (process_response wwwr cont) cnx
+(*e: function Http.start_request *)
 and start_request09 proxy_mode wwwr cont cnx =
   async_request proxy_mode wwwr (process_response09 wwwr cont) cnx
 
@@ -480,8 +484,10 @@ and proxy_request09 wr cont =
    we retry through the proxy
  *)
 and request wr cont =
+  (*s: [[Http.request()]] if always proxy *)
   if !always_proxy 
   then proxy_request wr cont
+  (*e: [[Http.request()]] if always proxy *)
   else 
     let urlp = wr.www_url in
     if urlp.protocol = HTTP 
@@ -500,10 +506,11 @@ and request wr cont =
         tcp_connect host port wr.www_logging
             (start_request false wr cont)
             (failed_request wr cont.document_finish)
+
       with HTTP_error _ -> (* direct failed, go through proxy *)
-        tcp_connect !proxy !proxy_port wr.www_logging
-             (start_request true wr cont)
-             (failed_request wr cont.document_finish)
+        (*s: [[Http.request()]] if http error on tcp_connect, try proxy *)
+        proxy_request wr cont
+        (*e: [[Http.request()]] if http error on tcp_connect, try proxy *)
     else 
       raise (HTTP_error (I18n.sprintf 
              "INTERNAL ERROR\nHttp.request (not a distant http url): %s" 

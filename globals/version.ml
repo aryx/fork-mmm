@@ -9,7 +9,7 @@ let number = 418
 (*e: constant Version.number *)
 (*s: constant Version.version_number *)
 let version_number = 
-  string_of_int number;;
+  string_of_int number
 (*e: constant Version.version_number *)
 
 (*s: constant Version.http *)
@@ -36,7 +36,7 @@ France
 Francois.Rouaix@inria.fr
 http://pauillac.inria.fr/~rouaix/
 "
-  | _ -> assert false
+  | s -> failwith (Printf.sprintf "language not supported: %s" s)
 (*e: function Version.about *)
 
 (*s: function Version.home *)
@@ -50,7 +50,7 @@ let home = function
 let initurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
-  | _ -> assert false
+  | s -> failwith (Printf.sprintf "language not supported: %s" s)
 (*e: function Version.initurl *)
 
 (*s: function Version.helpurl *)

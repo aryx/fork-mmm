@@ -3617,8 +3617,7 @@ and async_request proxy_mode wwwr cont cnx =
          end)
 
 (* wrappers for request/response transaction *)
-and start_request proxy_mode wwwr cont cnx =
-  async_request proxy_mode wwwr (process_response wwwr cont) cnx
+<<function Http.start_request>>
 and start_request09 proxy_mode wwwr cont cnx =
   async_request proxy_mode wwwr (process_response09 wwwr cont) cnx
 
@@ -3784,9 +3783,6 @@ let history_mode = ref false
      a caching proxy *)
 @
 
-<<constant Cache.max_lastused>>=
-let max_lastused = 100000000000.0
-@
 
 <<constant Cache.cutlinks>>=
 (* A list of operations to do when we remove a document from the cache. *)
