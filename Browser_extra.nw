@@ -3498,8 +3498,33 @@ open Http_headers
 @
 
 
-\subsection*{[[./http/http.ml]]}
+\subsection*{[[./http/http.mli]]}
 
+
+%-------------------------------------------------------------
+
+<<./http/http.mli>>=
+
+<<exception Http.End_of_headers>>
+
+<<signature Http.read_headers>>
+
+<<exception Http.HTTP_error>>
+
+<<signature Http.req>>
+
+<<signature Http.proxy_xxx>>
+
+<<signature Http.proxy_req>>
+
+val always_proxy: bool ref
+val send_referer: bool ref
+val user_agent: string ref
+val timeout: int ref
+val verbose: bool ref
+@
+
+\subsection*{[[./http/http.ml]]}
 
 
 %-------------------------------------------------------------

@@ -3941,6 +3941,11 @@ let get name =
 let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 @
 
+<<signature Http.req>>=
+val req:
+  Www.request -> Document.document_continuation -> (unit -> unit)
+@
+
 % ??? (via Protos.get HTTP) -> <>
 %(* Wrappers returning the abort callback *)
 <<function Http.req>>=
@@ -4371,6 +4376,11 @@ let rec process_response wwwr cont cnx =
  *    raises Invalid_HTTP_header
  *)
 exception End_of_headers
+@
+
+<<signature Http.read_headers>>=
+val read_headers: 
+  Unix.file_descr -> string list -> string list
 @
 
 % ??? | fake_cgi -> <>
@@ -6094,6 +6104,10 @@ let proxy = ref "no-proxy-defined"
 let proxy_port = ref 80
 @
 
+<<signature Http.proxy_xxx>>=
+val proxy: string ref
+val proxy_port: int ref
+@
 
 
 
@@ -6118,6 +6132,11 @@ let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
 let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
 @
 
+
+<<signature Http.proxy_req>>=
+val proxy_req:
+  Www.request -> Document.document_continuation -> (unit -> unit)
+@
 
 <<function Http.prox_req>>=
 and proxy_req wr cont = 
@@ -6759,43 +6778,44 @@ let fake_cgi wwwr cont path =
     let cmd, args = 
       try 
        let pos = String.index path '?' in
-    let cmd = String.sub path 0 pos in
-    if pos + 1 = String.length path then cmd, [| cmd |]
-    else 
-         cmd, [|cmd; String.sub path (pos+1) (String.length path - pos - 1)|]
-      with
-       Not_found -> path, [| path |] in
+       let cmd = String.sub path 0 pos in
+       if pos + 1 = String.length path 
+       then cmd, [| cmd |]
+       else cmd, [|cmd; String.sub path (pos+1) (String.length path - pos - 1)|]
+      with Not_found -> path, [| path |] 
+    in
     match Low.fork() with
-      0 -> 
-       close cmd_in;
-    dup2 cmd_out stdout; close cmd_out;
-    begin try execvp cmd args 
-    with
-      Unix_error(e, _, _) ->
-       Munix.write_string stdout "HTTP/1.0 404 Not found\r\n";
-       Munix.write_string stdout "Content-Type: text/html\r\n\r\n";
-       Munix.write_string stdout "<H1>Cannot execute local file</H1>";
-       Munix.write_string stdout "Command \"";
-       Munix.write_string stdout cmd;
-       Munix.write_string stdout "\" failed:";
-       Munix.write_string stdout (Unix.error_message e);
-       Munix.write_string stdout "\n";
-       exit 1
-    end
-    | n ->
-         close cmd_out;
-     let dh = {document_id = document_id wwwr;
-           document_referer = wwwr.www_link.h_context;
-           document_status = 0;
-           document_headers = [];
-           document_feed = Feed.of_fd cmd_in;
-           document_fragment = wwwr.www_fragment;
-           document_logger = Document.tty_logger} in
+    | 0 -> 
+        close cmd_in;
+        dup2 cmd_out stdout; close cmd_out;
+        begin 
+          try execvp cmd args 
+          with Unix_error(e, _, _) ->
+            Munix.write_string stdout "HTTP/1.0 404 Not found\r\n";
+            Munix.write_string stdout "Content-Type: text/html\r\n\r\n";
+            Munix.write_string stdout "<H1>Cannot execute local file</H1>";
+            Munix.write_string stdout "Command \"";
+            Munix.write_string stdout cmd;
+            Munix.write_string stdout "\" failed:";
+            Munix.write_string stdout (Unix.error_message e);
+            Munix.write_string stdout "\n";
+            exit 1
+         end
+   | n ->
+      close cmd_out;
+      let dh = {document_id = document_id wwwr;
+                document_referer = wwwr.www_link.h_context;
+                document_status = 0;
+                document_headers = [];
+                document_feed = Feed.of_fd cmd_in;
+                document_fragment = wwwr.www_fragment;
+                document_logger = Document.tty_logger} 
+      in
       dh.document_feed.feed_schedule
         (fun () ->
            try
-         if dh.document_headers = [] then begin
-           (* it should be the HTTP Status-Line *)
+            if dh.document_headers = [] then begin
+            (* it should be the HTTP Status-Line *)
             let l = Munix.read_line cmd_in in
               dh.document_status <- (parse_status l).status_code;
               dh.document_headers <- [l] (* keep it there *)
@@ -6803,27 +6823,27 @@ let fake_cgi wwwr cont path =
           else 
             dh.document_headers <- 
               read_headers cmd_in dh.document_headers
-           with
-         End_of_headers ->
-           dh.document_feed.feed_unschedule();
-           cont.document_process dh
+          with
+           | End_of_headers ->
+               dh.document_feed.feed_unschedule();
+               cont.document_process dh
            | Not_found -> (* No HTTP/ header *)
-           dh.document_feed.feed_unschedule();
-           dh.document_status <- 200;
+               dh.document_feed.feed_unschedule();
+               dh.document_status <- 200;
                dh.document_headers <- ["Content-Type: text/plain"];
-           cont.document_process dh
+               cont.document_process dh
            | Unix_error(_,_,_) ->
-           dclose true dh;
+               dclose true dh;
                raise (File_error (I18n.sprintf 
-               "Error while reading headers of %s\n%s" path "(read)"))
+                  "Error while reading headers of %s\n%s" path "(read)"))
            | Invalid_HTTP_header s ->
-           dclose true dh;
-           raise (File_error (I18n.sprintf 
-                  "Error while reading headers of %s\n%s" path s))
+               dclose true dh;
+               raise (File_error (I18n.sprintf 
+                      "Error while reading headers of %s\n%s" path s))
            | End_of_file ->
-           dclose true dh;
-           raise (File_error (I18n.sprintf 
-               "Error while reading headers of %s\n%s" path "eof"))
+               dclose true dh;
+               raise (File_error (I18n.sprintf 
+                  "Error while reading headers of %s\n%s" path "eof"))
           )
   with Unix_error(_,_,_) -> 
     raise (File_error (I18n.sprintf "cannot exec file"))

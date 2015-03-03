@@ -353,6 +353,7 @@ SRC_VIEWS= \
   http/lexheaders.mli\
   http/retype.mli\
   http/retype.ml\
+  http/http.mli\
   http/http.ml\
   \
   protocols/cache.mli\
