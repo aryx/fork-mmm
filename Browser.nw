@@ -385,6 +385,14 @@ get an updated copy.
 
 \section{Software architecture}
 
+% complicated archi in the end, because need to handle
+% network error, user action such as abort, timeout,
+% and want to have multiple requests going at the same time
+% possibly (if have many tabs), so it's a mini OS in some sense,
+% managing multiple tasks. Don't want a slow server
+% to hang the whole thing, so need to manage async requests,
+% and so have callbacks (called continuation here) when things
+% are ready.
 
 \section{Trace of a web request}
 % enter url in address bar and type enter, what happens?
@@ -540,6 +548,12 @@ type request =  {
 % fragment is for the URI, the #xxx
 %less: merge www_url in link?
 %less: LP split fields
+%todo: why need pass the logger? can't just use a global
+% logger always? which flexibility it brings?
+% www_logging, document_logger, Log.f, too many no?
+%it's ok though probably to have a www_error, because
+% we may want to print the error message of the request at different
+% places (e.x. if use different tabs)
 
 <<signature Www.make>>=
 val make : Hyper.link -> request
@@ -766,6 +780,7 @@ type document_continuation = {
 @
 % to pass to the protocol handler, callback to called
 % when he got the data.
+% bool is true when things were aborted
 
 \subsection{Document handle}
 
@@ -1178,22 +1193,6 @@ if Sys.file_exists site_resfile
 then Tkresource.readfile site_resfile Tk.StartupFile;
 @
 
-% user (localized) file
-<<[[Main.main()]] user preferences file>>=
-localize !preffile
-@
-
-<<[[Main.main()]] references>>=
-let preffile = ref (Mmm.user_file "MMM.ad") in
-@
-<<[[Main.main()]] command line options>>=
-"-prefs", Arg.String (fun s -> preffile := s),
-"<file>\t\tPreference File";
-@
-% .ad?
-% preferences of navigator
-% diff with code using MMM.ad below?
-
 <<function Main.localize>>=
 let localize file =
   let localized = spf "%s.%s" file !I18n.language in
@@ -1292,15 +1291,652 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 
 
 
+
+
 \section{[[Mmm.initial_navigator()]]}
 
+% file pref and url opt
+<<signature Mmm.initial_navigator>>=
+val initial_navigator : string -> string option -> Nav.t option
+@
+% return something? what for?
+<<function Mmm.initial_navigator>>=
+let initial_navigator preffile init_url =
+  <<[[Mmm.initial_navigator()]] set preferences>>
+  <<[[Mmm.initial_navigator()]] set initial page>>
+  main_navigator :=
+     navigator true 
+       (match !initial_page with Some u -> u | None -> assert false);
+  !main_navigator
+@
+
+
+\subsection{User preferences}
+
+<<constant Mmm.preferences>>=
+(* placeholder for preference panel *)
+let preferences = ref (fun () -> ())
+@
+
+<<[[Mmm.initial_navigator()]] set preferences>>=
+preferences := Mmmprefs.f preffile;
+!preferences();
+@
+
+
+
+
+% user (localized) file
+<<[[Main.main()]] user preferences file>>=
+localize !preffile
+@
+
+<<[[Main.main()]] references>>=
+let preffile = ref (Mmm.user_file "MMM.ad") in
+@
+<<[[Main.main()]] command line options>>=
+"-prefs", Arg.String (fun s -> preffile := s),
+"<file>\t\tPreference File";
+@
+% .ad?
+% preferences of navigator
+% diff with code using MMM.ad below?
+
+<<signature Mmm.user_file>>=
+val user_file : string -> string
+    (* [user_file base] returns $HOME/.mmm/[base] *)
+@
+%$
+<<function Mmm.user_file>>=
+let user_file name =
+  Filename.concat (Filename.concat home ".mmm") name
+@
+
+
+
+\subsection{Initial URL}
+
+<<constant Mmm.initial_page>>=
+let initial_page = ref None
+@
+% why need to store? if create a new window?
+
+<<[[Mmm.initial_navigator()]] set initial page>>=
+initial_page := Some (
+   match init_url with
+   | None -> Lexurl.make !Mmmprefs.home
+   | Some x -> 
+       begin
+         try Lexurl.make x 
+       with _ -> (* If fails, try to use file: *)
+         let path = 
+           if x.[0] = '/' 
+           then x
+           else Filename.concat (Unix.getcwd ()) x
+         in
+         Lexurl.make ("file://localhost" ^ path)
+       end
+);
+@
+% why need to store that? can't just be a let?
+
+\subsection{Main navigator}
+
+<<signature Mmm.main_navigator>>=
+val main_navigator : Nav.t option ref
+@
+<<constant Mmm.main_navigator>>=
+let main_navigator = ref None
+@
+
+<<constant Mmm.navigators>>=
+(*
+ * A navigator window
+ *)
+let navigators = ref 0
+@
+
+
+
+% Mmm.initial_navigator -> <>(, true, )
+<<function Mmm.navigator>>=
+let rec navigator has_tachy initial_url =
+  incr navigators;
+
+  (* The first navigator is named, so we can put special information in
+     window manager configurations, such as sticky *)
+  let top = 
+    if has_tachy 
+    then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
+    else Toplevel.create Widget.default_toplevel [Class "MMM"]
+  in
+  let current_di = ref None in
+  let update_vhistory = ref (fun () -> ()) (* duh *) in
+  let entryv = Textvariable.create_temporary top in
+
+  Wm.title_set top (I18n.sprintf "MMM Browser");
+
+  (* the size of the navigator MUST NOT depend on what is displayed inside *)
+  (* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
+  Pack.propagate_set top false;
+
+  try (* protect all the other initialisations *)
+  let initial_did = {document_url = initial_url; document_stamp = no_stamp} in
+  (* The frame in which a viewer might want to display *)
+  let viewer_frame = Frame.create_named top "viewer" [] in
+  let hist = History.create initial_did in
+
+  (* Change view, independantly of history manip *)
+  let show_current di frag =
+      di#di_touch;
+      begin match !current_di with
+       None -> display di
+      | Some olddi -> 
+        if olddi == di then () 
+         else begin
+        undisplay olddi;
+        display di
+        end
+      end;
+      current_di := Some di;
+      (* bogus if two views with fragment on the same pending document *)
+      di#di_fragment frag;
+      (* Bof *)
+      Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+
+  and add_hist did frag =
+    History.add hist did frag;
+    !update_vhistory ()
+
+  and error = new Tk_error.t top
+
+  and loggingv = Textvariable.create_temporary top
+
+  and actives = Hashtbl.create 37
+
+  in
+  let nav = { 
+      nav_id = hist.h_key;
+      nav_viewer_frame = viewer_frame;
+      nav_error = error;
+      nav_add_hist = add_hist;
+      nav_show_current = show_current;
+      nav_new = (fun link ->
+           try
+             let wwwr = Plink.make link in
+               navigator false wwwr.www_url |> ignore; ()
+           with
+              Invalid_link msg -> 
+                error#f (I18n.sprintf "Invalid link"));
+      nav_log = (fun s -> Textvariable.set loggingv s);
+      nav_add_active = Hashtbl.add actives;
+      nav_rem_active = Hashtbl.remove actives
+      } 
+  in
+
+  (* The navigation functions 
+   *  The cache may have been cleared, so the document may be lost.
+   *  historygoto implements the proper logic for this, taking care
+   *  of non-unique documents.
+   *)
+
+  let back () = 
+    match History.back hist with
+       None -> ()
+     | Some (did, frag) -> 
+    if not (historygoto nav did frag true) then
+          ignore (History.forward hist)
+  and forward () =
+     match History.forward hist with
+    None -> ()
+      | Some (did, frag) -> 
+     if not (historygoto nav did frag true) then begin
+          ignore (History.back hist)
+       end
+  and reload () =
+    let did = hist.h_current.h_did
+    and frag = hist.h_current.h_fragment in
+      if did.document_stamp = no_stamp then begin
+    (* kill both in cache and in gcache *)
+    Cache.kill did; Gcache.remove hist.h_key did;
+    ignore (historygoto nav did frag false)
+    end
+      else
+        error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
+
+  and update nocache =
+    let did = hist.h_current.h_did in
+    if did.document_stamp = no_stamp then
+      Nav.update nav did nocache
+    else (* POST result *)
+      error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
+
+   (* A bunch of other functions *)
+  and new_window () =
+       navigator false hist.h_current.h_did.document_url |> ignore
+  and new_window_initial () =
+       navigator false initial_url |> ignore
+  and new_window_sel () =
+    try 
+     let url = Selection.get [] in
+       navigator false (Lexurl.make url); ()
+    with
+      _ -> navigator false initial_url; ()
+  and abort () =
+    Hashtbl.iter (fun url abort -> abort()) actives;
+    Hashtbl.clear actives;
+    match !current_di with
+      None -> ()
+    | Some di -> di#di_abort
+  and open_sel () =
+    try 
+     let url = Selection.get [] in
+      absolutegoto nav url
+    with
+      _ -> ()
+  and open_file () =
+     Fileselect.f (I18n.sprintf "Open File")
+       (function [] -> ()
+           | [s] -> 
+           let path = Msys.tilde_subst s in
+           absolutegoto nav ("file://localhost/"^path)
+           | l -> raise (Failure "multiple selection"))
+       "*" 
+       ""
+       false
+       false
+  and save () = Save.document hist.h_current.h_did None
+  and print () = 
+    Save.document hist.h_current.h_did 
+       (Some (sprintf "|%s" !Save.print_command))
+  and close () =
+    if !navigators = 1 then quit true
+    else destroy top
+  and really_quit () = quit false
+  and gohome () = absolutegoto nav !Mmmprefs.home
+  and redisplay () =
+    match !current_di with
+       None -> ()
+      | Some di -> di#di_redisplay
+  and add_to_hotlist () =
+    match !current_di with
+       None -> ()
+      | Some di -> 
+      Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
+                di#di_title
+  and load_images () =
+    match !current_di with
+       None -> ()
+      | Some di -> di#di_load_images
+  and view_source () =     
+    match !current_di with
+       None -> ()
+      | Some di -> di#di_source
+  in
+
+  (***           Short cuts and menus             ***)
+  (* All the available shortcuts functions and their short cut keys. *)
+  (* If you put a new function with its short cut key here, then *)
+  (* Short cut string will be displayed automatically, when these *)
+  (* functions are added as menu elements. *)
+
+  (* Sorry, we use function equality, so we cannot use lambdas in the list *)
+  let update_true = fun () -> update true in
+
+  (* The shortcuts and the default settings *)
+  let all_short_cuts = [
+    (* function    resource name      default key sequence *)
+    About.f,     "About",           [[], KeyPressDetail "F1"]; 
+    new_window,    "NewWindow",       [[Alt], KeyPressDetail "n"];
+    open_sel,      "OpenSelection",   [[Alt], KeyPressDetail "y"];
+    open_file,     "OpenFile",        [[Alt], KeyPressDetail "o"];
+    save,          "Save",            [[Alt], KeyPressDetail "s"];
+    print,         "Print",           [];
+    !preferences,  "Preference",      [[Alt], KeyPressDetail "p"];
+    close,         "Close",           [[Alt], KeyPressDetail "c"];
+    really_quit,   "Quit",            [[Alt], KeyPressDetail "q"];
+
+    gohome,        "Home",            [];
+    back,          "Back",            [[Alt], KeyPressDetail "Left"];
+    forward,       "Forward",         [[Alt], KeyPressDetail "Right"];
+    reload,        "Reload",          [[Alt], KeyPressDetail "r"];
+    abort,         "Abort",           [[], KeyPressDetail "Escape"];
+
+    update_true,   "Update",          [[Alt], KeyPressDetail "u"];
+    redisplay,     "Redisplay",       [[Control], KeyPressDetail "l"];
+    add_to_hotlist, "AddToHotlist",   [[Alt], KeyPressDetail "a"];
+    load_images,   "LoadImages",      [[Alt], KeyPressDetail "i"];
+    view_source,   "ViewSource",      [[Alt], KeyPressDetail "e"]
+  ] 
+  in
+
+  (* Real shortcuts information actually used *)
+  let my_short_cuts = List.map (fun (f,r,d) ->
+    f, Tkresource.event_sequence ("shortcut" ^ r) d) all_short_cuts
+  in
+  
+  let configure_menu_elements menu =
+    let rec list_assoc_address k = function
+    (k',v)::_ when k == k' -> v
+      | _::xs -> list_assoc_address k xs
+      |	[] -> raise Not_found
+    in
+    List.iter (function l ->
+      let opts = 
+    List.fold_right (fun opt st ->
+      (match opt with
+        Command f -> 
+          begin
+        Command f :: 
+              try
+            [ Accelerator (Tkresource.short_event_sequence
+                     (list_assoc_address f my_short_cuts))]
+          with Not_found -> []
+          end
+      | _ -> [opt]) @ st) l []
+      in
+      match opts with
+    [] -> Menu.add_separator menu
+      |	_ -> Menu.add_command menu opts)
+  in
+
+  (* we break after each event so that All bindings, such as menu traversal,
+   * dont get invoked if we destroyed the window for some reason
+   * may be required only for things like reload
+   *)
+  List.iter (fun (f, eventl) -> 
+    if eventl <> [] then
+      bind top eventl (BindSetBreakable ([], fun _ -> f(); break())))
+  my_short_cuts;
+
+  (* Invariable part (the rest being the di stuff)
+     hgroup: blah and tachymeter
+   *)
+  let hgroup = Frame.create_named top "hgroup" [] in
+  let vgroup = Frame.create_named hgroup "vgroup" [] in (* Menus, open entry *)
+    let mbar = 
+      Frame.create_named vgroup "menubar" [] in
+     (* MMM menu *)
+     let mmm = Menubutton.create_named mbar 
+       "mmm" [Text (I18n.sprintf "MMM")] in
+     let mmmm = Menu.create_named mmm "menu" [] in
+       Menubutton.configure mmm [Menu mmmm];
+       configure_menu_elements mmmm [ 	    
+         [Label (I18n.sprintf "About"); Command About.f];
+         [];
+         [Label (I18n.sprintf "New Window"); Command new_window];
+         [Label (I18n.sprintf "Open Selection"); Command open_sel];
+         [Label (I18n.sprintf "Open File..."); Command open_file];
+         [Label (I18n.sprintf "Save document..."); Command save];
+         [Label (I18n.sprintf "Print document"); Command print];
+        [Label (I18n.sprintf "Preferences..."); Command !preferences];
+     [];
+         [Label (I18n.sprintf "Close Window"); Command close];
+     [];
+        [Label (I18n.sprintf "Quit"); Command really_quit]
+        ];
+    (* Navigation menu *)
+    let navb = 
+       Menubutton.create_named mbar "navigate"
+          [Text (I18n.sprintf "Navigate")] in
+    let navm = Menu.create_named navb "menu" [] in
+        Menubutton.configure navb [Menu navm];
+        configure_menu_elements navm [ 
+         [Label (I18n.sprintf "Home"); Command gohome];
+         [Label (I18n.sprintf "Back"); Command back];
+         [Label (I18n.sprintf "Forward"); Command forward];
+      []
+        ];
+        (* The history menu is destroyed and rebuild each time. 
+           Deleting all entries will cause a callback leak since
+           entries are associated to the menu itself *)
+    let history_mindex = Pattern (I18n.sprintf "History") in
+    let hmenu = ref (Menu.create_named navm "history" []) in 
+        Menu.add_cascade navm [Label (I18n.sprintf "History")];
+    update_vhistory := (fun () ->
+       destroy !hmenu;
+       hmenu := Menu.create_named navm "history" [];
+       List.iter
+             (fun e ->
+          let label = ref (Url.string_of e.h_did.document_url) in
+          begin match e.h_fragment with
+             None -> ()
+           | Some f -> label := !label^"#"^f
+          end;
+          begin match e.h_did.document_stamp with
+             0 -> ()
+           | n -> label := !label^"("^string_of_int n^")"
+          end;
+          Menu.add_command !hmenu 
+             [Label !label;
+              Command (fun () ->
+              let cure = hist.h_current in
+               History.set_current hist e;
+               if not (historygoto nav e.h_did e.h_fragment true)
+               then History.set_current hist cure)])
+           (History.contents hist);
+           Menu.configure_cascade navm history_mindex [Menu !hmenu]);
+    let docb = 
+       Menubutton.create_named mbar "document"
+          [Text (I18n.sprintf "Document")] in
+    let docm = Menu.create_named docb "menu" [] in
+        Menubutton.configure docb [Menu docm];
+        configure_menu_elements docm [	    
+      [Label (I18n.sprintf "Abort"); Command abort];
+      [Label (I18n.sprintf "Reload"); Command reload];
+      [Label (I18n.sprintf "Update"); Command update_true];
+      [Label (I18n.sprintf "Redisplay"); Command redisplay];
+      [Label (I18n.sprintf "Add to hotlist"); Command add_to_hotlist];
+      [Label (I18n.sprintf "Load Images"); Command load_images];
+      [Label (I18n.sprintf "View Source"); Command view_source]
+        ];
+    (* Other stuff *)
+    let othersb = 
+      Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
+    let othersm = Menu.create_named othersb "menu" [] in
+      Menubutton.configure othersb [Menu othersm];
+      Menu.add_command othersm
+    [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
+      Menu.add_command othersm
+    [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
+      Menu.add_command othersm
+    [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+
+(*      Menu.add_command othersm
+       [Label (I18n.sprintf "Caml Modules"); 
+        Command (fun _ -> Applets.edit())];
+      Menu.add_command othersm
+       [Label (I18n.sprintf "Load Caml Extension");
+     Command (fun _ ->
+                Fileselect.f (I18n.sprintf "Load Caml Extension")
+            (function [] -> ()
+                    | [s] -> Applets.load_local s
+                | l -> raise (Failure "multiple selection"))
+            "*.cmo"
+            ""
+            false
+            false)
+        ];
+*)
+             
+    (* Help menu *)
+    let helpb = 
+      Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
+    let helpm = Menu.create_named helpb "menu" [] in
+      Menubutton.configure helpb [Menu helpm];
+       Menu.add_command helpm
+          [Label (I18n.sprintf "Version information");
+       Command (fun () -> 
+         absolutegoto nav (Version.initurl (Lang.lang ())))];
+       Menu.add_command helpm
+      [Label (I18n.sprintf "Help on MMM");
+       Command (fun () -> navigator false !helpurl; ())];
+       Menu.add_command helpm
+          [Label (I18n.sprintf "Home Page of MMM");
+       Command (fun () -> navigator false
+         (Lexurl.make (Version.home (Lang.lang ()))); ())];
+
+    (* User menu, extensible by applets *)
+    let userb =
+      Menubutton.create_named mbar "user" [Text (I18n.sprintf "User")] in
+    let userm = ref (Menu.create_named userb "menu" []) in
+    let reset_user_menu _ =
+      destroy !userm;
+      userm := Menu.create_named userb "menu" [];
+      List.iter (function (entry, f) ->
+                 Menu.add_command !userm 
+                  [Label entry; 
+                   Command (fun () -> f 
+                      (Nav.make_ctx nav hist.h_current.h_did))])
+        !user_menus;
+      Menubutton.configure userb [Menu !userm] in
+      
+     reset_user_menu();
+     Frx_synth.bind userb "user_menu" reset_user_menu;
+
+     pack [mmm; navb; docb; othersb][Side Side_Left];
+     pack [helpb; userb] [Side Side_Right];
+
+    (* URL display and edit *)
+    let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
+                     (absolutegoto nav)
+    (* Navigation buttons *)
+    and fb = Frame.create_named vgroup "buttons" [] in
+    let backb = Button.create_named fb 
+      "back" [Text (I18n.sprintf "Back"); Command back ]
+    and abortb = Button.create_named fb 
+      "abort" [Text (I18n.sprintf "Abort"); Command abort]
+    and reloadb = Button.create_named fb
+      "reload" [Text (I18n.sprintf "Reload"); Command reload]
+    and forwardb = Button.create_named fb 
+      "forward" [Text (I18n.sprintf "Forward"); Command forward]
+    and loggingb = Label.create_named fb "logging"
+    [TextWidth 40; TextVariable loggingv; Anchor W]
+    and homeb = Button.create_named fb "home"
+      [ Text (I18n.sprintf "Home"); Command gohome]
+    in
+     Entry.configure e [TextVariable entryv; TextWidth 40];
+     pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
+     pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
+         [Side Side_Left; Fill Fill_X];
+     pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
+     pack [fb][Fill Fill_X];
+     (* Initial window only *)
+     if has_tachy then begin
+      (match !initial_geom with None -> ()
+       | Some g -> Wm.geometry_set top g);
+       (* put this as a function so we can restart it if needed *)
+       let rec restart_tachy () =
+       (* We must not pass hgroup to tachymeter applets *)
+       let fcontainer = Frame.create hgroup [] in
+       container_frame := Some fcontainer;
+       (* restart it if destroyed *)
+       bind fcontainer [[], Destroy]
+     (BindSet ([Ev_Widget],
+           (fun ei -> 
+             if ei.ev_Widget = fcontainer 
+                     && Winfo.exists hgroup (* but we're not dead *) then
+               restart_tachy())));
+
+       let rw = Winfo.reqwidth fcontainer
+       and rh = Winfo.reqheight fcontainer
+       in
+       Wm.minsize_set top rw rh;
+       pack [fcontainer][Side Side_Right; Anchor N];
+       start_tachy();
+       (* Bad hack to do bindings for our own internal tachymeter:
+      others, in applets, can just access these functions from the safe
+      library *)
+       if !tachy_maker == About.create_tachy then begin 
+     match Winfo.children fcontainer with
+       [c] ->
+         bind c (Glevents.get "tachy_new")
+               (BindSet ([], (fun _ -> new_window_initial ())));
+         bind c (Glevents.get "tachy_sel")
+               (BindSet ([], (fun _ -> new_window_sel ())));
+     | _ -> ()
+       end
+       in
+       restart_tachy(); (* first initialisation *)
+       (* good size for keeping only the tachy *)
+       Wm.minsize_set top 80 80;
+     end;
+     (* Pack last to avoid lossage when resizing *)
+     pack [vgroup][Fill Fill_X; Expand true; Side Side_Left];
+     pack [hgroup][Fill Fill_X];
+     pack [viewer_frame][Fill Fill_Both; Expand true];
+
+  (* We receive this event for each children destroyed because we are
+     a toplevel *)
+  bind top [[], Destroy] 
+   (BindSet ([Ev_Widget],
+      (fun ei -> 
+       if ei.ev_Widget = top then begin
+    decr navigators;
+    Gcache.kill hist.h_key;
+    (* we were destroyed by wm *)
+    if !navigators = 0 && Winfo.exists Widget.default_toplevel
+        then destroy Widget.default_toplevel
+        end)));
+  Tkwait.visibility hgroup;
+  !update_vhistory();
+  (* Yet another timer to avoid flushing displayed documents *)
+  let rec touch_current () =
+    if Winfo.exists top then begin
+      Cache.touch hist.h_current.h_did;
+      Timer.set 10000 touch_current
+    end in
+  touch_current();
+  absolutegoto nav (Url.string_of initial_url);
+  Some nav
+
+  with e -> 
+    !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
+                      (Url.string_of initial_url)
+                      (Printexc.to_string e));
+    if !navigators = 1 then begin
+      destroy Widget.default_toplevel;
+      raise e
+    end else begin 
+      destroy top;
+      None
+    end
+
+and new_window_initial () =
+ navigator false 
+   (match !initial_page with | Some u -> u | None -> assert false) |> ignore
+
+and new_window_sel () =
+  try 
+    let url = Selection.get [] in
+    ignore (navigator false (Lexurl.make url))
+  with _ -> new_window_initial ()
+@
+
+
+\subsection{Initial geometry}
+
+<<signature Mmm.initial_geom>>=
+val initial_geom : string option ref
+@
+<<constant Mmm.initial_geom>>=
+let initial_geom = ref None
+@
 <<[[Main.main()]] command line options>>=
 "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
 "<wxh+x+y>\tInitial geometry for the first navigator";
 @
 
-\subsection{XXX}
+\subsection{Help URL}
 
+
+<<signature Mmm.helpurl>>=
+(* Preferences, options *)
+val helpurl : Url.t ref
+@
+<<constant Mmm.helpurl>>=
+let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
+@
 <<[[Main.main()]] command line options>>=
 "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
 "<url>\tHelp URL";
@@ -3478,11 +4114,7 @@ let html_lex name =
         match token with
         | EOF -> close_in ic
         | t -> 
-           if !verbose 
-           then begin 
-              Html.print t; 
-              flush stdout
-            end
+          <<[[Htparse.html_lex()]] print token t if verbose>>
      )
      (error name find_line)
 @
@@ -3639,7 +4271,7 @@ let parse_request s =
 
 \subsection{Status}
 
-% ??? -> <>
+% Http.process_response -> <>
 <<signature Http_headers.parse_status>>=
 val parse_status : string -> Messages.status
   (* Parses a Status-Line
@@ -3647,7 +4279,6 @@ val parse_status : string -> Messages.status
      Raises [Invalid_HTTP_header "Status-Line"] 
      or [Not_found] if the string is not a Status-Line at all *)
 @
-
 <<function Http_headers.parse_status>>=
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
 let parse_status s =
@@ -3980,6 +4611,8 @@ let get name =
 
 
 
+
+
 \chapter{HTTP}
 %Communication Protocol
 % http/
@@ -3994,6 +4627,24 @@ let get name =
 %  (Document.handle -> Document.document_data * Cache.cache_fill)
 %@
 
+%less: why use continuation instead of returning things?
+% this makes the code harder to follow.
+% for instance tcp_connect takes a continuation, but return a connection
+% that later will call the continuation. argh.
+% use lwt instead? or async? or monads? or use threads??
+% might be far simpler with threads no? or is it because
+% it would not play well with tk?
+
+% Build each time a serie of intermediate computations.
+% for instance I guess mmm want to be called once the document
+% arrived, e.g. doc_arrived()
+% then we initiate a connection and want
+% first start_request to be called and then doc_arrived, so
+% we pass another continuation like (fun ... -> start_request   cont)
+% where cont will be doc_arrived called by start_request once it's
+% done. 
+
+
 
 \section{The request}
 
@@ -4003,10 +4654,13 @@ let get name =
 let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 @
 
+% ??? -> Protos.get HTTP -> <>
 <<signature Http.req>>=
 val req:
   Www.request -> Document.document_continuation -> (unit -> unit)
 @
+%todo: do a Aborted and type aborter = abort -> unit?
+% so here we return an aborter
 
 % ??? (via Protos.get HTTP) -> <>
 %(* Wrappers returning the abort callback *)
@@ -4016,6 +4670,8 @@ let req wr cont =
   let cnx = request wr cont in
   (fun () -> cnx#abort)
 @
+% run the request asynchronously,
+% and return the function to abort to the caller want to call it!
 
 %urlp = url parsed?
 <<function Http.request>>=
@@ -4041,8 +4697,8 @@ and request wr cont =
       in 
       try 
         tcp_connect host port wr.www_logging
-            (start_request false wr cont)
-            (failed_request wr cont.document_finish)
+            (fun cnx -> start_request false wr cont  cnx)
+            (fun s aborted -> failed_request wr cont.document_finish s aborted)
 
       with HTTP_error _ -> (* direct failed, go through proxy *)
         <<[[Http.request()]] if http error on tcp_connect, try proxy>>
@@ -4051,7 +4707,8 @@ and request wr cont =
              "INTERNAL ERROR\nHttp.request (not a distant http url): %s" 
                (Url.string_of wr.www_url)))
 @
-
+%old: used to use partial app of start_request and failed_request
+% but clearer to eta expand I think
 
 
 \subsection{[[Http.tcp_connect()]]}
@@ -4064,77 +4721,41 @@ let tcp_connect server_name port  log  cont error =
 
   (*  Find the inet address *)
   let server_addr =
-    try inet_addr_of_string server_name
+    try Unix.inet_addr_of_string server_name
     with Failure _ ->
-      try
-        log (I18n.sprintf "Looking for %s ..." server_name);
-        let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
-        log (I18n.sprintf "%s found" server_name);
-        adr
-      with Not_found -> 
-       raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) 
+      <<[[Http.tcp_connect()]] if inet_add_of_string fails>>
   in
 
   (* Attempt to connect *)
-  let sock = socket PF_INET SOCK_STREAM 0 in
+  let sock = Unix.socket PF_INET SOCK_STREAM 0 in
   Unix.clear_nonblock sock;
-  log (I18n.sprintf "Contacting host...");
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, error "User abort") in
+  log (I18n.sprintf "Contacting host...");
   try
     begin try
-      connect sock (ADDR_INET(server_addr, port));
+      Unix.connect sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
       log (I18n.sprintf "connection established");
       Log.debug "Connect returned without error !";
 
       (* because we need to return cnx *)
-      Timer_.set 10 (fun () -> cont cnx);
+      Timer_.set 10 (fun () -> 
+        (* ! calling the continuation, e.g. start_request *)
+        cont cnx
+      );
       cnx
     with Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
-       (* that is ok, we are starting something *)
-       let stuck = ref true in
-       Fileevent_.add_fileoutput sock
-         (* we are called when the cnx is established *)
-         (fun () -> 
-           stuck := false;
-           Fileevent_.remove_fileoutput sock;
-           Unix.clear_nonblock sock; (* return to blocking mode *)
-           begin try (* But has there been a cnx actually *)
-             let _ = getpeername sock in
-             log (I18n.sprintf "connection established");
-             cont cnx
-           with Unix_error(ENOTCONN, "getpeername", _) ->
-             cnx#close;
-             error (I18n.sprintf "Connection refused to %s" server_name) false
-            end
-         );
-       (* but also start the timer if nothing happens now
-        * the kernel has a timeout, but it might be too long (linux) 
-        *)
-        Timer_.set (1000 * !timeout)
-          (fun () -> 
-             if not cnx#aborted && !stuck 
-             then begin
-               Fileevent_.remove_fileoutput sock;
-               cnx#close;
-               error (I18n.sprintf "Timeout during connect to %s" server_name)
-                     false
-              end
-          );
-        cnx
-      end
+      <<[[Http.tcp_connect()]] if unix error when connect>>
+    end
   with Unix_error(e,fn,_) ->  (* other errors in connect *)
     cnx#close;
     raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
                              (error_message e) fn))
 @
 
-<<constant Http.timeout>>=
-let timeout = ref 60		(* in seconds *)
-@
-
+\subsubsection{[[cnx]]}
 
 <<type Http.status>>=
 (* Support for aborting requests while in connect/write/headers mode.
@@ -4143,15 +4764,16 @@ let timeout = ref 60		(* in seconds *)
  *)
 type status = 
   | Writing 
-  | Reading of handle 
-  | Discharged
+  <<[[Http.status]] cases>>
 @
 
+
 <<class Http.cnx>>=
-class cnx (sock,finish) =
+class cnx (sock, finish) =
  object (self)
   val mutable status = Writing
   val mutable fd = sock
+
   (* val finish = finish *)
   val mutable fdclosed = false		(* protect against double close *)
   val mutable aborted = false
@@ -4170,7 +4792,8 @@ class cnx (sock,finish) =
       close fd;
       fdclosed <- true
     end
-  
+
+  (* can be called from the aborter by the user or some exn handler *)  
   method abort =
      if not aborted then begin
        aborted <- true;
@@ -4179,23 +4802,121 @@ class cnx (sock,finish) =
            Fileevent_.remove_fileoutput fd; 
            self#close; 
            finish true
-       | Reading dh -> 
-           dclose true dh; 
-           finish true
-       | Discharged -> ()
+       <<[[Http.cnx.abort()]] cases>>
     end
 end
 @
 % ugly, could simplify?
 
+
+\subsubsection{Error managment}
+
+<<[[Http.tcp_connect()]] if inet_add_of_string fails>>=
+try
+  log (I18n.sprintf "Looking for %s ..." server_name);
+  let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
+  log (I18n.sprintf "%s found" server_name);
+  adr
+with Not_found -> 
+ raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) 
+@
+
+<<[[Http.tcp_connect()]] if unix error when connect>>=
+ (* that is ok, we are starting something *)
+ let stuck = ref true in
+ Fileevent_.add_fileoutput sock
+   (* we are called when the cnx is established *)
+   (fun () -> 
+     stuck := false;
+     Fileevent_.remove_fileoutput sock;
+     Unix.clear_nonblock sock; (* return to blocking mode *)
+     begin try (* But has there been a cnx actually *)
+       let _ = getpeername sock in
+       log (I18n.sprintf "connection established");
+       cont cnx
+     with Unix_error(ENOTCONN, "getpeername", _) ->
+       cnx#close;
+       error (I18n.sprintf "Connection refused to %s" server_name) false
+      end
+   );
+  <<[[Http.tcp_connect()]] setup timeout>>
+  cnx
+@
+
+
+
+\subsubsection{Timout managment}
+
+<<constant Http.timeout>>=
+let timeout = ref 60		(* in seconds *)
+@
+
+<<[[Http.tcp_connect()]] setup timeout>>=
+(* but also start the timer if nothing happens now
+* the kernel has a timeout, but it might be too long (linux) 
+*)
+Timer_.set (1000 * !timeout)
+  (fun () -> 
+     if not cnx#aborted && !stuck 
+     then begin
+       Fileevent_.remove_fileoutput sock;
+       cnx#close;
+       error (I18n.sprintf "Timeout during connect to %s" server_name)
+             false
+      end
+  );
+@
+
+\subsection{[[Http.start_request()]]}
+
+% tcp_connect -> <>
+<<function Http.start_request>>=
+and start_request proxy_mode wwwr cont =
+ fun cnx ->
+  async_request proxy_mode wwwr 
+     (fun cnx -> process_response wwwr cont cnx) cnx
+@
+% the continuation once we get the date is indeed to process
+% the response!
+
+<<function Http.async_request>>=
+(* Writing the request to the server
+ *   TODO:  We might get some error here in write
+ *   NOTE: tk doesn't allow two handles on the same fd, thus use CPS
+ *         so that reading response is our continuation
+ *)
+and async_request proxy_mode wwwr cont cnx =
+  let b = Ebuffer.create 1024 in
+  full_request (fun x -> Ebuffer.output_string b x) proxy_mode wwwr;
+  let req = Ebuffer.get b in
+  let len = Ebuffer.used b in
+  let curpos = ref 0 in
+  wwwr.www_logging (I18n.sprintf "Writing request...");
+  Fileevent_.add_fileoutput cnx#fd (fun _ ->
+    let n = Unix.write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
+    curpos := !curpos  + n;
+    if !curpos = len then begin
+      Fileevent_.remove_fileoutput cnx#fd;
+      <<[[Http.async_request()]] log request string req if verbose>>
+      (* ! calling the continuation, e.g. process_response *)
+      cont cnx
+    end)
+@
+
+% the continuation here should be process_response!
+
 \subsection{[[Http.full_request()]]}
 
-% ??? -> <>
+% this will build the content of the request in a buffer
+% represented by the writer 'w'
+% less: pass the buffer instead? need to abstract?
+% less: rename build_request_string?
+
+% Http.req -> tcp_connect -> start_request -> async_request -> <>
 <<function Http.full_request>>=
 let full_request w proxy_mode wwwr = 
   let url = 
-    if proxy_mode 
-    then Url.string_of wwwr.www_url
+    <<[[Http.full_request()]] if proxy mode>>
     else distant_path wwwr.www_url 
   in
   <<[[Http.full_request()]] helper functions>>
@@ -4208,17 +4929,18 @@ let full_request w proxy_mode wwwr =
 (* For http. The thing we have to send in the request *)
 val distant_path : t -> string
 @
-% ???
-
 <<function Url.distant_path>>=
 (* For http only *)
 let distant_path urlp =
   match urlp.path, urlp.search with
      None, None -> "/"
    | Some p, None -> "/"^p
-   | Some p, Some s -> "/"^p^"?"^s
+   | Some p, Some s -> "/" ^ p ^ "?" ^ s
    | None, Some s -> "/?" ^ s (* ??? *)
 @
+% so we just send the path and search component!
+% the host know who it is already
+%less: why distant??
 
 \subsubsection{[[GET]]}
 
@@ -4227,16 +4949,14 @@ let distant_path urlp =
     w ("GET " ^ url ^ " HTTP/1.0\r\n");
     (* No General-Header *)
     w (std_request_headers());
-
     write_referer ();
-
     <<[[Http.full_request()]] write auth stuff>>
-
     write_other_headers();
     write_host();
     w "\r\n"
 @
 % finally! the GET request
+% will see referer in section below
 
 <<function Http.std_request_headers>>=
 let std_request_headers() =
@@ -4262,7 +4982,7 @@ let write_other_headers () =
   end
 in
 @
-%?
+% is it where the parameter of the GET are stored?
 
 <<[[Http.full_request()]] helper functions>>=
 (* Host: header for virtual domains *)
@@ -4285,11 +5005,8 @@ in
     w ("POST "^url^" HTTP/1.0\r\n");
     (* No General-Header *)
     w (std_request_headers());
-
     write_referer ();
-
     <<[[Http.full_request()]] write auth stuff>>
-
     write_other_headers();
     write_host();
     (* 8.2.1 *)
@@ -4309,9 +5026,7 @@ in
     (* No General-Header *)
     w (std_request_headers());
     write_referer ();
-
     <<[[Http.full_request()]] write auth stuff>>
-
     write_other_headers();
     write_host();
     w "\r\n"
@@ -4342,16 +5057,9 @@ in
 let send_referer = ref false
 @
 
-\subsection{[[Http.start_request()]]}
-
-<<function Http.start_request>>=
-and start_request proxy_mode wwwr cont =
- fun cnx ->
-  async_request proxy_mode wwwr (process_response wwwr cont) cnx
-@
-
 \subsection{[[Http.failed_request()]]}
 
+% call with aborted = true when ??
 <<function Http.failed_request>>=
 (* shared error *)
 let failed_request wr finish =
@@ -4362,85 +5070,64 @@ let failed_request wr finish =
   wr.www_error#f (I18n.sprintf "Request for %s failed\n%s" 
                    (Url.string_of wr.www_url) s)
 @
+% aborted is a bool
 
 \section{The response}
 
-% ??? -> <>
+\subsection{[[Http.process_response()]]}
+
+% async_request (via its continuation passed in start_request) -> <>
 <<function Http.process_response>>=
 (* Read headers and run continuation *)
-let rec process_response wwwr cont cnx =
+let rec process_response wwwr cont =
+ fun cnx ->
   let url = Url.string_of wwwr.www_url in
   wwwr.www_logging (I18n.sprintf "Reading headers...");
 
   let dh = 
     { document_id = document_id wwwr;
       document_referer = wwwr.www_link.h_context;
+      document_fragment = wwwr.www_fragment;
+
       document_status = 0;
       document_headers = [];
       document_feed = Feed.of_fd cnx#fd;
-      document_fragment = wwwr.www_fragment;
-      document_logger = Document.tty_logger
+
+      document_logger = Document.tty_logger;
     }
   in
-  let stuck = ref true in
-
   cnx#set_status (Reading dh);
 
+  let stuck = ref true in
   (* set up a timer to abort if server is too far/slow *)
-  let rec timout () =
-     Timer_.set (1000 * !timeout) 
-      (fun () -> 
-         if not cnx#aborted && !stuck 
-         then
-           match wwwr.www_error#ari
-             (I18n.sprintf "Timeout while waiting for headers of %s" url) 
-           with
-           | 0 -> (* abort *) if !stuck then cnx#abort
-           | 1 -> (* retry *) timout ()
-           | 2 -> (* ignore *) ()
-           | _ -> ()
-    ) 
-  in
-
-  timout();
+  <<[[Http.process_response()]] setup a timer>>
 
   (* reading the headers *)
   dh.document_feed.feed_schedule
     (fun () ->
        stuck := false;
-       try
-         if dh.document_headers = [] then begin
-           (* it should be the HTTP Status-Line *)
-           let l = Munix.read_line cnx#fd in
-           dh.document_status <- (parse_status l).status_code;
-           dh.document_headers <- [l] (* keep it there *)
-         end else 
-            dh.document_headers <- read_headers cnx#fd dh.document_headers
-      with
-      (* each branch must unschedule *)
-      | End_of_headers ->
-          dh.document_feed.feed_unschedule();
-          cnx#set_status Discharged;
-          cont.document_process dh
+       <<[[Http.process_response()]] reading headers>>
+@
+% seems to call the continuation only for error cases
 
-      | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
-          dclose false dh; (* keep it an active cnx since we are retrying *)
-          let newcnx = request09 wwwr cont in
-          (* the guy up there has the old one !*)
-          cnx#set_fd newcnx#fd
-      | Unix_error(e,_,_) ->
-          cnx#abort;
-          wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url 
-                     (error_message e))
-      | Invalid_HTTP_header s ->
-          cnx#abort;
-          wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url s)
-      | End_of_file ->
-          cnx#abort;
-          wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url "eof"))
+<<[[Http.status]] cases>>=
+| Reading of handle 
+@
+
+\subsection{Reading headers}
+
+<<[[Http.process_response()]] reading headers>>=
+try
+  if dh.document_headers = [] then begin
+    (* it should be the HTTP Status-Line *)
+    let l = Munix.read_line cnx#fd in
+    dh.document_status <- (Http_headers.parse_status l).status_code;
+    dh.document_headers <- [l] (* keep it there *)
+  end else 
+     dh.document_headers <- read_headers cnx#fd dh.document_headers
+with
+(* each branch must unschedule *)
+<<[[Http.process_response()]] feed schedule callback failure cases>>
 @
 
 <<exception Http.End_of_headers>>=
@@ -4456,18 +5143,106 @@ exception End_of_headers
 val read_headers: 
   Unix.file_descr -> string list -> string list
 @
-
-% ??? | fake_cgi -> <>
+% process_response | fake_cgi -> <>
 <<function Http.read_headers>>=
 let read_headers fd previous =
   let l = Munix.read_line fd in
-   if String.length l = 0 then raise End_of_headers (* end of headers *)
-   else if l.[0] = ' ' || l.[0] = '\t' then  (* continuation *)
+   if String.length l = 0 
+   then raise End_of_headers (* end of headers *)
+   else 
+     if l.[0] = ' ' || l.[0] = '\t' 
+     then  (* continuation *)
        match previous with
-     [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
+       | [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
        | s :: rest -> (s^l) :: rest
-   else l :: previous
+      else l :: previous
 @
+% empty line means end of response!
+% tabs or space are compacted?
+
+
+% this is the normal case! 
+% we finally call the continuation! to let the caller
+% process the document! woohoo!
+<<[[Http.process_response()]] feed schedule callback failure cases>>=
+| End_of_headers ->
+    dh.document_feed.feed_unschedule();
+    cnx#set_status Discharged;
+
+    (* ! call the continuation, e.g. MMM stuff? *)
+    cont.document_process dh
+@
+%less: not a big fan of using exn again for non exception cases
+% but instead regular flow.
+
+<<[[Http.status]] cases>>=
+| Discharged
+@
+<<[[Http.cnx.abort()]] cases>>=
+| Discharged -> ()
+@
+
+
+\subsection{Error managment}
+
+
+<<[[Http.process_response()]] feed schedule callback failure cases>>=
+| Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
+    dclose false dh; (* keep it an active cnx since we are retrying *)
+    let newcnx = request09 wwwr cont in
+    (* the guy up there has the old one !*)
+    cnx#set_fd newcnx#fd
+@
+
+<<[[Http.process_response()]] feed schedule callback failure cases>>=
+| Unix_error(e,_,_) ->
+    cnx#abort;
+    wwwr.www_error#f (I18n.sprintf 
+               "Error while reading headers of %s\n%s" url 
+               (error_message e))
+@
+
+<<[[Http.process_response()]] feed schedule callback failure cases>>=
+| Invalid_HTTP_header s ->
+    cnx#abort;
+    wwwr.www_error#f (I18n.sprintf 
+               "Error while reading headers of %s\n%s" url s)
+@
+<<[[Http.process_response()]] feed schedule callback failure cases>>=
+| End_of_file ->
+    cnx#abort;
+    wwwr.www_error#f (I18n.sprintf 
+               "Error while reading headers of %s\n%s" url "eof"))
+@
+
+<<[[Http.cnx.abort()]] cases>>=
+| Reading dh -> 
+    Document.dclose true dh; 
+    finish true
+@
+
+\subsection{Timeout managment}
+
+
+<<[[Http.process_response()]] setup a timer>>=
+let rec timout () =
+   Timer_.set (1000 * !timeout) 
+    (fun () -> 
+       if not cnx#aborted && !stuck 
+       then
+         match wwwr.www_error#ari
+           (I18n.sprintf "Timeout while waiting for headers of %s" url) 
+         with
+         | 0 -> (* abort *) if !stuck then cnx#abort
+         | 1 -> (* retry *) timout ()
+         | 2 -> (* ignore *) ()
+         | _ -> ()
+  ) 
+in
+
+timout();
+@
+
 
 
 \section{Headers merging}
@@ -4500,7 +5275,7 @@ let merge_headers oldh newh =
   (filter [] oldh) @ newh
 @
 
-% mergE_headers -> <>
+% merge_headers -> <>
 <<signature Http_headers.header_type>>=
 val header_type : string -> string
   (* [header_type h] returns the field_name token of [h], in lowercase *)
@@ -4654,6 +5429,7 @@ let read_suffix_file f =
 \section{Time}
 % could be in Stdlib? with Date?
 
+% why need an extra time library? why not use Unix.tm indeed?
 <<type Http_date.http_time>>=
 (* Based on Unix.tm *)
 type http_time =
@@ -5547,8 +6323,17 @@ and proxy_request wr cont =
 @
 
 
+% start_request i passed true = proxy_mode, which is
+% then passed to async_request and finally to full_request
 
-
+<<[[Http.full_request()]] if proxy mode>>=
+if proxy_mode 
+then Url.string_of wwwr.www_url
+@
+% when it's not a proxy, we just send the path and search component!
+% (the host knows who it is already), but for a proxy
+% we need to give the info to the proxy host of the actual
+% original host we wanted to reach, so we unparse the full url
 
 \section{Encodings}
 
@@ -6742,7 +7527,6 @@ let add did doc =
 @
 
 
-
 \section{Audio}
 
 <<function Audio.fake_embed>>=
@@ -7134,6 +7918,15 @@ val verbose : bool ref
 let verbose = ref false
 @
 
+<<[[Htparse.html_lex()]] print token t if verbose>>=
+if !verbose 
+then begin 
+   Html.print t; 
+   flush stdout
+end
+@
+
+% ??? -> <>
 <<function Html.warning>>=
 let warning s (Loc(n,m)) = 
   if !verbose then begin 
@@ -7159,6 +7952,12 @@ let debug = ref false
 <<constant Http.verbose>>=
 let verbose = ref false
 @
+
+<<[[Http.async_request()]] log request string req if verbose>>=
+if !verbose 
+then Log.f req;
+@
+
 
 \subsection{Caches}
 
@@ -7458,7 +8257,7 @@ type link_error =
 @
 
 
-\section{Requests}
+\section{Web requests}
 
 <<exception Www.Invalid_request>>=
 exception Invalid_request of request * string

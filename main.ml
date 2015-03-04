@@ -75,9 +75,9 @@ let main () =
   (*x: [[Main.main()]] references *)
   let clicktofocus = ref false in
   (*x: [[Main.main()]] references *)
-  let preffile = ref (Mmm.user_file "MMM.ad") in
-  (*x: [[Main.main()]] references *)
   let palette = ref None in
+  (*x: [[Main.main()]] references *)
+  let preffile = ref (Mmm.user_file "MMM.ad") in
   (*x: [[Main.main()]] references *)
   let sufxfile = ref (Mmm.user_file "mime.types") in
   (*x: [[Main.main()]] references *)
@@ -97,11 +97,11 @@ let main () =
    "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
    "\tClick to Focus mode (default is Focus Follows Mouse)";
    (*x: [[Main.main()]] command line options *)
-   "-prefs", Arg.String (fun s -> preffile := s),
-   "<file>\t\tPreference File";
-   (*x: [[Main.main()]] command line options *)
    "-palette", Arg.String (fun s -> palette := Some s),
    "<color>\tTk Palette";
+   (*x: [[Main.main()]] command line options *)
+   "-prefs", Arg.String (fun s -> preffile := s),
+   "<file>\t\tPreference File";
    (*x: [[Main.main()]] command line options *)
    "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
    "<wxh+x+y>\tInitial geometry for the first navigator";

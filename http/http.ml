@@ -40,15 +40,19 @@ exception HTTP_error of string
  *)
 type status = 
   | Writing 
+  (*s: [[Http.status]] cases *)
   | Reading of handle 
+  (*x: [[Http.status]] cases *)
   | Discharged
+  (*e: [[Http.status]] cases *)
 (*e: type Http.status *)
 
 (*s: class Http.cnx *)
-class cnx (sock,finish) =
+class cnx (sock, finish) =
  object (self)
   val mutable status = Writing
   val mutable fd = sock
+
   (* val finish = finish *)
   val mutable fdclosed = false		(* protect against double close *)
   val mutable aborted = false
@@ -67,7 +71,8 @@ class cnx (sock,finish) =
       close fd;
       fdclosed <- true
     end
-  
+
+  (* can be called from the aborter by the user or some exn handler *)  
   method abort =
      if not aborted then begin
        aborted <- true;
@@ -76,10 +81,13 @@ class cnx (sock,finish) =
            Fileevent_.remove_fileoutput fd; 
            self#close; 
            finish true
-       | Reading dh -> 
-           dclose true dh; 
-           finish true
+       (*s: [[Http.cnx.abort()]] cases *)
        | Discharged -> ()
+       (*x: [[Http.cnx.abort()]] cases *)
+       | Reading dh -> 
+           Document.dclose true dh; 
+           finish true
+       (*e: [[Http.cnx.abort()]] cases *)
     end
 end
 (*e: class Http.cnx *)
@@ -92,8 +100,9 @@ let tcp_connect server_name port  log  cont error =
 
   (*  Find the inet address *)
   let server_addr =
-    try inet_addr_of_string server_name
+    try Unix.inet_addr_of_string server_name
     with Failure _ ->
+      (*s: [[Http.tcp_connect()]] if inet_add_of_string fails *)
       try
         log (I18n.sprintf "Looking for %s ..." server_name);
         let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
@@ -101,26 +110,31 @@ let tcp_connect server_name port  log  cont error =
         adr
       with Not_found -> 
        raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) 
+      (*e: [[Http.tcp_connect()]] if inet_add_of_string fails *)
   in
 
   (* Attempt to connect *)
-  let sock = socket PF_INET SOCK_STREAM 0 in
+  let sock = Unix.socket PF_INET SOCK_STREAM 0 in
   Unix.clear_nonblock sock;
-  log (I18n.sprintf "Contacting host...");
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, error "User abort") in
+  log (I18n.sprintf "Contacting host...");
   try
     begin try
-      connect sock (ADDR_INET(server_addr, port));
+      Unix.connect sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
       log (I18n.sprintf "connection established");
       Log.debug "Connect returned without error !";
 
       (* because we need to return cnx *)
-      Timer_.set 10 (fun () -> cont cnx);
+      Timer_.set 10 (fun () -> 
+        (* ! calling the continuation, e.g. start_request *)
+        cont cnx
+      );
       cnx
     with Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
+      (*s: [[Http.tcp_connect()]] if unix error when connect *)
        (* that is ok, we are starting something *)
        let stuck = ref true in
        Fileevent_.add_fileoutput sock
@@ -138,7 +152,8 @@ let tcp_connect server_name port  log  cont error =
              error (I18n.sprintf "Connection refused to %s" server_name) false
             end
          );
-       (* but also start the timer if nothing happens now
+        (*s: [[Http.tcp_connect()]] setup timeout *)
+        (* but also start the timer if nothing happens now
         * the kernel has a timeout, but it might be too long (linux) 
         *)
         Timer_.set (1000 * !timeout)
@@ -151,8 +166,10 @@ let tcp_connect server_name port  log  cont error =
                      false
               end
           );
+        (*e: [[Http.tcp_connect()]] setup timeout *)
         cnx
-      end
+      (*e: [[Http.tcp_connect()]] if unix error when connect *)
+    end
   with Unix_error(e,fn,_) ->  (* other errors in connect *)
     cnx#close;
     raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
@@ -180,8 +197,10 @@ let std_request_headers() =
 (*s: function Http.full_request *)
 let full_request w proxy_mode wwwr = 
   let url = 
+    (*s: [[Http.full_request()]] if proxy mode *)
     if proxy_mode 
     then Url.string_of wwwr.www_url
+    (*e: [[Http.full_request()]] if proxy mode *)
     else distant_path wwwr.www_url 
   in
   (*s: [[Http.full_request()]] helper functions *)
@@ -249,15 +268,12 @@ let full_request w proxy_mode wwwr =
       w ("GET " ^ url ^ " HTTP/1.0\r\n");
       (* No General-Header *)
       w (std_request_headers());
-
       write_referer ();
-
       (*s: [[Http.full_request()]] write auth stuff *)
       write_realm_auth ();
       if proxy_mode 
       then write_proxy_auth();
       (*e: [[Http.full_request()]] write auth stuff *)
-
       write_other_headers();
       write_host();
       w "\r\n"
@@ -266,15 +282,12 @@ let full_request w proxy_mode wwwr =
       w ("POST "^url^" HTTP/1.0\r\n");
       (* No General-Header *)
       w (std_request_headers());
-
       write_referer ();
-
       (*s: [[Http.full_request()]] write auth stuff *)
       write_realm_auth ();
       if proxy_mode 
       then write_proxy_auth();
       (*e: [[Http.full_request()]] write auth stuff *)
-
       write_other_headers();
       write_host();
       (* 8.2.1 *)
@@ -289,13 +302,11 @@ let full_request w proxy_mode wwwr =
       (* No General-Header *)
       w (std_request_headers());
       write_referer ();
-
       (*s: [[Http.full_request()]] write auth stuff *)
       write_realm_auth ();
       if proxy_mode 
       then write_proxy_auth();
       (*e: [[Http.full_request()]] write auth stuff *)
-
       write_other_headers();
       write_host();
       w "\r\n"
@@ -331,36 +342,42 @@ exception End_of_headers
 (*s: function Http.read_headers *)
 let read_headers fd previous =
   let l = Munix.read_line fd in
-   if String.length l = 0 then raise End_of_headers (* end of headers *)
-   else if l.[0] = ' ' || l.[0] = '\t' then  (* continuation *)
+   if String.length l = 0 
+   then raise End_of_headers (* end of headers *)
+   else 
+     if l.[0] = ' ' || l.[0] = '\t' 
+     then  (* continuation *)
        match previous with
-     [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
+       | [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
        | s :: rest -> (s^l) :: rest
-   else l :: previous
+      else l :: previous
 (*e: function Http.read_headers *)
 
 
 (*s: function Http.process_response *)
 (* Read headers and run continuation *)
-let rec process_response wwwr cont cnx =
+let rec process_response wwwr cont =
+ fun cnx ->
   let url = Url.string_of wwwr.www_url in
   wwwr.www_logging (I18n.sprintf "Reading headers...");
 
   let dh = 
     { document_id = document_id wwwr;
       document_referer = wwwr.www_link.h_context;
+      document_fragment = wwwr.www_fragment;
+
       document_status = 0;
       document_headers = [];
       document_feed = Feed.of_fd cnx#fd;
-      document_fragment = wwwr.www_fragment;
-      document_logger = Document.tty_logger
+
+      document_logger = Document.tty_logger;
     }
   in
-  let stuck = ref true in
-
   cnx#set_status (Reading dh);
 
+  let stuck = ref true in
   (* set up a timer to abort if server is too far/slow *)
+  (*s: [[Http.process_response()]] setup a timer *)
   let rec timout () =
      Timer_.set (1000 * !timeout) 
       (fun () -> 
@@ -377,61 +394,71 @@ let rec process_response wwwr cont cnx =
   in
 
   timout();
+  (*e: [[Http.process_response()]] setup a timer *)
 
   (* reading the headers *)
   dh.document_feed.feed_schedule
     (fun () ->
        stuck := false;
+       (*s: [[Http.process_response()]] reading headers *)
        try
          if dh.document_headers = [] then begin
            (* it should be the HTTP Status-Line *)
            let l = Munix.read_line cnx#fd in
-           dh.document_status <- (parse_status l).status_code;
+           dh.document_status <- (Http_headers.parse_status l).status_code;
            dh.document_headers <- [l] (* keep it there *)
          end else 
             dh.document_headers <- read_headers cnx#fd dh.document_headers
-      with
-      (* each branch must unschedule *)
-      | End_of_headers ->
-          dh.document_feed.feed_unschedule();
-          cnx#set_status Discharged;
-          cont.document_process dh
+       with
+       (* each branch must unschedule *)
+       (*s: [[Http.process_response()]] feed schedule callback failure cases *)
+       | End_of_headers ->
+           dh.document_feed.feed_unschedule();
+           cnx#set_status Discharged;
 
-      | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
-          dclose false dh; (* keep it an active cnx since we are retrying *)
-          let newcnx = request09 wwwr cont in
-          (* the guy up there has the old one !*)
-          cnx#set_fd newcnx#fd
-      | Unix_error(e,_,_) ->
-          cnx#abort;
-          wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url 
-                     (error_message e))
-      | Invalid_HTTP_header s ->
-          cnx#abort;
-          wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url s)
-      | End_of_file ->
-          cnx#abort;
-          wwwr.www_error#f (I18n.sprintf 
-                     "Error while reading headers of %s\n%s" url "eof"))
+           (* ! call the continuation, e.g. MMM stuff? *)
+           cont.document_process dh
+       (*x: [[Http.process_response()]] feed schedule callback failure cases *)
+       | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
+           dclose false dh; (* keep it an active cnx since we are retrying *)
+           let newcnx = request09 wwwr cont in
+           (* the guy up there has the old one !*)
+           cnx#set_fd newcnx#fd
+       (*x: [[Http.process_response()]] feed schedule callback failure cases *)
+       | Unix_error(e,_,_) ->
+           cnx#abort;
+           wwwr.www_error#f (I18n.sprintf 
+                      "Error while reading headers of %s\n%s" url 
+                      (error_message e))
+       (*x: [[Http.process_response()]] feed schedule callback failure cases *)
+       | Invalid_HTTP_header s ->
+           cnx#abort;
+           wwwr.www_error#f (I18n.sprintf 
+                      "Error while reading headers of %s\n%s" url s)
+       (*x: [[Http.process_response()]] feed schedule callback failure cases *)
+       | End_of_file ->
+           cnx#abort;
+           wwwr.www_error#f (I18n.sprintf 
+                      "Error while reading headers of %s\n%s" url "eof"))
+       (*e: [[Http.process_response()]] feed schedule callback failure cases *)
+       (*e: [[Http.process_response()]] reading headers *)
 (*e: function Http.process_response *)
 
 (* The same for HTTP 0.9, so we directly call the continuation *)
 and process_response09  wwwr cont cnx =
    let dh =
-       {document_id = document_id wwwr;
-    document_referer = wwwr.www_link.h_context;
-    document_status = 200;
-    document_headers = ["Content-Type: text/html"];
-    document_feed = Feed.of_fd cnx#fd;
-    document_fragment = wwwr.www_fragment;
-    document_logger = tty_logger} in
+       { document_id = document_id wwwr;
+         document_referer = wwwr.www_link.h_context;
+         document_status = 200;
+         document_headers = ["Content-Type: text/html"];
+         document_feed = Feed.of_fd cnx#fd;
+         document_fragment = wwwr.www_fragment;
+         document_logger = tty_logger} 
+   in
    cnx#set_status Discharged;
    cont.document_process dh
 
-
-
+(*s: function Http.async_request *)
 (* Writing the request to the server
  *   TODO:  We might get some error here in write
  *   NOTE: tk doesn't allow two handles on the same fd, thus use CPS
@@ -439,26 +466,34 @@ and process_response09  wwwr cont cnx =
  *)
 and async_request proxy_mode wwwr cont cnx =
   let b = Ebuffer.create 1024 in
-    full_request (Ebuffer.output_string b) proxy_mode wwwr;
-  let req = Ebuffer.get b 
-  and len = Ebuffer.used b in
+  full_request (fun x -> Ebuffer.output_string b x) proxy_mode wwwr;
+  let req = Ebuffer.get b in
+  let len = Ebuffer.used b in
   let curpos = ref 0 in
-    wwwr.www_logging (I18n.sprintf "Writing request...");
-    Fileevent_.add_fileoutput cnx#fd (fun _ ->
-      let n = write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
-       curpos := !curpos  + n;
+  wwwr.www_logging (I18n.sprintf "Writing request...");
+  Fileevent_.add_fileoutput cnx#fd (fun _ ->
+    let n = Unix.write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
+    curpos := !curpos  + n;
     if !curpos = len then begin
-         Fileevent_.remove_fileoutput cnx#fd;
-      if !verbose then Log.f req;
-         cont cnx
-         end)
+      Fileevent_.remove_fileoutput cnx#fd;
+      (*s: [[Http.async_request()]] log request string req if verbose *)
+      if !verbose 
+      then Log.f req;
+      (*e: [[Http.async_request()]] log request string req if verbose *)
+      (* ! calling the continuation, e.g. process_response *)
+      cont cnx
+    end)
+(*e: function Http.async_request *)
+
 
 (* wrappers for request/response transaction *)
 (*s: function Http.start_request *)
 and start_request proxy_mode wwwr cont =
  fun cnx ->
-  async_request proxy_mode wwwr (process_response wwwr cont) cnx
+  async_request proxy_mode wwwr 
+     (fun cnx -> process_response wwwr cont cnx) cnx
 (*e: function Http.start_request *)
+
 and start_request09 proxy_mode wwwr cont cnx =
   async_request proxy_mode wwwr (process_response09 wwwr cont) cnx
 
@@ -471,7 +506,6 @@ and proxy_request wr cont =
        (start_request true wr cont)
        (failed_request wr cont.document_finish)
 (*e: function Http.proxy_request *)
- 
 
 and proxy_request09 wr cont =
   tcp_connect !proxy !proxy_port wr.www_logging
@@ -504,8 +538,8 @@ and request wr cont =
       in 
       try 
         tcp_connect host port wr.www_logging
-            (start_request false wr cont)
-            (failed_request wr cont.document_finish)
+            (fun cnx -> start_request false wr cont  cnx)
+            (fun s aborted -> failed_request wr cont.document_finish s aborted)
 
       with HTTP_error _ -> (* direct failed, go through proxy *)
         (*s: [[Http.request()]] if http error on tcp_connect, try proxy *)
@@ -518,26 +552,29 @@ and request wr cont =
 (*e: function Http.request *)
 
 and request09 wr cont =
-  if !always_proxy then proxy_request09 wr cont
+  if !always_proxy 
+  then proxy_request09 wr cont
   else 
-   let urlp = wr.www_url in
+    let urlp = wr.www_url in
     if urlp.protocol = HTTP then
-      let host = match urlp.host with
-      Some h -> h 
-    | _ -> raise (HTTP_error (I18n.sprintf "Missing host in url"))
-      and port = match urlp.port with
-      Some p -> p
-    | None -> 80  (* default http port *)
+      let host = 
+        match urlp.host with
+        | Some h -> h 
+        | _ -> raise (HTTP_error (I18n.sprintf "Missing host in url"))
+      in
+      let port = 
+        match urlp.port with
+        | Some p -> p
+        | None -> 80  (* default http port *)
       in
       try 
-    tcp_connect host port wr.www_logging
+       tcp_connect host port wr.www_logging
         (start_request09 false wr cont)
         (failed_request wr cont.document_finish)
-      with
-    HTTP_error _ ->
-     tcp_connect !proxy !proxy_port wr.www_logging
-            (start_request09 true wr cont)
-        (failed_request wr cont.document_finish)
+      with HTTP_error _ ->
+        tcp_connect !proxy !proxy_port wr.www_logging
+               (start_request09 true wr cont)
+              (failed_request wr cont.document_finish)
     else 
       raise (HTTP_error (I18n.sprintf "INTERNAL ERROR\nHttp.request09 (not a distant http url): %s" (Url.string_of wr.www_url)))
 

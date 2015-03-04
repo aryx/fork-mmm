@@ -125,28 +125,33 @@ let add_user_menu entry f =
 let navigators = ref 0
 (*e: constant Mmm.navigators *)
 
+(*s: function Mmm.navigator *)
 let rec navigator has_tachy initial_url =
   incr navigators;
+
   (* The first navigator is named, so we can put special information in
      window manager configurations, such as sticky *)
   let top = 
-    if has_tachy then
-      Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
-    else
-      Toplevel.create Widget.default_toplevel [Class "MMM"]
-  and current_di = ref None
-  and update_vhistory = ref (fun () -> ()) (* duh *) in
-  let entryv = Textvariable.create_temporary top
+    if has_tachy 
+    then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
+    else Toplevel.create Widget.default_toplevel [Class "MMM"]
   in
+  let current_di = ref None in
+  let update_vhistory = ref (fun () -> ()) (* duh *) in
+  let entryv = Textvariable.create_temporary top in
+
   Wm.title_set top (I18n.sprintf "MMM Browser");
+
   (* the size of the navigator MUST NOT depend on what is displayed inside *)
   (* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
   Pack.propagate_set top false;
+
   try (* protect all the other initialisations *)
   let initial_did = {document_url = initial_url; document_stamp = no_stamp} in
   (* The frame in which a viewer might want to display *)
   let viewer_frame = Frame.create_named top "viewer" [] in
   let hist = History.create initial_did in
+
   (* Change view, independantly of history manip *)
   let show_current di frag =
       di#di_touch;
@@ -192,7 +197,8 @@ let rec navigator has_tachy initial_url =
       nav_log = (fun s -> Textvariable.set loggingv s);
       nav_add_active = Hashtbl.add actives;
       nav_rem_active = Hashtbl.remove actives
-      } in
+      } 
+  in
 
   (* The navigation functions 
    *  The cache may have been cleared, so the document may be lost.
@@ -609,33 +615,29 @@ let rec navigator has_tachy initial_url =
   touch_current();
   absolutegoto nav (Url.string_of initial_url);
   Some nav
-  with
-      e -> 
+
+  with e -> 
     !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
                       (Url.string_of initial_url)
-                  (Printexc.to_string e));
+                      (Printexc.to_string e));
     if !navigators = 1 then begin
-           destroy Widget.default_toplevel;
-        raise e
-        end
-    else begin 
-         destroy top;
+      destroy Widget.default_toplevel;
+      raise e
+    end else begin 
+      destroy top;
       None
-        end
+    end
 
 and new_window_initial () =
-  ignore (
-   navigator false
-    (match !initial_page with
-     | Some u -> u
-     | None -> assert false))
+ navigator false 
+   (match !initial_page with | Some u -> u | None -> assert false) |> ignore
 
 and new_window_sel () =
   try 
     let url = Selection.get [] in
     ignore (navigator false (Lexurl.make url))
-  with
-    _ -> new_window_initial ()
+  with _ -> new_window_initial ()
+(*e: function Mmm.navigator *)
 
 (*s: constant Mmm.client_navigator *)
 let client_navigator = navigator false
@@ -647,27 +649,30 @@ let main_navigator = ref None
 
 (*s: function Mmm.initial_navigator *)
 let initial_navigator preffile init_url =
+  (*s: [[Mmm.initial_navigator()]] set preferences *)
   preferences := Mmmprefs.f preffile;
   !preferences();
+  (*e: [[Mmm.initial_navigator()]] set preferences *)
+  (*s: [[Mmm.initial_navigator()]] set initial page *)
   initial_page := Some (
      match init_url with
-       None -> Lexurl.make !Mmmprefs.home
+     | None -> Lexurl.make !Mmmprefs.home
      | Some x -> 
-     begin
-       try 
-         Lexurl.make x 
-       with 
-         _ -> (* If fails, try to use file: *)
+         begin
+           try Lexurl.make x 
+         with _ -> (* If fails, try to use file: *)
            let path = 
-         if x.[0] = '/' then x
-         else Filename.concat (Unix.getcwd ()) x
+             if x.[0] = '/' 
+             then x
+             else Filename.concat (Unix.getcwd ()) x
            in
            Lexurl.make ("file://localhost" ^ path)
-     end);
+         end
+  );
+  (*e: [[Mmm.initial_navigator()]] set initial page *)
   main_navigator :=
-     navigator true (match !initial_page with
-       Some u -> u
-     | None -> assert false);
+     navigator true 
+       (match !initial_page with Some u -> u | None -> assert false);
   !main_navigator
 (*e: function Mmm.initial_navigator *)
 (*e: ./gui/mmm.ml *)

@@ -130,7 +130,7 @@ let distant_path urlp =
   match urlp.path, urlp.search with
      None, None -> "/"
    | Some p, None -> "/"^p
-   | Some p, Some s -> "/"^p^"?"^s
+   | Some p, Some s -> "/" ^ p ^ "?" ^ s
    | None, Some s -> "/?" ^ s (* ??? *)
 (*e: function Url.distant_path *)
 
