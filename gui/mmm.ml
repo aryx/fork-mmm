@@ -84,16 +84,25 @@ let start_tachy () =
 (*e: function Mmm.start_tachy *)
 
 (* Switching current viewers in the browser *)
+(*s: function Mmm.undisplay *)
 let undisplay di = 
-  if Winfo.exists di#di_widget then Pack.forget [di#di_widget]
-and display di = 
+  if Winfo.exists di#di_widget 
+  then Pack.forget [di#di_widget]
+(*e: function Mmm.undisplay *)
+(*s: function Mmm.display *)
+let display di = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
   else !Error.default#f "fatal error: window was destroyed";
-  let tl = Winfo.toplevel di#di_widget
-  and title = I18n.sprintf "MMM Browser@%s" di#di_title in
-  if Widget.known_class tl = "toplevel" then
-  (Wm.title_set tl title; Wm.iconname_set tl title)
+
+  let tl = Winfo.toplevel di#di_widget in
+  let title = I18n.sprintf "MMM Browser@%s" di#di_title in
+  if Widget.known_class tl = "toplevel" 
+  then begin 
+    Wm.title_set tl title; 
+    Wm.iconname_set tl title
+  end
+(*e: function Mmm.display *)
 
 (*s: function Mmm.quit *)
 let quit confirm =
@@ -102,8 +111,9 @@ let quit confirm =
       (I18n.sprintf "Confirm") 
       (I18n.sprintf "Do you really want to quit ?")
        (Predefined "question") 0 
-       [I18n.sprintf "Yep"; I18n.sprintf "Nope"] with
-      0 -> destroy Widget.default_toplevel
+       [I18n.sprintf "Yep"; I18n.sprintf "Nope"] 
+    with
+    |  0 -> destroy Widget.default_toplevel
     | _ -> ()
   else destroy Widget.default_toplevel
 (*e: function Mmm.quit *)
@@ -142,9 +152,9 @@ let rec navigator has_tachy initial_url =
     (*e: [[Mmm.navigator()]] if not main window, create default toplevel *)
   in
   (*s: [[Mmm.navigator()]] locals *)
-  let current_di = ref None in
-  (*x: [[Mmm.navigator()]] locals *)
   let entryv = Textvariable.create_temporary top in
+  (*x: [[Mmm.navigator()]] locals *)
+  let current_di = ref None in
   (*x: [[Mmm.navigator()]] locals *)
   let update_vhistory = ref (fun () -> ()) (* duh *) in
   (*e: [[Mmm.navigator()]] locals *)
@@ -174,22 +184,22 @@ let rec navigator has_tachy initial_url =
     (*s: local function Mmm.navigator.show_current *)
     (* Change view, independantly of history manip *)
     let show_current di frag =
-        di#di_touch;
-        (match !current_di with
-        | None -> display di
-        | Some olddi -> 
-           if olddi == di 
-           then () 
-           else begin
-             undisplay olddi;
-             display di
-             end
-        );
-        current_di := Some di;
-        (* bogus if two views with fragment on the same pending document *)
-        di#di_fragment frag;
-        (* Bof *)
-        Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+      di#di_touch;
+      (match !current_di with
+      | None -> display di
+      | Some olddi -> 
+         if olddi == di 
+         then () 
+         else begin
+           undisplay olddi;
+           display di
+         end
+      );
+      current_di := Some di;
+      (* bogus if two views with fragment on the same pending document *)
+      di#di_fragment frag;
+      (* Bof *)
+      Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
     in
     (*e: local function Mmm.navigator.show_current *)
     (*s: local function Mmm.navigator.add_hist *)
@@ -210,21 +220,28 @@ let rec navigator has_tachy initial_url =
     (*e: [[Mmm.navigator()]] locals before nav setting *)
     let nav = { 
       (*s: [[Mmm.navigator()]] set nav fields *)
-      nav_id = hist.h_key;
       nav_viewer_frame = viewer_frame;
-      nav_error = error;
-      nav_add_hist = add_hist;
-      nav_show_current = show_current;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_id = hist.h_key;
+      (*x: [[Mmm.navigator()]] set nav fields *)
       nav_new = (fun link ->
            try
              let wwwr = Plink.make link in
-               navigator false wwwr.www_url |> ignore; ()
-           with
-              Invalid_link msg -> 
-                error#f (I18n.sprintf "Invalid link"));
-      nav_log = (fun s -> Textvariable.set loggingv s);
+             navigator false wwwr.www_url |> ignore; ()
+           with Invalid_link msg -> 
+            error#f (I18n.sprintf "Invalid link")
+      );
+      (*x: [[Mmm.navigator()]] set nav fields *)
       nav_add_active = Hashtbl.add actives;
-      nav_rem_active = Hashtbl.remove actives
+      nav_rem_active = Hashtbl.remove actives;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_show_current = show_current;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_add_hist = add_hist;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_log = (fun s -> Textvariable.set loggingv s);
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_error = error;
       (*e: [[Mmm.navigator()]] set nav fields *)
     }
     in
@@ -576,7 +593,7 @@ let rec navigator has_tachy initial_url =
     (*s: [[Mmm.navigator()]] setup open url entry *)
     (* URL display and edit *)
     let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
-                       (absolutegoto nav)
+                       (fun url -> Nav.absolutegoto nav url)
     in
     Entry.configure e [TextVariable entryv; TextWidth 40];
     (*e: [[Mmm.navigator()]] setup open url entry *)
@@ -713,6 +730,7 @@ let rec navigator has_tachy initial_url =
     (*e: [[Mmm.navigator()]] exn handler, else if multiple navigators *)
 (*e: function Mmm.navigator *)
 
+
 (*s: function Mmm.new_window_initial *)
 and new_window_initial () =
  navigator false 
@@ -727,9 +745,6 @@ and new_window_sel () =
   with _ -> new_window_initial ()
 (*e: function Mmm.new_window_set *)
 
-(*s: constant Mmm.client_navigator *)
-let client_navigator = navigator false
-(*e: constant Mmm.client_navigator *)
 
 (*s: constant Mmm.main_navigator *)
 let main_navigator = ref None

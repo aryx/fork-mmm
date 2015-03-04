@@ -16101,27 +16101,6 @@ open Document
 
 \subsection*{[[./gui/nav.mli]]}
 
-<<type Nav.t>>=
-type t =
-  { nav_id: int;
-    nav_viewer_frame: Widget.widget;
-    nav_error: Error.t;
-    nav_add_hist: Document.document_id -> string option -> unit;
-    nav_show_current: Viewers.display_info -> string option -> unit;
-    nav_log: string -> unit;
-    nav_new: Hyper.link -> unit;
-    nav_add_active: Url.t -> (unit -> unit) -> unit;
-    nav_rem_active: Url.t -> unit }
-@
-
-<<signature Nav.request>>=
-val request :
-  t ->
-  bool ->
-  (Www.request -> Www.request) ->
-  (t -> Www.request -> Document.handle -> unit) ->
-  (t -> Document.document_id -> Www.request -> unit) -> Hyper.link -> unit
-@
 
 <<signature Nav.display_headers>>=
 val display_headers : Document.handle -> unit
@@ -16135,9 +16114,6 @@ val copy_link : t -> Hyper.link -> unit
 val save_link : t -> (Unix.file_descr * bool) option -> Hyper.link -> unit
 @
 
-<<signature Nav.follow_link>>=
-val follow_link : t -> Hyper.link -> unit
-@
 
 <<signature Nav.add_user_navigation>>=
 val add_user_navigation : string -> Viewers.hyper_func -> unit
@@ -16147,9 +16123,6 @@ val add_user_navigation : string -> Viewers.hyper_func -> unit
 val make_ctx : t -> Document.document_id -> Viewers.context
 @
 
-<<signature Nav.absolutegoto>>=
-val absolutegoto : t -> string -> unit
-@
 
 <<signature Nav.historygoto>>=
 val historygoto : t -> Document.document_id -> string option -> bool -> bool
@@ -16192,21 +16165,6 @@ val dont_check_cache : Www.request -> bool
 
 \subsection*{[[./gui/nav.ml]]}
 
-<<type Nav.t (./gui/nav.ml)>>=
-(* Navigation *)
-
-type t = {
-  nav_id : int;  (* key for the gfx cache *)
-  nav_viewer_frame : Widget.widget;
-  nav_error : Error.t;			(* popping error dialogs *)
-  nav_add_hist : document_id -> string option -> unit;
-  nav_show_current: display_info -> string option -> unit;
-  nav_log : string -> unit;
-  nav_new : Hyper.link -> unit;
-  nav_add_active : Url.t -> (unit -> unit) -> unit;
-  nav_rem_active : Url.t -> unit
- }
-@
 
 <<exception Nav.Duplicate>>=
 exception Duplicate of Url.t
@@ -16220,81 +16178,6 @@ let dont_check_cache wwwr =
     | _ -> false)
 @
 
-<<function Nav.request>>=
-(* [request nav usecache wrapwr process specific] produces a function that
-   takes an hyperlink, and apply the given behavior to it.
-   [usecache] : do we look in the cache to see if we have it already
-   [process nav wr dh] : what to to with the retrieved document
-   [specific nav did wr] : some specific behavior, checked before we
-     look in the cache. Must either raise Not_found or process completely
-     the link
-   [wrapwr wr] : returns a modified wr
- *)
-
-let request nav usecache wrapwr process specific =
-  (* Normally execute the request and process its answer (dh) *)
-  let rec retrieve_and_handle wr =
-    match Retrieve.f wr handle_link
-    { document_finish = (fun _ -> nav.nav_rem_active wr.www_url);
-      document_process = (fun dh ->
-        process nav wr dh;
-            nav.nav_rem_active wr.www_url)}
-    with
-    | Retrieve.Started abort -> nav.nav_add_active wr.www_url abort
-    | Retrieve.InUse -> raise (Duplicate wr.www_url)
-      
-  (* Wrapper to deal with general/specific cache *)
-  and handle_wr wr =
-    try
-      match wr.www_url.protocol with
-       MAILTO -> Mailto.f wr
-    (* mailto: is really a pain. It doesn't fit the retrieval semantics
-       of WWW requests. *)
-      | _ ->
-         if (not usecache) || dont_check_cache wr then retrieve_and_handle wr
-      else
-          (* If the the document can be cached, then it is with no_stamp *)
-        let did = {document_url = wr.www_url; document_stamp = no_stamp} in
-        try
-          specific nav did wr
-        with
-          Not_found ->
-               try
-            let doc = Cache.find did in
-            try (* display it from source *)
-                process nav wr (Cache.make_handle wr doc)
-            with
-            Sys_error s ->
-              wr.www_error#f 
-            (I18n.sprintf
-               "Cache error occurred during save of temporary buffer (%s)"
-               s)
-            | Unix_error (e,fname,arg) ->
-              wr.www_error#f
-            (I18n.sprintf 
-               "Cache error occurred when opening temporary file\n%s: %s (%s)"
-               fname (Unix.error_message e) arg)
-               with 
-            Not_found -> (* we don't have the document *)
-            retrieve_and_handle wr
-    with
-      Duplicate url ->
-        wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
-
-  and handle_link h =
-    try (* Convert the link into a request *)
-      let wr = Plink.make h in
-      wr.www_error <- nav.nav_error;
-      handle_wr (wrapwr wr)
-    with
-      Invalid_link msg ->
-       nav.nav_error#f (I18n.sprintf "Invalid link")
-    | Invalid_request (wr, msg) ->
-       nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
-                   (Url.string_of wr.www_url) msg)
-  in
-  handle_link
-@
 
 <<function Nav.nothing_specific>>=
 (*
@@ -16394,6 +16277,7 @@ let id_wr wr = wr
 let make_ctx nav did = 
   let o = new stdctx(did, nav) in
   ignore (o#init);
+  (o :> Viewers.context)
 @
 
 <<function Nav.save_link>>=
@@ -16402,20 +16286,7 @@ let save_link nav whereto =
   request nav true id_wr (process_save whereto) nothing_specific
 @
 
-<<function Nav.follow_link>>=
-let follow_link nav =
-  request nav true id_wr (process_viewer true make_ctx) (specific_viewer true)
-@
 
-<<function Nav.absolutegoto>>=
-(* Used outside an hyperlink *)
-let absolutegoto nav uri =
-  let follow_link = 
-    request nav true id_wr 
-      (process_viewer true make_ctx) (specific_viewer true)
-  in
-  follow_link { h_uri = uri; h_context = None; h_method = GET; h_params = []}
-@
 
 <<function Nav.historygoto>>=
 (* Used by navigators for back/forward/reload *)
@@ -16534,7 +16405,9 @@ open Http_headers
 open Viewers
 open Embed
 
-<<type Nav.t (./gui/nav.ml)>>
+(* Navigation *)
+
+<<type Nav.t>>
 
 <<exception Nav.Duplicate>>
 
@@ -16682,7 +16555,6 @@ class stdctx (did, nav) =
 end
 
 <<function Nav.make_ctx>>
-  (o :> Viewers.context)
 
 <<function Nav.save_link>>
 <<function Nav.follow_link>>
@@ -16707,9 +16579,6 @@ end
 val plug_applets : (Widget.widget -> pref_family) -> unit
 @
 
-<<signature Mmmprefs.home>>=
-val home : string ref
-@
 
 <<signature Mmmprefs.f>>=
 val f : string -> unit -> unit
@@ -16942,10 +16811,6 @@ let plug_applets f =
 let applets w = !appsys_plug w
 @
 
-<<constant Mmmprefs.home>>=
-(* There is no right place for this *)
-let home = ref ""
-@
 
 <<function Mmmprefs.reset_home>>=
 let reset_home () =
@@ -16971,7 +16836,8 @@ let families = [ network; html; i18n; images; progs; cache; applets;
 @
 
 <<function Mmmprefs.f>>=
-let f preffile = Prefs.define preffile families mute
+let f preffile = 
+  Prefs.define preffile families mute
 @
 
 
@@ -17042,29 +16908,6 @@ and dtd_p = Dtd.names()
 \subsection*{[[./gui/mmm.mli]]}
 
 
-
-<<signature Mmm.add_user_menu>>=
-(* Used for applets *)
-val add_user_menu : string -> (Viewers.context -> unit) -> unit
-@
-
-<<signature Mmm.navigator>>=
-val navigator : bool -> Url.t -> Nav.t option
-@
-
-<<signature Mmm.new_window_initial>>=
-val new_window_initial : unit -> unit
-@
-
-<<signature Mmm.new_window_sel>>=
-val new_window_sel : unit -> unit
-@
-
-<<signature Mmm.change_tachy>>=
-val change_tachy : (Widget.widget -> Low.tachymeter) -> unit
-@
-
-
 %-------------------------------------------------------------
 
 <<./gui/mmm.mli>>=
@@ -17086,92 +16929,10 @@ val change_tachy : (Widget.widget -> Low.tachymeter) -> unit
 
 \subsection*{[[./gui/mmm.ml]]}
 
-<<constant Mmm.hotlist>>=
-(* Preference settings *)
-let hotlist = ref ""
-@
-
-
-<<constant Mmm.home>>=
-let home =
-  try
-    Sys.getenv "HOME"
-  with
-  | Not_found -> 
-      prerr_endline "Please set the HOME environment variable.";
-      exit (-1)
-@
-
-
-
-<<constant Mmm.container_frame>>=
-(* Tachymeter support
- * [container_frame] is the parent frame for displaying a tachymeter
- * It's initialized only after the first navigator window is created.
- * [tachy_maker] contains the current tachymeter creation function.
- * [change_tachy] changes the current tachymeter. It has immediate
- * effect if the first navigator window is already available. Otherwise,
- * it will take effect at creation time, using [start_tachy].
- *)
-let container_frame = ref None
-@
-
-<<constant Mmm.tachy_maker>>=
-let tachy_maker = ref About.create_tachy
-@
-
-<<function Mmm.change_tachy>>=
-let change_tachy (t : Widget.widget -> Low.tachymeter) = 
-  !Low.cur_tachy#quit;
-  tachy_maker := t;
-  begin match !container_frame with
-    Some f -> 
-      List.iter Tk.destroy (Winfo.children f);
-      Low.cur_tachy := t f
-  | None -> ()
-  end
-@
-
-<<function Mmm.start_tachy>>=
-let start_tachy () = 
-  begin match !container_frame with
-    Some f -> 
-      Low.cur_tachy := !tachy_maker f
-  | None -> ()
-  end
-@
-
-<<function Mmm.quit>>=
-let quit confirm =
-  if confirm then
-    match Frx_dialog.f Widget.default_toplevel (gensym "quit")
-      (I18n.sprintf "Confirm") 
-      (I18n.sprintf "Do you really want to quit ?")
-       (Predefined "question") 0 
-       [I18n.sprintf "Yep"; I18n.sprintf "Nope"] with
-      0 -> destroy Widget.default_toplevel
-    | _ -> ()
-  else destroy Widget.default_toplevel
-@
-
-<<constant Mmm.user_menus>>=
-(* User defined menus *)
-let user_menus = ref []
-@
-
-<<function Mmm.add_user_menu>>=
-let add_user_menu entry f = 
-  user_menus := (entry,(fun x -> try f x with _ ->())) :: !user_menus;
-  Frx_synth.broadcast "user_menu"
-@
-
-
-<<constant Mmm.client_navigator>>=
-let client_navigator = navigator false
-@
-
-
-
+%<<constant Mmm.client_navigator>>=
+%let client_navigator = navigator false
+%@
+% ???
 
 %-------------------------------------------------------------
 
@@ -17209,16 +16970,8 @@ open Nav
 <<function Mmm.start_tachy>>
 
 (* Switching current viewers in the browser *)
-let undisplay di = 
-  if Winfo.exists di#di_widget then Pack.forget [di#di_widget]
-and display di = 
-  if Winfo.exists di#di_widget
-  then pack [di#di_widget][Fill Fill_Both; Expand true]
-  else !Error.default#f "fatal error: window was destroyed";
-  let tl = Winfo.toplevel di#di_widget
-  and title = I18n.sprintf "MMM Browser@%s" di#di_title in
-  if Widget.known_class tl = "toplevel" then
-  (Wm.title_set tl title; Wm.iconname_set tl title)
+<<function Mmm.undisplay>>
+<<function Mmm.display>>
 
 <<function Mmm.quit>>
 
@@ -17229,11 +16982,11 @@ and display di =
 
 <<function Mmm.navigator>>
 
+
 <<function Mmm.new_window_initial>>
 
 <<function Mmm.new_window_set>>
 
-<<constant Mmm.client_navigator>>
 
 <<constant Mmm.main_navigator>>
 
@@ -17335,13 +17088,9 @@ open Tk
 open Unix
 open Hyper
 
-
 <<function Cci.handler>>
-      
-
 
 <<function Cci.init>>
-
 
 @
 

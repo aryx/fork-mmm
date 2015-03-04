@@ -1,15 +1,24 @@
 (*s: ./gui/nav.mli *)
 (*s: type Nav.t *)
-type t =
-  { nav_id: int;
-    nav_viewer_frame: Widget.widget;
-    nav_error: Error.t;
-    nav_add_hist: Document.document_id -> string option -> unit;
-    nav_show_current: Viewers.display_info -> string option -> unit;
-    nav_log: string -> unit;
-    nav_new: Hyper.link -> unit;
-    nav_add_active: Url.t -> (unit -> unit) -> unit;
-    nav_rem_active: Url.t -> unit }
+type t = {
+  nav_viewer_frame : Widget.widget;
+  (*s: [[Nav.t]] other fields *)
+  nav_id : int;  (* key for the gfx cache *)
+  (*x: [[Nav.t]] other fields *)
+  nav_new : Hyper.link -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_add_active : Url.t -> (unit -> unit) -> unit;
+  nav_rem_active : Url.t -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_show_current: Viewers.display_info -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_add_hist : Document.document_id -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_log : string -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_error : Error.t;			(* popping error dialogs *)
+  (*e: [[Nav.t]] other fields *)
+ }
 (*e: type Nav.t *)
 
 (*s: signature Nav.request *)
@@ -18,7 +27,9 @@ val request :
   bool ->
   (Www.request -> Www.request) ->
   (t -> Www.request -> Document.handle -> unit) ->
-  (t -> Document.document_id -> Www.request -> unit) -> Hyper.link -> unit
+  (t -> Document.document_id -> Www.request -> unit) -> 
+  Hyper.link -> 
+  unit
 (*e: signature Nav.request *)
 
 (*s: signature Nav.display_headers *)

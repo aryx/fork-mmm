@@ -11,21 +11,29 @@ open Http_headers
 open Viewers
 open Embed
 
-(*s: type Nav.t (./gui/nav.ml) *)
 (* Navigation *)
 
+(*s: type Nav.t *)
 type t = {
-  nav_id : int;  (* key for the gfx cache *)
   nav_viewer_frame : Widget.widget;
-  nav_error : Error.t;			(* popping error dialogs *)
-  nav_add_hist : document_id -> string option -> unit;
-  nav_show_current: display_info -> string option -> unit;
-  nav_log : string -> unit;
+  (*s: [[Nav.t]] other fields *)
+  nav_id : int;  (* key for the gfx cache *)
+  (*x: [[Nav.t]] other fields *)
   nav_new : Hyper.link -> unit;
+  (*x: [[Nav.t]] other fields *)
   nav_add_active : Url.t -> (unit -> unit) -> unit;
-  nav_rem_active : Url.t -> unit
+  nav_rem_active : Url.t -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_show_current: Viewers.display_info -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_add_hist : Document.document_id -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_log : string -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_error : Error.t;			(* popping error dialogs *)
+  (*e: [[Nav.t]] other fields *)
  }
-(*e: type Nav.t (./gui/nav.ml) *)
+(*e: type Nav.t *)
 
 (*s: exception Nav.Duplicate *)
 exception Duplicate of Url.t
@@ -56,7 +64,6 @@ let dont_check_cache wwwr =
      the link
    [wrapwr wr] : returns a modified wr
  *)
-
 let request nav usecache wrapwr process specific =
   (* Normally execute the request and process its answer (dh) *)
   let rec retrieve_and_handle wr =
@@ -64,7 +71,7 @@ let request nav usecache wrapwr process specific =
     { document_finish = (fun _ -> nav.nav_rem_active wr.www_url);
       document_process = (fun dh ->
         process nav wr dh;
-            nav.nav_rem_active wr.www_url)}
+        nav.nav_rem_active wr.www_url)}
     with
     | Retrieve.Started abort -> nav.nav_add_active wr.www_url abort
     | Retrieve.InUse -> raise (Duplicate wr.www_url)
@@ -330,8 +337,8 @@ end
 let make_ctx nav did = 
   let o = new stdctx(did, nav) in
   ignore (o#init);
-(*e: function Nav.make_ctx *)
   (o :> Viewers.context)
+(*e: function Nav.make_ctx *)
 
 (*s: function Nav.save_link *)
 (* Simple wrappers *)
@@ -350,11 +357,12 @@ let follow_link nav =
 (*s: function Nav.absolutegoto *)
 (* Used outside an hyperlink *)
 let absolutegoto nav uri =
-  let follow_link = 
-    request nav true id_wr 
-      (process_viewer true make_ctx) (specific_viewer true)
-  in
-  follow_link { h_uri = uri; h_context = None; h_method = GET; h_params = []}
+  follow_link nav { 
+    h_uri = uri; 
+    h_context = None; 
+    h_method = GET; 
+    h_params = []
+  }
 (*e: function Nav.absolutegoto *)
     
 (*s: function Nav.historygoto *)

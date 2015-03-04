@@ -3,7 +3,6 @@ open Tk
 open Unix
 open Hyper
 
-
 (*s: function Cci.handler *)
 (* CCI was cool, but nobody implements it anymore. More over,
  * it's trivial to fork mmm_remote and let the protocol be managed
@@ -47,8 +46,6 @@ let handler fd line =
     ignore (Mmm.navigator false (Lexurl.make line))
   end
 (*e: function Cci.handler *)
-      
-
 
 (*s: function Cci.init *)
 (* External requests *)
@@ -89,6 +86,5 @@ let init () =
      !Error.default#f (I18n.sprintf "Can't initialize %s\n%s"
                        file (Printexc.to_string e))
 (*e: function Cci.init *)
-
 
 (*e: ./gui/cci.ml *)
