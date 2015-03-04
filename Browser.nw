@@ -307,54 +307,6 @@ let version_number =
 
 \section{[[hello.html]]}
 
-<<signature Version.html>>=
-val html : string -> string    (* fake initial document *)
-@
-%less: type language = string
-<<function Version.html>>=
-let html = function
-  | "iso8859" ->
-"<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
-<BODY>
-<H1> The MMM navigator Version 0." ^ version_number ^ "</H1>
-<H2 ALIGN=CENTER> Written by Fran\231ois Rouaix </H2>
-<H2 ALIGN=CENTER> Contributions by Jun P. Furuse and Jacques Garrigue</H2>
-<H3 ALIGN=CENTER> Port to O'Caml V3.0 by Jun P. Furuse and Pierre Weis</H3>
-<H2 ALIGN=CENTER> \169 Copyright INRIA </H2>
-
-<H4 ALIGN=CENTER> Using Objective Caml \169 Copyright INRIA </H4>
-<H4 ALIGN=CENTER> And Tcl8.0/Tk8.0 (John Ousterhout and al.)<BR>
- \169 Copyright The Regents of the University of California<BR>
- and Sun Microsystems, Inc </H4>
-<BLOCKQUOTE>
-Please note that the software is a product currently being developed.
-INRIA shall not be responsible in any way concerning conformity, and in
-particular shall not be liable should the software not comply with the
-requirements of the user, INRIA not being obliged to repair any
-possible direct or indirect damage.
-</BLOCKQUOTE>
-<P>
-The MMM home page is 
-<A HREF=\"http://pauillac.inria.fr/mmm/\">here</A>,
-and there is also some
-<A HREF=\"http://pauillac.inria.fr/mmm/doc.html\">documentation</A>
-and
-<A HREF=\"http://pauillac.inria.fr/mmm/releases.html\">release notes</A>.
-<BR>
-Join the author by clicking
-<A HREF=\"mailto:Francois.Rouaix@inria.fr\">here.</A>
-<P>
-<BLOCKQUOTE>
-This document is included in your browser. Click on <TT>Reload</TT> to
-get an updated copy.
-</BLOCKQUOTE>
-</BODY>
-</HTML>
-"
-  |  s -> failwith (Printf.sprintf "language %s not supported here" s)
-@
-%$
-
 
 \section{CSS style language}
 
@@ -964,68 +916,6 @@ type attribute_value = string
 
 
 
-
-
-% specified where? RFC?
-<<constant Html.default_attributes>>=
-(* Attribute values *)
-let default_attributes = [ 
-  ("isindex"  , "prompt" ),  "Document is indexed/searchable: ";
-                             
-  ("a"        , "methods"),  "GET";     (* <A METHODS=GET> *)
-  ("embed"    , "methods"),  "GET";		(* <EMBED METHODS=GET> *)
-  ("embed"    , "alt"    ),  "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
-  ("form"     , "method" ),  "GET";		(* <FORM METHOD=GET> *)
-  ("form"     , "enctype"),  "application/x-www-form-urlencoded";
-
-  ("ol"       , "type"   ),  "1";       (* <OL TYPE=1 *)
-  ("input"    , "type"   ),  "TEXT";	(* <INPUT TYPE=TEXT> *)
-  ("select"   , "size"   ),  "5";
-  ("textarea" , "align"  ),  "bottom";
-  ("input"    , "align"  ),  "bottom";
-  ("select"   , "align"  ),  "bottom";
-  ("img"      , "align"  ),  "bottom";
-  (* ("img"   , "alt"    ),  "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
-  ("area"     , "shape"  ),  "rect";
-  ("div"      , "align"  ),  "left";
-  ("basefont" , "size"   ),  "3";
-
-  (* frames *)
-  ("frame"    , "frameborder" ), "0";
-  ("frame"    , "scrolling"   ), "auto";
-  ("frameset" , "rows"        ), "100%";
-  ("frameset" , "cols"        ), "100%";
-  ]
-@
-
-
-<<signature Html.get_attribute>>=
-val get_attribute : tag -> string -> string
-  (* [get_attribute tag attrib_name] *)
-@
-<<function Html.get_attribute>>=
-let get_attribute tag attr =
-  try
-    List.assoc attr tag.attributes 
-  with
-    Not_found ->
-     List.assoc (tag.tag_name, attr) default_attributes
-@
-
-
-<<signature Html.has_attribute>>=
-val has_attribute : tag -> string -> bool
-  (* [has_attribute tag attrib_name] *)
-@
-<<function Html.has_attribute>>=
-let has_attribute tag attr =
-     List.mem_assoc attr tag.attributes
-  || List.mem_assoc (tag.tag_name, attr) default_attributes
-@
-
-
-
-
 \subsection{CSS}
 
 \subsection{Javascript}
@@ -1039,33 +929,30 @@ let has_attribute tag attr =
 
 \chapter{[[main()]]}
 
-<<[[Main.main()]] references>>=
+<<[[Main.main()]] locals>>=
 let init_urls = ref [] in
 @
+% possible command line arguments, $ mmm http://www.google.com
 
 % _ -> Main.postmortem -> <>
 <<function Main.main>>=
 let main () =
-
   <<[[Main.main()]] tk backends setup>>
 
- (* As always, we must parse argument first, using references... *)
-  <<[[Main.main()]] references>>
-
+  (* As always, we must parse argument first, using references... *)
+  <<[[Main.main()]] locals>>
   Arg.parse [
    <<[[Main.main()]] command line options>>
   ]
     (fun s -> init_urls := s :: !init_urls)
     usage_str
-   ;
-
+  ;
   <<[[Main.main()]] signal handling>>
-
   <<[[Main.main()]] initialisation>>
 
   let url_opt = 
     match !init_urls with 
-    | [] -> None 
+    | []     -> None 
     | x :: l -> Some x
   in
   let user_preferences_file =
@@ -1075,7 +962,6 @@ let main () =
   Mmm.initial_navigator user_preferences_file url_opt |> ignore;
 
   safe_loop();
-
   <<[[Main.main()]] after event loop, if debug mode>>
   ()
 @
@@ -1126,10 +1012,8 @@ Mailto.internal_backend          := Tk_mailto.internal;
 let top = Tk.openTkDisplayClass !display "mmm" in
 
 Wm.withdraw top;
-
-if not !clicktofocus 
-then Focus.follows_mouse();
 @
+
 %(*
 %(* Just after the init. of Tk, we have to detect the Tk is under
 % * Latin or Japanese mode at first. 
@@ -1141,7 +1025,8 @@ then Focus.follows_mouse();
 %*)
 
 
-<<[[Main.main()]] references>>=
+% main -> Tk.openTkDisplayClass(<>)
+<<[[Main.main()]] locals>>=
 let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
 @
 <<[[Main.main()]] command line options>>=
@@ -1153,16 +1038,6 @@ let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
 "<foo:0>\tDisplay";
 @
 
-
-
-
-<<[[Main.main()]] references>>=
-let clicktofocus = ref false in
-@
-<<[[Main.main()]] command line options>>=
-"-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-"\tClick to Focus mode (default is Focus Follows Mouse)";
-@
 
 
 <<[[Main.main()]] tk libs initialisation>>=
@@ -1204,23 +1079,6 @@ let localize file =
 
 
 
-
-<<[[Main.main()]] resource initialisation>>=
-begin match !palette with
-| None -> ()
-| Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
-end;
-@
-% ??
-
-<<[[Main.main()]] references>>=
-let palette = ref None in
-@
-<<[[Main.main()]] command line options>>=
-"-palette", Arg.String (fun s -> palette := Some s),
-"<color>\tTk Palette";
-@
-
 \subsection{Local initialisation}
 
 <<[[Main.main()]] local initialisation>>=
@@ -1233,6 +1091,9 @@ Debug.init();                       (* debugging RPC *)
 %Low.init(), see Concurrency chapter
 %Auth.init(), see Security chapter
 %Debug.init(), see Debugging in appendix
+%Cache.init(), see next section
+
+\subsection{Initial fake URL and HTML document}
 
 % could maybe be moved earlier
 <<signature Cache.init>>=
@@ -1280,6 +1141,58 @@ let initurl = function
 @
 % comment? NORMALIZED?
 
+% so Version.initurl and Version.html
+
+<<signature Version.html>>=
+val html : string -> string    (* fake initial document *)
+@
+%todo: rename inithtml, to match initurl
+%less: type language = string
+<<function Version.html>>=
+let html = function
+  | "iso8859" ->
+"<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
+<BODY>
+<H1> The MMM navigator Version 0." ^ version_number ^ "</H1>
+<H2 ALIGN=CENTER> Written by Fran\231ois Rouaix </H2>
+<H2 ALIGN=CENTER> Contributions by Jun P. Furuse and Jacques Garrigue</H2>
+<H3 ALIGN=CENTER> Port to O'Caml V3.0 by Jun P. Furuse and Pierre Weis</H3>
+<H2 ALIGN=CENTER> \169 Copyright INRIA </H2>
+
+<H4 ALIGN=CENTER> Using Objective Caml \169 Copyright INRIA </H4>
+<H4 ALIGN=CENTER> And Tcl8.0/Tk8.0 (John Ousterhout and al.)<BR>
+ \169 Copyright The Regents of the University of California<BR>
+ and Sun Microsystems, Inc </H4>
+<BLOCKQUOTE>
+Please note that the software is a product currently being developed.
+INRIA shall not be responsible in any way concerning conformity, and in
+particular shall not be liable should the software not comply with the
+requirements of the user, INRIA not being obliged to repair any
+possible direct or indirect damage.
+</BLOCKQUOTE>
+<P>
+The MMM home page is 
+<A HREF=\"http://pauillac.inria.fr/mmm/\">here</A>,
+and there is also some
+<A HREF=\"http://pauillac.inria.fr/mmm/doc.html\">documentation</A>
+and
+<A HREF=\"http://pauillac.inria.fr/mmm/releases.html\">release notes</A>.
+<BR>
+Join the author by clicking
+<A HREF=\"mailto:Francois.Rouaix@inria.fr\">here.</A>
+<P>
+<BLOCKQUOTE>
+This document is included in your browser. Click on <TT>Reload</TT> to
+get an updated copy.
+</BLOCKQUOTE>
+</BODY>
+</HTML>
+"
+  |  s -> failwith (Printf.sprintf "language %s not supported here" s)
+@
+%$
+
+
 \subsection{Misc initialisation}
 
 <<[[Main.main()]] misc initialisation>>=
@@ -1290,16 +1203,16 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 % ???
 
 
-
-
-
 \section{[[Mmm.initial_navigator()]]}
 
-% file pref and url opt
+%  (* Start the initial navigator *)
+%  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
+
+% file pref and url opt, return something? what for? for multi window
 <<signature Mmm.initial_navigator>>=
 val initial_navigator : string -> string option -> Nav.t option
 @
-% return something? what for?
+% main -> <>
 <<function Mmm.initial_navigator>>=
 let initial_navigator preffile init_url =
   <<[[Mmm.initial_navigator()]] set preferences>>
@@ -1310,48 +1223,14 @@ let initial_navigator preffile init_url =
   !main_navigator
 @
 
-
-\subsection{User preferences}
-
-<<constant Mmm.preferences>>=
-(* placeholder for preference panel *)
-let preferences = ref (fun () -> ())
+<<signature Mmm.main_navigator>>=
+val main_navigator : Nav.t option ref
 @
-
-<<[[Mmm.initial_navigator()]] set preferences>>=
-preferences := Mmmprefs.f preffile;
-!preferences();
+<<constant Mmm.main_navigator>>=
+let main_navigator = ref None
 @
-
-
-
-
-% user (localized) file
-<<[[Main.main()]] user preferences file>>=
-localize !preffile
-@
-
-<<[[Main.main()]] references>>=
-let preffile = ref (Mmm.user_file "MMM.ad") in
-@
-<<[[Main.main()]] command line options>>=
-"-prefs", Arg.String (fun s -> preffile := s),
-"<file>\t\tPreference File";
-@
-% .ad?
-% preferences of navigator
-% diff with code using MMM.ad below?
-
-<<signature Mmm.user_file>>=
-val user_file : string -> string
-    (* [user_file base] returns $HOME/.mmm/[base] *)
-@
-%$
-<<function Mmm.user_file>>=
-let user_file name =
-  Filename.concat (Filename.concat home ".mmm") name
-@
-
+% have this mostly to support multi windows,
+% so this could be moved in the extra features chapter
 
 
 \subsection{Initial URL}
@@ -1379,516 +1258,33 @@ initial_page := Some (
 );
 @
 % why need to store that? can't just be a let?
+% again I think it's because of the multi windows
 
-\subsection{Main navigator}
+\subsection{[[Mmm.navigator()]]}
 
-<<signature Mmm.main_navigator>>=
-val main_navigator : Nav.t option ref
-@
-<<constant Mmm.main_navigator>>=
-let main_navigator = ref None
-@
-
-<<constant Mmm.navigators>>=
-(*
- * A navigator window
- *)
-let navigators = ref 0
-@
-
-
+% has_tachy means also main window
 
 % Mmm.initial_navigator -> <>(, true, )
 <<function Mmm.navigator>>=
 let rec navigator has_tachy initial_url =
-  incr navigators;
+  <<[[Mmm.navigator()]] new navigator hook>>
 
   (* The first navigator is named, so we can put special information in
-     window manager configurations, such as sticky *)
+   * window manager configurations, such as sticky 
+   *)
   let top = 
     if has_tachy 
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
-    else Toplevel.create Widget.default_toplevel [Class "MMM"]
+    <<[[Mmm.navigator()]] if not main window, create default toplevel>>
   in
-  let current_di = ref None in
-  let update_vhistory = ref (fun () -> ()) (* duh *) in
-  let entryv = Textvariable.create_temporary top in
+  <<[[Mmm.navigator()]] locals>>
 
   Wm.title_set top (I18n.sprintf "MMM Browser");
+  <<[[Mmm.navigator()]] setup top packing>>
 
-  (* the size of the navigator MUST NOT depend on what is displayed inside *)
-  (* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
-  Pack.propagate_set top false;
-
-  try (* protect all the other initialisations *)
-  let initial_did = {document_url = initial_url; document_stamp = no_stamp} in
-  (* The frame in which a viewer might want to display *)
-  let viewer_frame = Frame.create_named top "viewer" [] in
-  let hist = History.create initial_did in
-
-  (* Change view, independantly of history manip *)
-  let show_current di frag =
-      di#di_touch;
-      begin match !current_di with
-       None -> display di
-      | Some olddi -> 
-        if olddi == di then () 
-         else begin
-        undisplay olddi;
-        display di
-        end
-      end;
-      current_di := Some di;
-      (* bogus if two views with fragment on the same pending document *)
-      di#di_fragment frag;
-      (* Bof *)
-      Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
-
-  and add_hist did frag =
-    History.add hist did frag;
-    !update_vhistory ()
-
-  and error = new Tk_error.t top
-
-  and loggingv = Textvariable.create_temporary top
-
-  and actives = Hashtbl.create 37
-
-  in
-  let nav = { 
-      nav_id = hist.h_key;
-      nav_viewer_frame = viewer_frame;
-      nav_error = error;
-      nav_add_hist = add_hist;
-      nav_show_current = show_current;
-      nav_new = (fun link ->
-           try
-             let wwwr = Plink.make link in
-               navigator false wwwr.www_url |> ignore; ()
-           with
-              Invalid_link msg -> 
-                error#f (I18n.sprintf "Invalid link"));
-      nav_log = (fun s -> Textvariable.set loggingv s);
-      nav_add_active = Hashtbl.add actives;
-      nav_rem_active = Hashtbl.remove actives
-      } 
-  in
-
-  (* The navigation functions 
-   *  The cache may have been cleared, so the document may be lost.
-   *  historygoto implements the proper logic for this, taking care
-   *  of non-unique documents.
-   *)
-
-  let back () = 
-    match History.back hist with
-       None -> ()
-     | Some (did, frag) -> 
-    if not (historygoto nav did frag true) then
-          ignore (History.forward hist)
-  and forward () =
-     match History.forward hist with
-    None -> ()
-      | Some (did, frag) -> 
-     if not (historygoto nav did frag true) then begin
-          ignore (History.back hist)
-       end
-  and reload () =
-    let did = hist.h_current.h_did
-    and frag = hist.h_current.h_fragment in
-      if did.document_stamp = no_stamp then begin
-    (* kill both in cache and in gcache *)
-    Cache.kill did; Gcache.remove hist.h_key did;
-    ignore (historygoto nav did frag false)
-    end
-      else
-        error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
-
-  and update nocache =
-    let did = hist.h_current.h_did in
-    if did.document_stamp = no_stamp then
-      Nav.update nav did nocache
-    else (* POST result *)
-      error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
-
-   (* A bunch of other functions *)
-  and new_window () =
-       navigator false hist.h_current.h_did.document_url |> ignore
-  and new_window_initial () =
-       navigator false initial_url |> ignore
-  and new_window_sel () =
-    try 
-     let url = Selection.get [] in
-       navigator false (Lexurl.make url); ()
-    with
-      _ -> navigator false initial_url; ()
-  and abort () =
-    Hashtbl.iter (fun url abort -> abort()) actives;
-    Hashtbl.clear actives;
-    match !current_di with
-      None -> ()
-    | Some di -> di#di_abort
-  and open_sel () =
-    try 
-     let url = Selection.get [] in
-      absolutegoto nav url
-    with
-      _ -> ()
-  and open_file () =
-     Fileselect.f (I18n.sprintf "Open File")
-       (function [] -> ()
-           | [s] -> 
-           let path = Msys.tilde_subst s in
-           absolutegoto nav ("file://localhost/"^path)
-           | l -> raise (Failure "multiple selection"))
-       "*" 
-       ""
-       false
-       false
-  and save () = Save.document hist.h_current.h_did None
-  and print () = 
-    Save.document hist.h_current.h_did 
-       (Some (sprintf "|%s" !Save.print_command))
-  and close () =
-    if !navigators = 1 then quit true
-    else destroy top
-  and really_quit () = quit false
-  and gohome () = absolutegoto nav !Mmmprefs.home
-  and redisplay () =
-    match !current_di with
-       None -> ()
-      | Some di -> di#di_redisplay
-  and add_to_hotlist () =
-    match !current_di with
-       None -> ()
-      | Some di -> 
-      Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
-                di#di_title
-  and load_images () =
-    match !current_di with
-       None -> ()
-      | Some di -> di#di_load_images
-  and view_source () =     
-    match !current_di with
-       None -> ()
-      | Some di -> di#di_source
-  in
-
-  (***           Short cuts and menus             ***)
-  (* All the available shortcuts functions and their short cut keys. *)
-  (* If you put a new function with its short cut key here, then *)
-  (* Short cut string will be displayed automatically, when these *)
-  (* functions are added as menu elements. *)
-
-  (* Sorry, we use function equality, so we cannot use lambdas in the list *)
-  let update_true = fun () -> update true in
-
-  (* The shortcuts and the default settings *)
-  let all_short_cuts = [
-    (* function    resource name      default key sequence *)
-    About.f,     "About",           [[], KeyPressDetail "F1"]; 
-    new_window,    "NewWindow",       [[Alt], KeyPressDetail "n"];
-    open_sel,      "OpenSelection",   [[Alt], KeyPressDetail "y"];
-    open_file,     "OpenFile",        [[Alt], KeyPressDetail "o"];
-    save,          "Save",            [[Alt], KeyPressDetail "s"];
-    print,         "Print",           [];
-    !preferences,  "Preference",      [[Alt], KeyPressDetail "p"];
-    close,         "Close",           [[Alt], KeyPressDetail "c"];
-    really_quit,   "Quit",            [[Alt], KeyPressDetail "q"];
-
-    gohome,        "Home",            [];
-    back,          "Back",            [[Alt], KeyPressDetail "Left"];
-    forward,       "Forward",         [[Alt], KeyPressDetail "Right"];
-    reload,        "Reload",          [[Alt], KeyPressDetail "r"];
-    abort,         "Abort",           [[], KeyPressDetail "Escape"];
-
-    update_true,   "Update",          [[Alt], KeyPressDetail "u"];
-    redisplay,     "Redisplay",       [[Control], KeyPressDetail "l"];
-    add_to_hotlist, "AddToHotlist",   [[Alt], KeyPressDetail "a"];
-    load_images,   "LoadImages",      [[Alt], KeyPressDetail "i"];
-    view_source,   "ViewSource",      [[Alt], KeyPressDetail "e"]
-  ] 
-  in
-
-  (* Real shortcuts information actually used *)
-  let my_short_cuts = List.map (fun (f,r,d) ->
-    f, Tkresource.event_sequence ("shortcut" ^ r) d) all_short_cuts
-  in
-  
-  let configure_menu_elements menu =
-    let rec list_assoc_address k = function
-    (k',v)::_ when k == k' -> v
-      | _::xs -> list_assoc_address k xs
-      |	[] -> raise Not_found
-    in
-    List.iter (function l ->
-      let opts = 
-    List.fold_right (fun opt st ->
-      (match opt with
-        Command f -> 
-          begin
-        Command f :: 
-              try
-            [ Accelerator (Tkresource.short_event_sequence
-                     (list_assoc_address f my_short_cuts))]
-          with Not_found -> []
-          end
-      | _ -> [opt]) @ st) l []
-      in
-      match opts with
-    [] -> Menu.add_separator menu
-      |	_ -> Menu.add_command menu opts)
-  in
-
-  (* we break after each event so that All bindings, such as menu traversal,
-   * dont get invoked if we destroyed the window for some reason
-   * may be required only for things like reload
-   *)
-  List.iter (fun (f, eventl) -> 
-    if eventl <> [] then
-      bind top eventl (BindSetBreakable ([], fun _ -> f(); break())))
-  my_short_cuts;
-
-  (* Invariable part (the rest being the di stuff)
-     hgroup: blah and tachymeter
-   *)
-  let hgroup = Frame.create_named top "hgroup" [] in
-  let vgroup = Frame.create_named hgroup "vgroup" [] in (* Menus, open entry *)
-    let mbar = 
-      Frame.create_named vgroup "menubar" [] in
-     (* MMM menu *)
-     let mmm = Menubutton.create_named mbar 
-       "mmm" [Text (I18n.sprintf "MMM")] in
-     let mmmm = Menu.create_named mmm "menu" [] in
-       Menubutton.configure mmm [Menu mmmm];
-       configure_menu_elements mmmm [ 	    
-         [Label (I18n.sprintf "About"); Command About.f];
-         [];
-         [Label (I18n.sprintf "New Window"); Command new_window];
-         [Label (I18n.sprintf "Open Selection"); Command open_sel];
-         [Label (I18n.sprintf "Open File..."); Command open_file];
-         [Label (I18n.sprintf "Save document..."); Command save];
-         [Label (I18n.sprintf "Print document"); Command print];
-        [Label (I18n.sprintf "Preferences..."); Command !preferences];
-     [];
-         [Label (I18n.sprintf "Close Window"); Command close];
-     [];
-        [Label (I18n.sprintf "Quit"); Command really_quit]
-        ];
-    (* Navigation menu *)
-    let navb = 
-       Menubutton.create_named mbar "navigate"
-          [Text (I18n.sprintf "Navigate")] in
-    let navm = Menu.create_named navb "menu" [] in
-        Menubutton.configure navb [Menu navm];
-        configure_menu_elements navm [ 
-         [Label (I18n.sprintf "Home"); Command gohome];
-         [Label (I18n.sprintf "Back"); Command back];
-         [Label (I18n.sprintf "Forward"); Command forward];
-      []
-        ];
-        (* The history menu is destroyed and rebuild each time. 
-           Deleting all entries will cause a callback leak since
-           entries are associated to the menu itself *)
-    let history_mindex = Pattern (I18n.sprintf "History") in
-    let hmenu = ref (Menu.create_named navm "history" []) in 
-        Menu.add_cascade navm [Label (I18n.sprintf "History")];
-    update_vhistory := (fun () ->
-       destroy !hmenu;
-       hmenu := Menu.create_named navm "history" [];
-       List.iter
-             (fun e ->
-          let label = ref (Url.string_of e.h_did.document_url) in
-          begin match e.h_fragment with
-             None -> ()
-           | Some f -> label := !label^"#"^f
-          end;
-          begin match e.h_did.document_stamp with
-             0 -> ()
-           | n -> label := !label^"("^string_of_int n^")"
-          end;
-          Menu.add_command !hmenu 
-             [Label !label;
-              Command (fun () ->
-              let cure = hist.h_current in
-               History.set_current hist e;
-               if not (historygoto nav e.h_did e.h_fragment true)
-               then History.set_current hist cure)])
-           (History.contents hist);
-           Menu.configure_cascade navm history_mindex [Menu !hmenu]);
-    let docb = 
-       Menubutton.create_named mbar "document"
-          [Text (I18n.sprintf "Document")] in
-    let docm = Menu.create_named docb "menu" [] in
-        Menubutton.configure docb [Menu docm];
-        configure_menu_elements docm [	    
-      [Label (I18n.sprintf "Abort"); Command abort];
-      [Label (I18n.sprintf "Reload"); Command reload];
-      [Label (I18n.sprintf "Update"); Command update_true];
-      [Label (I18n.sprintf "Redisplay"); Command redisplay];
-      [Label (I18n.sprintf "Add to hotlist"); Command add_to_hotlist];
-      [Label (I18n.sprintf "Load Images"); Command load_images];
-      [Label (I18n.sprintf "View Source"); Command view_source]
-        ];
-    (* Other stuff *)
-    let othersb = 
-      Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
-    let othersm = Menu.create_named othersb "menu" [] in
-      Menubutton.configure othersb [Menu othersm];
-      Menu.add_command othersm
-    [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
-      Menu.add_command othersm
-    [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
-      Menu.add_command othersm
-    [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
-
-(*      Menu.add_command othersm
-       [Label (I18n.sprintf "Caml Modules"); 
-        Command (fun _ -> Applets.edit())];
-      Menu.add_command othersm
-       [Label (I18n.sprintf "Load Caml Extension");
-     Command (fun _ ->
-                Fileselect.f (I18n.sprintf "Load Caml Extension")
-            (function [] -> ()
-                    | [s] -> Applets.load_local s
-                | l -> raise (Failure "multiple selection"))
-            "*.cmo"
-            ""
-            false
-            false)
-        ];
-*)
-             
-    (* Help menu *)
-    let helpb = 
-      Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
-    let helpm = Menu.create_named helpb "menu" [] in
-      Menubutton.configure helpb [Menu helpm];
-       Menu.add_command helpm
-          [Label (I18n.sprintf "Version information");
-       Command (fun () -> 
-         absolutegoto nav (Version.initurl (Lang.lang ())))];
-       Menu.add_command helpm
-      [Label (I18n.sprintf "Help on MMM");
-       Command (fun () -> navigator false !helpurl; ())];
-       Menu.add_command helpm
-          [Label (I18n.sprintf "Home Page of MMM");
-       Command (fun () -> navigator false
-         (Lexurl.make (Version.home (Lang.lang ()))); ())];
-
-    (* User menu, extensible by applets *)
-    let userb =
-      Menubutton.create_named mbar "user" [Text (I18n.sprintf "User")] in
-    let userm = ref (Menu.create_named userb "menu" []) in
-    let reset_user_menu _ =
-      destroy !userm;
-      userm := Menu.create_named userb "menu" [];
-      List.iter (function (entry, f) ->
-                 Menu.add_command !userm 
-                  [Label entry; 
-                   Command (fun () -> f 
-                      (Nav.make_ctx nav hist.h_current.h_did))])
-        !user_menus;
-      Menubutton.configure userb [Menu !userm] in
-      
-     reset_user_menu();
-     Frx_synth.bind userb "user_menu" reset_user_menu;
-
-     pack [mmm; navb; docb; othersb][Side Side_Left];
-     pack [helpb; userb] [Side Side_Right];
-
-    (* URL display and edit *)
-    let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
-                     (absolutegoto nav)
-    (* Navigation buttons *)
-    and fb = Frame.create_named vgroup "buttons" [] in
-    let backb = Button.create_named fb 
-      "back" [Text (I18n.sprintf "Back"); Command back ]
-    and abortb = Button.create_named fb 
-      "abort" [Text (I18n.sprintf "Abort"); Command abort]
-    and reloadb = Button.create_named fb
-      "reload" [Text (I18n.sprintf "Reload"); Command reload]
-    and forwardb = Button.create_named fb 
-      "forward" [Text (I18n.sprintf "Forward"); Command forward]
-    and loggingb = Label.create_named fb "logging"
-    [TextWidth 40; TextVariable loggingv; Anchor W]
-    and homeb = Button.create_named fb "home"
-      [ Text (I18n.sprintf "Home"); Command gohome]
-    in
-     Entry.configure e [TextVariable entryv; TextWidth 40];
-     pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
-     pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
-         [Side Side_Left; Fill Fill_X];
-     pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
-     pack [fb][Fill Fill_X];
-     (* Initial window only *)
-     if has_tachy then begin
-      (match !initial_geom with None -> ()
-       | Some g -> Wm.geometry_set top g);
-       (* put this as a function so we can restart it if needed *)
-       let rec restart_tachy () =
-       (* We must not pass hgroup to tachymeter applets *)
-       let fcontainer = Frame.create hgroup [] in
-       container_frame := Some fcontainer;
-       (* restart it if destroyed *)
-       bind fcontainer [[], Destroy]
-     (BindSet ([Ev_Widget],
-           (fun ei -> 
-             if ei.ev_Widget = fcontainer 
-                     && Winfo.exists hgroup (* but we're not dead *) then
-               restart_tachy())));
-
-       let rw = Winfo.reqwidth fcontainer
-       and rh = Winfo.reqheight fcontainer
-       in
-       Wm.minsize_set top rw rh;
-       pack [fcontainer][Side Side_Right; Anchor N];
-       start_tachy();
-       (* Bad hack to do bindings for our own internal tachymeter:
-      others, in applets, can just access these functions from the safe
-      library *)
-       if !tachy_maker == About.create_tachy then begin 
-     match Winfo.children fcontainer with
-       [c] ->
-         bind c (Glevents.get "tachy_new")
-               (BindSet ([], (fun _ -> new_window_initial ())));
-         bind c (Glevents.get "tachy_sel")
-               (BindSet ([], (fun _ -> new_window_sel ())));
-     | _ -> ()
-       end
-       in
-       restart_tachy(); (* first initialisation *)
-       (* good size for keeping only the tachy *)
-       Wm.minsize_set top 80 80;
-     end;
-     (* Pack last to avoid lossage when resizing *)
-     pack [vgroup][Fill Fill_X; Expand true; Side Side_Left];
-     pack [hgroup][Fill Fill_X];
-     pack [viewer_frame][Fill Fill_Both; Expand true];
-
-  (* We receive this event for each children destroyed because we are
-     a toplevel *)
-  bind top [[], Destroy] 
-   (BindSet ([Ev_Widget],
-      (fun ei -> 
-       if ei.ev_Widget = top then begin
-    decr navigators;
-    Gcache.kill hist.h_key;
-    (* we were destroyed by wm *)
-    if !navigators = 0 && Winfo.exists Widget.default_toplevel
-        then destroy Widget.default_toplevel
-        end)));
-  Tkwait.visibility hgroup;
-  !update_vhistory();
-  (* Yet another timer to avoid flushing displayed documents *)
-  let rec touch_current () =
-    if Winfo.exists top then begin
-      Cache.touch hist.h_current.h_did;
-      Timer.set 10000 touch_current
-    end in
-  touch_current();
-  absolutegoto nav (Url.string_of initial_url);
-  Some nav
+  (* protect all the other initialisations *)
+  try 
+    <<[[Mmm.navigator()]] inside try>>
 
   with e -> 
     !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
@@ -1897,60 +1293,101 @@ let rec navigator has_tachy initial_url =
     if !navigators = 1 then begin
       destroy Widget.default_toplevel;
       raise e
-    end else begin 
-      destroy top;
-      None
-    end
-
-and new_window_initial () =
- navigator false 
-   (match !initial_page with | Some u -> u | None -> assert false) |> ignore
-
-and new_window_sel () =
-  try 
-    let url = Selection.get [] in
-    ignore (navigator false (Lexurl.make url))
-  with _ -> new_window_initial ()
+    end 
+    <<[[Mmm.navigator()]] exn handler, else if multiple navigators>>
 @
+% => top widget
 
 
-\subsection{Initial geometry}
 
-<<signature Mmm.initial_geom>>=
-val initial_geom : string option ref
+<<[[Mmm.navigator()]] inside try>>=
+(* The frame in which a viewer might want to display *)
+let viewer_frame = Frame.create_named top "viewer" [] in
+
+<<[[Mmm.navigator()]] locals before nav setting>>
+let nav = { 
+  <<[[Mmm.navigator()]] set nav fields>>
+}
+in
+
+(* The navigation functions *)
+<<[[Mmm.navigator()]] navigation functions>>
+(* A bunch of other functions *)
+<<[[Mmm.navigator()]] new window functions>>
+<<[[Mmm.navigator()]] other functions>>
+
+(* Short cuts *)
+<<[[Mmm.navigator()]] short cuts>>
+
+(* Invariable part (the rest being the di stuff)
+   hgroup: blah and tachymeter
+ *)
+let hgroup = Frame.create_named top "hgroup" [] in
+let vgroup = Frame.create_named hgroup "vgroup" [] in (* Menus, open entry *)
+
+let mbar = Frame.create_named vgroup "menubar" [] in
+<<[[Mmm.navigator()]] setup menu>>
+
+<<[[Mmm.navigator()]] setup open url entry>>
+
+(* Navigation buttons *)
+let fb = Frame.create_named vgroup "buttons" [] in
+<<[[Mmm.navigator()]] navigation buttons>>
+
+<<[[Mmm.navigator()]] packing part one>>
+(* Initial window only *)
+if has_tachy then begin
+  <<[[Mmm.navigator()]] set geometry if specified>>
+  <<[[Mmm.navigator()]] set tachy>>
+end;
+<<[[Mmm.navigator()]] packing part two>>
+
+<<[[Mmm.navigator()]] handling destroy event>>
+Tkwait.visibility hgroup;
+
+<<[[Mmm.navigator()]] call update_vhistory>>
+<<[[Mmm.navigator()]] touch current>>
+
+absolutegoto nav (Url.string_of initial_url);
+Some nav
 @
-<<constant Mmm.initial_geom>>=
-let initial_geom = ref None
+% absolutegoto!!
+
+\subsection{Destroy event}
+
+<<[[Mmm.navigator()]] handling destroy event>>=
+(* We receive this event for each children destroyed because we are
+   a toplevel *)
+bind top [[], Destroy] (BindSet ([Ev_Widget], (fun ei -> 
+  if ei.ev_Widget = top then begin
+    decr navigators;
+    Gcache.kill hist.h_key;
+
+    (* we were destroyed by wm *)
+    if !navigators = 0 && Winfo.exists Widget.default_toplevel
+    then destroy Widget.default_toplevel
+  end
+)));
 @
-<<[[Main.main()]] command line options>>=
-"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-"<wxh+x+y>\tInitial geometry for the first navigator";
+% Gcache.kill
+% G??
+
+\subsection{Timer}
+
+<<[[Mmm.navigator()]] touch current>>=
+(* Yet another timer to avoid flushing displayed documents *)
+let rec touch_current () =
+  if Winfo.exists top then begin
+    Cache.touch hist.h_current.h_did;
+    Timer.set 10000 touch_current
+  end 
+in
+touch_current();
 @
 
-\subsection{Help URL}
+% Gcache.touch
 
 
-<<signature Mmm.helpurl>>=
-(* Preferences, options *)
-val helpurl : Url.t ref
-@
-<<constant Mmm.helpurl>>=
-let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
-@
-<<[[Main.main()]] command line options>>=
-"-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-"<url>\tHelp URL";
-@
-
-<<signature Version.helpurl>>=
-val helpurl : string -> string (* help url *)
-@
-<<function Version.helpurl>>=
-let helpurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
-  | _ -> assert false
-@
 
 
 \section{The event loop}
@@ -1974,11 +1411,314 @@ let rec safe_loop() =
 % The chrome
 % gui/
 
+\section{Layout}
+
+<<[[Mmm.navigator()]] setup top packing>>=
+(* the size of the navigator MUST NOT depend on what is displayed inside *)
+(* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
+Pack.propagate_set top false;
+@
+
+<<[[Mmm.navigator()]] packing part one>>=
+pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
+pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
+       [Side Side_Left; Fill Fill_X];
+pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
+pack [fb][Fill Fill_X];
+@
+
+<<[[Mmm.navigator()]] packing part two>>=
+(* Pack last to avoid lossage when resizing *)
+pack [vgroup][Fill Fill_X; Expand true; Side Side_Left];
+pack [hgroup][Fill Fill_X];
+pack [viewer_frame][Fill Fill_Both; Expand true];
+@
+
+
+\section{XXX}
+
+<<[[Mmm.navigator()]] locals>>=
+let current_di = ref None in
+@
+
+<<local function Mmm.navigator.show_current>>=
+(* Change view, independantly of history manip *)
+let show_current di frag =
+    di#di_touch;
+    (match !current_di with
+    | None -> display di
+    | Some olddi -> 
+       if olddi == di 
+       then () 
+       else begin
+         undisplay olddi;
+         display di
+         end
+    );
+    current_di := Some di;
+    (* bogus if two views with fragment on the same pending document *)
+    di#di_fragment frag;
+    (* Bof *)
+    Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+in
+@
+
+
+<<local object Mmm.navigator.error>>=
+let error = new Tk_error.t top in
+@
+
+
+<<local Mmm.navigator.actives>>=
+let actives = Hashtbl.create 37 in
+@
+
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_id = hist.h_key;
+nav_viewer_frame = viewer_frame;
+nav_error = error;
+nav_add_hist = add_hist;
+nav_show_current = show_current;
+nav_new = (fun link ->
+     try
+       let wwwr = Plink.make link in
+         navigator false wwwr.www_url |> ignore; ()
+     with
+        Invalid_link msg -> 
+          error#f (I18n.sprintf "Invalid link"));
+nav_log = (fun s -> Textvariable.set loggingv s);
+nav_add_active = Hashtbl.add actives;
+nav_rem_active = Hashtbl.remove actives
+@
+
+<<[[Mmm.navigator()]] locals before nav setting>>=
+<<local Mmm.navigator.hist>>
+<<local function Mmm.navigator.show_current>>
+<<local function Mmm.navigator.add_hist>>
+<<local object Mmm.navigator.error>>
+<<local Mmm.navigator.loggingv>>
+<<local Mmm.navigator.actives>>
+@
+
+<<[[Mmm.navigator()]] navigation functions>>=
+(*  The cache may have been cleared, so the document may be lost.
+ *  historygoto implements the proper logic for this, taking care
+ *  of non-unique documents.
+ *)
+let back () = 
+  match History.back hist with
+   | None -> ()
+   | Some (did, frag) -> 
+       if not (historygoto nav did frag true) 
+       then History.forward hist |> ignore
+in
+let forward () =
+  match History.forward hist with
+  | None -> ()
+  | Some (did, frag) -> 
+      if not (historygoto nav did frag true) 
+      then History.back hist |> ignore
+in
+let reload () =
+  let did = hist.h_current.h_did in
+  let frag = hist.h_current.h_fragment in
+  if did.document_stamp = no_stamp then begin
+    (* kill both in cache and in gcache *)
+    Cache.kill did; 
+    Gcache.remove hist.h_key did;
+    historygoto nav did frag false |> ignore
+  end
+    else
+      error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
+in
+
+let update nocache =
+  let did = hist.h_current.h_did in
+  if did.document_stamp = no_stamp then
+    Nav.update nav did nocache
+  else (* POST result *)
+    error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
+in
+@
+
+
+
+<<[[Mmm.navigator()]] other functions>>=
+let abort () =
+  actives |> Hashtbl.iter (fun url abort -> abort());
+  Hashtbl.clear actives;
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_abort
+in
+let open_sel () =
+  try 
+    let url = Selection.get [] in
+    absolutegoto nav url
+  with _ -> ()
+in
+let open_file () =
+  Fileselect.f (I18n.sprintf "Open File") (function
+    | [] -> ()
+    | [s] -> 
+        let path = Msys.tilde_subst s in
+        absolutegoto nav ("file://localhost/"^path)
+    | l -> raise (Failure "multiple selection")
+   )
+     "*" 
+     ""
+     false
+     false
+in
+let save () = 
+ Save.document hist.h_current.h_did None 
+in
+let print () = 
+  Save.document hist.h_current.h_did 
+     (Some (sprintf "|%s" !Save.print_command))
+in
+let close () =
+  if !navigators = 1 
+  then quit true
+  else destroy top
+in
+let really_quit () = 
+  quit false
+in
+let gohome () = 
+  absolutegoto nav !Mmmprefs.home
+in
+let redisplay () =
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_redisplay
+in
+let add_to_hotlist () =
+  match !current_di with
+  | None -> ()
+  | Some di -> 
+      Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
+                  di#di_title
+in
+let load_images () =
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_load_images
+in
+let view_source () =     
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_source
+in
+@
+
+
+
+
+
+
 \section{Address bar}
+
+<<[[Mmm.navigator()]] locals>>=
+let entryv = Textvariable.create_temporary top in
+@
+
+<<[[Mmm.navigator()]] setup open url entry>>=
+(* URL display and edit *)
+let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
+                   (absolutegoto nav)
+in
+Entry.configure e [TextVariable entryv; TextWidth 40];
+@
+% absolutegoto!
+% f is the widget that will be packed
+
+\subsection{[[Mmm.absolutegoto()]]}
+
+\section{History}
+
+<<local Mmm.navigator.hist>>=
+let initial_did = 
+  { document_url = initial_url; 
+    document_stamp = Document.no_stamp
+  } 
+in
+let hist = History.create initial_did in
+@
+
+<<local function Mmm.navigator.add_hist>>=
+let add_hist did frag =
+  History.add hist did frag;
+  !update_vhistory ()
+in
+@
+
+<<[[Mmm.navigator()]] locals>>=
+let update_vhistory = ref (fun () -> ()) (* duh *) in
+@
+
+
+<<[[Mmm.navigator()]] History menu>>=
+(* The history menu is destroyed and rebuild each time. 
+ * Deleting all entries will cause a callback leak since
+ *  entries are associated to the menu itself 
+ *)
+let history_mindex = Pattern (I18n.sprintf "History") in
+let hmenu = ref (Menu.create_named navm "history" []) in 
+Menu.add_cascade navm [Label (I18n.sprintf "History")];
+update_vhistory := (fun () ->
+  destroy !hmenu;
+  hmenu := Menu.create_named navm "history" [];
+  History.contents hist |> List.iter (fun e ->
+    let label = ref (Url.string_of e.h_did.document_url) in
+    (match e.h_fragment with
+    | None -> ()
+    | Some f -> label := !label^"#"^f
+    );
+    (match e.h_did.document_stamp with
+    | 0 -> ()
+    | n -> label := !label^"("^string_of_int n^")"
+    );
+    Menu.add_command !hmenu 
+       [Label !label;
+        Command (fun () ->
+          let cure = hist.h_current in
+          History.set_current hist e;
+          if not (historygoto nav e.h_did e.h_fragment true)
+          then History.set_current hist cure)
+        ]
+    );
+    Menu.configure_cascade navm history_mindex [Menu !hmenu]
+);
+
+@
+
+
+<<[[Mmm.navigator()]] call update_vhistory>>=
+!update_vhistory();
+@
 
 \section{Back and forward}
 
+<<[[Mmm.navigator()]] navigation buttons>>=
+let backb = Button.create_named fb 
+  "back" [Text (I18n.sprintf "Back"); Command back ] in
+@
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let forwardb = Button.create_named fb 
+  "forward" [Text (I18n.sprintf "Forward"); Command forward] in
+@
+
+
 \section{Home}
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let homeb = Button.create_named fb "home"
+  [ Text (I18n.sprintf "Home"); Command gohome] in
+@
+
+
 
 <<signature Version.home>>=
 val home : string -> string    (* MMM home page *)
@@ -1991,12 +1731,239 @@ let home = function
 
 \section{Bookmarks}
 
-\section{History}
-
 \section{Refresh and stop}
 
+<<[[Mmm.navigator()]] navigation buttons>>=
+let reloadb = Button.create_named fb
+  "reload" [Text (I18n.sprintf "Reload"); Command reload] in
+@
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let abortb = Button.create_named fb 
+  "abort" [Text (I18n.sprintf "Abort"); Command abort] in
+@
 
 
+\section{Menus}
+
+<<[[Mmm.navigator()]] setup menu>>=
+<<function Mmm.navigator.configure_menu_elements>>
+<<[[Mmm.navigator()]] MMM menu>>
+<<[[Mmm.navigator()]] Navigation menu>>
+<<[[Mmm.navigator()]] History menu>>
+<<[[Mmm.navigator()]] Document menu>>
+<<[[Mmm.navigator()]] Other menu>>
+<<[[Mmm.navigator()]] Help menu>>
+<<[[Mmm.navigator()]] User menu>>
+
+pack [mmm; navb; docb; othersb][Side Side_Left];
+pack [helpb; userb] [Side Side_Right];
+@
+
+
+<<function Mmm.navigator.configure_menu_elements>>=
+let configure_menu_elements menu xs =
+  let rec list_assoc_address k = function
+    | (k',v)::_ when k == k' -> v
+    | _::xs -> list_assoc_address k xs
+    |	[] -> raise Not_found
+  in
+  xs |> List.iter (fun l ->
+    let opts = 
+     List.fold_right (fun opt st ->
+       (match opt with
+       | Command f -> 
+           begin
+            Command f :: 
+              try
+                [ Accelerator (Tkresource.short_event_sequence
+                               (list_assoc_address f my_short_cuts))]
+              with Not_found -> []
+           end
+       | _ -> [opt])
+       @ st
+     ) l []
+    in
+    match opts with
+    | [] -> Menu.add_separator menu
+    | _  -> Menu.add_command menu opts
+ )
+in
+@
+
+\subsection{MMM menu}
+
+<<[[Mmm.navigator()]] MMM menu>>=
+(* MMM menu *)
+let mmm = Menubutton.create_named mbar "mmm" [Text (I18n.sprintf "MMM")] in
+let mmmm = Menu.create_named mmm "menu" [] in
+Menubutton.configure mmm [Menu mmmm];
+configure_menu_elements mmmm [
+  [Label (I18n.sprintf "About")            ; Command About.f];
+  [];
+  [Label (I18n.sprintf "New Window")       ; Command new_window];
+  [Label (I18n.sprintf "Open Selection")   ; Command open_sel];
+  [Label (I18n.sprintf "Open File...")     ; Command open_file];
+  [Label (I18n.sprintf "Save document...") ; Command save];
+  [Label (I18n.sprintf "Print document")   ; Command print];
+  [Label (I18n.sprintf "Preferences...")   ; Command !preferences];
+  [];
+  [Label (I18n.sprintf "Close Window")     ; Command close];
+  [];
+  [Label (I18n.sprintf "Quit")             ; Command really_quit]
+];
+@
+
+\subsection{Navigation menu}
+
+<<[[Mmm.navigator()]] Navigation menu>>=
+(* Navigation menu *)
+let navb = Menubutton.create_named mbar "navigate" [Text (I18n.sprintf "Navigate")] in
+let navm = Menu.create_named navb "menu" [] in
+Menubutton.configure navb [Menu navm];
+configure_menu_elements navm [ 
+  [Label (I18n.sprintf "Home"); Command gohome];
+  [Label (I18n.sprintf "Back"); Command back];
+  [Label (I18n.sprintf "Forward"); Command forward];
+  []
+];
+@
+
+\subsection{Document menu}
+
+<<[[Mmm.navigator()]] Document menu>>=
+let docb = Menubutton.create_named mbar "document" [Text (I18n.sprintf "Document")] in
+let docm = Menu.create_named docb "menu" [] in
+Menubutton.configure docb [Menu docm];
+configure_menu_elements docm [	    
+  [Label (I18n.sprintf "Abort")          ; Command abort];
+  [Label (I18n.sprintf "Reload")         ; Command reload];
+  [Label (I18n.sprintf "Update")         ; Command update_true];
+  [Label (I18n.sprintf "Redisplay")      ; Command redisplay];
+  [Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
+  [Label (I18n.sprintf "Load Images")    ; Command load_images];
+  [Label (I18n.sprintf "View Source")    ; Command view_source]
+];
+@
+
+\subsection{Other menu}
+
+<<[[Mmm.navigator()]] Other menu>>=
+(* Other stuff *)
+let othersb = Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
+let othersm = Menu.create_named othersb "menu" [] in
+Menubutton.configure othersb [Menu othersm];
+Menu.add_command othersm
+  [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
+Menu.add_command othersm
+  [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
+Menu.add_command othersm
+  [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+@
+% (*      Menu.add_command othersm
+%     [Label (I18n.sprintf "Caml Modules"); 
+%      Command (fun _ -> Applets.edit())];
+%    Menu.add_command othersm
+%     [Label (I18n.sprintf "Load Caml Extension");
+%   Command (fun _ ->
+%              Fileselect.f (I18n.sprintf "Load Caml Extension")
+%          (function [] -> ()
+%                  | [s] -> Applets.load_local s
+%              | l -> raise (Failure "multiple selection"))
+%          "*.cmo"
+%          ""
+%          false
+%          false)
+%      ];
+% *)
+
+\subsection{Help menu}
+
+<<[[Mmm.navigator()]] Help menu>>=
+(* Help menu *)
+let helpb = Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
+let helpm = Menu.create_named helpb "menu" [] in
+Menubutton.configure helpb [Menu helpm];
+Menu.add_command helpm
+  [Label (I18n.sprintf "Version information");
+   Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
+Menu.add_command helpm
+  [Label (I18n.sprintf "Help on MMM");
+   Command (fun () -> navigator false !helpurl |> ignore)];
+Menu.add_command helpm
+  [Label (I18n.sprintf "Home Page of MMM");
+   Command (fun () -> 
+     navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
+@
+
+%\subsection{Applet user menu}
+% see later
+
+\section{Status bar}
+% it's actually on the right of the buttons for now,
+% but should be in status bar I think
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let loggingb = Label.create_named fb "logging"
+  [TextWidth 40; TextVariable loggingv; Anchor W] in
+@
+
+<<local Mmm.navigator.loggingv>>=
+let loggingv = Textvariable.create_temporary top in
+@
+
+\section{Shortcuts}
+
+<<[[Mmm.navigator()]] short cuts>>=
+(* All the available shortcuts functions and their short cut keys. *)
+(* If you put a new function with its short cut key here, then *)
+(* Short cut string will be displayed automatically, when these *)
+(* functions are added as menu elements. *)
+
+(* Sorry, we use function equality, so we cannot use lambdas in the list *)
+let update_true = fun () -> update true in
+
+(* The shortcuts and the default settings *)
+let all_short_cuts = [
+  (* function    resource name      default key sequence *)
+  About.f,     "About",           [[], KeyPressDetail "F1"]; 
+  new_window,    "NewWindow",       [[Alt], KeyPressDetail "n"];
+  open_sel,      "OpenSelection",   [[Alt], KeyPressDetail "y"];
+  open_file,     "OpenFile",        [[Alt], KeyPressDetail "o"];
+  save,          "Save",            [[Alt], KeyPressDetail "s"];
+  print,         "Print",           [];
+  !preferences,  "Preference",      [[Alt], KeyPressDetail "p"];
+  close,         "Close",           [[Alt], KeyPressDetail "c"];
+  really_quit,   "Quit",            [[Alt], KeyPressDetail "q"];
+
+  gohome,        "Home",            [];
+  back,          "Back",            [[Alt], KeyPressDetail "Left"];
+  forward,       "Forward",         [[Alt], KeyPressDetail "Right"];
+  reload,        "Reload",          [[Alt], KeyPressDetail "r"];
+  abort,         "Abort",           [[], KeyPressDetail "Escape"];
+
+  update_true,   "Update",          [[Alt], KeyPressDetail "u"];
+  redisplay,     "Redisplay",       [[Control], KeyPressDetail "l"];
+  add_to_hotlist, "AddToHotlist",   [[Alt], KeyPressDetail "a"];
+  load_images,   "LoadImages",      [[Alt], KeyPressDetail "i"];
+  view_source,   "ViewSource",      [[Alt], KeyPressDetail "e"]
+] 
+in
+
+(* Real shortcuts information actually used *)
+let my_short_cuts = List.map (fun (f,r,d) ->
+  f, Tkresource.event_sequence ("shortcut" ^ r) d) all_short_cuts
+in
+
+(* we break after each event so that All bindings, such as menu traversal,
+ * dont get invoked if we destroyed the window for some reason
+ * may be required only for things like reload
+ *)
+my_short_cuts |> List.iter (fun (f, eventl) -> 
+  if eventl <> [] 
+  then bind top eventl (BindSetBreakable ([], fun _ -> f(); break()))
+);
+@
 
 
 \chapter{Parsing}
@@ -4484,6 +4451,68 @@ val media_type :
 \chapter{HTML}
 % html/
 
+\section{Attributes}
+
+
+% specified where? RFC?
+<<constant Html.default_attributes>>=
+(* Attribute values *)
+let default_attributes = [ 
+  ("isindex"  , "prompt" ),  "Document is indexed/searchable: ";
+                             
+  ("a"        , "methods"),  "GET";     (* <A METHODS=GET> *)
+  ("embed"    , "methods"),  "GET";		(* <EMBED METHODS=GET> *)
+  ("embed"    , "alt"    ),  "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
+  ("form"     , "method" ),  "GET";		(* <FORM METHOD=GET> *)
+  ("form"     , "enctype"),  "application/x-www-form-urlencoded";
+
+  ("ol"       , "type"   ),  "1";       (* <OL TYPE=1 *)
+  ("input"    , "type"   ),  "TEXT";	(* <INPUT TYPE=TEXT> *)
+  ("select"   , "size"   ),  "5";
+  ("textarea" , "align"  ),  "bottom";
+  ("input"    , "align"  ),  "bottom";
+  ("select"   , "align"  ),  "bottom";
+  ("img"      , "align"  ),  "bottom";
+  (* ("img"   , "alt"    ),  "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
+  ("area"     , "shape"  ),  "rect";
+  ("div"      , "align"  ),  "left";
+  ("basefont" , "size"   ),  "3";
+
+  (* frames *)
+  ("frame"    , "frameborder" ), "0";
+  ("frame"    , "scrolling"   ), "auto";
+  ("frameset" , "rows"        ), "100%";
+  ("frameset" , "cols"        ), "100%";
+  ]
+@
+
+
+<<signature Html.get_attribute>>=
+val get_attribute : tag -> string -> string
+  (* [get_attribute tag attrib_name] *)
+@
+<<function Html.get_attribute>>=
+let get_attribute tag attr =
+  try
+    List.assoc attr tag.attributes 
+  with
+    Not_found ->
+     List.assoc (tag.tag_name, attr) default_attributes
+@
+
+
+<<signature Html.has_attribute>>=
+val has_attribute : tag -> string -> bool
+  (* [has_attribute tag attrib_name] *)
+@
+<<function Html.has_attribute>>=
+let has_attribute tag attr =
+     List.mem_assoc attr tag.attributes
+  || List.mem_assoc (tag.tag_name, attr) default_attributes
+@
+
+
+
 \section{Tables}
 
 \section{Forms}
@@ -5370,7 +5399,7 @@ let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 @
 % cmo, hehe :)
 
-<<[[Main.main()]] references>>=
+<<[[Main.main()]] locals>>=
 let sufxfile = ref (Mmm.user_file "mime.types") in
 @
 <<[[Main.main()]] command line options>>=
@@ -6247,6 +6276,8 @@ let init () = refresh ()
 
 \section{Tachymeter}
 
+\subsection{backend}
+
 <<global Low.bytes_read>>=
 let bytes_read = ref 0
 @
@@ -6258,6 +6289,739 @@ let sample_read = ref 0
 
 <<signature Low.cur_tachy>>=
 val cur_tachy : tachymeter ref
+@
+
+\subsection{frontend}
+
+<<[[Mmm.navigator()]] if not main window, create default toplevel>>=
+else Toplevel.create Widget.default_toplevel [Class "MMM"]
+@
+
+<<[[Mmm.navigator()]] set tachy>>=
+(* put this as a function so we can restart it if needed *)
+let rec restart_tachy () =
+   (* We must not pass hgroup to tachymeter applets *)
+   let fcontainer = Frame.create hgroup [] in
+   container_frame := Some fcontainer;
+   (* restart it if destroyed *)
+   bind fcontainer [[], Destroy]
+    (BindSet ([Ev_Widget],
+      (fun ei -> 
+        if ei.ev_Widget = fcontainer 
+                && Winfo.exists hgroup (* but we're not dead *) then
+          restart_tachy())));
+
+  let rw = Winfo.reqwidth fcontainer in
+  let rh = Winfo.reqheight fcontainer in
+  Wm.minsize_set top rw rh;
+  pack [fcontainer][Side Side_Right; Anchor N];
+  start_tachy();
+  (* Bad hack to do bindings for our own internal tachymeter:
+   * others, in applets, can just access these functions from the safe
+   * library *)
+  if !tachy_maker == About.create_tachy then begin 
+    match Winfo.children fcontainer with
+    | [c] ->
+         bind c (Glevents.get "tachy_new")
+          (BindSet ([], (fun _ -> new_window_initial ())));
+         bind c (Glevents.get "tachy_sel")
+          (BindSet ([], (fun _ -> new_window_sel ())));
+    | _ -> ()
+  end
+in
+restart_tachy(); (* first initialisation *)
+(* good size for keeping only the tachy *)
+Wm.minsize_set top 80 80;
+@
+
+\chapter{Extra features}
+
+\section{User preferences}
+
+% important, like in efuns
+
+\subsection{Preference file, [[-prefs]]}
+<<constant Mmm.preferences>>=
+(* placeholder for preference panel *)
+let preferences = ref (fun () -> ())
+@
+
+<<[[Mmm.initial_navigator()]] set preferences>>=
+preferences := Mmmprefs.f preffile;
+!preferences();
+@
+
+
+<<[[Main.main()]] locals>>=
+let preffile = ref (Mmm.user_file "MMM.ad") in
+@
+<<[[Main.main()]] command line options>>=
+"-prefs", Arg.String (fun s -> preffile := s),
+"<file>\t\tPreference File";
+@
+% .ad?
+% preferences of navigator
+% diff with code using MMM.ad below?
+
+
+
+<<signature Mmm.user_file>>=
+val user_file : string -> string
+    (* [user_file base] returns $HOME/.mmm/[base] *)
+@
+%$
+<<function Mmm.user_file>>=
+let user_file name =
+  Filename.concat (Filename.concat home ".mmm") name
+@
+
+
+% user (localized) file
+<<[[Main.main()]] user preferences file>>=
+localize !preffile
+@
+
+\subsection{Initial geometry, [[-geometry]]}
+
+<<signature Mmm.initial_geom>>=
+val initial_geom : string option ref
+@
+<<constant Mmm.initial_geom>>=
+let initial_geom = ref None
+@
+<<[[Main.main()]] command line options>>=
+"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
+"<wxh+x+y>\tInitial geometry for the first navigator";
+@
+
+<<[[Mmm.navigator()]] set geometry if specified>>=
+(match !initial_geom with 
+ | None -> ()
+ | Some g -> 
+    Wm.geometry_set top g
+ );
+@
+
+\section{TK customization}
+
+\subsection{Color palette, [[-palette]]}
+
+<<[[Main.main()]] resource initialisation>>=
+begin match !palette with
+| None -> ()
+| Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
+end;
+@
+% ??
+
+<<[[Main.main()]] locals>>=
+let palette = ref None in
+@
+<<[[Main.main()]] command line options>>=
+"-palette", Arg.String (fun s -> palette := Some s),
+"<color>\tTk Palette";
+@
+
+\subsection{Click to follow, [[-clicktofocus]]}
+
+<<[[Main.main()]] tk initialisation>>=
+if not !clicktofocus 
+then Focus.follows_mouse();
+@
+
+<<[[Main.main()]] locals>>=
+let clicktofocus = ref false in
+@
+<<[[Main.main()]] command line options>>=
+"-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
+"\tClick to Focus mode (default is Focus Follows Mouse)";
+@
+
+
+\section{Help URL, [[-helpurl]]}
+
+<<signature Mmm.helpurl>>=
+(* Preferences, options *)
+val helpurl : Url.t ref
+@
+<<constant Mmm.helpurl>>=
+let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
+@
+<<[[Main.main()]] command line options>>=
+"-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
+"<url>\tHelp URL";
+@
+
+<<signature Version.helpurl>>=
+val helpurl : string -> string (* help url *)
+@
+<<function Version.helpurl>>=
+let helpurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
+  | _ -> assert false
+@
+
+\section{Multi windows}
+
+<<constant Mmm.navigators>>=
+(*
+ * A navigator window
+ *)
+let navigators = ref 0
+@
+
+<<[[Mmm.navigator()]] new navigator hook>>=
+incr navigators;
+@
+
+<<[[Mmm.navigator()]] exn handler, else if multiple navigators>>=
+else begin 
+  destroy top;
+  None
+end
+@
+
+
+<<function Mmm.new_window_initial>>=
+and new_window_initial () =
+ navigator false 
+   (match !initial_page with | Some u -> u | None -> assert false) |> ignore
+@
+
+<<function Mmm.new_window_set>>=
+and new_window_sel () =
+  try 
+    let url = Selection.get [] in
+    navigator false (Lexurl.make url) |> ignore
+  with _ -> new_window_initial ()
+@
+
+
+<<[[Mmm.navigator()]] new window functions>>=
+let new_window () =
+     navigator false hist.h_current.h_did.document_url |> ignore
+in
+let new_window_initial () =
+     navigator false initial_url |> ignore
+in
+let new_window_sel () =
+  try 
+     let url = Selection.get [] in
+     navigator false (Lexurl.make url) |> ignore
+  with _ -> navigator false initial_url |> ignore
+in
+@
+
+\section{Gzip decoders}
+
+% for gzip stuff?
+
+<<signature Decoders.insert>>=
+val insert  : Document.handle -> Document.handle
+@
+
+<<signature Decoders.add>>=
+val add : string -> (Document.handle -> Document.handle) -> unit
+@
+
+<<constant Decoders.decoders>>=
+(* Insert a decoding if necessary.
+ * We don't do it in http, since we don't want do decompress when we
+ * save for example.
+ *)
+
+let decoders = Hashtbl.create 37
+@
+
+
+<<toplevel Decoders._1>>=
+let _ =  
+  [ "COMPRESS", gzip;
+    "X-COMPRESS", gzip;
+    "GZIP", gzip;
+    "X-GZIP", gzip
+  ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
+@
+
+
+
+\section{Animated GIFs}
+
+\section{Extra Protocols}
+
+
+\subsection{[[file://]]}
+
+<<toplevel Protos._7>>=
+let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
+@
+
+<<[[Lexurl.f]] protocol cases>>=
+(* the spec says file://host/ dammit *)
+| "FILE" ->
+  (try
+     slashslash lexbuf;
+     let h = fhost lexbuf in
+     let p = slashpath lexbuf in
+     result.protocol <- FILE;
+     result.host <- h;
+     result.path <- p
+  with Url_Lexing _ ->
+    let p = slashpath lexbuf in
+    result.protocol <- FILE;
+    result.path <- p
+  )
+@
+
+<<functions Lexurl.xxx>>=
+and fhost = parse
+  ['A'-'Z' 'a'-'z' '0'-'9' '.' '-']+
+     { Some (normalize_host (Lexing.lexeme lexbuf)) }
+| ""
+     { Some "localhost" }
+@
+
+
+
+<<signature File.request>>=
+(* file: protocol *)
+val request : Www.request -> Document.document_continuation -> 
+   (unit -> unit)
+    (* [request wr cont] returns [abort] *)
+@
+
+<<exception File.File_error>>=
+exception File_error of string
+@
+
+<<function File.document_id>>=
+let document_id wwwr =
+  { document_url = wwwr.www_url; document_stamp = no_stamp}
+@
+
+%less: LP split and distribute in two sections below
+<<function File.request>>=
+(*
+ * Display a file on the local unix file system (file:)
+ *  is path really supposed to be absolute ?
+ * Note: completely ignores method (GET, POST,...)
+ *)
+
+let request wr cont =
+  let path = match wr.www_url.path with
+    Some path -> "/" ^ (Lexurl.remove_dots path)
+  | None -> "/" 
+  in
+  <<[[File.request()]] if CGI path>>
+  else   (* A bit weird, but we don't want to capture errors from the cont *)
+    let st =
+      try 
+        stat path 
+      with _ -> raise (File_error (I18n.sprintf "cannot stat file")) 
+    in
+    match st.st_kind with
+    | S_REG ->
+      begin
+      (* check if this is an update *)
+        try 
+          let since = get_header "if-modified-since" wr.www_headers in
+          let ht = Lexdate.ht_of_string since in
+          let filet = Http_date.ht_of_stamp st.st_mtime in
+          if Http_date.compare filet ht > 0
+          then raise Not_found (* fall through *)
+          else begin
+            let dh = { 
+              document_id = document_id wr;
+              document_referer = wr.www_link.h_context;
+              document_status = 304;
+              document_headers = [ sprintf "Date: %s" (Date.asc_now())];
+              document_feed = 
+                Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
+              document_fragment = wr.www_fragment;
+              document_logger = Document.tty_logger
+            } in
+            Retype.f dh;
+            cont.document_process dh;
+            (fun () -> ())
+          end
+       with
+       | Not_found  (* default case *)
+       | Lexdate.Invalid_date (_,_) ->
+          let s = 
+            try openfile path [O_RDONLY] 0
+            with Unix_error(_,_,_) -> 
+              raise (File_error (I18n.sprintf "cannot open file")) 
+          in
+          let dh =
+            { document_id = document_id wr;
+              document_referer = wr.www_link.h_context;
+              document_status = 200;
+              document_headers = 
+                [sprintf "Content-Length: %d" st.st_size;
+                 sprintf "Date: %s" (Date.asc_now());
+                 sprintf "Last-modified: %s" (Date.asc st.st_mtime)
+                ];
+              document_feed = Feed.of_fd s;
+              document_fragment = wr.www_fragment;
+              document_logger = Document.tty_logger
+            } in
+           Retype.f dh;
+           cont.document_process dh;
+           (fun () -> ())
+    end
+    | S_DIR -> 
+        let s = dir path in
+        cont.document_process 
+          { document_id = document_id wr;
+            document_referer = wr.www_link.h_context;
+            document_status = 200;
+            document_headers = ["Content-Type: text/html"];
+            document_feed = Feed.of_fd s;
+            document_fragment = wr.www_fragment;
+            document_logger = Document.tty_logger
+           };
+         (fun () -> ())
+
+    | _ -> raise (File_error (I18n.sprintf "cannot open file"))
+@
+
+
+\subsubsection{Files}
+
+\subsubsection{Directories}
+
+% File.request (DIR case) ->  <>
+<<function File.dir>>=
+(* It's easiest to do it asynchronously anyway *)
+let dir path =
+  try
+    let d = opendir path in
+    let cin, cout = pipe() in
+    match Low.fork() with
+    | 0 -> 
+        close cin; dup2 cout stdout; close cout;
+        begin
+          try 
+            d2html path d 
+          with e ->
+            print_endline (Printexc.to_string e)
+        end;
+        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
+        exit 0;
+        cin (*duh*)
+     | n -> closedir d; close cout; cin
+  with Unix_error(_,_,_)  -> 
+    raise (File_error (I18n.sprintf "cannot open dir"))
+@
+
+
+
+% File.dir -> <>
+<<function File.d2html>>=
+let d2html path d =
+  (* make sure that when path is used in url, it is / terminated *)
+  let pathurl =
+    let l = String.length path in
+    if l = 0 
+    then path 
+    else
+      if path.[l-1] = '/' 
+      then path
+      else sprintf "%s/" path
+  in
+  Printf.printf 
+"<HTML>
+<HEAD><TITLE>%s</TITLE>
+<BASE HREF=\"file://localhost%s\">
+</HEAD>
+<BODY>
+<H1>Directory list: %s</H1>
+<PRE>" path pathurl path;
+
+  let entries = ref [] in
+  begin 
+   try
+     while true do 
+       entries := (readdir d) :: !entries
+     done      	
+   with  End_of_file -> closedir d
+  end;
+  entries := Sort.list (<=) !entries;
+  !entries |> List.iter (function
+    |  "." -> ()
+    | ".." ->
+       printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
+              (Filename.concat (dirname (dirname pathurl)) "")
+    | f ->
+       try
+         let fullname = Filename.concat path f in
+         let st = stat fullname in
+         match st.st_kind with
+         | S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
+         | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
+                       f f (st.st_size)
+         | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
+         | _ -> ()
+       with Unix_error(_,_,_) -> ()
+    );
+  printf "</PRE></BODY></HTML>"
+@
+
+% ??? -> <>
+<<function File.isdir>>=
+(* 
+ * Simulate directory
+ *)
+let isdir path f =
+  let fullname = Filename.concat path f in
+  (stat fullname).st_kind = S_DIR
+@
+% dead?
+
+
+
+
+
+
+
+\subsection{[[mailto://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "MAILTO" ->
+    let address = any lexbuf in
+    result.protocol <- MAILTO;
+    result.path <- address
+@
+
+% see extra
+
+
+\subsection{Proxied protocols}
+
+<<toplevel Protos._1>>=
+let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._3>>=
+let _ = Hashtbl.add protos GOPHER (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._4>>=
+let _ = Hashtbl.add protos NEWS (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._5>>=
+let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
+@
+
+<<toplevel Protos._6>>=
+let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
+@
+
+
+<<signature Http.proxy_req>>=
+val proxy_req:
+  Www.request -> Document.document_continuation -> (unit -> unit)
+@
+
+<<function Http.prox_req>>=
+and proxy_req wr cont = 
+  let cnx = proxy_request wr cont in
+  (fun () -> cnx#abort)
+@
+
+
+\subsection{[[ftp://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "FTP" -> (* we don't need the detail of path *)
+   slashslash lexbuf;
+   let u, p = userpass lexbuf in
+   let h, po = hostport lexbuf in
+   let path = slashpath lexbuf in
+   result.protocol <- FTP;
+   result.user <- u;
+   result.password <- p;
+   result.host <- h;
+   result.port <- normalize_port (FTP, po);
+   result.path <- path
+@
+
+
+<<function Lexurl.userpass>>=
+and userpass = parse
+  (* foo:bar@, foo:@ *)
+  [^ ':' '/' '@']+ ':' [^ ':' '/' '@']* '@'
+    { let lexeme = Lexing.lexeme lexbuf in
+      let pos = String.index lexeme ':' in
+      Some (String.sub lexeme 0 pos),
+      Some (String.sub lexeme (succ pos) (String.length lexeme - 2 - pos))
+    }
+  (* foo@, @ *)
+| [^ ':' '/' '@']* '@'
+   { let lexeme = Lexing.lexeme lexbuf in
+     Some (String.sub lexeme 0 (String.length lexeme - 1)), None
+   }
+      
+| ""
+   { None, None }
+@
+
+<<functions Lexurl.xxx>>=
+and slashpath = parse
+  "/" { any lexbuf }
+| ""  { None }
+@
+
+\subsection{[[telnet://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "TELNET" ->
+    slashslash lexbuf;
+    let u,p = userpass lexbuf in
+    let h,po = hostport lexbuf in
+    result.protocol <- TELNET;
+    result.user <- u;
+   result.password <- p;
+    result.host <- h;
+   result.port <- po
+@
+
+\subsection{[[nntp://]]}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "NNTP" ->
+    let h,po = hostport lexbuf in
+    let blah = any lexbuf in
+    result.protocol <- NEWS;
+    result.host <- h;
+    result.port <- po;
+    result.path <- blah
+@
+
+
+\subsection{Old protocols}
+
+<<[[Lexurl.f]] protocol cases>>=
+| "GOPHER" | "GOPHER+" -> (* we don't need the detail of path *)
+    slashslash lexbuf;
+    let h,po = hostport lexbuf in
+    let path = slashpath lexbuf in
+    result.protocol <- GOPHER;
+    result.host <- h;
+    result.port <- po;
+    result.path <- path
+| "NEWS" ->
+    let blah = any lexbuf in
+    result.protocol <- NEWS;
+    result.path <- blah
+| "WAIS" ->
+    slashslash lexbuf;
+    let h,po = hostport lexbuf in
+    let pa,se = pathsearch lexbuf in
+    result.protocol <- WAIS;
+    result.host <- h;
+   result.port <- po;
+    result.path <- pa;
+    result.search <- se
+| "PROSPERO" ->
+    slashslash lexbuf;
+    let h,po = hostport lexbuf in
+    let p = slashpath lexbuf in
+    result.protocol <- PROSPERO;
+    result.host <- h;
+   result.port <- po;
+    result.path <- p
+@
+
+
+
+\section{Audio}
+
+<<function Audio.fake_embed>>=
+(* Defines embedded viewer for audio types as re-running the document *)
+let fake_embed media_pars w ctx dh =
+  Document.dclose true dh;
+  try 
+    let hlink = {h_uri = Url.string_of dh.document_id.document_url;
+         h_context = None;
+         h_method = GET;
+         h_params = []} in
+    pack [Label.create w [Text "Redispatched externally"]][];
+    ctx#goto hlink
+  with 
+    Not_found (* goto *) -> 
+      pack [Label.create w [Text "No navigation given to us"]][]
+  | e ->
+      pack [Label.create w [Text (Printexc.to_string e)]][]
+@
+
+<<toplevel Audio._1>>=
+let _ =
+  Mmm.add_embedded_viewer ("audio", "*") fake_embed
+@
+
+
+
+\section{[[mmm_remote]]}
+
+\subsection{Server}
+
+<<[[Main.main()]] locals>>=
+let accept_external = ref false in
+@
+<<[[Main.main()]] command line options>>=
+"-external", Arg.Unit (fun () -> accept_external := true),
+"\t\tAccept remote command (mmm_remote <url>)";
+@
+
+<<[[Main.main()]] mmm server initialisation>>=
+(* This must occur after most initialisations *)
+if !accept_external 
+then Cci.init();
+@
+
+\subsection{Client}
+
+<<function Main_remote.request>>=
+let request sock cmd url =
+  if cmd <> "" 
+  then write sock cmd 0 (String.length cmd) |> ignore;
+  write sock url 0 (String.length url) |> ignore;
+  write sock "\n" 0 1 |> ignore;
+  let buf = String.create 1024 in
+  try
+    while true do
+      let n = read sock buf 0 1024 in
+      if n = 0 
+      then raise End_of_file 
+      else ignore (write stdout buf 0 n)
+    done
+  with End_of_file -> close sock
+@
+
+<<function Main_remote.main>>=
+let main () =
+  let file = 
+    Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
+  let cmd = ref "" in
+  
+  let s = socket PF_UNIX SOCK_STREAM 0 in
+  connect s (ADDR_UNIX file);
+  Arg.parse [ 
+  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
+  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
+  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
+  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
+  ]
+    (fun url -> request s !cmd url)
+    "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
+     The default is -show."
+@
+
+<<toplevel Main_remote._1>>=
+let _ = Printexc.catch main ()
 @
 
 
@@ -6721,430 +7485,6 @@ let sprintf (fmt : ('a, unit, string) format) =
 @
 
 
-\section{Gzip decoders}
-
-% for gzip stuff?
-
-<<signature Decoders.insert>>=
-val insert  : Document.handle -> Document.handle
-@
-
-<<signature Decoders.add>>=
-val add : string -> (Document.handle -> Document.handle) -> unit
-@
-
-<<constant Decoders.decoders>>=
-(* Insert a decoding if necessary.
- * We don't do it in http, since we don't want do decompress when we
- * save for example.
- *)
-
-let decoders = Hashtbl.create 37
-@
-
-
-<<toplevel Decoders._1>>=
-let _ =  
-  [ "COMPRESS", gzip;
-    "X-COMPRESS", gzip;
-    "GZIP", gzip;
-    "X-GZIP", gzip
-  ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
-@
-
-
-
-\section{Animated GIFs}
-
-\section{Extra Protocols}
-
-
-\subsection{[[file://]]}
-
-<<toplevel Protos._7>>=
-let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
-@
-
-<<[[Lexurl.f]] protocol cases>>=
-(* the spec says file://host/ dammit *)
-| "FILE" ->
-  (try
-     slashslash lexbuf;
-     let h = fhost lexbuf in
-     let p = slashpath lexbuf in
-     result.protocol <- FILE;
-     result.host <- h;
-     result.path <- p
-  with Url_Lexing _ ->
-    let p = slashpath lexbuf in
-    result.protocol <- FILE;
-    result.path <- p
-  )
-@
-
-<<functions Lexurl.xxx>>=
-and fhost = parse
-  ['A'-'Z' 'a'-'z' '0'-'9' '.' '-']+
-     { Some (normalize_host (Lexing.lexeme lexbuf)) }
-| ""
-     { Some "localhost" }
-@
-
-
-
-<<signature File.request>>=
-(* file: protocol *)
-val request : Www.request -> Document.document_continuation -> 
-   (unit -> unit)
-    (* [request wr cont] returns [abort] *)
-@
-
-<<exception File.File_error>>=
-exception File_error of string
-@
-
-<<function File.document_id>>=
-let document_id wwwr =
-  { document_url = wwwr.www_url; document_stamp = no_stamp}
-@
-
-%less: LP split and distribute in two sections below
-<<function File.request>>=
-(*
- * Display a file on the local unix file system (file:)
- *  is path really supposed to be absolute ?
- * Note: completely ignores method (GET, POST,...)
- *)
-
-let request wr cont =
-  let path = match wr.www_url.path with
-    Some path -> "/" ^ (Lexurl.remove_dots path)
-  | None -> "/" 
-  in
-  <<[[File.request()]] if CGI path>>
-  else   (* A bit weird, but we don't want to capture errors from the cont *)
-    let st =
-      try 
-        stat path 
-      with _ -> raise (File_error (I18n.sprintf "cannot stat file")) 
-    in
-    match st.st_kind with
-    | S_REG ->
-      begin
-      (* check if this is an update *)
-        try 
-          let since = get_header "if-modified-since" wr.www_headers in
-          let ht = Lexdate.ht_of_string since in
-          let filet = Http_date.ht_of_stamp st.st_mtime in
-          if Http_date.compare filet ht > 0
-          then raise Not_found (* fall through *)
-          else begin
-            let dh = { 
-              document_id = document_id wr;
-              document_referer = wr.www_link.h_context;
-              document_status = 304;
-              document_headers = [ sprintf "Date: %s" (Date.asc_now())];
-              document_feed = 
-                Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
-              document_fragment = wr.www_fragment;
-              document_logger = Document.tty_logger
-            } in
-            Retype.f dh;
-            cont.document_process dh;
-            (fun () -> ())
-          end
-       with
-       | Not_found  (* default case *)
-       | Lexdate.Invalid_date (_,_) ->
-          let s = 
-            try openfile path [O_RDONLY] 0
-            with Unix_error(_,_,_) -> 
-              raise (File_error (I18n.sprintf "cannot open file")) 
-          in
-          let dh =
-            { document_id = document_id wr;
-              document_referer = wr.www_link.h_context;
-              document_status = 200;
-              document_headers = 
-                [sprintf "Content-Length: %d" st.st_size;
-                 sprintf "Date: %s" (Date.asc_now());
-                 sprintf "Last-modified: %s" (Date.asc st.st_mtime)
-                ];
-              document_feed = Feed.of_fd s;
-              document_fragment = wr.www_fragment;
-              document_logger = Document.tty_logger
-            } in
-           Retype.f dh;
-           cont.document_process dh;
-           (fun () -> ())
-    end
-    | S_DIR -> 
-        let s = dir path in
-        cont.document_process 
-          { document_id = document_id wr;
-            document_referer = wr.www_link.h_context;
-            document_status = 200;
-            document_headers = ["Content-Type: text/html"];
-            document_feed = Feed.of_fd s;
-            document_fragment = wr.www_fragment;
-            document_logger = Document.tty_logger
-           };
-         (fun () -> ())
-
-    | _ -> raise (File_error (I18n.sprintf "cannot open file"))
-@
-
-
-\subsubsection{Files}
-
-\subsubsection{Directories}
-
-% File.request (DIR case) ->  <>
-<<function File.dir>>=
-(* It's easiest to do it asynchronously anyway *)
-let dir path =
-  try
-    let d = opendir path in
-    let cin, cout = pipe() in
-    match Low.fork() with
-    | 0 -> 
-        close cin; dup2 cout stdout; close cout;
-        begin
-          try 
-            d2html path d 
-          with e ->
-            print_endline (Printexc.to_string e)
-        end;
-        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
-        exit 0;
-        cin (*duh*)
-     | n -> closedir d; close cout; cin
-  with Unix_error(_,_,_)  -> 
-    raise (File_error (I18n.sprintf "cannot open dir"))
-@
-
-
-
-% File.dir -> <>
-<<function File.d2html>>=
-let d2html path d =
-  (* make sure that when path is used in url, it is / terminated *)
-  let pathurl =
-    let l = String.length path in
-    if l = 0 
-    then path 
-    else
-      if path.[l-1] = '/' 
-      then path
-      else sprintf "%s/" path
-  in
-  Printf.printf 
-"<HTML>
-<HEAD><TITLE>%s</TITLE>
-<BASE HREF=\"file://localhost%s\">
-</HEAD>
-<BODY>
-<H1>Directory list: %s</H1>
-<PRE>" path pathurl path;
-
-  let entries = ref [] in
-  begin 
-   try
-     while true do 
-       entries := (readdir d) :: !entries
-     done      	
-   with  End_of_file -> closedir d
-  end;
-  entries := Sort.list (<=) !entries;
-  !entries |> List.iter (function
-    |  "." -> ()
-    | ".." ->
-       printf "Dir   <A HREF=\"file://localhost%s\">..</A>\n"
-              (Filename.concat (dirname (dirname pathurl)) "")
-    | f ->
-       try
-         let fullname = Filename.concat path f in
-         let st = stat fullname in
-         match st.st_kind with
-         | S_DIR -> printf "Dir   <A HREF=\"%s\">%s</A>\n" f f
-         | S_REG -> printf "File  <A HREF=\"%s\">%-30s</A>%8d bytes\n" 
-                       f f (st.st_size)
-         | S_LNK -> printf "Link  <A HREF=\"%s\">%s</A>\n" f f
-         | _ -> ()
-       with Unix_error(_,_,_) -> ()
-    );
-  printf "</PRE></BODY></HTML>"
-@
-
-% ??? -> <>
-<<function File.isdir>>=
-(* 
- * Simulate directory
- *)
-let isdir path f =
-  let fullname = Filename.concat path f in
-  (stat fullname).st_kind = S_DIR
-@
-% dead?
-
-
-
-
-
-
-
-\subsection{[[mailto://]]}
-
-<<[[Lexurl.f]] protocol cases>>=
-| "MAILTO" ->
-    let address = any lexbuf in
-    result.protocol <- MAILTO;
-    result.path <- address
-@
-
-% see extra
-
-
-\subsection{Proxied protocols}
-
-<<toplevel Protos._1>>=
-let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._3>>=
-let _ = Hashtbl.add protos GOPHER (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._4>>=
-let _ = Hashtbl.add protos NEWS (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._5>>=
-let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
-@
-
-<<toplevel Protos._6>>=
-let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
-@
-
-
-<<signature Http.proxy_req>>=
-val proxy_req:
-  Www.request -> Document.document_continuation -> (unit -> unit)
-@
-
-<<function Http.prox_req>>=
-and proxy_req wr cont = 
-  let cnx = proxy_request wr cont in
-  (fun () -> cnx#abort)
-@
-
-
-\subsection{[[ftp://]]}
-
-<<[[Lexurl.f]] protocol cases>>=
-| "FTP" -> (* we don't need the detail of path *)
-   slashslash lexbuf;
-   let u, p = userpass lexbuf in
-   let h, po = hostport lexbuf in
-   let path = slashpath lexbuf in
-   result.protocol <- FTP;
-   result.user <- u;
-   result.password <- p;
-   result.host <- h;
-   result.port <- normalize_port (FTP, po);
-   result.path <- path
-@
-
-
-<<function Lexurl.userpass>>=
-and userpass = parse
-  (* foo:bar@, foo:@ *)
-  [^ ':' '/' '@']+ ':' [^ ':' '/' '@']* '@'
-    { let lexeme = Lexing.lexeme lexbuf in
-      let pos = String.index lexeme ':' in
-      Some (String.sub lexeme 0 pos),
-      Some (String.sub lexeme (succ pos) (String.length lexeme - 2 - pos))
-    }
-  (* foo@, @ *)
-| [^ ':' '/' '@']* '@'
-   { let lexeme = Lexing.lexeme lexbuf in
-     Some (String.sub lexeme 0 (String.length lexeme - 1)), None
-   }
-      
-| ""
-   { None, None }
-@
-
-<<functions Lexurl.xxx>>=
-and slashpath = parse
-  "/" { any lexbuf }
-| ""  { None }
-@
-
-\subsection{[[telnet://]]}
-
-<<[[Lexurl.f]] protocol cases>>=
-| "TELNET" ->
-    slashslash lexbuf;
-    let u,p = userpass lexbuf in
-    let h,po = hostport lexbuf in
-    result.protocol <- TELNET;
-    result.user <- u;
-   result.password <- p;
-    result.host <- h;
-   result.port <- po
-@
-
-\subsection{[[nntp://]]}
-
-<<[[Lexurl.f]] protocol cases>>=
-| "NNTP" ->
-    let h,po = hostport lexbuf in
-    let blah = any lexbuf in
-    result.protocol <- NEWS;
-    result.host <- h;
-    result.port <- po;
-    result.path <- blah
-@
-
-
-\subsection{Old protocols}
-
-<<[[Lexurl.f]] protocol cases>>=
-| "GOPHER" | "GOPHER+" -> (* we don't need the detail of path *)
-    slashslash lexbuf;
-    let h,po = hostport lexbuf in
-    let path = slashpath lexbuf in
-    result.protocol <- GOPHER;
-    result.host <- h;
-    result.port <- po;
-    result.path <- path
-| "NEWS" ->
-    let blah = any lexbuf in
-    result.protocol <- NEWS;
-    result.path <- blah
-| "WAIS" ->
-    slashslash lexbuf;
-    let h,po = hostport lexbuf in
-    let pa,se = pathsearch lexbuf in
-    result.protocol <- WAIS;
-    result.host <- h;
-   result.port <- po;
-    result.path <- pa;
-    result.search <- se
-| "PROSPERO" ->
-    slashslash lexbuf;
-    let h,po = hostport lexbuf in
-    let p = slashpath lexbuf in
-    result.protocol <- PROSPERO;
-    result.host <- h;
-   result.port <- po;
-    result.path <- p
-@
-
-
-
 \section{Security}
 
 
@@ -7527,95 +7867,6 @@ let add did doc =
 @
 
 
-\section{Audio}
-
-<<function Audio.fake_embed>>=
-(* Defines embedded viewer for audio types as re-running the document *)
-let fake_embed media_pars w ctx dh =
-  Document.dclose true dh;
-  try 
-    let hlink = {h_uri = Url.string_of dh.document_id.document_url;
-         h_context = None;
-         h_method = GET;
-         h_params = []} in
-    pack [Label.create w [Text "Redispatched externally"]][];
-    ctx#goto hlink
-  with 
-    Not_found (* goto *) -> 
-      pack [Label.create w [Text "No navigation given to us"]][]
-  | e ->
-      pack [Label.create w [Text (Printexc.to_string e)]][]
-@
-
-<<toplevel Audio._1>>=
-let _ =
-  Mmm.add_embedded_viewer ("audio", "*") fake_embed
-@
-
-
-
-\section{[[mmm_remote]]}
-
-\subsection{Server}
-
-<<[[Main.main()]] references>>=
-let accept_external = ref false in
-@
-<<[[Main.main()]] command line options>>=
-"-external", Arg.Unit (fun () -> accept_external := true),
-"\t\tAccept remote command (mmm_remote <url>)";
-@
-
-<<[[Main.main()]] mmm server initialisation>>=
-(* This must occur after most initialisations *)
-if !accept_external 
-then Cci.init();
-@
-
-\subsection{Client}
-
-<<function Main_remote.request>>=
-let request sock cmd url =
-  if cmd <> "" 
-  then write sock cmd 0 (String.length cmd) |> ignore;
-  write sock url 0 (String.length url) |> ignore;
-  write sock "\n" 0 1 |> ignore;
-  let buf = String.create 1024 in
-  try
-    while true do
-      let n = read sock buf 0 1024 in
-      if n = 0 
-      then raise End_of_file 
-      else ignore (write stdout buf 0 n)
-    done
-  with End_of_file -> close sock
-@
-
-<<function Main_remote.main>>=
-let main () =
-  let file = 
-    Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
-  let cmd = ref "" in
-  
-  let s = socket PF_UNIX SOCK_STREAM 0 in
-  connect s (ADDR_UNIX file);
-  Arg.parse [ 
-  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
-  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
-  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
-  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
-  ]
-    (fun url -> request s !cmd url)
-    "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
-     The default is -show."
-@
-
-<<toplevel Main_remote._1>>=
-let _ = Printexc.catch main ()
-@
-
-
-
 \section{Fake CGI}
 
 <<[[File.request()]] if CGI path>>=
@@ -7743,7 +7994,7 @@ let fake_cgi wwwr cont path =
 !Version.applet_init !modules;
 @
 
-<<[[Main.main()]] references>>=
+<<[[Main.main()]] locals>>=
 let modules = ref true in
 @
 <<[[Main.main()]] command line options>>=
@@ -7760,6 +8011,25 @@ val applet_init : (bool -> unit) ref
 <<constant Version.applet_init>>=
 (* Make it easier to compile both bytecode and native versions *)
 let applet_init = ref (fun _ -> ())
+@
+
+
+<<[[Mmm.navigator()]] User menu>>=
+(* User menu, extensible by applets *)
+let userb = Menubutton.create_named mbar "user" [Text (I18n.sprintf "User")] in
+let userm = ref (Menu.create_named userb "menu" []) in
+let reset_user_menu _ =
+  destroy !userm;
+  userm := Menu.create_named userb "menu" [];
+  !user_menus |> List.iter (fun (entry, f) ->
+      Menu.add_command !userm 
+           [Label entry; 
+            Command (fun () -> f (Nav.make_ctx nav hist.h_current.h_did))]
+  );
+  Menubutton.configure userb [Menu !userm] 
+in
+reset_user_menu();
+Frx_synth.bind userb "user_menu" reset_user_menu;
 @
 
 \section{Signals}

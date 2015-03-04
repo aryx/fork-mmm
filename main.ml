@@ -49,7 +49,6 @@ let usage_str =
 
 (*s: function Main.main *)
 let main () =
-
   (*s: [[Main.main()]] tk backends setup *)
   Error.default                    := new Tk_error.t Widget.default_toplevel;
   Condition.backend                := Tk_condition.backend ();
@@ -67,25 +66,24 @@ let main () =
   Mailto.internal_backend          := Tk_mailto.internal;
   (*e: [[Main.main()]] tk backends setup *)
 
- (* As always, we must parse argument first, using references... *)
-  (*s: [[Main.main()]] references *)
+  (* As always, we must parse argument first, using references... *)
+  (*s: [[Main.main()]] locals *)
   let init_urls = ref [] in
-  (*x: [[Main.main()]] references *)
+  (*x: [[Main.main()]] locals *)
   let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
-  (*x: [[Main.main()]] references *)
-  let clicktofocus = ref false in
-  (*x: [[Main.main()]] references *)
-  let palette = ref None in
-  (*x: [[Main.main()]] references *)
-  let preffile = ref (Mmm.user_file "MMM.ad") in
-  (*x: [[Main.main()]] references *)
+  (*x: [[Main.main()]] locals *)
   let sufxfile = ref (Mmm.user_file "mime.types") in
-  (*x: [[Main.main()]] references *)
+  (*x: [[Main.main()]] locals *)
+  let preffile = ref (Mmm.user_file "MMM.ad") in
+  (*x: [[Main.main()]] locals *)
+  let palette = ref None in
+  (*x: [[Main.main()]] locals *)
+  let clicktofocus = ref false in
+  (*x: [[Main.main()]] locals *)
   let accept_external = ref false in
-  (*x: [[Main.main()]] references *)
+  (*x: [[Main.main()]] locals *)
   let modules = ref true in
-  (*e: [[Main.main()]] references *)
-
+  (*e: [[Main.main()]] locals *)
   Arg.parse [
    (*s: [[Main.main()]] command line options *)
    "-d", Arg.String (fun s -> display := s),
@@ -94,11 +92,8 @@ let main () =
    "-display", Arg.String (fun s -> display := s),
    "<foo:0>\tDisplay";
    (*x: [[Main.main()]] command line options *)
-   "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-   "\tClick to Focus mode (default is Focus Follows Mouse)";
-   (*x: [[Main.main()]] command line options *)
-   "-palette", Arg.String (fun s -> palette := Some s),
-   "<color>\tTk Palette";
+   "-suffixes", Arg.String (fun s -> sufxfile := s),
+   "<file>\tSuffix file";
    (*x: [[Main.main()]] command line options *)
    "-prefs", Arg.String (fun s -> preffile := s),
    "<file>\t\tPreference File";
@@ -106,11 +101,17 @@ let main () =
    "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
    "<wxh+x+y>\tInitial geometry for the first navigator";
    (*x: [[Main.main()]] command line options *)
+   "-palette", Arg.String (fun s -> palette := Some s),
+   "<color>\tTk Palette";
+   (*x: [[Main.main()]] command line options *)
+   "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
+   "\tClick to Focus mode (default is Focus Follows Mouse)";
+   (*x: [[Main.main()]] command line options *)
    "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
    "<url>\tHelp URL";
    (*x: [[Main.main()]] command line options *)
-   "-suffixes", Arg.String (fun s -> sufxfile := s),
-   "<file>\tSuffix file";
+   "-external", Arg.Unit (fun () -> accept_external := true),
+   "\t\tAccept remote command (mmm_remote <url>)";
    (*x: [[Main.main()]] command line options *)
    "-proxy", Arg.String (fun s -> Http.proxy := s), 
    "<hostname>\tProxy host";
@@ -124,29 +125,24 @@ let main () =
    "-msgfile", Arg.String (fun s -> I18n.message_file := s),
    "<file>\tI18n message file";
    (*x: [[Main.main()]] command line options *)
-   "-external", Arg.Unit (fun () -> accept_external := true),
-   "\t\tAccept remote command (mmm_remote <url>)";
-   (*x: [[Main.main()]] command line options *)
    "-nomodule", Arg.Unit (fun () -> modules := false),
    "\t\tDon't load initial modules";
    (*e: [[Main.main()]] command line options *)
   ]
     (fun s -> init_urls := s :: !init_urls)
     usage_str
-   ;
-
+  ;
   (*s: [[Main.main()]] signal handling *)
   Sys.catch_break true;
   (* Avoid SIGPIPE completely, in favor of write() errors *)
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   (*e: [[Main.main()]] signal handling *)
-
   (*s: [[Main.main()]] initialisation *)
   (*s: [[Main.main()]] tk initialisation *)
   let top = Tk.openTkDisplayClass !display "mmm" in
 
   Wm.withdraw top;
-
+  (*x: [[Main.main()]] tk initialisation *)
   if not !clicktofocus 
   then Focus.follows_mouse();
   (*e: [[Main.main()]] tk initialisation *)
@@ -215,7 +211,7 @@ let main () =
 
   let url_opt = 
     match !init_urls with 
-    | [] -> None 
+    | []     -> None 
     | x :: l -> Some x
   in
   let user_preferences_file =
@@ -227,7 +223,6 @@ let main () =
   Mmm.initial_navigator user_preferences_file url_opt |> ignore;
 
   safe_loop();
-
   (*s: [[Main.main()]] after event loop, if debug mode *)
   if !Log.debug_mode then begin
     Cache.postmortem();

@@ -17229,6 +17229,10 @@ and display di =
 
 <<function Mmm.navigator>>
 
+<<function Mmm.new_window_initial>>
+
+<<function Mmm.new_window_set>>
+
 <<constant Mmm.client_navigator>>
 
 <<constant Mmm.main_navigator>>
