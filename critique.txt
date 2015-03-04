@@ -1,0 +1,9 @@
+wrong indentation at many places
+
+lots of nested functions, very long functions
+
+use of exceptions for regular flow
+
+lots of objects
+
+lots of curry and partial app that makes the code harder to understand
