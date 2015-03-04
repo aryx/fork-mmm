@@ -27,6 +27,7 @@
 
 %thx to this manual, better understand web browsers?:
 % - TODO encodings, accents, base64, iso8559, etc
+% - TODO better understand html, cs, js?
 
 %history LP-ization:
 % - skeleton, mostly copy paste of Template.nw skeleton
@@ -259,6 +260,15 @@ val http : string              (* the version in User-Agent field *)
 let http = "MMM/0." ^ string_of_int number
 @
 
+<<signature Version.number>>=
+(* Version and other builtin strings *)
+val number : int
+@
+<<constant Version.number>>=
+(* Version *)
+let number = 418
+@
+
 
 
 <<signature Version.about>>=
@@ -285,17 +295,9 @@ http://pauillac.inria.fr/~rouaix/
 "
   | s -> failwith (Printf.sprintf "language not supported: %s" s)
 @
-old: assert false
+%old: assert false
 
 
-<<signature Version.number>>=
-(* Version and other builtin strings *)
-val number : int
-@
-<<constant Version.number>>=
-(* Version *)
-let number = 418
-@
 
 <<constant Version.version_number>>=
 let version_number = 
@@ -705,6 +707,8 @@ val get: Url.protocol ->
 @
 % will see below what are those Document.xxx
 %less: define a record type?
+% the unit -> unit is actually a returned aborter hook! so caller
+%  can abort the request, maybe could do a type?
 
 <<constant Protos.protos>>=
 let protos = Hashtbl.create 11
@@ -932,7 +936,8 @@ type attribute_value = string
 <<[[Main.main()]] locals>>=
 let init_urls = ref [] in
 @
-% possible command line arguments, $ mmm http://www.google.com
+% possible command line arguments, 
+%   $ mmm http://www.google.com
 
 % _ -> Main.postmortem -> <>
 <<function Main.main>>=
@@ -959,7 +964,7 @@ let main () =
     <<[[Main.main()]] user preferences file>>
   in
   (* Start the initial navigator *)
-  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
+  Mmm.initial_navigator user_preferences_file url_opt;
 
   safe_loop();
   <<[[Main.main()]] after event loop, if debug mode>>
@@ -1010,9 +1015,9 @@ Mailto.internal_backend          := Tk_mailto.internal;
 
 <<[[Main.main()]] tk initialisation>>=
 let top = Tk.openTkDisplayClass !display "mmm" in
-
 Wm.withdraw top;
 @
+% withdraw??
 
 %(*
 %(* Just after the init. of Tk, we have to detect the Tk is under
@@ -1080,6 +1085,7 @@ let localize file =
 
 
 \subsection{Local initialisation}
+% bad section title
 
 <<[[Main.main()]] local initialisation>>=
 (* Local initialisations *)
@@ -1089,9 +1095,9 @@ Auth.init();                        (* start expiration timer *)
 Debug.init();                       (* debugging RPC *)
 @
 %Low.init(), see Concurrency chapter
+%Cache.init(), see next section
 %Auth.init(), see Security chapter
 %Debug.init(), see Debugging in appendix
-%Cache.init(), see next section
 
 \subsection{Initial fake URL and HTML document}
 
@@ -1105,7 +1111,7 @@ let init () =
   let initurl = Lexurl.make (Version.initurl (Lang.lang ())) in
 
   let b = Ebuffer.create 128 in
-  Ebuffer.output_string b (Version.html (Lang.lang ()));
+  Ebuffer.output_string b (Version.inithtml (Lang.lang ()));
 
   let docid = { 
     document_url = initurl;
@@ -1144,12 +1150,12 @@ let initurl = function
 % so Version.initurl and Version.html
 
 <<signature Version.html>>=
-val html : string -> string    (* fake initial document *)
+val inithtml : string -> string    (* fake initial document *)
 @
-%todo: rename inithtml, to match initurl
+%old: I rename inithtml, to match initurl
 %less: type language = string
 <<function Version.html>>=
-let html = function
+let inithtml = function
   | "iso8859" ->
 "<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
 <BODY>
@@ -1205,24 +1211,27 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 
 \section{[[Mmm.initial_navigator()]]}
 
+% in main():
 %  (* Start the initial navigator *)
 %  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
 
-% file pref and url opt, return something? what for? for multi window
+% file pref and url opt
 <<signature Mmm.initial_navigator>>=
-val initial_navigator : string -> string option -> Nav.t option
+val initial_navigator : string -> string option -> unit
 @
 % main -> <>
 <<function Mmm.initial_navigator>>=
 let initial_navigator preffile init_url =
   <<[[Mmm.initial_navigator()]] set preferences>>
-  <<[[Mmm.initial_navigator()]] set initial page>>
+  <<[[Mmm.initial_navigator()]] set initial page based on init_url>>
   main_navigator :=
      navigator true 
-       (match !initial_page with Some u -> u | None -> assert false);
-  !main_navigator
+       (match !initial_page with Some u -> u | None -> assert false)
 @
+%old: used to return !main_navigator, but it was ignored anyway
+% so I simplified the code
 
+% mv later?
 <<signature Mmm.main_navigator>>=
 val main_navigator : Nav.t option ref
 @
@@ -1233,6 +1242,9 @@ let main_navigator = ref None
 % so this could be moved in the extra features chapter
 
 
+% the set preferences will be exposed in extra features,
+% let's focus for now on initial URL and navigator call
+
 \subsection{Initial URL}
 
 <<constant Mmm.initial_page>>=
@@ -1240,7 +1252,7 @@ let initial_page = ref None
 @
 % why need to store? if create a new window?
 
-<<[[Mmm.initial_navigator()]] set initial page>>=
+<<[[Mmm.initial_navigator()]] set initial page based on init_url>>=
 initial_page := Some (
    match init_url with
    | None -> Lexurl.make !Mmmprefs.home
@@ -1248,25 +1260,33 @@ initial_page := Some (
        begin
          try Lexurl.make x 
        with _ -> (* If fails, try to use file: *)
-         let path = 
-           if x.[0] = '/' 
-           then x
-           else Filename.concat (Unix.getcwd ()) x
-         in
-         Lexurl.make ("file://localhost" ^ path)
+        <<[[Mmm.initial_navigator()]] if cannot parse init_url>>
        end
 );
 @
 % why need to store that? can't just be a let?
 % again I think it's because of the multi windows
 
-\subsection{[[Mmm.navigator()]]}
+<<[[Mmm.initial_navigator()]] if cannot parse init_url>>=
+let path = 
+  if x.[0] = '/' 
+  then x
+  else Filename.concat (Unix.getcwd ()) x
+in
+Lexurl.make ("file://localhost" ^ path)
+@
+% so can do
+%    $ ./mmm docs/website/tech.html
+% cool :)
+
+\subsection{[[Mmm.navigator()]] and [[Nav.t]]}
 
 <<signature Mmm.navigator>>=
 val navigator : bool -> Url.t -> Nav.t option
 @
 % has_tachy means also main window
-% Mmm.initial_navigator -> <>(, true, )
+
+% main -> Mmm.initial_navigator -> <>(, true, )
 <<function Mmm.navigator>>=
 let rec navigator has_tachy initial_url =
   <<[[Mmm.navigator()]] new navigator hook>>
@@ -1279,14 +1299,26 @@ let rec navigator has_tachy initial_url =
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
     <<[[Mmm.navigator()]] if not main window, create default toplevel>>
   in
-  <<[[Mmm.navigator()]] locals>>
-
   Wm.title_set top (I18n.sprintf "MMM Browser");
   <<[[Mmm.navigator()]] setup top packing>>
 
+  <<[[Mmm.navigator()]] locals>>
+
   (* protect all the other initialisations *)
   try 
-    <<[[Mmm.navigator()]] inside try>>
+    (* The frame in which a viewer might want to display *)
+    let viewer_frame = Frame.create_named top "viewer" [] in
+    
+    <<[[Mmm.navigator()]] locals before nav setting>>
+    let nav = { 
+      <<[[Mmm.navigator()]] set nav fields>>
+    }
+    in
+    <<[[Mmm.navigator()]] nested functions>>
+    <<[[Mmm.navigator()]] widgets setting>>
+
+    absolutegoto nav (Url.string_of initial_url);
+    Some nav
 
   with e -> 
     !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
@@ -1299,25 +1331,222 @@ let rec navigator has_tachy initial_url =
     <<[[Mmm.navigator()]] exn handler, else if multiple navigators>>
 @
 % => top widget
+%less: rewrite !Error.default#f -> Error.f ?
 
 
+% absolutegoto!! initiate the whole thing!
 
-<<[[Mmm.navigator()]] inside try>>=
-(* The frame in which a viewer might want to display *)
-let viewer_frame = Frame.create_named top "viewer" [] in
+\ifallcode
+<<[[Mmm.navigator()]] locals before nav setting>>=
+<<local Mmm.navigator.hist>>
+<<local function Mmm.navigator.show_current>>
+<<local function Mmm.navigator.add_hist>>
+<<local object Mmm.navigator.error>>
+<<local Mmm.navigator.loggingv>>
+<<local Mmm.navigator.actives>>
+@
 
-<<[[Mmm.navigator()]] locals before nav setting>>
-let nav = { 
-  <<[[Mmm.navigator()]] set nav fields>>
-}
-in
 
+<<[[Mmm.navigator()]] nested functions>>=
 (* The navigation functions *)
-<<[[Mmm.navigator()]] navigation functions>>
-(* A bunch of other functions *)
-<<[[Mmm.navigator()]] new window functions>>
-<<[[Mmm.navigator()]] other functions>>
 
+<<function Mmm.navigator.back>>
+<<function Mmm.navigator.forward>>
+<<function Mmm.navigator.reload>>
+<<function Mmm.navigator.update>>
+
+(* A bunch of other functions *)
+
+<<function Mmm.navigator.abort>>
+<<function Mmm.navigator.open_sel>>
+<<function Mmm.navigator.open_file>>
+<<function Mmm.navigator.save>>
+<<function Mmm.navigator.print>>
+<<function Mmm.navigator.close>>
+<<function Mmm.navigator.really_quit>>
+<<function Mmm.navigator.gohome>>
+<<function Mmm.navigator.redisplay>>
+<<function Mmm.navigator.add_to_hotlist>>
+<<function Mmm.navigator.load_images>>
+<<function Mmm.navigator.view_source>>
+@
+
+\fi
+
+%\subsection{[[Nav.t]]}
+
+<<type Nav.t>>=
+type t = {
+  nav_viewer_frame : Widget.widget;
+  <<[[Nav.t]] other fields>>
+ }
+@
+
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_viewer_frame = viewer_frame;
+@
+
+
+\subsection{[[Nav.absolutegoto()]]}
+
+<<signature Nav.absolutegoto>>=
+val absolutegoto : t -> string -> unit
+@
+% navigator -> (enter on URL entry | explicit call)  -> <>
+<<function Nav.absolutegoto>>=
+(* Used outside an hyperlink *)
+let absolutegoto nav uri =
+  follow_link nav { 
+    h_uri = uri; 
+    h_context = None; 
+    h_method = GET; 
+    h_params = []
+  }
+@
+%old: duplicated code
+%  let follow_link = 
+%    request nav true id_wr 
+%      (process_viewer true make_ctx) (specific_viewer true)
+%  in
+
+<<signature Nav.follow_link>>=
+val follow_link : t -> Hyper.link -> unit
+@
+<<function Nav.follow_link>>=
+let follow_link nav =
+  request nav true id_wr (process_viewer true make_ctx) (specific_viewer true)
+@
+% all those true booleans ... hard to read
+
+\subsection{[[Nav.request()]]}
+
+<<signature Nav.request>>=
+val request :
+  t ->
+  bool ->
+  (Www.request -> Www.request) ->
+  (t -> Www.request -> Document.handle -> unit) ->
+  (t -> Document.document_id -> Www.request -> unit) -> 
+  Hyper.link -> 
+  unit
+@
+% wow, complicated type
+
+<<function Nav.request>>=
+(* [request nav usecache wrapwr process specific] produces a function that
+   takes an hyperlink, and apply the given behavior to it.
+   [usecache] : do we look in the cache to see if we have it already
+   [process nav wr dh] : what to to with the retrieved document
+   [specific nav did wr] : some specific behavior, checked before we
+     look in the cache. Must either raise Not_found or process completely
+     the link
+   [wrapwr wr] : returns a modified wr
+ *)
+let request nav usecache wrapwr process specific =
+
+  (* Normally execute the request and process its answer (dh) *)
+  let rec retrieve_and_handle wr =
+    match Retrieve.f wr handle_link
+    { document_finish = (fun _ -> nav.nav_rem_active wr.www_url);
+      document_process = (fun dh ->
+        process nav wr dh;
+        nav.nav_rem_active wr.www_url)}
+    with
+    | Retrieve.Started abort -> nav.nav_add_active wr.www_url abort
+    | Retrieve.InUse -> raise (Duplicate wr.www_url)
+      
+  (* Wrapper to deal with general/specific cache *)
+  and handle_wr wr =
+    try
+      match wr.www_url.protocol with
+     | MAILTO -> Mailto.f wr
+      (* mailto: is really a pain. It doesn't fit the retrieval semantics
+       of WWW requests. *)
+      | _ ->
+         if (not usecache) || dont_check_cache wr 
+         then retrieve_and_handle wr
+         else
+           (* If the the document can be cached, then it is with no_stamp *)
+           let did = {document_url = wr.www_url; document_stamp = no_stamp} in
+           try
+             specific nav did wr
+           with Not_found ->
+             try
+               let doc = Cache.find did in
+               try (* display it from source *)
+                 process nav wr (Cache.make_handle wr doc)
+               with 
+               | Sys_error s ->
+                   wr.www_error#f (I18n.sprintf
+                    "Cache error occurred during save of temporary buffer (%s)"
+                       s)
+               | Unix_error (e,fname,arg) ->
+                   wr.www_error#f (I18n.sprintf 
+               "Cache error occurred when opening temporary file\n%s: %s (%s)"
+               fname (Unix.error_message e) arg)
+            with Not_found -> (* we don't have the document *)
+              retrieve_and_handle wr
+    with
+      Duplicate url ->
+        wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
+
+  and handle_link h =
+    try (* Convert the link into a request *)
+      let wr = Plink.make h in
+      wr.www_error <- nav.nav_error;
+      handle_wr (wrapwr wr)
+    with
+    | Invalid_link msg ->
+        nav.nav_error#f (I18n.sprintf "Invalid link")
+    | Invalid_request (wr, msg) ->
+        nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
+                          (Url.string_of wr.www_url) msg)
+  in
+  handle_link
+@
+
+
+
+<<[[Nav.t]] other fields>>=
+nav_add_active : Url.t -> (unit -> unit) -> unit;
+nav_rem_active : Url.t -> unit;
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_add_active = Hashtbl.add actives;
+nav_rem_active = Hashtbl.remove actives;
+@
+<<local Mmm.navigator.actives>>=
+let actives = Hashtbl.create 37 in
+@
+
+
+
+
+\section{The event loop}
+
+<<function Main.safe_loop>>=
+let rec safe_loop() =
+  try
+    Printexc.print Tk.mainLoop () (* prints and reraises *)
+  with
+  | Out_of_memory -> raise Out_of_memory
+  | Sys.Break -> raise Sys.Break
+  | Stack_overflow -> raise Stack_overflow
+  | e -> 
+      flush Pervasives.stderr; 
+      safe_loop()
+@
+
+
+
+\chapter{Navigator Interface}
+% The chrome
+% gui/
+
+\section{Layout}
+
+
+<<[[Mmm.navigator()]] widgets setting>>=
 (* Short cuts *)
 <<[[Mmm.navigator()]] short cuts>>
 
@@ -1327,9 +1556,9 @@ in
 let hgroup = Frame.create_named top "hgroup" [] in
 let vgroup = Frame.create_named hgroup "vgroup" [] in (* Menus, open entry *)
 
+(* Menus *)
 let mbar = Frame.create_named vgroup "menubar" [] in
 <<[[Mmm.navigator()]] setup menu>>
-
 <<[[Mmm.navigator()]] setup open url entry>>
 
 (* Navigation buttons *)
@@ -1349,194 +1578,33 @@ Tkwait.visibility hgroup;
 
 <<[[Mmm.navigator()]] call update_vhistory>>
 <<[[Mmm.navigator()]] touch current>>
-
-absolutegoto nav (Url.string_of initial_url);
-Some nav
 @
-% absolutegoto!! initiate the whole thing!
 %less: put call to update_vhistory close to absolutegoto? can
 % exchange with touch_current? in both case they initialize things
 % and initiate the "big bang"
 
-\ifallcode
-<<[[Mmm.navigator()]] locals before nav setting>>=
-<<local Mmm.navigator.hist>>
-<<local function Mmm.navigator.show_current>>
-<<local function Mmm.navigator.add_hist>>
-<<local object Mmm.navigator.error>>
-<<local Mmm.navigator.loggingv>>
-<<local Mmm.navigator.actives>>
-@
-\fi
 
-\subsection{[[Nav.t]]}
-
-<<type Nav.t>>=
-type t = {
-  nav_viewer_frame : Widget.widget;
-  <<[[Nav.t]] other fields>>
- }
+<<[[Mmm.navigator()]] setup top packing>>=
+(* the size of the navigator MUST NOT depend on what is displayed inside *)
+(* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
+Pack.propagate_set top false;
 @
 
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_viewer_frame = viewer_frame;
+% menubar, buttons, entry, buttons
+<<[[Mmm.navigator()]] packing part one>>=
+pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
+pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
+       [Side Side_Left; Fill Fill_X];
+pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
+pack [fb][Fill Fill_X];
 @
 
 
-%XXX
-<<[[Nav.t]] other fields>>=
-nav_id : int;  (* key for the gfx cache *)
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_id = hist.h_key;
-@
-
-
-
-
-<<[[Nav.t]] other fields>>=
-nav_new : Hyper.link -> unit;
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_new = (fun link ->
-     try
-       let wwwr = Plink.make link in
-       navigator false wwwr.www_url |> ignore; ()
-     with Invalid_link msg -> 
-      error#f (I18n.sprintf "Invalid link")
-);
-@
-
-
-
-<<[[Nav.t]] other fields>>=
-nav_add_active : Url.t -> (unit -> unit) -> unit;
-nav_rem_active : Url.t -> unit;
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_add_active = Hashtbl.add actives;
-nav_rem_active = Hashtbl.remove actives;
-@
-<<local Mmm.navigator.actives>>=
-let actives = Hashtbl.create 37 in
-@
-
-\subsection{[[Nav.absolutegoto()]]}
-
-<<signature Nav.absolutegoto>>=
-val absolutegoto : t -> string -> unit
-@
-% navigator -> (enter on URL entry | explicit call)  -> <>
-<<function Nav.absolutegoto>>=
-(* Used outside an hyperlink *)
-let absolutegoto nav uri =
-  follow_link nav { 
-    h_uri = uri; 
-    h_context = None; 
-    h_method = GET; 
-    h_params = []
-  }
-@
-%  let follow_link = 
-%    request nav true id_wr 
-%      (process_viewer true make_ctx) (specific_viewer true)
-%  in
-
-<<signature Nav.follow_link>>=
-val follow_link : t -> Hyper.link -> unit
-@
-<<function Nav.follow_link>>=
-let follow_link nav =
-  request nav true id_wr (process_viewer true make_ctx) (specific_viewer true)
-@
-
-\subsection{[[Nav.request()]]}
-
-<<signature Nav.request>>=
-val request :
-  t ->
-  bool ->
-  (Www.request -> Www.request) ->
-  (t -> Www.request -> Document.handle -> unit) ->
-  (t -> Document.document_id -> Www.request -> unit) -> 
-  Hyper.link -> 
-  unit
-@
-
-
-<<function Nav.request>>=
-(* [request nav usecache wrapwr process specific] produces a function that
-   takes an hyperlink, and apply the given behavior to it.
-   [usecache] : do we look in the cache to see if we have it already
-   [process nav wr dh] : what to to with the retrieved document
-   [specific nav did wr] : some specific behavior, checked before we
-     look in the cache. Must either raise Not_found or process completely
-     the link
-   [wrapwr wr] : returns a modified wr
- *)
-let request nav usecache wrapwr process specific =
-  (* Normally execute the request and process its answer (dh) *)
-  let rec retrieve_and_handle wr =
-    match Retrieve.f wr handle_link
-    { document_finish = (fun _ -> nav.nav_rem_active wr.www_url);
-      document_process = (fun dh ->
-        process nav wr dh;
-        nav.nav_rem_active wr.www_url)}
-    with
-    | Retrieve.Started abort -> nav.nav_add_active wr.www_url abort
-    | Retrieve.InUse -> raise (Duplicate wr.www_url)
-      
-  (* Wrapper to deal with general/specific cache *)
-  and handle_wr wr =
-    try
-      match wr.www_url.protocol with
-       MAILTO -> Mailto.f wr
-    (* mailto: is really a pain. It doesn't fit the retrieval semantics
-       of WWW requests. *)
-      | _ ->
-         if (not usecache) || dont_check_cache wr then retrieve_and_handle wr
-      else
-          (* If the the document can be cached, then it is with no_stamp *)
-        let did = {document_url = wr.www_url; document_stamp = no_stamp} in
-        try
-          specific nav did wr
-        with
-          Not_found ->
-               try
-            let doc = Cache.find did in
-            try (* display it from source *)
-                process nav wr (Cache.make_handle wr doc)
-            with
-            Sys_error s ->
-              wr.www_error#f 
-            (I18n.sprintf
-               "Cache error occurred during save of temporary buffer (%s)"
-               s)
-            | Unix_error (e,fname,arg) ->
-              wr.www_error#f
-            (I18n.sprintf 
-               "Cache error occurred when opening temporary file\n%s: %s (%s)"
-               fname (Unix.error_message e) arg)
-               with 
-            Not_found -> (* we don't have the document *)
-            retrieve_and_handle wr
-    with
-      Duplicate url ->
-        wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
-
-  and handle_link h =
-    try (* Convert the link into a request *)
-      let wr = Plink.make h in
-      wr.www_error <- nav.nav_error;
-      handle_wr (wrapwr wr)
-    with
-      Invalid_link msg ->
-       nav.nav_error#f (I18n.sprintf "Invalid link")
-    | Invalid_request (wr, msg) ->
-       nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
-                   (Url.string_of wr.www_url) msg)
-  in
-  handle_link
+<<[[Mmm.navigator()]] packing part two>>=
+(* Pack last to avoid lossage when resizing *)
+pack [vgroup][Fill Fill_X; Expand true; Side Side_Left];
+pack [hgroup][Fill Fill_X];
+pack [viewer_frame][Fill Fill_Both; Expand true];
 @
 
 
@@ -1574,168 +1642,6 @@ touch_current();
 
 % Gcache.touch
 
-
-
-
-\section{The event loop}
-
-<<function Main.safe_loop>>=
-let rec safe_loop() =
-  try
-    Printexc.print Tk.mainLoop () (* prints and reraises *)
-  with
-  | Out_of_memory -> raise Out_of_memory
-  | Sys.Break -> raise Sys.Break
-  | Stack_overflow -> raise Stack_overflow
-  | e -> 
-      flush Pervasives.stderr; 
-      safe_loop()
-@
-
-
-
-\chapter{Navigator Interface}
-% The chrome
-% gui/
-
-\section{Layout}
-
-<<[[Mmm.navigator()]] setup top packing>>=
-(* the size of the navigator MUST NOT depend on what is displayed inside *)
-(* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
-Pack.propagate_set top false;
-@
-
-% menubar, buttons, entry, buttons
-<<[[Mmm.navigator()]] packing part one>>=
-pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
-pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
-       [Side Side_Left; Fill Fill_X];
-pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
-pack [fb][Fill Fill_X];
-@
-
-
-<<[[Mmm.navigator()]] packing part two>>=
-(* Pack last to avoid lossage when resizing *)
-pack [vgroup][Fill Fill_X; Expand true; Side Side_Left];
-pack [hgroup][Fill Fill_X];
-pack [viewer_frame][Fill Fill_Both; Expand true];
-@
-
-
-\section{Functions}
-
-<<[[Mmm.navigator()]] navigation functions>>=
-(*  The cache may have been cleared, so the document may be lost.
- *  historygoto implements the proper logic for this, taking care
- *  of non-unique documents.
- *)
-let back () = 
-  match History.back hist with
-   | None -> ()
-   | Some (did, frag) -> 
-       if not (historygoto nav did frag true) 
-       then History.forward hist |> ignore
-in
-let forward () =
-  match History.forward hist with
-  | None -> ()
-  | Some (did, frag) -> 
-      if not (historygoto nav did frag true) 
-      then History.back hist |> ignore
-in
-let reload () =
-  let did = hist.h_current.h_did in
-  let frag = hist.h_current.h_fragment in
-  if did.document_stamp = no_stamp then begin
-    (* kill both in cache and in gcache *)
-    Cache.kill did; 
-    Gcache.remove hist.h_key did;
-    historygoto nav did frag false |> ignore
-  end
-    else
-      error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
-in
-
-let update nocache =
-  let did = hist.h_current.h_did in
-  if did.document_stamp = no_stamp then
-    Nav.update nav did nocache
-  else (* POST result *)
-    error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
-in
-@
-
-<<[[Mmm.navigator()]] other functions>>=
-let abort () =
-  actives |> Hashtbl.iter (fun url abort -> abort());
-  Hashtbl.clear actives;
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_abort
-in
-let open_sel () =
-  try 
-    let url = Selection.get [] in
-    absolutegoto nav url
-  with _ -> ()
-in
-let open_file () =
-  Fileselect.f (I18n.sprintf "Open File") (function
-    | [] -> ()
-    | [s] -> 
-        let path = Msys.tilde_subst s in
-        absolutegoto nav ("file://localhost/"^path)
-    | l -> raise (Failure "multiple selection")
-   )
-     "*" 
-     ""
-     false
-     false
-in
-let save () = 
- Save.document hist.h_current.h_did None 
-in
-let print () = 
-  Save.document hist.h_current.h_did 
-     (Some (sprintf "|%s" !Save.print_command))
-in
-let close () =
-  if !navigators = 1 
-  then quit true
-  else destroy top
-in
-let really_quit () = 
-  quit false
-in
-let gohome () = 
-  absolutegoto nav !Mmmprefs.home
-in
-let redisplay () =
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_redisplay
-in
-let add_to_hotlist () =
-  match !current_di with
-  | None -> ()
-  | Some di -> 
-      Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
-                  di#di_title
-in
-let load_images () =
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_load_images
-in
-let view_source () =     
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_source
-in
-@
-%todo: LP split and distribute
 
 
 
@@ -1833,6 +1739,15 @@ let add_hist did frag =
 in
 @
 
+%XXX
+<<[[Nav.t]] other fields>>=
+nav_id : int;  (* key for the gfx cache *)
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_id = hist.h_key;
+@
+
+
 <<[[Nav.t]] other fields>>=
 nav_add_hist : Document.document_id -> string option -> unit;
 @
@@ -1892,9 +1807,33 @@ let backb = Button.create_named fb
   "back" [Text (I18n.sprintf "Back"); Command back ] in
 @
 
+<<function Mmm.navigator.back>>=
+(*  The cache may have been cleared, so the document may be lost.
+ *  historygoto implements the proper logic for this, taking care
+ *  of non-unique documents.
+ *)
+let back () = 
+  match History.back hist with
+   | None -> ()
+   | Some (did, frag) -> 
+       if not (historygoto nav did frag true) 
+       then History.forward hist |> ignore
+in
+@
+
 <<[[Mmm.navigator()]] navigation buttons>>=
 let forwardb = Button.create_named fb 
   "forward" [Text (I18n.sprintf "Forward"); Command forward] in
+@
+
+<<function Mmm.navigator.forward>>=
+let forward () =
+  match History.forward hist with
+  | None -> ()
+  | Some (did, frag) -> 
+      if not (historygoto nav did frag true) 
+      then History.back hist |> ignore
+in
 @
 
 
@@ -1903,6 +1842,12 @@ let forwardb = Button.create_named fb
 <<[[Mmm.navigator()]] navigation buttons>>=
 let homeb = Button.create_named fb "home"
   [ Text (I18n.sprintf "Home"); Command gohome] in
+@
+
+<<function Mmm.navigator.gohome>>=
+let gohome () = 
+  absolutegoto nav !Mmmprefs.home
+in
 @
 
 
@@ -1932,11 +1877,46 @@ let reloadb = Button.create_named fb
   "reload" [Text (I18n.sprintf "Reload"); Command reload] in
 @
 
+<<function Mmm.navigator.reload>>=
+let reload () =
+  let did = hist.h_current.h_did in
+  let frag = hist.h_current.h_fragment in
+  if did.document_stamp = no_stamp then begin
+    (* kill both in cache and in gcache *)
+    Cache.kill did; 
+    Gcache.remove hist.h_key did;
+    historygoto nav did frag false |> ignore
+  end
+    else
+      error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
+in
+@
+
+% see also update_true alias
+<<function Mmm.navigator.update>>=
+let update nocache =
+  let did = hist.h_current.h_did in
+  if did.document_stamp = no_stamp then
+    Nav.update nav did nocache
+  else (* POST result *)
+    error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
+in
+@
+
 <<[[Mmm.navigator()]] navigation buttons>>=
 let abortb = Button.create_named fb 
   "abort" [Text (I18n.sprintf "Abort"); Command abort] in
 @
 
+<<function Mmm.navigator.abort>>=
+let abort () =
+  actives |> Hashtbl.iter (fun url abort -> abort());
+  Hashtbl.clear actives;
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_abort
+in
+@
 
 \section{Menus}
 
@@ -2008,6 +1988,58 @@ configure_menu_elements mmmm [
 ];
 @
 
+<<function Mmm.navigator.open_sel>>=
+let open_sel () =
+  try 
+    let url = Selection.get [] in
+    absolutegoto nav url
+  with _ -> ()
+in
+@
+
+<<function Mmm.navigator.open_file>>=
+let open_file () =
+  Fileselect.f (I18n.sprintf "Open File") (function
+    | [] -> ()
+    | [s] -> 
+        let path = Msys.tilde_subst s in
+        absolutegoto nav ("file://localhost/"^path)
+    | l -> raise (Failure "multiple selection")
+   )
+     "*" 
+     ""
+     false
+     false
+in
+@
+
+<<function Mmm.navigator.save>>=
+let save () = 
+ Save.document hist.h_current.h_did None 
+in
+@
+
+<<function Mmm.navigator.print>>=
+let print () = 
+  Save.document hist.h_current.h_did 
+     (Some (sprintf "|%s" !Save.print_command))
+in
+@
+
+<<function Mmm.navigator.close>>=
+let close () =
+  if !navigators = 1 
+  then quit true
+  else destroy top
+in
+@
+
+<<function Mmm.navigator.really_quit>>=
+let really_quit () = 
+  quit false
+in
+@
+
 
 
 <<function Mmm.quit>>=
@@ -2055,6 +2087,41 @@ configure_menu_elements docm [
   [Label (I18n.sprintf "View Source")    ; Command view_source]
 ];
 @
+
+<<function Mmm.navigator.add_to_hotlist>>=
+let add_to_hotlist () =
+  match !current_di with
+  | None -> ()
+  | Some di -> 
+      Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
+                  di#di_title
+in
+@
+
+<<function Mmm.navigator.load_images>>=
+let load_images () =
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_load_images
+in
+@
+
+<<function Mmm.navigator.view_source>>=
+let view_source () =     
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_source
+in
+@
+
+<<function Mmm.navigator.redisplay>>=
+let redisplay () =
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_redisplay
+in
+@
+
 
 \subsection{Other menu}
 
@@ -6778,6 +6845,19 @@ end
 @
 
 
+<<[[Nav.t]] other fields>>=
+nav_new : Hyper.link -> unit;
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_new = (fun link ->
+     try
+       let wwwr = Plink.make link in
+       navigator false wwwr.www_url |> ignore; ()
+     with Invalid_link msg -> 
+      error#f (I18n.sprintf "Invalid link")
+);
+@
+
 <<signature Mmm.new_window_initial>>=
 val new_window_initial : unit -> unit
 @
@@ -6800,7 +6880,7 @@ and new_window_sel () =
 @
 
 
-<<[[Mmm.navigator()]] new window functions>>=
+<<[[Mmm.navigator()]] nested functions>>=
 let new_window () =
      navigator false hist.h_current.h_did.document_url |> ignore
 in

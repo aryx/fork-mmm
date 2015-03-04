@@ -140,7 +140,6 @@ let main () =
   (*s: [[Main.main()]] initialisation *)
   (*s: [[Main.main()]] tk initialisation *)
   let top = Tk.openTkDisplayClass !display "mmm" in
-
   Wm.withdraw top;
   (*x: [[Main.main()]] tk initialisation *)
   if not !clicktofocus 
@@ -220,7 +219,7 @@ let main () =
     (*e: [[Main.main()]] user preferences file *)
   in
   (* Start the initial navigator *)
-  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
+  Mmm.initial_navigator user_preferences_file url_opt;
 
   safe_loop();
   (*s: [[Main.main()]] after event loop, if debug mode *)

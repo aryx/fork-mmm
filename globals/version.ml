@@ -61,7 +61,7 @@ let helpurl = function
 (*e: function Version.helpurl *)
 
 (*s: function Version.html *)
-let html = function
+let inithtml = function
   | "iso8859" ->
 "<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
 <BODY>

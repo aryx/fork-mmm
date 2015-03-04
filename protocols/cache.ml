@@ -253,7 +253,7 @@ let init () =
   let initurl = Lexurl.make (Version.initurl (Lang.lang ())) in
 
   let b = Ebuffer.create 128 in
-  Ebuffer.output_string b (Version.html (Lang.lang ()));
+  Ebuffer.output_string b (Version.inithtml (Lang.lang ()));
 
   let docid = { 
     document_url = initurl;

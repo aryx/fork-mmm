@@ -5,7 +5,7 @@ val user_file : string -> string
 (*e: signature Mmm.user_file *)
 
 (*s: signature Mmm.initial_navigator *)
-val initial_navigator : string -> string option -> Nav.t option
+val initial_navigator : string -> string option -> unit
 (*e: signature Mmm.initial_navigator *)
 (*s: signature Mmm.main_navigator *)
 val main_navigator : Nav.t option ref

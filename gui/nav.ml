@@ -17,20 +17,20 @@ open Embed
 type t = {
   nav_viewer_frame : Widget.widget;
   (*s: [[Nav.t]] other fields *)
-  nav_id : int;  (* key for the gfx cache *)
-  (*x: [[Nav.t]] other fields *)
-  nav_new : Hyper.link -> unit;
-  (*x: [[Nav.t]] other fields *)
   nav_add_active : Url.t -> (unit -> unit) -> unit;
   nav_rem_active : Url.t -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_show_current: Viewers.display_info -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_id : int;  (* key for the gfx cache *)
   (*x: [[Nav.t]] other fields *)
   nav_add_hist : Document.document_id -> string option -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_log : string -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_error : Error.t;			(* popping error dialogs *)
+  (*x: [[Nav.t]] other fields *)
+  nav_new : Hyper.link -> unit;
   (*e: [[Nav.t]] other fields *)
  }
 (*e: type Nav.t *)
@@ -65,6 +65,7 @@ let dont_check_cache wwwr =
    [wrapwr wr] : returns a modified wr
  *)
 let request nav usecache wrapwr process specific =
+
   (* Normally execute the request and process its answer (dh) *)
   let rec retrieve_and_handle wr =
     match Retrieve.f wr handle_link
@@ -80,36 +81,33 @@ let request nav usecache wrapwr process specific =
   and handle_wr wr =
     try
       match wr.www_url.protocol with
-       MAILTO -> Mailto.f wr
-    (* mailto: is really a pain. It doesn't fit the retrieval semantics
+     | MAILTO -> Mailto.f wr
+      (* mailto: is really a pain. It doesn't fit the retrieval semantics
        of WWW requests. *)
       | _ ->
-         if (not usecache) || dont_check_cache wr then retrieve_and_handle wr
-      else
-          (* If the the document can be cached, then it is with no_stamp *)
-        let did = {document_url = wr.www_url; document_stamp = no_stamp} in
-        try
-          specific nav did wr
-        with
-          Not_found ->
-               try
-            let doc = Cache.find did in
-            try (* display it from source *)
-                process nav wr (Cache.make_handle wr doc)
-            with
-            Sys_error s ->
-              wr.www_error#f 
-            (I18n.sprintf
-               "Cache error occurred during save of temporary buffer (%s)"
-               s)
-            | Unix_error (e,fname,arg) ->
-              wr.www_error#f
-            (I18n.sprintf 
+         if (not usecache) || dont_check_cache wr 
+         then retrieve_and_handle wr
+         else
+           (* If the the document can be cached, then it is with no_stamp *)
+           let did = {document_url = wr.www_url; document_stamp = no_stamp} in
+           try
+             specific nav did wr
+           with Not_found ->
+             try
+               let doc = Cache.find did in
+               try (* display it from source *)
+                 process nav wr (Cache.make_handle wr doc)
+               with 
+               | Sys_error s ->
+                   wr.www_error#f (I18n.sprintf
+                    "Cache error occurred during save of temporary buffer (%s)"
+                       s)
+               | Unix_error (e,fname,arg) ->
+                   wr.www_error#f (I18n.sprintf 
                "Cache error occurred when opening temporary file\n%s: %s (%s)"
                fname (Unix.error_message e) arg)
-               with 
-            Not_found -> (* we don't have the document *)
-            retrieve_and_handle wr
+            with Not_found -> (* we don't have the document *)
+              retrieve_and_handle wr
     with
       Duplicate url ->
         wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
@@ -120,11 +118,11 @@ let request nav usecache wrapwr process specific =
       wr.www_error <- nav.nav_error;
       handle_wr (wrapwr wr)
     with
-      Invalid_link msg ->
-       nav.nav_error#f (I18n.sprintf "Invalid link")
+    | Invalid_link msg ->
+        nav.nav_error#f (I18n.sprintf "Invalid link")
     | Invalid_request (wr, msg) ->
-       nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
-                   (Url.string_of wr.www_url) msg)
+        nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
+                          (Url.string_of wr.www_url) msg)
   in
   handle_link
 (*e: function Nav.request *)

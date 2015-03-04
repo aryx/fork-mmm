@@ -151,6 +151,13 @@ let rec navigator has_tachy initial_url =
     else Toplevel.create Widget.default_toplevel [Class "MMM"]
     (*e: [[Mmm.navigator()]] if not main window, create default toplevel *)
   in
+  Wm.title_set top (I18n.sprintf "MMM Browser");
+  (*s: [[Mmm.navigator()]] setup top packing *)
+  (* the size of the navigator MUST NOT depend on what is displayed inside *)
+  (* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
+  Pack.propagate_set top false;
+  (*e: [[Mmm.navigator()]] setup top packing *)
+
   (*s: [[Mmm.navigator()]] locals *)
   let entryv = Textvariable.create_temporary top in
   (*x: [[Mmm.navigator()]] locals *)
@@ -159,19 +166,11 @@ let rec navigator has_tachy initial_url =
   let update_vhistory = ref (fun () -> ()) (* duh *) in
   (*e: [[Mmm.navigator()]] locals *)
 
-  Wm.title_set top (I18n.sprintf "MMM Browser");
-  (*s: [[Mmm.navigator()]] setup top packing *)
-  (* the size of the navigator MUST NOT depend on what is displayed inside *)
-  (* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
-  Pack.propagate_set top false;
-  (*e: [[Mmm.navigator()]] setup top packing *)
-
   (* protect all the other initialisations *)
   try 
-    (*s: [[Mmm.navigator()]] inside try *)
     (* The frame in which a viewer might want to display *)
     let viewer_frame = Frame.create_named top "viewer" [] in
-
+    
     (*s: [[Mmm.navigator()]] locals before nav setting *)
     (*s: local Mmm.navigator.hist *)
     let initial_did = 
@@ -222,7 +221,18 @@ let rec navigator has_tachy initial_url =
       (*s: [[Mmm.navigator()]] set nav fields *)
       nav_viewer_frame = viewer_frame;
       (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_add_active = Hashtbl.add actives;
+      nav_rem_active = Hashtbl.remove actives;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_show_current = show_current;
+      (*x: [[Mmm.navigator()]] set nav fields *)
       nav_id = hist.h_key;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_add_hist = add_hist;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_log = (fun s -> Textvariable.set loggingv s);
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_error = error;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_new = (fun link ->
            try
@@ -231,23 +241,13 @@ let rec navigator has_tachy initial_url =
            with Invalid_link msg -> 
             error#f (I18n.sprintf "Invalid link")
       );
-      (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_add_active = Hashtbl.add actives;
-      nav_rem_active = Hashtbl.remove actives;
-      (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_show_current = show_current;
-      (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_add_hist = add_hist;
-      (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_log = (fun s -> Textvariable.set loggingv s);
-      (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_error = error;
       (*e: [[Mmm.navigator()]] set nav fields *)
     }
     in
-
+    (*s: [[Mmm.navigator()]] nested functions *)
     (* The navigation functions *)
-    (*s: [[Mmm.navigator()]] navigation functions *)
+
+    (*s: function Mmm.navigator.back *)
     (*  The cache may have been cleared, so the document may be lost.
      *  historygoto implements the proper logic for this, taking care
      *  of non-unique documents.
@@ -259,6 +259,8 @@ let rec navigator has_tachy initial_url =
            if not (historygoto nav did frag true) 
            then History.forward hist |> ignore
     in
+    (*e: function Mmm.navigator.back *)
+    (*s: function Mmm.navigator.forward *)
     let forward () =
       match History.forward hist with
       | None -> ()
@@ -266,6 +268,8 @@ let rec navigator has_tachy initial_url =
           if not (historygoto nav did frag true) 
           then History.back hist |> ignore
     in
+    (*e: function Mmm.navigator.forward *)
+    (*s: function Mmm.navigator.reload *)
     let reload () =
       let did = hist.h_current.h_did in
       let frag = hist.h_current.h_fragment in
@@ -278,7 +282,8 @@ let rec navigator has_tachy initial_url =
         else
           error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
     in
-
+    (*e: function Mmm.navigator.reload *)
+    (*s: function Mmm.navigator.update *)
     let update nocache =
       let did = hist.h_current.h_did in
       if did.document_stamp = no_stamp then
@@ -286,23 +291,11 @@ let rec navigator has_tachy initial_url =
       else (* POST result *)
         error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
     in
-    (*e: [[Mmm.navigator()]] navigation functions *)
+    (*e: function Mmm.navigator.update *)
+
     (* A bunch of other functions *)
-    (*s: [[Mmm.navigator()]] new window functions *)
-    let new_window () =
-         navigator false hist.h_current.h_did.document_url |> ignore
-    in
-    let new_window_initial () =
-         navigator false initial_url |> ignore
-    in
-    let new_window_sel () =
-      try 
-         let url = Selection.get [] in
-         navigator false (Lexurl.make url) |> ignore
-      with _ -> navigator false initial_url |> ignore
-    in
-    (*e: [[Mmm.navigator()]] new window functions *)
-    (*s: [[Mmm.navigator()]] other functions *)
+
+    (*s: function Mmm.navigator.abort *)
     let abort () =
       actives |> Hashtbl.iter (fun url abort -> abort());
       Hashtbl.clear actives;
@@ -310,12 +303,16 @@ let rec navigator has_tachy initial_url =
       | None -> ()
       | Some di -> di#di_abort
     in
+    (*e: function Mmm.navigator.abort *)
+    (*s: function Mmm.navigator.open_sel *)
     let open_sel () =
       try 
         let url = Selection.get [] in
         absolutegoto nav url
       with _ -> ()
     in
+    (*e: function Mmm.navigator.open_sel *)
+    (*s: function Mmm.navigator.open_file *)
     let open_file () =
       Fileselect.f (I18n.sprintf "Open File") (function
         | [] -> ()
@@ -329,29 +326,43 @@ let rec navigator has_tachy initial_url =
          false
          false
     in
+    (*e: function Mmm.navigator.open_file *)
+    (*s: function Mmm.navigator.save *)
     let save () = 
      Save.document hist.h_current.h_did None 
     in
+    (*e: function Mmm.navigator.save *)
+    (*s: function Mmm.navigator.print *)
     let print () = 
       Save.document hist.h_current.h_did 
          (Some (sprintf "|%s" !Save.print_command))
     in
+    (*e: function Mmm.navigator.print *)
+    (*s: function Mmm.navigator.close *)
     let close () =
       if !navigators = 1 
       then quit true
       else destroy top
     in
+    (*e: function Mmm.navigator.close *)
+    (*s: function Mmm.navigator.really_quit *)
     let really_quit () = 
       quit false
     in
+    (*e: function Mmm.navigator.really_quit *)
+    (*s: function Mmm.navigator.gohome *)
     let gohome () = 
       absolutegoto nav !Mmmprefs.home
     in
+    (*e: function Mmm.navigator.gohome *)
+    (*s: function Mmm.navigator.redisplay *)
     let redisplay () =
       match !current_di with
       | None -> ()
       | Some di -> di#di_redisplay
     in
+    (*e: function Mmm.navigator.redisplay *)
+    (*s: function Mmm.navigator.add_to_hotlist *)
     let add_to_hotlist () =
       match !current_di with
       | None -> ()
@@ -359,18 +370,36 @@ let rec navigator has_tachy initial_url =
           Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
                       di#di_title
     in
+    (*e: function Mmm.navigator.add_to_hotlist *)
+    (*s: function Mmm.navigator.load_images *)
     let load_images () =
       match !current_di with
       | None -> ()
       | Some di -> di#di_load_images
     in
+    (*e: function Mmm.navigator.load_images *)
+    (*s: function Mmm.navigator.view_source *)
     let view_source () =     
       match !current_di with
       | None -> ()
       | Some di -> di#di_source
     in
-    (*e: [[Mmm.navigator()]] other functions *)
-
+    (*e: function Mmm.navigator.view_source *)
+    (*x: [[Mmm.navigator()]] nested functions *)
+    let new_window () =
+         navigator false hist.h_current.h_did.document_url |> ignore
+    in
+    let new_window_initial () =
+         navigator false initial_url |> ignore
+    in
+    let new_window_sel () =
+      try 
+         let url = Selection.get [] in
+         navigator false (Lexurl.make url) |> ignore
+      with _ -> navigator false initial_url |> ignore
+    in
+    (*e: [[Mmm.navigator()]] nested functions *)
+    (*s: [[Mmm.navigator()]] widgets setting *)
     (* Short cuts *)
     (*s: [[Mmm.navigator()]] short cuts *)
     (* All the available shortcuts functions and their short cut keys. *)
@@ -429,6 +458,7 @@ let rec navigator has_tachy initial_url =
     let hgroup = Frame.create_named top "hgroup" [] in
     let vgroup = Frame.create_named hgroup "vgroup" [] in (* Menus, open entry *)
 
+    (* Menus *)
     let mbar = Frame.create_named vgroup "menubar" [] in
     (*s: [[Mmm.navigator()]] setup menu *)
     (*s: function Mmm.navigator.configure_menu_elements *)
@@ -589,7 +619,6 @@ let rec navigator has_tachy initial_url =
     pack [mmm; navb; docb; othersb][Side Side_Left];
     pack [helpb; userb] [Side Side_Right];
     (*e: [[Mmm.navigator()]] setup menu *)
-
     (*s: [[Mmm.navigator()]] setup open url entry *)
     (* URL display and edit *)
     let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
@@ -709,10 +738,10 @@ let rec navigator has_tachy initial_url =
     in
     touch_current();
     (*e: [[Mmm.navigator()]] touch current *)
+    (*e: [[Mmm.navigator()]] widgets setting *)
 
     absolutegoto nav (Url.string_of initial_url);
     Some nav
-    (*e: [[Mmm.navigator()]] inside try *)
 
   with e -> 
     !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
@@ -756,7 +785,7 @@ let initial_navigator preffile init_url =
   preferences := Mmmprefs.f preffile;
   !preferences();
   (*e: [[Mmm.initial_navigator()]] set preferences *)
-  (*s: [[Mmm.initial_navigator()]] set initial page *)
+  (*s: [[Mmm.initial_navigator()]] set initial page based on init_url *)
   initial_page := Some (
      match init_url with
      | None -> Lexurl.make !Mmmprefs.home
@@ -764,18 +793,19 @@ let initial_navigator preffile init_url =
          begin
            try Lexurl.make x 
          with _ -> (* If fails, try to use file: *)
-           let path = 
-             if x.[0] = '/' 
-             then x
-             else Filename.concat (Unix.getcwd ()) x
-           in
-           Lexurl.make ("file://localhost" ^ path)
+          (*s: [[Mmm.initial_navigator()]] if cannot parse init_url *)
+          let path = 
+            if x.[0] = '/' 
+            then x
+            else Filename.concat (Unix.getcwd ()) x
+          in
+          Lexurl.make ("file://localhost" ^ path)
+          (*e: [[Mmm.initial_navigator()]] if cannot parse init_url *)
          end
   );
-  (*e: [[Mmm.initial_navigator()]] set initial page *)
+  (*e: [[Mmm.initial_navigator()]] set initial page based on init_url *)
   main_navigator :=
      navigator true 
-       (match !initial_page with Some u -> u | None -> assert false);
-  !main_navigator
+       (match !initial_page with Some u -> u | None -> assert false)
 (*e: function Mmm.initial_navigator *)
 (*e: ./gui/mmm.ml *)
