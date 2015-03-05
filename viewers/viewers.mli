@@ -30,16 +30,20 @@ type hyper_func = {
 
 (* list of additionnal parameters for the viewer, according to its
    activation point *)
-  
+
+(*s: signature class Viewers.context *)
 (* The context given to a viewer *)
 (* Standard hyper functions are: "goto", "save", "gotonew" *)
-class  virtual context : (Document.document_id * vparams) -> object ('a)
+class virtual context : (Document.document_id * vparams) -> object ('a)
+
   method base : Document.document_id
   method params : vparams
+
   method goto : Hyper.link -> unit
   method gotonew : Hyper.link -> unit
   method save : Hyper.link -> unit
   method invoke : string -> Hyper.link -> unit    
+
   method virtual log : string -> unit
   method add_nav : string * hyper_func -> unit
   (*-*)
@@ -52,7 +56,9 @@ class  virtual context : (Document.document_id * vparams) -> object ('a)
   method with_viewer_params: (string * string) list -> 'a
 
 end
+(*e: signature class Viewers.context *)
 
+(*s: signature class Viewers.display_info *)
 class  virtual display_info : (unit) -> object ('a)
   method virtual di_widget : Widget.widget
   method virtual di_abort : unit		(* stop display *)
@@ -66,9 +72,12 @@ class  virtual display_info : (unit) -> object ('a)
   method di_last_used : int
   method di_touch : unit
 end
+(*e: signature class Viewers.display_info *)
 
 
-class trivial_display : (Widget.widget * Url.t) -> object
+
+class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
+object
   method di_abort : unit
   method di_destroy : unit
   method di_fragment : string option -> unit
@@ -81,7 +90,6 @@ class trivial_display : (Widget.widget * Url.t) -> object
   method di_widget : Widget.widget
   method di_update : unit
 end
-
 
 (*s: signature Viewers.di_compare *)
 val di_compare : display_info -> display_info -> bool
@@ -110,7 +118,7 @@ val rem_viewer : media_type -> unit
 (*e: signature Viewers.rem_viewer *)
 
 (*s: signature Viewers.view *)
-val view : Widget.widget -> context -> handle -> display_info option
+val view : Widget.widget -> context -> Document.handle -> display_info option
 (*e: signature Viewers.view *)
 
 (*s: signature Viewers.reset *)

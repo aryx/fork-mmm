@@ -221,14 +221,14 @@ let rec navigator has_tachy initial_url =
       (*s: [[Mmm.navigator()]] set nav fields *)
       nav_viewer_frame = viewer_frame;
       (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_add_active = Hashtbl.add actives;
-      nav_rem_active = Hashtbl.remove actives;
-      (*x: [[Mmm.navigator()]] set nav fields *)
       nav_show_current = show_current;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_id = hist.h_key;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_add_hist = add_hist;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_add_active = Hashtbl.add actives;
+      nav_rem_active = Hashtbl.remove actives;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_log = (fun s -> Textvariable.set loggingv s);
       (*x: [[Mmm.navigator()]] set nav fields *)
@@ -279,8 +279,8 @@ let rec navigator has_tachy initial_url =
         Gcache.remove hist.h_key did;
         historygoto nav did frag false |> ignore
       end
-        else
-          error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
+        else error#f (I18n.sprintf 
+          "Document cannot be reloaded from its url\n(probably a POST request)")
     in
     (*e: function Mmm.navigator.reload *)
     (*s: function Mmm.navigator.update *)
@@ -297,7 +297,7 @@ let rec navigator has_tachy initial_url =
 
     (*s: function Mmm.navigator.abort *)
     let abort () =
-      actives |> Hashtbl.iter (fun url abort -> abort());
+      actives |> Hashtbl.iter (fun _url abort -> abort());
       Hashtbl.clear actives;
       match !current_di with
       | None -> ()

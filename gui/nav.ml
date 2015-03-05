@@ -17,14 +17,14 @@ open Embed
 type t = {
   nav_viewer_frame : Widget.widget;
   (*s: [[Nav.t]] other fields *)
-  nav_add_active : Url.t -> (unit -> unit) -> unit;
-  nav_rem_active : Url.t -> unit;
-  (*x: [[Nav.t]] other fields *)
   nav_show_current: Viewers.display_info -> string option -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_id : int;  (* key for the gfx cache *)
   (*x: [[Nav.t]] other fields *)
   nav_add_hist : Document.document_id -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_add_active : Url.t -> (unit -> unit) -> unit;
+  nav_rem_active : Url.t -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_log : string -> unit;
   (*x: [[Nav.t]] other fields *)
@@ -49,9 +49,9 @@ exception Duplicate of Url.t
 (*s: function Nav.dont_check_cache *)
 (* Some requests should not be looked for in the cache *)
 let dont_check_cache wwwr =
-  (match wwwr.www_link.h_method with
-      POST _ -> true
-    | _ -> false)
+  match wwwr.www_link.h_method with
+  | POST _ -> true
+  | _ -> false
 (*e: function Nav.dont_check_cache *)
 
 (*s: function Nav.request *)
@@ -64,32 +64,45 @@ let dont_check_cache wwwr =
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request nav usecache wrapwr process specific =
+let request nav  usecache wrapwr  process  specific lk =
 
+  (*s: function Nav.request.retrieve_and_handle *)
   (* Normally execute the request and process its answer (dh) *)
   let rec retrieve_and_handle wr =
-    match Retrieve.f wr handle_link
-    { document_finish = (fun _ -> nav.nav_rem_active wr.www_url);
-      document_process = (fun dh ->
-        process nav wr dh;
-        nav.nav_rem_active wr.www_url)}
-    with
-    | Retrieve.Started abort -> nav.nav_add_active wr.www_url abort
-    | Retrieve.InUse -> raise (Duplicate wr.www_url)
-      
+    let cont = 
+      { document_process = (fun dh ->
+          process nav wr dh;
+          nav.nav_rem_active wr.www_url);
+        document_finish = (fun _ -> 
+          nav.nav_rem_active wr.www_url);
+      }
+    in
+    match Retrieve.f wr handle_link cont with
+    | Retrieve.Started abort -> 
+        nav.nav_add_active wr.www_url abort
+    | Retrieve.InUse -> 
+        raise (Duplicate wr.www_url)
+  (*e: function Nav.request.retrieve_and_handle *)
+  (*s: function Nav.request.handle_wr *)
   (* Wrapper to deal with general/specific cache *)
   and handle_wr wr =
     try
       match wr.www_url.protocol with
-     | MAILTO -> Mailto.f wr
-      (* mailto: is really a pain. It doesn't fit the retrieval semantics
-       of WWW requests. *)
+      (*s: [[Nav.request.handle_wr()]] match protocol cases *)
+      | MAILTO -> Mailto.f wr
+       (* mailto: is really a pain. It doesn't fit the retrieval semantics
+        of WWW requests. *)
+      (*e: [[Nav.request.handle_wr()]] match protocol cases *)
       | _ ->
          if (not usecache) || dont_check_cache wr 
          then retrieve_and_handle wr
          else
+           (*s: [[Nav.request.handle_wr()]] if use cache *)
            (* If the the document can be cached, then it is with no_stamp *)
-           let did = {document_url = wr.www_url; document_stamp = no_stamp} in
+           let did = 
+             { document_url = wr.www_url; 
+               document_stamp = no_stamp }
+           in
            try
              specific nav did wr
            with Not_found ->
@@ -104,19 +117,21 @@ let request nav usecache wrapwr process specific =
                        s)
                | Unix_error (e,fname,arg) ->
                    wr.www_error#f (I18n.sprintf 
-               "Cache error occurred when opening temporary file\n%s: %s (%s)"
-               fname (Unix.error_message e) arg)
+                     "Cache error occurred when opening temporary file\n%s: %s (%s)"
+                     fname (Unix.error_message e) arg)
             with Not_found -> (* we don't have the document *)
               retrieve_and_handle wr
-    with
-      Duplicate url ->
-        wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
-
+           (*e: [[Nav.request.handle_wr()]] if use cache *)
+    with Duplicate url ->
+      wr.www_error#f (I18n.sprintf 
+          "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
+  (*e: function Nav.request.handle_wr *)
+  (*s: function Nav.request.handle_link *)
   and handle_link h =
     try (* Convert the link into a request *)
       let wr = Plink.make h in
       wr.www_error <- nav.nav_error;
-      handle_wr (wrapwr wr)
+      wr |> wrapwr |> handle_wr
     with
     | Invalid_link msg ->
         nav.nav_error#f (I18n.sprintf "Invalid link")
@@ -124,7 +139,8 @@ let request nav usecache wrapwr process specific =
         nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
                           (Url.string_of wr.www_url) msg)
   in
-  handle_link
+  (*e: function Nav.request.handle_link *)
+  handle_link lk
 (*e: function Nav.request *)
 
 (*s: function Nav.nothing_specific *)
@@ -136,13 +152,18 @@ let nothing_specific nav did wr = raise Not_found
 
 (*s: function Nav.process_viewer *)
 (* Specific handling of "view" requests *)
-let process_viewer addhist make_ctx = fun nav wr dh ->
+let process_viewer addhist make_ctx = 
+ fun nav wr dh ->
   let ctx = make_ctx nav dh.document_id in
   match Viewers.view nav.nav_viewer_frame ctx dh with
-    None -> () (* external viewer *)
+  | None -> () (* external viewer *)
   | Some di ->
+      (*s: [[Nav.process_viewer()]] add in cache and history the document *)
+      if addhist 
+      then nav.nav_add_hist dh.document_id dh.document_fragment;
+      (*x: [[Nav.process_viewer()]] add in cache and history the document *)
       Gcache.add nav.nav_id dh.document_id di;
-      if addhist then nav.nav_add_hist dh.document_id dh.document_fragment;
+      (*e: [[Nav.process_viewer()]] add in cache and history the document *)
       nav.nav_show_current di dh.document_fragment
 (*e: function Nav.process_viewer *)
 
@@ -225,6 +246,7 @@ let add_user_navigation (s : string) (f : Viewers.hyper_func) =
 let id_wr wr = wr
 (*e: function Nav.id_wr *)
 
+(*s: class Nav.stdctx *)
 (* WARNING: we take copies of these objects, so "self" must *not* be
  * captured in a closure (it would always point to the old object).
  * A new object is created for each new top viewer (follow_link).
@@ -238,9 +260,11 @@ class stdctx (did, nav) =
 
   method log = nav.nav_log
   method init =
+
     (* a new context for a toplevel window *)
     let make_ctx nav did = 
       ((new stdctx(did, nav))#init :> Viewers.context) in
+
     (* a new context for an embedded window *)
     let make_embed_ctx w targets = 
       let targets = 
@@ -329,7 +353,9 @@ class stdctx (did, nav) =
         "goto", frame_goto, I18n.sprintf "Open this Link";
        ];
     self
+
 end
+(*e: class Nav.stdctx *)
 
 (*s: function Nav.make_ctx *)
 let make_ctx nav did = 
@@ -344,8 +370,14 @@ let save_link nav whereto =
   request nav true id_wr (process_save whereto) nothing_specific
 (*e: function Nav.save_link *)
 (*s: function Nav.follow_link *)
-let follow_link nav =
-  request nav true id_wr (process_viewer true make_ctx) (specific_viewer true)
+let follow_link nav lk =
+  request 
+   nav 
+   true 
+   id_wr 
+   (fun nav wr dh -> process_viewer true make_ctx nav wr dh) 
+   (specific_viewer true)
+   lk
 (*e: function Nav.follow_link *)
     
 (*

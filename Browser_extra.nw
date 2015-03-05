@@ -4676,32 +4676,7 @@ let rec http_check cache retry cont wwwr dh =
       *)
       cont.document_process dh
 
-(*
- * Emitting a request:
- *   we must catch here all errors due to protocols and remove the
- *   cnx from the set of active cnx.
- *)
-and f request retry cont = 
-  Log.debug "Retrieve.f";
-  if Www.is_active_cnx request.www_url then InUse
-  else begin
-   Www.add_active_cnx request.www_url;
-   try 
-     let req,cache = Protos.get request.www_url.protocol in
-      Started (req request
-        {document_finish = cont.document_finish;
-        document_process = http_check cache retry cont request})
-
-   with Not_found ->
-      Www.rem_active_cnx request.www_url;
-      raise (Invalid_request (request, I18n.sprintf "unknown protocol"))
-    | Http.HTTP_error s ->
-      Www.rem_active_cnx request.www_url;
-      raise (Invalid_request (request, I18n.sprintf "HTTP Error \"%s\"" s))
-    | File.File_error s ->
-      Www.rem_active_cnx request.www_url;
-      raise (Invalid_request (request, s))
-   end
+<<function Retrieve.f>>
 
 
 (* In all the following, we avoid popping up dialog boxes, and use
@@ -6242,45 +6217,15 @@ open Http_headers
 
 (* list of additionnal parameters for the viewer, according to its
    activation point *)
-  
-(* The context given to a viewer *)
-(* Standard hyper functions are: "goto", "save", "gotonew" *)
-class  virtual context : (Document.document_id * vparams) -> object ('a)
-  method base : Document.document_id
-  method params : vparams
-  method goto : Hyper.link -> unit
-  method gotonew : Hyper.link -> unit
-  method save : Hyper.link -> unit
-  method invoke : string -> Hyper.link -> unit    
-  method virtual log : string -> unit
-  method add_nav : string * hyper_func -> unit
-  (*-*)
-  method for_embed : vparams -> frame_targets -> 'a
-  method in_embed : Document.document_id -> 'a
-  method hyper_funs : (string * hyper_func) list
 
-  (* pad: this is just because of some bugs in camlp4o *)
-  method with_target: frame_targets -> 'a
-  method with_viewer_params: (string * string) list -> 'a
+<<signature class Viewers.context>>
 
-end
-
-class  virtual display_info : (unit) -> object ('a)
-  method virtual di_widget : Widget.widget
-  method virtual di_abort : unit		(* stop display *)
-  method virtual di_destroy : unit		(* die *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
-  method virtual di_redisplay : unit		(* redisplay *)
-  method virtual di_title : string		(* some visible title *)
-  method virtual di_source : unit 	        (* source viewer *)
-  method virtual di_load_images : unit	        (* load images *)
-  method virtual di_update : unit
-  method di_last_used : int
-  method di_touch : unit
-end
+<<signature class Viewers.display_info>>
 
 
-class trivial_display : (Widget.widget * Url.t) -> object
+
+class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
+object
   method di_abort : unit
   method di_destroy : unit
   method di_fragment : string option -> unit
@@ -6293,7 +6238,6 @@ class trivial_display : (Widget.widget * Url.t) -> object
   method di_widget : Widget.widget
   method di_update : unit
 end
-
 
 <<signature Viewers.di_compare>>
 
@@ -6309,6 +6253,20 @@ end
 
 <<signature Viewers.reset>>
 @
+
+%  method di_abort : unit
+%  method di_destroy : unit
+%  method di_fragment : string option -> unit
+%  method di_last_used : int
+%  method di_load_images : unit
+%  method di_redisplay : unit
+%  method di_source : unit
+%  method di_title : string
+%  method di_touch : unit
+%  method di_widget : Widget.widget
+%  method di_update : unit
+%end
+
 
 
 \subsection*{[[./viewers/viewers.ml]]}
@@ -6451,7 +6409,7 @@ open Hyper
 
 <<type Viewers.hyper_func>>
 
-class  virtual context ((did : Document.document_id), 
+class virtual context ((did : Document.document_id), 
                (v : vparams)) =
  object (self : 'a)
 
@@ -6647,48 +6605,7 @@ and interactive frame ctx dh ctype =
   | 3 -> dclose true dh; None
   | _ -> assert false (* property of dialogs *)
 
-(* the meat *)
-and view frame ctx dh =
-  try 
-    let ctype = contenttype dh.document_headers in
-    let (typ,sub),pars = Lexheaders.media_type ctype in
-    try (* Get the viewer *)
-      let viewer =
-  try Hashtbl.find viewers (typ,sub)
-    with
-      Not_found -> Hashtbl.find viewers (typ,"*")
-      in
-      match viewer with
-      |	Internal viewer ->
-      ctx#log (I18n.sprintf "Displaying...");
-         viewer pars frame ctx (Decoders.insert dh)
-      |	External ->
-      ctx#log (I18n.sprintf "Displaying externally");
-      extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
-      None
-      |	Interactive ->
-      interactive frame ctx dh ctype
-      |	Save ->
-      Save.interactive (fun _ -> ()) dh;
-      None
-    with
-    | Failure "too late" -> (* custom for our internal viewers *)
-    dclose true dh;
-    Document.destroy_log dh false;
-    None
-    | Not_found -> 
-        (* we don't know how to handle this *)
-    ctx#log (I18n.sprintf "Displaying externally");
-    interactive frame ctx dh ctype
-  with 
-  | Invalid_HTTP_header e ->
-      ctx#log (I18n.sprintf "Malformed type: %s" e);
-      unknown frame ctx dh
-  | Not_found -> 
-    (* Content-type was not defined in the headers *)
-    (* and could not be computed from url *)
-    unknown frame ctx dh
-
+<<function Viewers.view>>
 
 <<constant Viewers.builtin_viewers>>
 <<function Viewers.add_builtin>>
@@ -16119,9 +16036,6 @@ val save_link : t -> (Unix.file_descr * bool) option -> Hyper.link -> unit
 val add_user_navigation : string -> Viewers.hyper_func -> unit
 @
 
-<<signature Nav.make_ctx>>=
-val make_ctx : t -> Document.document_id -> Viewers.context
-@
 
 
 <<signature Nav.historygoto>>=
@@ -16132,10 +16046,6 @@ val historygoto : t -> Document.document_id -> string option -> bool -> bool
 val update : t -> Document.document_id -> bool -> unit
 @
 
-<<signature Nav.dont_check_cache>>=
-(*-*)
-val dont_check_cache : Www.request -> bool
-@
 
 
 %-------------------------------------------------------------
@@ -16170,13 +16080,6 @@ val dont_check_cache : Www.request -> bool
 exception Duplicate of Url.t
 @
 
-<<function Nav.dont_check_cache>>=
-(* Some requests should not be looked for in the cache *)
-let dont_check_cache wwwr =
-  (match wwwr.www_link.h_method with
-      POST _ -> true
-    | _ -> false)
-@
 
 
 <<function Nav.nothing_specific>>=
@@ -16186,17 +16089,6 @@ let dont_check_cache wwwr =
 let nothing_specific nav did wr = raise Not_found
 @
 
-<<function Nav.process_viewer>>=
-(* Specific handling of "view" requests *)
-let process_viewer addhist make_ctx = fun nav wr dh ->
-  let ctx = make_ctx nav dh.document_id in
-  match Viewers.view nav.nav_viewer_frame ctx dh with
-    None -> () (* external viewer *)
-  | Some di ->
-      Gcache.add nav.nav_id dh.document_id di;
-      if addhist then nav.nav_add_hist dh.document_id dh.document_fragment;
-      nav.nav_show_current di dh.document_fragment
-@
 
 <<function Nav.specific_viewer>>=
 (* check the widget cache *)
@@ -16269,16 +16161,7 @@ let add_user_navigation (s : string) (f : Viewers.hyper_func) =
   user_navigation := (s,f) :: !user_navigation
 @
 
-<<function Nav.id_wr>>=
-let id_wr wr = wr
-@
 
-<<function Nav.make_ctx>>=
-let make_ctx nav did = 
-  let o = new stdctx(did, nav) in
-  ignore (o#init);
-  (o :> Viewers.context)
-@
 
 <<function Nav.save_link>>=
 (* Simple wrappers *)
@@ -16448,111 +16331,7 @@ open Embed
 
 <<function Nav.id_wr>>
 
-(* WARNING: we take copies of these objects, so "self" must *not* be
- * captured in a closure (it would always point to the old object).
- * A new object is created for each new top viewer (follow_link).
- * AND for each frame_goto operation.
- *)
-class stdctx (did, nav) =
- object (self)
-  inherit Viewers.context (did, []) as super
-  (* val nav = nav *)  
-  (* val did = did *)
-
-  method log = nav.nav_log
-  method init =
-    (* a new context for a toplevel window *)
-    let make_ctx nav did = 
-      ((new stdctx(did, nav))#init :> Viewers.context) in
-    (* a new context for an embedded window *)
-    let make_embed_ctx w targets = 
-      let targets = 
-    ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
-      let newctx = (new stdctx(did,nav))#init in
-      begin
-    try 
-      let f = List.assoc "pointsto" self#hyper_funs in
-      let g = List.assoc "clearpointsto" self#hyper_funs in
-      newctx#add_nav ("pointsto", f);
-      newctx#add_nav ("clearpointsto", g);
-    with
-      Not_found -> ()
-      end;
-      (newctx#for_embed [] targets :> Viewers.context) in
-    (* by default, use the cache, don't touch the request *)
-    let default_request = request nav true id_wr in
-    let follow_link _ = 
-      default_request (process_viewer true make_ctx) (specific_viewer true)
-    and save_link _ =
-      default_request (process_save None) nothing_specific
-    and copy_link _ = copy_link nav
-    and head_link = 
-      let f = default_request process_head nothing_specific in
-      (fun _ hlink -> f (make_head hlink))
-    and new_link _ = nav.nav_new
-    in 
-    let frame_goto targets hlink =
-      try
-      (* target semantics PR-HTML 4.0 16.3.2 *)
-       match List.assoc "target" hlink.h_params with
-       | "_blank" ->
-        let w = Toplevel.create Widget.default_toplevel [] in
-        Embed.add { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | "_self" ->
-        let w = List.assoc "_self" targets in
-        Embed.add {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | "_top" -> follow_link targets hlink
-       | "_parent" ->
-        let w = List.assoc "_parent" targets in
-        Embed.add { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | s ->
-        let w = List.assoc s targets in
-        Embed.add {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-      with
-       Not_found -> (* if we are in a frame, it is available as _self *)
-      try
-        let w = List.assoc "_self" targets in
-        Embed.add {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-      with
-        Not_found -> follow_link targets hlink
-    in
-    List.iter super#add_nav !user_navigation;
-    List.iter (fun (name, f, txt) ->
-      self#add_nav
-    (name, {hyper_visible = true; hyper_func = f; hyper_title = txt}))
-       ["copy", copy_link, I18n.sprintf "Copy this Link to clipboard";
-    "head", head_link, I18n.sprintf "Headers of document";
-    "save", save_link, I18n.sprintf "Save this Link";
-    "gotonew", new_link, I18n.sprintf "New window with this Link";
-        "goto", frame_goto, I18n.sprintf "Open this Link";
-       ];
-    self
-end
+<<class Nav.stdctx>>
 
 <<function Nav.make_ctx>>
 

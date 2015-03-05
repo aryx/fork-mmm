@@ -49,7 +49,7 @@ type hyper_func = {
   }
 (*e: type Viewers.hyper_func *)
 
-class  virtual context ((did : Document.document_id), 
+class virtual context ((did : Document.document_id), 
                (v : vparams)) =
  object (self : 'a)
 
@@ -336,48 +336,48 @@ and interactive frame ctx dh ctype =
   | 3 -> dclose true dh; None
   | _ -> assert false (* property of dialogs *)
 
+(*s: function Viewers.view *)
 (* the meat *)
 and view frame ctx dh =
   try 
     let ctype = contenttype dh.document_headers in
-    let (typ,sub),pars = Lexheaders.media_type ctype in
+    let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
       let viewer =
-  try Hashtbl.find viewers (typ,sub)
-    with
-      Not_found -> Hashtbl.find viewers (typ,"*")
+        try Hashtbl.find viewers (typ,sub)
+        with Not_found -> Hashtbl.find viewers (typ,"*")
       in
       match viewer with
       |	Internal viewer ->
-      ctx#log (I18n.sprintf "Displaying...");
-         viewer pars frame ctx (Decoders.insert dh)
+          ctx#log (I18n.sprintf "Displaying...");
+          viewer pars frame ctx (Decoders.insert dh)
       |	External ->
-      ctx#log (I18n.sprintf "Displaying externally");
-      extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
-      None
+          ctx#log (I18n.sprintf "Displaying externally");
+          extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
+          None
       |	Interactive ->
-      interactive frame ctx dh ctype
+          interactive frame ctx dh ctype
       |	Save ->
-      Save.interactive (fun _ -> ()) dh;
-      None
+          Save.interactive (fun _ -> ()) dh;
+          None
     with
     | Failure "too late" -> (* custom for our internal viewers *)
-    dclose true dh;
-    Document.destroy_log dh false;
-    None
+        dclose true dh;
+        Document.destroy_log dh false;
+        None
     | Not_found -> 
-        (* we don't know how to handle this *)
-    ctx#log (I18n.sprintf "Displaying externally");
-    interactive frame ctx dh ctype
+       (* we don't know how to handle this *)
+       ctx#log (I18n.sprintf "Displaying externally");
+       interactive frame ctx dh ctype
   with 
   | Invalid_HTTP_header e ->
       ctx#log (I18n.sprintf "Malformed type: %s" e);
       unknown frame ctx dh
   | Not_found -> 
-    (* Content-type was not defined in the headers *)
-    (* and could not be computed from url *)
-    unknown frame ctx dh
-
+      (* Content-type was not defined in the headers *)
+      (* and could not be computed from url *)
+      unknown frame ctx dh
+(*e: function Viewers.view *)
 
 (*s: constant Viewers.builtin_viewers *)
 let builtin_viewers = ref []

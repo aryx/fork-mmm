@@ -155,8 +155,10 @@ you fully understand how things work under the hood.
 
 Here are other candidates that were considered but ultimately discarded:
 \begin{itemize}
+\item nexus
+% original one, objective C, 8000 LOC?
 \item mosaic
-% maybe good. LOC?
+% maybe good. but 130 000 LOC (vs 30 000 LOC for mmm)
 \item gecko (firefox)
 % descendant of mosaic, netscape, introduced IMG
 % huge now
@@ -231,7 +233,11 @@ the main author of MMM.
 %  - client/server around this protocol
 
 % a web browser is then a special kind of interface on top of that:
-% a navigator interface! (history, forward, click etc)
+% a navigator interface! (history, forward, click etc).
+% One important thing is that it must provide feedback, especially
+% when connect with network, you want to see if something is stucked
+% or is progressing (hence the complex passing of continuation,
+% error hook, etc)
 
 % see mmm-gdr-fr.ps
 
@@ -695,8 +701,9 @@ let find did =
 % don't have the data yet, that the cache is pending?
 % should be document option no?
 
-\section{Protocols}
+\section{Protocols and document flow}
 
+% Nav.request -> Retrieve.f -> <>
 <<signature Protos.get>>=
 val get: Url.protocol ->
   (Www.request -> Document.document_continuation -> 
@@ -737,6 +744,15 @@ type document_continuation = {
 % to pass to the protocol handler, callback to called
 % when he got the data.
 % bool is true when things were aborted
+
+% often build a serie of continuations for document_process
+% where you add some intermediate processing.
+% ex:
+%  let foo doc_cont ... =
+%     let req,cache = Protos.get request.www_url.protocol in
+%      Started (req request
+%        { doc_cont with
+%          document_process = http_check cache retry doc_cont request})
 
 \subsection{Document handle}
 
@@ -928,8 +944,63 @@ type attribute_value = string
 
 
 
+\section{Viewers}
+
+\subsection{[[Viewers.context]]}
+
+<<signature class Viewers.context>>=
+(* The context given to a viewer *)
+(* Standard hyper functions are: "goto", "save", "gotonew" *)
+class virtual context : (Document.document_id * vparams) -> object ('a)
+
+  method base : Document.document_id
+  method params : vparams
+
+  method goto : Hyper.link -> unit
+  method gotonew : Hyper.link -> unit
+  method save : Hyper.link -> unit
+  method invoke : string -> Hyper.link -> unit    
+
+  method virtual log : string -> unit
+  method add_nav : string * hyper_func -> unit
+  (*-*)
+  method for_embed : vparams -> frame_targets -> 'a
+  method in_embed : Document.document_id -> 'a
+  method hyper_funs : (string * hyper_func) list
+
+  (* pad: this is just because of some bugs in camlp4o *)
+  method with_target: frame_targets -> 'a
+  method with_viewer_params: (string * string) list -> 'a
+
+end
+@
+
+<<type Viewers.vparams>>=
+(* hyper functions are: "goto", "save", "gotonew" *)
+type vparams = (string * string) list
+@
+% ???
+
+\subsection{[[Viewers.display_info]]}
+
+<<signature class Viewers.display_info>>=
+class  virtual display_info : (unit) -> object ('a)
+  method virtual di_widget : Widget.widget
+  method virtual di_abort : unit		(* stop display *)
+  method virtual di_destroy : unit		(* die *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+  method virtual di_redisplay : unit		(* redisplay *)
+  method virtual di_title : string		(* some visible title *)
+  method virtual di_source : unit 	        (* source viewer *)
+  method virtual di_load_images : unit	        (* load images *)
+  method virtual di_update : unit
+  method di_last_used : int
+  method di_touch : unit
+end
+@
 
 
+\section{Display}
 
 \chapter{[[main()]]}
 
@@ -1231,16 +1302,8 @@ let initial_navigator preffile init_url =
 %old: used to return !main_navigator, but it was ignored anyway
 % so I simplified the code
 
-% mv later?
-<<signature Mmm.main_navigator>>=
-val main_navigator : Nav.t option ref
-@
-<<constant Mmm.main_navigator>>=
-let main_navigator = ref None
-@
-% have this mostly to support multi windows,
-% so this could be moved in the extra features chapter
-
+% main_navigator will be described far later, it's for multi windows
+% navigator
 
 % the set preferences will be exposed in extra features,
 % let's focus for now on initial URL and navigator call
@@ -1381,6 +1444,9 @@ type t = {
   <<[[Nav.t]] other fields>>
  }
 @
+% this will be full of hooks
+%todo: could classify other fields, like active hooks, error hook,
+% etc
 
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_viewer_frame = viewer_frame;
@@ -1413,10 +1479,21 @@ let absolutegoto nav uri =
 val follow_link : t -> Hyper.link -> unit
 @
 <<function Nav.follow_link>>=
-let follow_link nav =
-  request nav true id_wr (process_viewer true make_ctx) (specific_viewer true)
+let follow_link nav lk =
+  request 
+   nav 
+   true 
+   id_wr 
+   (fun nav wr dh -> process_viewer true make_ctx nav wr dh) 
+   (specific_viewer true)
+   lk
 @
 % all those true booleans ... hard to read
+
+<<function Nav.id_wr>>=
+let id_wr wr = wr
+@
+%todo: when want to pass something else? and want to transform the wr?
 
 \subsection{[[Nav.request()]]}
 
@@ -1430,7 +1507,7 @@ val request :
   Hyper.link -> 
   unit
 @
-% wow, complicated type
+%todo: wow, complicated type, change order and LP aspectize the hooks!
 
 <<function Nav.request>>=
 (* [request nav usecache wrapwr process specific] produces a function that
@@ -1442,82 +1519,91 @@ val request :
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request nav usecache wrapwr process specific =
+let request nav  usecache wrapwr  process  specific lk =
 
-  (* Normally execute the request and process its answer (dh) *)
-  let rec retrieve_and_handle wr =
-    match Retrieve.f wr handle_link
-    { document_finish = (fun _ -> nav.nav_rem_active wr.www_url);
-      document_process = (fun dh ->
+  <<function Nav.request.retrieve_and_handle>>
+  <<function Nav.request.handle_wr>>
+  <<function Nav.request.handle_link>>
+  handle_link lk
+@
+%old: I eta expanded with lk, again
+
+% link -> wr -> ...
+<<function Nav.request.handle_link>>=
+and handle_link h =
+  try (* Convert the link into a request *)
+    let wr = Plink.make h in
+    wr.www_error <- nav.nav_error;
+    wr |> wrapwr |> handle_wr
+  with
+  | Invalid_link msg ->
+      nav.nav_error#f (I18n.sprintf "Invalid link")
+  | Invalid_request (wr, msg) ->
+      nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
+                        (Url.string_of wr.www_url) msg)
+in
+@
+
+% wr (-> cache) -> ...
+<<function Nav.request.handle_wr>>=
+(* Wrapper to deal with general/specific cache *)
+and handle_wr wr =
+  try
+    match wr.www_url.protocol with
+    <<[[Nav.request.handle_wr()]] match protocol cases>>
+    | _ ->
+       if (not usecache) || dont_check_cache wr 
+       then retrieve_and_handle wr
+       else
+         <<[[Nav.request.handle_wr()]] if use cache>>
+  with Duplicate url ->
+    wr.www_error#f (I18n.sprintf 
+        "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
+@
+% you want exception analysis ... this gets tricky
+
+<<function Nav.request.retrieve_and_handle>>=
+(* Normally execute the request and process its answer (dh) *)
+let rec retrieve_and_handle wr =
+  let cont = 
+    { document_process = (fun dh ->
         process nav wr dh;
-        nav.nav_rem_active wr.www_url)}
-    with
-    | Retrieve.Started abort -> nav.nav_add_active wr.www_url abort
-    | Retrieve.InUse -> raise (Duplicate wr.www_url)
-      
-  (* Wrapper to deal with general/specific cache *)
-  and handle_wr wr =
-    try
-      match wr.www_url.protocol with
-     | MAILTO -> Mailto.f wr
-      (* mailto: is really a pain. It doesn't fit the retrieval semantics
-       of WWW requests. *)
-      | _ ->
-         if (not usecache) || dont_check_cache wr 
-         then retrieve_and_handle wr
-         else
-           (* If the the document can be cached, then it is with no_stamp *)
-           let did = {document_url = wr.www_url; document_stamp = no_stamp} in
-           try
-             specific nav did wr
-           with Not_found ->
-             try
-               let doc = Cache.find did in
-               try (* display it from source *)
-                 process nav wr (Cache.make_handle wr doc)
-               with 
-               | Sys_error s ->
-                   wr.www_error#f (I18n.sprintf
-                    "Cache error occurred during save of temporary buffer (%s)"
-                       s)
-               | Unix_error (e,fname,arg) ->
-                   wr.www_error#f (I18n.sprintf 
-               "Cache error occurred when opening temporary file\n%s: %s (%s)"
-               fname (Unix.error_message e) arg)
-            with Not_found -> (* we don't have the document *)
-              retrieve_and_handle wr
-    with
-      Duplicate url ->
-        wr.www_error#f (I18n.sprintf "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
-
-  and handle_link h =
-    try (* Convert the link into a request *)
-      let wr = Plink.make h in
-      wr.www_error <- nav.nav_error;
-      handle_wr (wrapwr wr)
-    with
-    | Invalid_link msg ->
-        nav.nav_error#f (I18n.sprintf "Invalid link")
-    | Invalid_request (wr, msg) ->
-        nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
-                          (Url.string_of wr.www_url) msg)
+        nav.nav_rem_active wr.www_url);
+      document_finish = (fun _ -> 
+        nav.nav_rem_active wr.www_url);
+    }
   in
-  handle_link
+  match Retrieve.f wr handle_link cont with
+  | Retrieve.Started abort -> 
+      nav.nav_add_active wr.www_url abort
+  | Retrieve.InUse -> 
+      raise (Duplicate wr.www_url)
 @
+% will se Retrieve.f later      
 
+\subsubsection{[[Nav.process_viewer()]]}
 
+% Nav.absolutegoto | ... -> Nav.request -> <> 
+%  (as Nav.request.process <- follow_link (<>) <- Nav.absolutegoto )
+<<function Nav.process_viewer>>=
+(* Specific handling of "view" requests *)
+let process_viewer addhist make_ctx = 
+ fun nav wr dh ->
+  let ctx = make_ctx nav dh.document_id in
+  match Viewers.view nav.nav_viewer_frame ctx dh with
+  | None -> () (* external viewer *)
+  | Some di ->
+      <<[[Nav.process_viewer()]] add in cache and history the document>>
+      nav.nav_show_current di dh.document_fragment
+@
+% compute the graphic, and then show it in the nav at the right
+% anchor! Finally made the link from user url request -> graphic display
 
-<<[[Nav.t]] other fields>>=
-nav_add_active : Url.t -> (unit -> unit) -> unit;
-nav_rem_active : Url.t -> unit;
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_add_active = Hashtbl.add actives;
-nav_rem_active = Hashtbl.remove actives;
-@
-<<local Mmm.navigator.actives>>=
-let actives = Hashtbl.create 37 in
-@
+% so request -> retrieve -> view -> display
+
+% will see viewer later, Viewers.view, and make_ctx
+% will see nav.nav_show_current later
+
 
 
 
@@ -1664,10 +1750,7 @@ Entry.configure e [TextVariable entryv; TextWidth 40];
 
 \section{Display}
 
-<<[[Mmm.navigator()]] locals>>=
-let current_di = ref None in
-@
-
+% Nav.absolutegoto -> request -> process_viewer -> <>
 <<[[Nav.t]] other fields>>=
 nav_show_current: Viewers.display_info -> string option -> unit;
 @
@@ -1675,7 +1758,7 @@ nav_show_current: Viewers.display_info -> string option -> unit;
 nav_show_current = show_current;
 @
 
-% ??? -> <>
+% Nav.absolutegoto -> request -> process_viewer -> <> (as Nav.nav_show_current)
 <<local function Mmm.navigator.show_current>>=
 (* Change view, independantly of history manip *)
 let show_current di frag =
@@ -1696,6 +1779,10 @@ let show_current di frag =
   (* Bof *)
   Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
 in
+@
+
+<<[[Mmm.navigator()]] locals>>=
+let current_di = ref None in
 @
 
 <<function Mmm.undisplay>>=
@@ -1729,6 +1816,12 @@ let initial_did =
   } 
 in
 let hist = History.create initial_did in
+@
+
+
+<<[[Nav.process_viewer()]] add in cache and history the document>>=
+if addhist 
+then nav.nav_add_hist dh.document_id dh.document_fragment;
 @
 
 % ?? -> <>
@@ -1887,8 +1980,8 @@ let reload () =
     Gcache.remove hist.h_key did;
     historygoto nav did frag false |> ignore
   end
-    else
-      error#f (I18n.sprintf "Document cannot be reloaded from its url\n(probably a POST request)")
+    else error#f (I18n.sprintf 
+      "Document cannot be reloaded from its url\n(probably a POST request)")
 in
 @
 
@@ -1903,20 +1996,37 @@ let update nocache =
 in
 @
 
+
+
 <<[[Mmm.navigator()]] navigation buttons>>=
 let abortb = Button.create_named fb 
   "abort" [Text (I18n.sprintf "Abort"); Command abort] in
 @
 
+<<local Mmm.navigator.actives>>=
+let actives = Hashtbl.create 37 in
+@
+
 <<function Mmm.navigator.abort>>=
 let abort () =
-  actives |> Hashtbl.iter (fun url abort -> abort());
+  actives |> Hashtbl.iter (fun _url abort -> abort());
   Hashtbl.clear actives;
   match !current_di with
   | None -> ()
   | Some di -> di#di_abort
 in
 @
+
+% Nav.request -> <>
+<<[[Nav.t]] other fields>>=
+nav_add_active : Url.t -> (unit -> unit) -> unit;
+nav_rem_active : Url.t -> unit;
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_add_active = Hashtbl.add actives;
+nav_rem_active = Hashtbl.remove actives;
+@
+
 
 \section{Menus}
 
@@ -2266,7 +2376,7 @@ my_short_cuts |> List.iter (fun (f, eventl) ->
 
 
 \chapter{Parsing}
-% www/ html/ 
+% www/ html/ http/
 
 \section{URLs}
 
@@ -4747,198 +4857,447 @@ val media_type :
 
 
 
-\chapter{HTML}
-% html/
+\chapter{Retrieving}
+%Retrieving Documents
+% retrieve/
+% put before http
 
-\section{Attributes}
-
-
-% specified where? RFC?
-<<constant Html.default_attributes>>=
-(* Attribute values *)
-let default_attributes = [ 
-  ("isindex"  , "prompt" ),  "Document is indexed/searchable: ";
-                             
-  ("a"        , "methods"),  "GET";     (* <A METHODS=GET> *)
-  ("embed"    , "methods"),  "GET";		(* <EMBED METHODS=GET> *)
-  ("embed"    , "alt"    ),  "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
-  ("form"     , "method" ),  "GET";		(* <FORM METHOD=GET> *)
-  ("form"     , "enctype"),  "application/x-www-form-urlencoded";
-
-  ("ol"       , "type"   ),  "1";       (* <OL TYPE=1 *)
-  ("input"    , "type"   ),  "TEXT";	(* <INPUT TYPE=TEXT> *)
-  ("select"   , "size"   ),  "5";
-  ("textarea" , "align"  ),  "bottom";
-  ("input"    , "align"  ),  "bottom";
-  ("select"   , "align"  ),  "bottom";
-  ("img"      , "align"  ),  "bottom";
-  (* ("img"   , "alt"    ),  "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
-  ("area"     , "shape"  ),  "rect";
-  ("div"      , "align"  ),  "left";
-  ("basefont" , "size"   ),  "3";
-
-  (* frames *)
-  ("frame"    , "frameborder" ), "0";
-  ("frame"    , "scrolling"   ), "auto";
-  ("frameset" , "rows"        ), "100%";
-  ("frameset" , "cols"        ), "100%";
-  ]
+% Nav.request.retrieve_and_handle -> <>
+<<signature Retrieve.f>>=
+(* f is supposed to raise only Invalid_url *)
+val f : Www.request ->  (* the request *)
+        (Hyper.link -> unit) -> (* the retry function *)
+        Document.document_continuation -> (* the handlers *)
+        retrievalStatus
 @
 
-
-<<signature Html.get_attribute>>=
-val get_attribute : tag -> string -> string
-  (* [get_attribute tag attrib_name] *)
+<<type Retrieve.retrievalStatus>>=
+type retrievalStatus =
+ | Started of (unit -> unit)  
+ | InUse
 @
-<<function Html.get_attribute>>=
-let get_attribute tag attr =
-  try
-    List.assoc attr tag.attributes 
-  with
-    Not_found ->
-     List.assoc (tag.tag_name, attr) default_attributes
-@
+% abort hook
+% less: typedef?
 
+\section{[[Retrieve.f()]]}
 
-<<signature Html.has_attribute>>=
-val has_attribute : tag -> string -> bool
-  (* [has_attribute tag attrib_name] *)
-@
-<<function Html.has_attribute>>=
-let has_attribute tag attr =
-     List.mem_assoc attr tag.attributes
-  || List.mem_assoc (tag.tag_name, attr) default_attributes
-@
-
-
-
-\section{Tables}
-
-\section{Forms}
-
-\section{Maps}
-
-% important for imgs?
-
-%(* Client-side image maps:
-%     the "only" difficulty in implementing client-side image maps is that
-%     the map may well come *after* the image in the document. In general,
-%     anyway, the map may be an arbitrary URL.
-%
-%   We thus have to implement a general delay mechanism for maps : the idea
-%   here is to use a table of maps, each map being accessed by an URI (that is,
-%   an URL plus a fragment).
-%
-%   PROBLEM: we have no idea in general when to flush this table.
-%
-% *)
-
-
-<<type Maps.area_kind>>=
-(* The active areas *)
-type area_kind = 
- | Rect 
- | Circle 
- | Poly 
- | Default
-@
-
-<<type Maps.area>>=
-(* The area *)
-type area = {
-  area_kind : area_kind;
-  area_coords : int list;
-  area_link : Hyper.link;
-  area_alt  : string
- }
-@
-
-<<type Maps.map>>=
-type map = area list
-@
-
-<<type Maps.t>>=
-(* We merge any kind of map, for we actually are going to support
-   maps for arbitrary embedded objects
+<<function Retrieve.f>>=
+(*
+ * Emitting a request:
+ *   we must catch here all errors due to protocols and remove the
+ *   cnx from the set of active cnx.
  *)
-type t = 
-    ClientSide of Hyper.link		(* usemap link *)
-  | ServerSide of Hyper.link		(* ismap *)
-  | Direct of Hyper.link			(* inside an anchor *)
-  | NoMap				(* no additionnal navigation *)
-  | FormMap of (int * int -> Hyper.link)
+and f request retry cont = 
+  Log.debug "Retrieve.f";
+  if Www.is_active_cnx request.www_url
+  then InUse
+  else begin
+    Www.add_active_cnx request.www_url;
+    try 
+      let (req, cache) = Protos.get request.www_url.protocol in
+      Started (req request
+               { cont with
+                 document_process = http_check cache retry cont request})
+
+   with 
+   | Not_found ->
+       Www.rem_active_cnx request.www_url;
+       raise (Invalid_request (request, I18n.sprintf "unknown protocol"))
+   | Http.HTTP_error s ->
+       Www.rem_active_cnx request.www_url;
+       raise (Invalid_request (request, I18n.sprintf "HTTP Error \"%s\"" s))
+   | File.File_error s ->
+       Www.rem_active_cnx request.www_url;
+       raise (Invalid_request (request, s))
+   end
 @
 
-<<type Maps.map_status>>=
-(* The table of client-side image maps *)
-type map_status =
-   KnownMap of map
- | RequestedMap of string
+\section{Active connections}
+
+<<module Www.UrlSet>>=
+(* Table of unresolved active connexions *)
+(* We need to keep a trace of pending connections, since there is a race
+   condition when the user clicks twice rapidly on an anchor. If the second
+   click occurs before the document is added to the cache, (e.g. because we
+   are waiting for the headers), then the document will be retrieved twice.
+   And naturally, for documents that don't enter the cache we always will
+   duplicate connexions.
+   Retrieve.f is a safe place to add the request to the list of pending
+   connexions, because it is synchronous.
+   Removing an active connexion must take place when we close the 
+   dh.document_fd.
+*)
+module UrlSet =
+  Set.Make(struct type t = Url.t let compare = compare end)
 @
 
-<<signature Maps.parse_coords>>=
-val parse_coords : string -> int list
+<<constant Www.active_connexions>>=
+let active_connexions = ref UrlSet.empty
 @
 
-<<signature Maps.get>>=
-val get : string -> map_status
+<<signature Www.is_active_cnx>>=
+val is_active_cnx : Url.t -> bool
+@
+<<signature Www.add_active_cnx>>=
+val add_active_cnx : Url.t -> unit
+@
+<<signature Www.rem_active_cnx>>=
+val rem_active_cnx : Url.t -> unit
 @
 
-<<signature Maps.add>>=
-val add : string -> map -> unit
+% Retrieve.f -> <>
+<<functions Www.xxx_active_cnx>>=
+let is_active_cnx url = 
+  UrlSet.mem url !active_connexions
+let add_active_cnx url = 
+  active_connexions := UrlSet.add url !active_connexions
+@
+
+% Retrieve.f (when error) | (??-> Document.dclose) | Http.failed_request -> <>
+<<functions Www.xxx_active_cnx>>=
+let rem_active_cnx url =
+  active_connexions := UrlSet.remove url !active_connexions
+@
+
+\section{Connections}
+
+<<type Feed.internal>>=
+(* An abstract notion of connection *)
+
+type internal = Unix.file_descr
+@
+
+<<type Feed.t>>=
+type t = {
+  feed_read : string -> int -> int -> int;
+  feed_schedule : (unit -> unit) -> unit;
+  feed_unschedule : unit -> unit;
+  feed_close : unit -> unit;
+  feed_internal : internal  
+  }
+@
+
+<<signature Feed.of_fd>>=
+val of_fd : Unix.file_descr -> t
+@
+
+<<signature Feed.internal>>=
+val internal : t -> internal
 @
 
 
-<<constant Maps.table>>=
-let table = (Hashtbl.create 37 : (string, map_status) Hashtbl.t)
+<<function Feed.of_fd>>=
+(* We should distinguish internal/external connections *)
+let of_fd fd =
+  let is_open = ref true in
+  let action = ref None in
+  let condition = Condition.create() in
+  let first_read = ref false in
+
+  (* ASSUMES: this is the first read on the fileevent *)
+  let safe_read buf offs len =
+    first_read := false;
+    if !is_open then Low.read fd buf offs len else 0
+  in
+
+  (* In other cases : this is non blocking but not fully threaded. *)
+  let special_read buf ofs len =
+     (* remove the normal handler *)
+     Fileevent_.remove_fileinput fd; 
+     (* add a handler to trigger the condition *)
+     Fileevent_.add_fileinput fd (fun () ->
+     Fileevent_.remove_fileinput fd; (* remove myself *)
+     Condition.set condition);
+     (* wait for the condition to happen *)
+     Condition.wait condition;
+     (* Meanwhile, someone may have unscheduled/closed the 
+    feed (e.g. abort). We call safe_read, but if the feed has been
+    closed, read will fail.
+    To know if we have to put back on schedule, check the *current*
+    state of action
+      *)
+     let n = try safe_read buf ofs len with _ -> 0 in
+     (* reschedule; it is essential that Low.add_fileinput does not
+        call the event loop, otherwise we loose sequentiality of reads *)
+     (match !action with
+        Some f ->
+      Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
+      | None -> ());
+     (* and return *)
+     n
+  in {
+
+   feed_read = (fun buf ofs len -> 
+       if !first_read then safe_read buf ofs len
+       else special_read buf ofs len
+   );
+
+   feed_schedule = (function f ->
+       if not !is_open then
+     Log.f "ERROR: feed is closed, can't schedule"
+       else match !action with
+     Some f -> (* we are already scheduled ! *)
+       Log.f "Warning: feed already scheduled"
+       | None -> begin
+        action := Some f;
+        Low.add_fileinput fd (fun () -> first_read := true; f())
+      end
+   );
+
+   feed_unschedule = (function () -> 
+       match !action with
+     Some f -> Low.remove_fileinput fd; action := None
+       | None -> (* this happens quite often (for all action codes which
+            do not process the body of the document, the feed got
+            unscheduled as the end of headers) *)
+       ()
+   );
+
+   (* feed_close must be called only if the feed it *not* scheduled *)
+
+   feed_close = (function () -> 
+       (* if we abort during a state when we are waiting on the condition,
+          the feed is unscheduled but we never get out. So always change
+      the state *)
+       Condition.set condition;
+       if !is_open then begin
+     match !action with 
+        Some f -> Log.f "ERROR: feed is scheduled, can't close"
+      | None -> Unix.close fd;
+                is_open := false;
+            (* Condition.free condition RACE CONDITION HERE *)
+       end 
+    );
+
+    feed_internal = fd
+   }
 @
 
-<<constant Maps.coord_sep>>=
-(* Tolerance: official syntax is "," separated.
-   We use instead "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
-   that is non empty sequence of whitespace
-        or comma with possible surrounding whitespace
+<<function Feed.internal>>=
+let internal {feed_internal = fd} = fd
+@
+
+
+\section{XXX}
+
+<<type Retrieve.behaviour>>=
+(* We should implement the proper behaviours for all return codes
+ * defined in the HTTP/1.0 protocol draft. 
+ * Return codes are HTTP specific, but since all protocols are more or
+ * less mapped to http, we deal with them at the retrieval level.
  *)
-(* let coord_sep = Str.regexp "," *)
-let coord_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
+type behaviour =
+   Ok 			              (* process the document *)
+ | Stop of string             (* stop (no document) and display message *)
+ | Retry of Hyper.link        (* restart with a new link *)
+ | Error of string            (* same as stop, but it's an error *)
+ | Restart of (handle -> handle) (* restart the same request, but apply
+                     transformation on the continuation *)
 @
 
-<<function Maps.parse_coords>>=
-let parse_coords s =
-  List.map int_of_string (Str.split coord_sep s)
+<<signature Retrieve.add_http_processor>>=
+val add_http_processor : 
+  int -> (Www.request -> Document.handle -> behaviour) -> unit
 @
 
-<<function Maps.add>>=
-let add name map =
-  Log.debug (sprintf "Adding map : %s" name);
+
+<<constant Retrieve.http_process>>=
+(*
+ * Provision for user (re)definition of behaviours.
+ *)
+let http_process = Hashtbl.create 37
+@
+
+<<constant Retrieve.add_http_processor>>=
+let add_http_processor = Hashtbl.add http_process
+@
+
+<<toplevel Retrieve._1>>=
+(* 400 : proxies do return this code when they can satisfy the request,
+ *       so we keep it as default (displayed)
+ *)
+let _ =
+ List.iter (function (code, behave) -> Hashtbl.add http_process code behave)
+  [200, code200;
+   201, code200;
+   202, code200;
+   204, code204;
+
+   301, forward_permanent;
+   302, forward;
+   (* 304, update; *)
+   401, unauthorized;
+   407, proxy_unauthorized]
+@
+
+% no 404? :)
+
+
+<<function Retrieve.code200>>=
+(* 200 OK *)
+let code200 wwwr dh = Ok
+(* 201 Created (same as 200) *)
+(* 202 Accepted (same as 200) *)
+@
+
+
+<<function Retrieve.code400>>=
+(* 400 Bad request *)
+let code400 wwwr dh = Error (I18n.sprintf "Bad Request")
+@
+
+\section{Logging}
+
+
+
+
+<<signature Document.dclose>>=
+val dclose : bool -> handle -> unit
+  (* [dclose remactive dh] closes a living dh *)
+@
+
+<<signature Document.add_log>>=
+val add_log: handle -> string -> (unit -> unit) -> unit
+@
+
+<<signature Document.put_log>>=
+val put_log : handle -> string -> unit
+@
+
+<<signature Document.progress_log>>=
+val progress_log : handle -> int -> unit
+@
+
+<<signature Document.end_log>>=
+val end_log : handle -> string -> unit
+@
+
+<<signature Document.destroy_log>>=
+val destroy_log : handle -> bool -> unit
+  (* logging functions *)
+@
+
+
+
+<<function Document.dclose>>=
+(* Close a connexion. Should be called only by a fileinput callback
+      or by somebody attempting to abort the connexion 
+   We remove the fd of the select before closing it since we don't want
+   a spurious read to happen. This way we are somewhat independant of the
+   Tk implementation 
+ *)
+
+let dclose remactive dh =
+  dh.document_feed.feed_unschedule();
+  dh.document_feed.feed_close();
+  if remactive then Www.rem_active_cnx dh.document_id.document_url
+@
+
+
+<<function Document.add_log>>=
+let add_log dh initmsg abort =
+  !add_log_backend dh initmsg abort
+@
+
+<<function Document.end_log>>=
+let end_log dh msg =
+    dh.document_logger.logger_end msg;
+    destroy_log dh true
+@
+
+<<functions Document.xxx_log>>=
+let put_log dh = dh.document_logger.logger_msg
+let destroy_log dh = dh.document_logger.logger_destroy
+let progress_log dh = dh.document_logger.logger_progress
+@
+
+<<type Document.display_info>>=
+type display_info = {
+    di_abort : unit -> unit;
+    di_destroy : unit -> unit;
+    di_fragment : string option -> unit;
+    di_redisplay: unit -> unit;
+    di_title : unit -> string;	      (* some title for bookmarks *)
+    di_source : unit -> unit;
+    di_load_images : unit -> unit
+}
+@
+
+\section{Images}
+
+<<signature Img.get>>=
+val get : document_id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
+            Scheduler.progress_func -> unit
+@
+
+<<signature Img.update>>=
+val update : Url.t -> unit
+@
+
+
+<<function Img.get>>=
+let get did link cont prog =
+  let wr = Www.make link in
+  wr.www_headers <- "Accept: image/*" :: wr.www_headers;
+  ImageScheduler.add_request wr did cont prog
+@
+
+
+<<function Img.update>>=
+let update url =
   try
-    match Hashtbl.find table name with
-      KnownMap m -> Log.debug "Map already known !"
-    | RequestedMap event ->
-       Hashtbl.remove table name; (* remove it *)
-       Hashtbl.add table name (KnownMap map); (* add its value *)
-       !broadcast_backend event (* trigger all waiting people *)
+    let (oldi,refs,headers) = ImageData.direct_cache_access url in
+    let link = { h_uri = Url.string_of url;
+         h_context = None;
+         h_method = GET;
+             h_params = []} in
+    let wr = Www.make link in
+    let date_received = get_header "date" headers in
+    wr.www_headers <- 
+       ("If-Modified-Since: "^date_received)
+       :: "Pragma: no-cache"
+       :: wr.www_headers;
+
+    ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
+      (fun url i -> 
+    match oldi, i with
+      Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
+        Imagephoto.copy oldn newn []
+  | _, _ -> ())
+      Progress.no_meter
+
   with
-    Not_found -> (* nobody requested it *)
-      Hashtbl.add table name (KnownMap map)
+    Not_found ->  (* either not in cache (bogus) or no date *)
+      ()
 @
 
-<<function Maps.get>>=
-let get name =
-  Log.debug (sprintf "Asking map : %s" name);
-  try
-    Hashtbl.find table name 
-  with
-    Not_found ->
-       let m = Mstring.gensym "map" in
-         Hashtbl.add table name (RequestedMap m);
-     RequestedMap m
+
+\section{Scheduling}
+
+
+
+\section{Progressing}
+% important in a slow word to have some feedback
+
+
+<<type Scheduler.progress_func>>=
+type progress_func = int option -> int -> unit
 @
 
 
 
+<<signature Progress.no_meter>>=
+val no_meter : Scheduler.progress_func
+@
+<<constant Progress.no_meter>>=
+let no_meter = (fun _ _ -> () : Scheduler.progress_func)
+@
 
+<<signature Progress.meter>>=
+@
 
+<<function Progress.meter>>=
+@
 
 
 \chapter{HTTP}
@@ -4982,7 +5341,8 @@ let get name =
 let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 @
 
-% ??? -> Protos.get HTTP -> <>
+% Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
+%  (as Retrieve.f.req <- Protos.get HTTP wr <- Hashtbl.add protos (<>) <- _top
 <<signature Http.req>>=
 val req:
   Www.request -> Document.document_continuation -> (unit -> unit)
@@ -5864,411 +6224,204 @@ let ht_of_stamp ut =
      }
 @
 
-\chapter{Network}
-%Retrieving Documents
-% retrieve/
-% put before http?
-
-<<type Retrieve.retrievalStatus>>=
-type retrievalStatus =
- | Started of (unit -> unit)  
- | InUse
-@
-
-<<signature Retrieve.f>>=
-(* f is supposed to raise only Invalid_url *)
-val f : Www.request ->  (* the request *)
-        (Hyper.link -> unit) -> (* the retry function *)
-        Document.document_continuation -> (* the handlers *)
-        retrievalStatus
-@
-
-<<type Retrieve.behaviour>>=
-(* We should implement the proper behaviours for all return codes
- * defined in the HTTP/1.0 protocol draft. 
- * Return codes are HTTP specific, but since all protocols are more or
- * less mapped to http, we deal with them at the retrieval level.
- *)
-type behaviour =
-   Ok 			              (* process the document *)
- | Stop of string             (* stop (no document) and display message *)
- | Retry of Hyper.link        (* restart with a new link *)
- | Error of string            (* same as stop, but it's an error *)
- | Restart of (handle -> handle) (* restart the same request, but apply
-                     transformation on the continuation *)
-@
-
-<<signature Retrieve.add_http_processor>>=
-val add_http_processor : 
-  int -> (Www.request -> Document.handle -> behaviour) -> unit
-@
-
-
-<<constant Retrieve.http_process>>=
-(*
- * Provision for user (re)definition of behaviours.
- *)
-let http_process = Hashtbl.create 37
-@
-
-<<constant Retrieve.add_http_processor>>=
-let add_http_processor = Hashtbl.add http_process
-@
-
-<<toplevel Retrieve._1>>=
-(* 400 : proxies do return this code when they can satisfy the request,
- *       so we keep it as default (displayed)
- *)
-let _ =
- List.iter (function (code, behave) -> Hashtbl.add http_process code behave)
-  [200, code200;
-   201, code200;
-   202, code200;
-   204, code204;
-
-   301, forward_permanent;
-   302, forward;
-   (* 304, update; *)
-   401, unauthorized;
-   407, proxy_unauthorized]
-@
-
-% no 404? :)
-
-
-<<function Retrieve.code200>>=
-(* 200 OK *)
-let code200 wwwr dh = Ok
-(* 201 Created (same as 200) *)
-(* 202 Accepted (same as 200) *)
-@
-
-
-<<function Retrieve.code400>>=
-(* 400 Bad request *)
-let code400 wwwr dh = Error (I18n.sprintf "Bad Request")
-@
-
-\section{Connections}
-
-<<type Feed.internal>>=
-(* An abstract notion of connection *)
-
-type internal = Unix.file_descr
-@
-
-<<type Feed.t>>=
-type t = {
-  feed_read : string -> int -> int -> int;
-  feed_schedule : (unit -> unit) -> unit;
-  feed_unschedule : unit -> unit;
-  feed_close : unit -> unit;
-  feed_internal : internal  
-  }
-@
-
-<<signature Feed.of_fd>>=
-val of_fd : Unix.file_descr -> t
-@
-
-<<signature Feed.internal>>=
-val internal : t -> internal
-@
-
-
-<<function Feed.of_fd>>=
-(* We should distinguish internal/external connections *)
-let of_fd fd =
-  let is_open = ref true in
-  let action = ref None in
-  let condition = Condition.create() in
-  let first_read = ref false in
-
-  (* ASSUMES: this is the first read on the fileevent *)
-  let safe_read buf offs len =
-    first_read := false;
-    if !is_open then Low.read fd buf offs len else 0
-  in
-
-  (* In other cases : this is non blocking but not fully threaded. *)
-  let special_read buf ofs len =
-     (* remove the normal handler *)
-     Fileevent_.remove_fileinput fd; 
-     (* add a handler to trigger the condition *)
-     Fileevent_.add_fileinput fd (fun () ->
-     Fileevent_.remove_fileinput fd; (* remove myself *)
-     Condition.set condition);
-     (* wait for the condition to happen *)
-     Condition.wait condition;
-     (* Meanwhile, someone may have unscheduled/closed the 
-    feed (e.g. abort). We call safe_read, but if the feed has been
-    closed, read will fail.
-    To know if we have to put back on schedule, check the *current*
-    state of action
-      *)
-     let n = try safe_read buf ofs len with _ -> 0 in
-     (* reschedule; it is essential that Low.add_fileinput does not
-        call the event loop, otherwise we loose sequentiality of reads *)
-     (match !action with
-        Some f ->
-      Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
-      | None -> ());
-     (* and return *)
-     n
-  in {
-
-   feed_read = (fun buf ofs len -> 
-       if !first_read then safe_read buf ofs len
-       else special_read buf ofs len
-   );
-
-   feed_schedule = (function f ->
-       if not !is_open then
-     Log.f "ERROR: feed is closed, can't schedule"
-       else match !action with
-     Some f -> (* we are already scheduled ! *)
-       Log.f "Warning: feed already scheduled"
-       | None -> begin
-        action := Some f;
-        Low.add_fileinput fd (fun () -> first_read := true; f())
-      end
-   );
-
-   feed_unschedule = (function () -> 
-       match !action with
-     Some f -> Low.remove_fileinput fd; action := None
-       | None -> (* this happens quite often (for all action codes which
-            do not process the body of the document, the feed got
-            unscheduled as the end of headers) *)
-       ()
-   );
-
-   (* feed_close must be called only if the feed it *not* scheduled *)
-
-   feed_close = (function () -> 
-       (* if we abort during a state when we are waiting on the condition,
-          the feed is unscheduled but we never get out. So always change
-      the state *)
-       Condition.set condition;
-       if !is_open then begin
-     match !action with 
-        Some f -> Log.f "ERROR: feed is scheduled, can't close"
-      | None -> Unix.close fd;
-                is_open := false;
-            (* Condition.free condition RACE CONDITION HERE *)
-       end 
-    );
-
-    feed_internal = fd
-   }
-@
-
-<<function Feed.internal>>=
-let internal {feed_internal = fd} = fd
-@
-
-
-\section{Active}
-
-<<module Www.UrlSet>>=
-(* Table of unresolved active connexions *)
-(* We need to keep a trace of pending connections, since there is a race
-   condition when the user clicks twice rapidly on an anchor. If the second
-   click occurs before the document is added to the cache, (e.g. because we
-   are waiting for the headers), then the document will be retrieved twice.
-   And naturally, for documents that don't enter the cache we always will
-   duplicate connexions.
-   Retrieve.f is a safe place to add the request to the list of pending
-   connexions, because it is synchronous.
-   Removing an active connexion must take place when we close the 
-   dh.document_fd.
-*)
-module UrlSet =
-  Set.Make(struct type t = Url.t let compare = compare end)
-@
-
-
-
-<<constant Www.active_connexions>>=
-let active_connexions = ref UrlSet.empty
-@
-
-<<signature Www.is_active_cnx>>=
-val is_active_cnx : Url.t -> bool
-@
-<<signature Www.add_active_cnx>>=
-val add_active_cnx : Url.t -> unit
-@
-<<signature Www.rem_active_cnx>>=
-val rem_active_cnx : Url.t -> unit
-@
-
-<<functions Www.xxx_active_cnx>>=
-let is_active_cnx url = 
-  UrlSet.mem url !active_connexions
-let add_active_cnx url = 
-  active_connexions := UrlSet.add url !active_connexions
-let rem_active_cnx url =
-  active_connexions := UrlSet.remove url !active_connexions
-@
-
-\section{Logging}
-
-
-
-
-<<signature Document.dclose>>=
-val dclose : bool -> handle -> unit
-  (* [dclose remactive dh] closes a living dh *)
-@
-
-<<signature Document.add_log>>=
-val add_log: handle -> string -> (unit -> unit) -> unit
-@
-
-<<signature Document.put_log>>=
-val put_log : handle -> string -> unit
-@
-
-<<signature Document.progress_log>>=
-val progress_log : handle -> int -> unit
-@
-
-<<signature Document.end_log>>=
-val end_log : handle -> string -> unit
-@
-
-<<signature Document.destroy_log>>=
-val destroy_log : handle -> bool -> unit
-  (* logging functions *)
-@
-
-
-
-<<function Document.dclose>>=
-(* Close a connexion. Should be called only by a fileinput callback
-      or by somebody attempting to abort the connexion 
-   We remove the fd of the select before closing it since we don't want
-   a spurious read to happen. This way we are somewhat independant of the
-   Tk implementation 
- *)
-
-let dclose remactive dh =
-  dh.document_feed.feed_unschedule();
-  dh.document_feed.feed_close();
-  if remactive then Www.rem_active_cnx dh.document_id.document_url
-@
-
-
-<<function Document.add_log>>=
-let add_log dh initmsg abort =
-  !add_log_backend dh initmsg abort
-@
-
-<<function Document.end_log>>=
-let end_log dh msg =
-    dh.document_logger.logger_end msg;
-    destroy_log dh true
-@
-
-<<functions Document.xxx_log>>=
-let put_log dh = dh.document_logger.logger_msg
-let destroy_log dh = dh.document_logger.logger_destroy
-let progress_log dh = dh.document_logger.logger_progress
-@
-
-<<type Document.display_info>>=
-type display_info = {
-    di_abort : unit -> unit;
-    di_destroy : unit -> unit;
-    di_fragment : string option -> unit;
-    di_redisplay: unit -> unit;
-    di_title : unit -> string;	      (* some title for bookmarks *)
-    di_source : unit -> unit;
-    di_load_images : unit -> unit
-}
-@
-
-\section{Images}
-
-<<signature Img.get>>=
-val get : document_id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
-            Scheduler.progress_func -> unit
-@
-
-<<signature Img.update>>=
-val update : Url.t -> unit
-@
-
-
-<<function Img.get>>=
-let get did link cont prog =
-  let wr = Www.make link in
-  wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-  ImageScheduler.add_request wr did cont prog
-@
-
-
-<<function Img.update>>=
-let update url =
-  try
-    let (oldi,refs,headers) = ImageData.direct_cache_access url in
-    let link = { h_uri = Url.string_of url;
-         h_context = None;
-         h_method = GET;
-             h_params = []} in
-    let wr = Www.make link in
-    let date_received = get_header "date" headers in
-    wr.www_headers <- 
-       ("If-Modified-Since: "^date_received)
-       :: "Pragma: no-cache"
-       :: wr.www_headers;
-
-    ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
-      (fun url i -> 
-    match oldi, i with
-      Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
-        Imagephoto.copy oldn newn []
-  | _, _ -> ())
-      Progress.no_meter
-
-  with
-    Not_found ->  (* either not in cache (bogus) or no date *)
-      ()
-@
-
-
-\section{Scheduling}
-
-
-
-\section{Progressing}
-% important in a slow word to have some feedback
-
-
-<<type Scheduler.progress_func>>=
-type progress_func = int option -> int -> unit
-@
-
-
-
-<<signature Progress.no_meter>>=
-val no_meter : Scheduler.progress_func
-@
-<<constant Progress.no_meter>>=
-let no_meter = (fun _ _ -> () : Scheduler.progress_func)
-@
-
-<<signature Progress.meter>>=
-@
-
-<<function Progress.meter>>=
-@
-
-
 \chapter{Viewers}
 % viewers/
 
+%reput process_viewer():
+% fun nav wr dh ->
+%  let ctx = make_ctx nav dh.document_id in
+%  match Viewers.view nav.nav_viewer_frame ctx dh with
+%  | None -> () (* external viewer *)
+%  | Some di ->
+%      <<[[Nav.process_viewer()]] add in cache and history the document>>
+%      nav.nav_show_current di dh.document_fragment
+
+<<signature Nav.make_ctx>>=
+val make_ctx : t -> Document.document_id -> Viewers.context
+@
+<<signature Viewers.view>>=
+val view : Widget.widget -> context -> Document.handle -> display_info option
+@
+
+
+
+
+%where nav_show_current is:
+%    di#di_touch;
+%    pack di, set title of toplevel window to name of document
+%    di#di_fragment frag;
+
+
+
+
+\section{[[Viewers.view()]]}
+
+% Nav.request -> ... document_finish continuation -> Nav.process_viewer  -> <>
+<<function Viewers.view>>=
+(* the meat *)
+and view frame ctx dh =
+  try 
+    let ctype = contenttype dh.document_headers in
+    let (typ, sub), pars = Lexheaders.media_type ctype in
+    try (* Get the viewer *)
+      let viewer =
+        try Hashtbl.find viewers (typ,sub)
+        with Not_found -> Hashtbl.find viewers (typ,"*")
+      in
+      match viewer with
+      |	Internal viewer ->
+          ctx#log (I18n.sprintf "Displaying...");
+          viewer pars frame ctx (Decoders.insert dh)
+      |	External ->
+          ctx#log (I18n.sprintf "Displaying externally");
+          extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
+          None
+      |	Interactive ->
+          interactive frame ctx dh ctype
+      |	Save ->
+          Save.interactive (fun _ -> ()) dh;
+          None
+    with
+    | Failure "too late" -> (* custom for our internal viewers *)
+        dclose true dh;
+        Document.destroy_log dh false;
+        None
+    | Not_found -> 
+       (* we don't know how to handle this *)
+       ctx#log (I18n.sprintf "Displaying externally");
+       interactive frame ctx dh ctype
+  with 
+  | Invalid_HTTP_header e ->
+      ctx#log (I18n.sprintf "Malformed type: %s" e);
+      unknown frame ctx dh
+  | Not_found -> 
+      (* Content-type was not defined in the headers *)
+      (* and could not be computed from url *)
+      unknown frame ctx dh
+@
+
+\section{[[Nav.stdctx]]}
+
+<<function Nav.make_ctx>>=
+let make_ctx nav did = 
+  let o = new stdctx(did, nav) in
+  ignore (o#init);
+  (o :> Viewers.context)
+@
+
+<<class Nav.stdctx>>=
+(* WARNING: we take copies of these objects, so "self" must *not* be
+ * captured in a closure (it would always point to the old object).
+ * A new object is created for each new top viewer (follow_link).
+ * AND for each frame_goto operation.
+ *)
+class stdctx (did, nav) =
+ object (self)
+  inherit Viewers.context (did, []) as super
+  (* val nav = nav *)  
+  (* val did = did *)
+
+  method log = nav.nav_log
+  method init =
+
+    (* a new context for a toplevel window *)
+    let make_ctx nav did = 
+      ((new stdctx(did, nav))#init :> Viewers.context) in
+
+    (* a new context for an embedded window *)
+    let make_embed_ctx w targets = 
+      let targets = 
+    ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
+      let newctx = (new stdctx(did,nav))#init in
+      begin
+    try 
+      let f = List.assoc "pointsto" self#hyper_funs in
+      let g = List.assoc "clearpointsto" self#hyper_funs in
+      newctx#add_nav ("pointsto", f);
+      newctx#add_nav ("clearpointsto", g);
+    with
+      Not_found -> ()
+      end;
+      (newctx#for_embed [] targets :> Viewers.context) in
+    (* by default, use the cache, don't touch the request *)
+    let default_request = request nav true id_wr in
+    let follow_link _ = 
+      default_request (process_viewer true make_ctx) (specific_viewer true)
+    and save_link _ =
+      default_request (process_save None) nothing_specific
+    and copy_link _ = copy_link nav
+    and head_link = 
+      let f = default_request process_head nothing_specific in
+      (fun _ hlink -> f (make_head hlink))
+    and new_link _ = nav.nav_new
+    in 
+    let frame_goto targets hlink =
+      try
+      (* target semantics PR-HTML 4.0 16.3.2 *)
+       match List.assoc "target" hlink.h_params with
+       | "_blank" ->
+        let w = Toplevel.create Widget.default_toplevel [] in
+        Embed.add { 
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+       | "_self" ->
+        let w = List.assoc "_self" targets in
+        Embed.add {
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+       | "_top" -> follow_link targets hlink
+       | "_parent" ->
+        let w = List.assoc "_parent" targets in
+        Embed.add { 
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+       | s ->
+        let w = List.assoc s targets in
+        Embed.add {
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+      with
+       Not_found -> (* if we are in a frame, it is available as _self *)
+      try
+        let w = List.assoc "_self" targets in
+        Embed.add {
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+      with
+        Not_found -> follow_link targets hlink
+    in
+    List.iter super#add_nav !user_navigation;
+    List.iter (fun (name, f, txt) ->
+      self#add_nav
+    (name, {hyper_visible = true; hyper_func = f; hyper_title = txt}))
+       ["copy", copy_link, I18n.sprintf "Copy this Link to clipboard";
+    "head", head_link, I18n.sprintf "Headers of document";
+    "save", save_link, I18n.sprintf "Save this Link";
+    "gotonew", new_link, I18n.sprintf "New window with this Link";
+        "goto", frame_goto, I18n.sprintf "Open this Link";
+       ];
+    self
+
+end
+@
+
+
+\section{XXX}
 
 <<type Viewers.t>>=
 (* Definition of an internal viewer *)
@@ -6296,9 +6449,6 @@ val add_builtin : media_type -> t -> unit
 @
 
 
-<<signature Viewers.view>>=
-val view : Widget.widget -> context -> handle -> display_info option
-@
 
 <<signature Viewers.reset>>=
 val reset : unit -> unit
@@ -6357,10 +6507,6 @@ let reset () =
 
 \section{XXX}
 
-<<type Viewers.vparams>>=
-(* hyper functions are: "goto", "save", "gotonew" *)
-type vparams = (string * string) list
-@
 
 <<type Viewers.frame_targets>>=
 type frame_targets = (string * Widget.widget) list
@@ -6483,9 +6629,203 @@ let _ =
   Viewers.add_builtin ("text","plain") display_plain
 @
 
-\chapter{Rendering}
+\chapter{HTML}
+% html/
+
+\section{Attributes}
+
+
+% specified where? RFC?
+<<constant Html.default_attributes>>=
+(* Attribute values *)
+let default_attributes = [ 
+  ("isindex"  , "prompt" ),  "Document is indexed/searchable: ";
+                             
+  ("a"        , "methods"),  "GET";     (* <A METHODS=GET> *)
+  ("embed"    , "methods"),  "GET";		(* <EMBED METHODS=GET> *)
+  ("embed"    , "alt"    ),  "[EMBEDDED OBJECT]";(* <EMBED ALT="EMBEDDED OBJECT"> *)
+  ("form"     , "method" ),  "GET";		(* <FORM METHOD=GET> *)
+  ("form"     , "enctype"),  "application/x-www-form-urlencoded";
+
+  ("ol"       , "type"   ),  "1";       (* <OL TYPE=1 *)
+  ("input"    , "type"   ),  "TEXT";	(* <INPUT TYPE=TEXT> *)
+  ("select"   , "size"   ),  "5";
+  ("textarea" , "align"  ),  "bottom";
+  ("input"    , "align"  ),  "bottom";
+  ("select"   , "align"  ),  "bottom";
+  ("img"      , "align"  ),  "bottom";
+  (* ("img"   , "alt"    ),  "[IMAGE]"; *) (* Just "IMAGE" ? Boring... *)
+  ("area"     , "shape"  ),  "rect";
+  ("div"      , "align"  ),  "left";
+  ("basefont" , "size"   ),  "3";
+
+  (* frames *)
+  ("frame"    , "frameborder" ), "0";
+  ("frame"    , "scrolling"   ), "auto";
+  ("frameset" , "rows"        ), "100%";
+  ("frameset" , "cols"        ), "100%";
+  ]
+@
+
+
+<<signature Html.get_attribute>>=
+val get_attribute : tag -> string -> string
+  (* [get_attribute tag attrib_name] *)
+@
+<<function Html.get_attribute>>=
+let get_attribute tag attr =
+  try
+    List.assoc attr tag.attributes 
+  with
+    Not_found ->
+     List.assoc (tag.tag_name, attr) default_attributes
+@
+
+
+<<signature Html.has_attribute>>=
+val has_attribute : tag -> string -> bool
+  (* [has_attribute tag attrib_name] *)
+@
+<<function Html.has_attribute>>=
+let has_attribute tag attr =
+     List.mem_assoc attr tag.attributes
+  || List.mem_assoc (tag.tag_name, attr) default_attributes
+@
+
+
+
+\section{Tables}
+
+\section{Forms}
+
+\section{Maps}
+
+% important for imgs?
+
+%(* Client-side image maps:
+%     the "only" difficulty in implementing client-side image maps is that
+%     the map may well come *after* the image in the document. In general,
+%     anyway, the map may be an arbitrary URL.
+%
+%   We thus have to implement a general delay mechanism for maps : the idea
+%   here is to use a table of maps, each map being accessed by an URI (that is,
+%   an URL plus a fragment).
+%
+%   PROBLEM: we have no idea in general when to flush this table.
+%
+% *)
+
+
+<<type Maps.area_kind>>=
+(* The active areas *)
+type area_kind = 
+ | Rect 
+ | Circle 
+ | Poly 
+ | Default
+@
+
+<<type Maps.area>>=
+(* The area *)
+type area = {
+  area_kind : area_kind;
+  area_coords : int list;
+  area_link : Hyper.link;
+  area_alt  : string
+ }
+@
+
+<<type Maps.map>>=
+type map = area list
+@
+
+<<type Maps.t>>=
+(* We merge any kind of map, for we actually are going to support
+   maps for arbitrary embedded objects
+ *)
+type t = 
+    ClientSide of Hyper.link		(* usemap link *)
+  | ServerSide of Hyper.link		(* ismap *)
+  | Direct of Hyper.link			(* inside an anchor *)
+  | NoMap				(* no additionnal navigation *)
+  | FormMap of (int * int -> Hyper.link)
+@
+
+<<type Maps.map_status>>=
+(* The table of client-side image maps *)
+type map_status =
+   KnownMap of map
+ | RequestedMap of string
+@
+
+<<signature Maps.parse_coords>>=
+val parse_coords : string -> int list
+@
+
+<<signature Maps.get>>=
+val get : string -> map_status
+@
+
+<<signature Maps.add>>=
+val add : string -> map -> unit
+@
+
+
+<<constant Maps.table>>=
+let table = (Hashtbl.create 37 : (string, map_status) Hashtbl.t)
+@
+
+<<constant Maps.coord_sep>>=
+(* Tolerance: official syntax is "," separated.
+   We use instead "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
+   that is non empty sequence of whitespace
+        or comma with possible surrounding whitespace
+ *)
+(* let coord_sep = Str.regexp "," *)
+let coord_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
+@
+
+<<function Maps.parse_coords>>=
+let parse_coords s =
+  List.map int_of_string (Str.split coord_sep s)
+@
+
+<<function Maps.add>>=
+let add name map =
+  Log.debug (sprintf "Adding map : %s" name);
+  try
+    match Hashtbl.find table name with
+      KnownMap m -> Log.debug "Map already known !"
+    | RequestedMap event ->
+       Hashtbl.remove table name; (* remove it *)
+       Hashtbl.add table name (KnownMap map); (* add its value *)
+       !broadcast_backend event (* trigger all waiting people *)
+  with
+    Not_found -> (* nobody requested it *)
+      Hashtbl.add table name (KnownMap map)
+@
+
+<<function Maps.get>>=
+let get name =
+  Log.debug (sprintf "Asking map : %s" name);
+  try
+    Hashtbl.find table name 
+  with
+    Not_found ->
+       let m = Mstring.gensym "map" in
+         Hashtbl.add table name (RequestedMap m);
+     RequestedMap m
+@
+
+
+
+
+
+
+
+\chapter{Displaying}
 % display/
-% layout engine
+% layout engine? or layout engine is actually in viewers/ ?
 
 \section{Display primitives}
 
@@ -6825,6 +7165,17 @@ let helpurl = function
 @
 
 \section{Multi windows}
+
+% mv later?
+<<signature Mmm.main_navigator>>=
+val main_navigator : Nav.t option ref
+@
+<<constant Mmm.main_navigator>>=
+let main_navigator = ref None
+@
+% have this mostly to support multi windows,
+
+
 
 <<constant Mmm.navigators>>=
 (*
@@ -7178,6 +7529,11 @@ let isdir path f =
 
 % see extra
 
+<<[[Nav.request.handle_wr()]] match protocol cases>>=
+| MAILTO -> Mailto.f wr
+ (* mailto: is really a pain. It doesn't fit the retrieval semantics
+  of WWW requests. *)
+@
 
 \subsection{Proxied protocols}
 
@@ -8199,7 +8555,8 @@ let init () =
 \section{Optimisations}
 % could also have an parallel chapter?
 
-\subsection{Caches}
+
+\subsection{Document cache, [[Cache]]}
 
 %rappel:
 %let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
@@ -8247,6 +8604,54 @@ let add did doc =
                }) :: !memory
 @
 
+
+<<[[Nav.request.handle_wr()]] if use cache>>=
+(* If the the document can be cached, then it is with no_stamp *)
+let did = 
+  { document_url = wr.www_url; 
+    document_stamp = no_stamp }
+in
+try
+  specific nav did wr
+with Not_found ->
+  try
+    let doc = Cache.find did in
+    try (* display it from source *)
+      process nav wr (Cache.make_handle wr doc)
+    with 
+    | Sys_error s ->
+        wr.www_error#f (I18n.sprintf
+         "Cache error occurred during save of temporary buffer (%s)"
+            s)
+    | Unix_error (e,fname,arg) ->
+        wr.www_error#f (I18n.sprintf 
+          "Cache error occurred when opening temporary file\n%s: %s (%s)"
+          fname (Unix.error_message e) arg)
+ with Not_found -> (* we don't have the document *)
+   retrieve_and_handle wr
+@
+
+
+<<signature Nav.dont_check_cache>>=
+(*-*)
+val dont_check_cache : Www.request -> bool
+@
+% Nav.request -> <>
+<<function Nav.dont_check_cache>>=
+(* Some requests should not be looked for in the cache *)
+let dont_check_cache wwwr =
+  match wwwr.www_link.h_method with
+  | POST _ -> true
+  | _ -> false
+@
+
+
+\subsection{Graphic cache, [[Gcache]]}
+% Graphic cache
+
+<<[[Nav.process_viewer()]] add in cache and history the document>>=
+Gcache.add nav.nav_id dh.document_id di;
+@
 
 \section{Fake CGI}
 

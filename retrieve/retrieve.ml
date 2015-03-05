@@ -108,6 +108,7 @@ let rec http_check cache retry cont wwwr dh =
       *)
       cont.document_process dh
 
+(*s: function Retrieve.f *)
 (*
  * Emitting a request:
  *   we must catch here all errors due to protocols and remove the
@@ -115,25 +116,28 @@ let rec http_check cache retry cont wwwr dh =
  *)
 and f request retry cont = 
   Log.debug "Retrieve.f";
-  if Www.is_active_cnx request.www_url then InUse
+  if Www.is_active_cnx request.www_url
+  then InUse
   else begin
-   Www.add_active_cnx request.www_url;
-   try 
-     let req,cache = Protos.get request.www_url.protocol in
+    Www.add_active_cnx request.www_url;
+    try 
+      let (req, cache) = Protos.get request.www_url.protocol in
       Started (req request
-        {document_finish = cont.document_finish;
-        document_process = http_check cache retry cont request})
+               { cont with
+                 document_process = http_check cache retry cont request})
 
-   with Not_found ->
-      Www.rem_active_cnx request.www_url;
-      raise (Invalid_request (request, I18n.sprintf "unknown protocol"))
-    | Http.HTTP_error s ->
-      Www.rem_active_cnx request.www_url;
-      raise (Invalid_request (request, I18n.sprintf "HTTP Error \"%s\"" s))
-    | File.File_error s ->
-      Www.rem_active_cnx request.www_url;
-      raise (Invalid_request (request, s))
+   with 
+   | Not_found ->
+       Www.rem_active_cnx request.www_url;
+       raise (Invalid_request (request, I18n.sprintf "unknown protocol"))
+   | Http.HTTP_error s ->
+       Www.rem_active_cnx request.www_url;
+       raise (Invalid_request (request, I18n.sprintf "HTTP Error \"%s\"" s))
+   | File.File_error s ->
+       Www.rem_active_cnx request.www_url;
+       raise (Invalid_request (request, s))
    end
+(*e: function Retrieve.f *)
 
 
 (* In all the following, we avoid popping up dialog boxes, and use

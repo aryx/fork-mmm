@@ -80,6 +80,7 @@ let is_active_cnx url =
   UrlSet.mem url !active_connexions
 let add_active_cnx url = 
   active_connexions := UrlSet.add url !active_connexions
+(*x: functions Www.xxx_active_cnx *)
 let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 (*e: functions Www.xxx_active_cnx *)

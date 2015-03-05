@@ -3,14 +3,14 @@
 type t = {
   nav_viewer_frame : Widget.widget;
   (*s: [[Nav.t]] other fields *)
-  nav_add_active : Url.t -> (unit -> unit) -> unit;
-  nav_rem_active : Url.t -> unit;
-  (*x: [[Nav.t]] other fields *)
   nav_show_current: Viewers.display_info -> string option -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_id : int;  (* key for the gfx cache *)
   (*x: [[Nav.t]] other fields *)
   nav_add_hist : Document.document_id -> string option -> unit;
+  (*x: [[Nav.t]] other fields *)
+  nav_add_active : Url.t -> (unit -> unit) -> unit;
+  nav_rem_active : Url.t -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_log : string -> unit;
   (*x: [[Nav.t]] other fields *)
