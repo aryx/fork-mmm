@@ -64,25 +64,26 @@ let rec interactive cont dh =
 
   Fileselect.f (I18n.sprintf "Save document")
     (function 
-    [] ->
-      (* by closing dh, we might break the cache *)
-          dclose true dh
-      | [fname] ->
-      begin try 
-        let endmsg = (I18n.sprintf "URL %s\nsaved as %s" url fname) in
-        f cont dh fname endmsg;
-        Document.add_log dh 
+    | [] ->
+         (* by closing dh, we might break the cache *)
+         dclose true dh
+    | [fname] ->
+        begin try 
+          let endmsg = (I18n.sprintf "URL %s\nsaved as %s" url fname) in
+          f cont dh fname endmsg;
+          Document.add_log dh 
               (I18n.sprintf "Saving %s\nto %s" url fname)
-          (* channel is not closed ! *)
+              (* channel is not closed ! *)
               (fun () -> Msys.rm fname)
-      with Sys_error msg -> 
-        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
-        interactive cont dh
-      end
-      | l -> raise (Failure "multiple selection"))
+        with Sys_error msg -> 
+          !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
+          interactive cont dh
+        end
+    | l -> raise (Failure "multiple selection")
+    )
     "*"
     (Filename.basename path)
-    false false    
+    false false
 (*e: function Save.interactive *)
 
 

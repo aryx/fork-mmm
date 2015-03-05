@@ -351,6 +351,7 @@ SRC_VIEWS= \
   http/auth.mli\
   http/auth.ml\
   http/lexheaders.mli\
+  http/lexheaders.mll\
   http/retype.mli\
   http/retype.ml\
   http/http.mli\

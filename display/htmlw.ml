@@ -393,11 +393,12 @@ class  virtual bored () =
 
 end
 
+(*s: class Htmlw.display_html *)
 class display_html ((top : Widget.widget),
-            (ctx : Viewers.context),
-            (mediapars : (string * string) list),
-            imgmanager,
-            dh') =
+                    (ctx : Viewers.context),
+                    (mediapars : (string * string) list),
+                    imgmanager,
+                    dh') =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit viewer_globs (ctx, dh')
@@ -469,13 +470,6 @@ class display_html ((top : Widget.widget),
        Not_found ->
       !Error.default#f (I18n.sprintf "Document not in cache anymore")
 
-  (* The source is attached to this frame so we can destroy the interior
-     widgets *)
-  method source =
-    if pending then
-      !Error.default#f (I18n.sprintf "Cannot view document source (pending)")
-    else Source.view frame did (fun () -> self#redisplay) errors annotations
-           feed_read#get_code
 
   val mutable title = Url.string_of ctx#base.document_url
 
@@ -737,7 +731,6 @@ class display_html ((top : Widget.widget),
   method di_title = title
   method di_fragment = mach#see_frag
   method di_redisplay = self#redisplay
-  method di_source = self#source
   method di_load_images = 
     (* load our images *)
     imgmanager#load_images;
@@ -756,7 +749,20 @@ class display_html ((top : Widget.widget),
     List.iter (fun {embed_frame = f} ->
       List.iter (Frx_synth.send "update") (Winfo.children f))
       mach#embedded)
+
+
+  (*s: [[Htmlw.display_html]] other methods or fields *)
+  method di_source = self#source
+
+  (* The source is attached to this frame so we can destroy the interior widgets*)
+  method source =
+    if pending 
+    then !Error.default#f (I18n.sprintf "Cannot view document source (pending)")
+    else Source.view frame did (fun () -> self#redisplay) errors annotations
+           feed_read#get_code
+  (*e: [[Htmlw.display_html]] other methods or fields *)
 end
+(*e: class Htmlw.display_html *)
       
 (*s: function Htmlw.display_html *)
 let display_html mediapars top ctx dh =
@@ -786,8 +792,11 @@ let embedded_html mediapars top ctx doc =
 
 (*s: toplevel Htmlw._1 *)
 let _ =
-  Viewers.add_builtin ("text","html") display_html;
-  Embed.add_viewer ("text", "html") embedded_html
+  Viewers.add_builtin ("text","html") display_html
 (*e: toplevel Htmlw._1 *)
+(*s: toplevel Htmlw._2 *)
+let _ =
+  Embed.add_viewer ("text", "html") embedded_html
+(*e: toplevel Htmlw._2 *)
 
 (*e: ./display/htmlw.ml *)

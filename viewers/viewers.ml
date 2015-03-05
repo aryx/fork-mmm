@@ -121,18 +121,29 @@ end
 (* The object created/returned by a viewer *)
 class  virtual display_info () =
  object (_self : 'a)
+  (* boilerplate class decl *)
+  (*s: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_title : string		(* some visible title *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+
   method virtual di_widget : Widget.widget
+
   method virtual di_abort : unit		(* stop display *)
   method virtual di_destroy : unit		(* die *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
+
+
   method virtual di_redisplay : unit		(* redisplay *)
-  method virtual di_title : string		(* some visible title *)
-  method virtual di_source : unit 	        (* source viewer *)
   method virtual di_load_images : unit	        (* load images *)
-  method virtual di_update : unit	        (* update embedded objects *)
+  method virtual di_update : unit      (* update embedded objects *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_source : unit 	        (* source viewer *)
+  (*e: [[Viewers.display_info]] virtual fields signatures *)
+
   val mutable di_last_used = !Low.global_time
-  method di_last_used = di_last_used
-  method di_touch = di_last_used <- !Low.global_time
+  method di_last_used = 
+    di_last_used
+  method di_touch = 
+    di_last_used <- !Low.global_time
 end
 
 class trivial_display (w, url) =
@@ -193,50 +204,50 @@ let extern dh ctype =
   (* children must not keep pout open *)
   Unix.set_close_on_exec pout;
   match Low.fork() with
-    0 ->
-      dup2 pin stdin; close pin;
+  | 0 ->
+      dup2 pin stdin; 
+      close pin;
       Munix.execvp "metamail" [| "metamail"; "-b"; "-x"; "-c"; ctype |]
   | pid ->  
       close pin;
       let kill () = 
          try Unix.kill pid 2
-        with Unix_error (e,_,_) ->
-         Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
-             in
+         with Unix_error (e,_,_) ->
+          Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
+      in
       let url = Url.string_of dh.document_id.document_url in
-      Document.add_log dh (
-    I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
+      Document.add_log dh 
+        (I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
              url ctype)
-       kill;
+        kill;
 
-      let red = ref 0 
-      and size =   
-       try Http_headers.contentlength dh.document_headers 
-       with Not_found -> 40000 (* duh *)
-      and buffer = String.create 4096 in
+      let red = ref 0 in
+      let size =   
+        try Http_headers.contentlength dh.document_headers
+        with Not_found -> 40000 (* duh *)
+      in
+      let buffer = String.create 4096 in
       dh.document_feed.feed_schedule
-       (fun () ->
-      try
-       let n = dh.document_feed.feed_read buffer 0 4096 in
-       if n = 0 then begin
-           dclose true dh;
-           close pout;
-           Document.end_log dh (I18n.sprintf "End of transmission")
-           end
-       else begin
-         ignore (write pout buffer 0 n);
-         red := !red + n;
-         Document.progress_log dh (!red * 100 / size)
-         end
-      with
-       Unix_error(e,_,_) ->
-         Log.f (sprintf "Error writing to viewer (%s)"
+        (fun () ->
+          try
+            let n = dh.document_feed.feed_read buffer 0 4096 in
+            if n = 0 then begin
+              dclose true dh;
+              close pout;
+              Document.end_log dh (I18n.sprintf "End of transmission")
+            end else begin
+              ignore (write pout buffer 0 n);
+              red := !red + n;
+              Document.progress_log dh (!red * 100 / size)
+            end
+          with Unix_error(e,_,_) ->
+            Log.f (sprintf "Error writing to viewer (%s)"
                     (Unix.error_message e));
-         dclose true dh;
-         kill();
-         close pout;
-         Document.destroy_log dh false;
-         !Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
+            dclose true dh;
+            kill();
+            close pout;
+            Document.destroy_log dh false;
+            !Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
        )
 (*e: function Viewers.extern *)
 
@@ -256,77 +267,90 @@ let extern dh ctype =
 (*s: type Viewers.t *)
 (* Definition of an internal viewer *)
 type t = 
-    Http_headers.media_parameter list -> Widget.widget -> 
-     context -> Document.handle -> 
-     display_info option
+    Http_headers.media_parameter list -> 
+    Widget.widget -> 
+    context -> 
+    Document.handle -> 
+    display_info option
 (*e: type Viewers.t *)
 
 (*s: type Viewers.spec *)
 type spec =
-    Internal of t
-  | External         (* pass to metamail *)
+  | Internal of t
+  | External
+  (*s: [[Viewers.spec]] other cases *)
+  | Interactive  (* ask what to do about it *)
+  (*x: [[Viewers.spec]] other cases *)
   | Save	     (* always save *)
-  | Interactive	     (* ask what to do about it *)
+  (*e: [[Viewers.spec]] other cases *)
 (*e: type Viewers.spec *)
 
 (*s: constant Viewers.viewers *)
-let viewers = Hashtbl.create 17
+let viewers = (Hashtbl.create 17: (media_type, spec) Hashtbl.t)
 (*e: constant Viewers.viewers *)
 
+(*s: function Viewers.add_viewer *)
 (* That's for internal viewers only *)
 let add_viewer ctype viewer =
   Hashtbl.add viewers ctype (Internal viewer)
+(*e: function Viewers.add_viewer *)
 
+(*s: function Viewers.rem_viewer *)
 let rem_viewer ctype =
   Hashtbl.remove viewers ctype
+(*e: function Viewers.rem_viewer *)
 
+(*s: function Viewers.unknown *)
 let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (I18n.sprintf "MMM Warning")
-     (I18n.sprintf
-       "No MIME type given for the document\n%s"
-       (Url.string_of dh.document_id.document_url))
+         (I18n.sprintf "No MIME type given for the document\n%s"
+           (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
      [I18n.sprintf "Retry with type";
       I18n.sprintf "Save to file";
-      I18n.sprintf "Abort"] with
-   0 ->
+      I18n.sprintf "Abort"] 
+  with
+  | 0 ->
     let v = Textvariable.create_temporary frame in
-     Textvariable.set v "text/html";
-     if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
+    Textvariable.set v "text/html";
+    if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
        let ctype = Textvariable.get v in
-        dh.document_headers <- 
-         ("Content-Type: " ^ ctype) :: dh.document_headers;
-        view frame ctx dh
-     else begin
+       dh.document_headers <- 
+           ("Content-Type: " ^ ctype) :: dh.document_headers;
+       view frame ctx dh
+    else begin
        Save.interactive (fun _ -> ()) dh;
        None
-     end
- | 1 ->
-      Save.interactive (fun _ -> ()) dh; None
+    end
+ | 1 -> Save.interactive (fun _ -> ()) dh; None
  | 2 -> dclose true dh; None
  | _ -> assert false (* property of dialogs *)
+(*e: function Viewers.unknown *)
 
+(*s: function Viewers.interactive *)
 and interactive frame ctx dh ctype =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (I18n.sprintf "MMM Viewers")
-     (I18n.sprintf
-       "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
-        ctype
-        (Url.string_of dh.document_id.document_url))
+         (I18n.sprintf
+          "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
+           ctype
+           (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
      [I18n.sprintf "Retry with another type";
       I18n.sprintf "Display with metamail";
       I18n.sprintf "Save to file";
-      I18n.sprintf "Abort"] with
+      I18n.sprintf "Abort"] 
+  with
   | 0 ->
       let v = Textvariable.create_temporary frame in
       Textvariable.set v "text/html";
       if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
-        let ctype = Textvariable.get v in
-       dh.document_headers <- 
+        let ctype = Textvariable.get v 
+        in
+        dh.document_headers <- 
           ("Content-Type: " ^ ctype) :: dh.document_headers;
-       view frame ctx dh
+        view frame ctx dh
       else begin
         Save.interactive (fun _ -> ()) dh;
         None
@@ -335,12 +359,13 @@ and interactive frame ctx dh ctype =
   | 2 -> Save.interactive (fun _ -> ()) dh; None
   | 3 -> dclose true dh; None
   | _ -> assert false (* property of dialogs *)
+(*e: function Viewers.interactive *)
 
 (*s: function Viewers.view *)
 (* the meat *)
 and view frame ctx dh =
   try 
-    let ctype = contenttype dh.document_headers in
+    let ctype = Http_headers.contenttype dh.document_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
       let viewer =
@@ -348,28 +373,37 @@ and view frame ctx dh =
         with Not_found -> Hashtbl.find viewers (typ,"*")
       in
       match viewer with
-      |	Internal viewer ->
+      (*s: [[Viewers.view]] match viewer cases *)
+      | Internal viewer ->
           ctx#log (I18n.sprintf "Displaying...");
           viewer pars frame ctx (Decoders.insert dh)
-      |	External ->
+      (*x: [[Viewers.view]] match viewer cases *)
+      | External ->
           ctx#log (I18n.sprintf "Displaying externally");
           extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
           None
-      |	Interactive ->
+      (*x: [[Viewers.view]] match viewer cases *)
+      | Interactive ->
           interactive frame ctx dh ctype
-      |	Save ->
+      (*x: [[Viewers.view]] match viewer cases *)
+      | Save ->
           Save.interactive (fun _ -> ()) dh;
           None
+      (*e: [[Viewers.view]] match viewer cases *)
     with
+    (*s: [[Viewers.view]] exn handler 1 *)
     | Failure "too late" -> (* custom for our internal viewers *)
         dclose true dh;
         Document.destroy_log dh false;
         None
+    (*x: [[Viewers.view]] exn handler 1 *)
     | Not_found -> 
        (* we don't know how to handle this *)
        ctx#log (I18n.sprintf "Displaying externally");
        interactive frame ctx dh ctype
+    (*e: [[Viewers.view]] exn handler 1 *)
   with 
+  (*s: [[Viewers.view]] exn handler 2 *)
   | Invalid_HTTP_header e ->
       ctx#log (I18n.sprintf "Malformed type: %s" e);
       unknown frame ctx dh
@@ -377,6 +411,7 @@ and view frame ctx dh =
       (* Content-type was not defined in the headers *)
       (* and could not be computed from url *)
       unknown frame ctx dh
+  (*e: [[Viewers.view]] exn handler 2 *)
 (*e: function Viewers.view *)
 
 (*s: constant Viewers.builtin_viewers *)
@@ -395,25 +430,25 @@ let reset () =
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
 
+  (*s: [[Viewers.reset()]] setting other viewers *)
   (* Preference settings *)
-  let l = Tkresource.stringlist "externalViewers" [] in
-  List.iter (fun ctype -> 
+  Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype -> 
     try
-      let (typ,sub),pars = Lexheaders.media_type ctype in
+      let (typ,sub), pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
-    with
-      Invalid_HTTP_header e ->
-    !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
-    l;
-  let l = Tkresource.stringlist "savedTypes" [] in
-  List.iter (fun ctype -> 
+    with Invalid_HTTP_header e ->
+      !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e)
+  );
+  (*x: [[Viewers.reset()]] setting other viewers *)
+  Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype -> 
     try
       let (typ,sub),pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
-    with
-      Invalid_HTTP_header e ->
-    !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e))
-    l
+    with Invalid_HTTP_header e ->
+      !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e)
+  );
+  (*e: [[Viewers.reset()]] setting other viewers *)
+  ()
 (*e: function Viewers.reset *)
     
 (*e: ./viewers/viewers.ml *)

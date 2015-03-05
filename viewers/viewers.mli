@@ -60,23 +60,33 @@ end
 
 (*s: signature class Viewers.display_info *)
 class  virtual display_info : (unit) -> object ('a)
+  (*s: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_title : string		(* some visible title *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+
   method virtual di_widget : Widget.widget
+
   method virtual di_abort : unit		(* stop display *)
   method virtual di_destroy : unit		(* die *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
+
+
   method virtual di_redisplay : unit		(* redisplay *)
-  method virtual di_title : string		(* some visible title *)
-  method virtual di_source : unit 	        (* source viewer *)
   method virtual di_load_images : unit	        (* load images *)
-  method virtual di_update : unit
+  method virtual di_update : unit      (* update embedded objects *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_source : unit 	        (* source viewer *)
+  (*e: [[Viewers.display_info]] virtual fields signatures *)
+  (*s: [[Viewers.display_info]] cache methods *)
   method di_last_used : int
   method di_touch : unit
+  (*e: [[Viewers.display_info]] cache methods *)
 end
 (*e: signature class Viewers.display_info *)
 
 
 
 class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
+(* boilerplate class type *)
 object
   method di_abort : unit
   method di_destroy : unit
@@ -98,9 +108,11 @@ val di_compare : display_info -> display_info -> bool
 (*s: type Viewers.t *)
 (* Definition of an internal viewer *)
 type t = 
-    Http_headers.media_parameter list -> Widget.widget -> 
-     context -> Document.handle -> 
-     display_info option
+    Http_headers.media_parameter list -> 
+    Widget.widget -> 
+    context -> 
+    Document.handle -> 
+    display_info option
 (*e: type Viewers.t *)
 
 (*s: signature Viewers.add_viewer *)

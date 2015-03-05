@@ -6,29 +6,30 @@ open Document
 open Viewers
 open Feed
 
+(*s: class Plain.plain *)
 class plain ((top : Widget.widget),
-         (ctx : Viewers.context),
-         (dh : Document.handle)) =
+             (ctx : Viewers.context),
+             (dh : Document.handle)) =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit Htmlw.viewer_globs (ctx,dh)
 
-  val frame = if not (Winfo.exists top) then failwith "too late"
-    else Frame.create top [Class "Plain"]
+  val frame = 
+     if not (Winfo.exists top) 
+     then failwith "too late"
+     else Frame.create top [Class "Plain"]
   method frame = frame
+  method di_widget = frame
   
-  val mutable pending = true
-
   (* to redisplay, we have to destroy all widgets, then restart, except
      that we don't use the feed, but rather the cache *)
   method redisplay =
     try
       dh <- Decoders.insert (Cache.renew_handle dh);
-      List.iter destroy (Winfo.children frame);
+      Winfo.children frame |> List.iter destroy;
       self#init
-    with
-      Not_found ->
-    Error.default#f (I18n.sprintf "Document not in cache anymore")
+    with Not_found ->
+       Error.default#f (I18n.sprintf "Document not in cache anymore")
 
   (* [finish abort?] *)
   val mutable (*private*) terminated = false
@@ -45,13 +46,18 @@ class plain ((top : Widget.widget),
   val mutable set_progress = Progress.no_meter
   method set_progress = set_progress
 
+
+  val mutable pending = true
+
   method add_text s =
-    if s = "" then pending <- false else
-    if Winfo.exists tw then begin
-      Text.configure tw [State Normal];
-      Text.insert tw textEnd s [];
-      Text.configure tw [State Disabled]
-    end
+    if s = "" 
+    then pending <- false 
+    else
+      if Winfo.exists tw then begin
+        Text.configure tw [State Normal];
+        Text.insert tw textEnd s [];
+        Text.configure tw [State Disabled]
+      end
 
   method init =
     let hgbas, progf = Htmlw.progress_report frame ctx in
@@ -59,11 +65,11 @@ class plain ((top : Widget.widget),
     pack [hgbas] [Side Side_Bottom; Fill Fill_X];
     let (headgroup,_,_,_,_) = 
       Htmlw.html_head_ui dh.document_headers (fun () -> ()) (ref false)
-       frame ctx in 
+       frame ctx 
+    in 
     pack [headgroup][Side Side_Top; Fill Fill_X];
     (* Scrollable text widget *)
-    let hgroup = Frame.create_named frame "textw" [Class "Plain"]
-    in
+    let hgroup = Frame.create_named frame "textw" [Class "Plain"] in
     let ftext, text = 
       Frx_text.new_scrollable_text hgroup [Wrap WrapWord; State Disabled] true 
     in
@@ -83,9 +89,9 @@ class plain ((top : Widget.widget),
     Text.configure text opts;
     tw <- text;
 
-    let buffer = String.create 2048
-    and red = ref 0
-    and size = 
+    let buffer = String.create 2048 in
+    let red = ref 0 in
+    let size = 
       try Some (Http_headers.contentlength dh.document_headers)
       with Not_found -> None (* duh *) 
     in
@@ -93,42 +99,48 @@ class plain ((top : Widget.widget),
     let lastwascr = ref false in
     dh.document_feed.feed_schedule
       (fun () ->
-     try let n = dh.document_feed.feed_read buffer 0 2048 in
-       if n = 0 then begin
-         if !lastwascr then self#add_text "\n";
-         self#add_text ""; (* special case to indicate end *)
-         self#set_progress (Some !red) !red;
-         self#finish false
+         try let n = dh.document_feed.feed_read buffer 0 2048 in
+         if n = 0 then begin
+           if !lastwascr 
+           then self#add_text "\n";
+           self#add_text ""; (* special case to indicate end *)
+           self#set_progress (Some !red) !red;
+           self#finish false
+         end else begin
+           red := !red + n;
+           self#set_progress size !red;
+           let s,flag = Mstring.norm_crlf !lastwascr buffer 0 n in
+           lastwascr := flag;
+           self#add_text s
          end
-       else begin
-         red := !red + n;
-         self#set_progress size !red;
-         let s,flag = Mstring.norm_crlf !lastwascr buffer 0 n in
-         lastwascr := flag;
-         self#add_text s
-       end
-     with
-       Unix_error(_,_,_) ->
+     with Unix_error(_,_,_) ->
          self#set_progress size (-1);
          self#finish true
-       );
+     );
 
-  method di_widget = frame
-  method di_abort = self#finish true
-  method di_destroy = if Winfo.exists frame then destroy frame
-  method di_redisplay = self#redisplay
+  method di_abort = 
+    self#finish true
+  method di_destroy = 
+    if Winfo.exists frame 
+    then destroy frame
+  method di_redisplay = 
+    self#redisplay
   method di_title =
     Url.string_of dh.document_id.document_url
-  method di_source = ()
   method di_load_images = ()
   method di_fragment f = ()
   method di_update = ()
+
+  (*s: [[Plain.plain]] other methods or fields *)
+  method di_source = ()
+  (*e: [[Plain.plain]] other methods or fields *)
 end
+(*e: class Plain.plain *)
 
 (*s: function Plain.display_plain *)
 (* Viewing text/plain *)
 
-let display_plain mediapars top vcontext dh =
+let display_plain _mediapars top vcontext dh =
   let viewer = new plain (top,vcontext,dh) in
   viewer#init;
   Some (viewer :> Viewers.display_info)

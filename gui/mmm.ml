@@ -567,7 +567,9 @@ let rec navigator has_tachy initial_url =
       [Label (I18n.sprintf "Redisplay")      ; Command redisplay];
       [Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
       [Label (I18n.sprintf "Load Images")    ; Command load_images];
+      (*s: Document menu elements *)
       [Label (I18n.sprintf "View Source")    ; Command view_source]
+      (*e: Document menu elements *)
     ];
     (*e: [[Mmm.navigator()]] Document menu *)
     (*s: [[Mmm.navigator()]] Other menu *)
