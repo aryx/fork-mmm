@@ -226,20 +226,22 @@ the main author of MMM.
 
 % before seing the browser, first expose web principles: world wide web.
 % a "web" of interconnected machines with:
-%  - "resources": html documents, images
+%  - "resources": html documents, images, plain text, music
 %  - URL to reference a resource; an html document contains itself
-%    possible links to other documents or resources (e.g. images) => a web
+%    possible links to other documents or resources (e.g. images)
+%    => it forms a "web" of documents
 %  - http protocol to fetch the resources
 %  - client/server around this protocol
 
 % a web browser is then a special kind of interface on top of that:
-% a navigator interface! (history, forward, click etc).
+% a navigator interface! (history, forward, click, multiple windows, etc).
 % One important thing is that it must provide feedback, especially
-% when connect with network, you want to see if something is stucked
+% when fecth data from the network, you want to see if something is stucked
 % or is progressing (hence the complex passing of continuation,
-% error hook, etc)
+% error hooks, abort, etc)
 
 % see mmm-gdr-fr.ps
+% todo: see docs/website/tech.html
 
 
 %"The main function of a browser is to present the web resource you
@@ -353,6 +355,8 @@ let version_number =
 % to hang the whole thing, so need to manage async requests,
 % and so have callbacks (called continuation here) when things
 % are ready.
+
+%todo: see docs/website/tech.html
 
 \section{Trace of a web request}
 % enter url in address bar and type enter, what happens?
@@ -955,25 +959,41 @@ type attribute_value = string
 
 <<signature class Viewers.context>>=
 (* The context given to a viewer *)
-(* Standard hyper functions are: "goto", "save", "gotonew" *)
 class virtual context : (Document.document_id * vparams) -> object ('a)
 
   method base : Document.document_id
-  method params : vparams
 
-  method goto : Hyper.link -> unit
-  method gotonew : Hyper.link -> unit
-  method save : Hyper.link -> unit
-  method invoke : string -> Hyper.link -> unit    
-
-  method virtual log : string -> unit
-  method add_nav : string * hyper_func -> unit
-  (*-*)
-  method for_embed : vparams -> frame_targets -> 'a
-  method in_embed : Document.document_id -> 'a
-  method hyper_funs : (string * hyper_func) list
-
+  <<[[Viewers.context]] other methods signatures>>
 end
+@
+%(* Standard hyper functions are: "goto", "save", "gotonew" *)
+
+
+%XXX
+<<[[Viewers.context]] other methods signatures>>=
+method goto : Hyper.link -> unit
+method gotonew : Hyper.link -> unit
+method save : Hyper.link -> unit
+method invoke : string -> Hyper.link -> unit    
+@
+
+<<[[Viewers.context]] other methods signatures>>=
+method virtual log : string -> unit
+@
+
+<<[[Viewers.context]] other methods signatures>>=
+method add_nav : string * hyper_func -> unit
+method hyper_funs : (string * hyper_func) list
+@
+
+<<[[Viewers.context]] other methods signatures>>=
+(*-*)
+method for_embed : vparams -> frame_targets -> 'a
+method in_embed : Document.document_id -> 'a
+@
+
+<<[[Viewers.context]] other methods signatures>>=
+method params : vparams
 @
 
 <<type Viewers.vparams>>=
@@ -984,30 +1004,38 @@ type vparams = (string * string) list
 
 \subsection{[[Viewers.display_info]]}
 
+% this is what will be returned by function like
+% display_html given a viewer_context
+
 <<signature class Viewers.display_info>>=
 class  virtual display_info : (unit) -> object ('a)
   <<[[Viewers.display_info]] virtual fields signatures>>
   <<[[Viewers.display_info]] cache methods>>
 end
 @
-
-<<[[Viewers.display_info]] cache methods>>=
-method di_last_used : int
-method di_touch : unit
-@
+%note: the <<[[Viewers.display_info]] virtual fields signatures>> chunk
+% is used both for the .mli and the .ml, so don't extract
+% anything from it otherwise it will not be copy pasted in the .mli and .ml
 
 <<[[Viewers.display_info]] virtual fields signatures>>=
 method virtual di_title : string		(* some visible title *)
 method virtual di_fragment : string option -> unit	(* for # URIs *)
 
 method virtual di_widget : Widget.widget
-
-method virtual di_abort : unit		(* stop display *)
-method virtual di_destroy : unit		(* die *)
-
-
 method virtual di_redisplay : unit		(* redisplay *)
-method virtual di_load_images : unit	        (* load images *)
+@
+
+%XXX
+<<[[Viewers.display_info]] cache methods>>=
+method di_last_used : int
+method di_touch : unit
+@
+
+%XXX
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_abort : unit		 (* stop display *)
+method virtual di_destroy : unit	 (* die *)
+method virtual di_load_images : unit (* load images *)
 method virtual di_update : unit      (* update embedded objects *)
 @
 
@@ -1220,6 +1248,7 @@ let init () =
 <<signature Version.initurl>>=
 val initurl : string -> string (* fake initial url *)
 @
+% Help menu -> <>
 <<function Version.initurl>>=
 (* MUST BE NORMALIZED *)
 let initurl = function
@@ -1635,7 +1664,6 @@ let rec safe_loop() =
 @
 
 
-
 \chapter{Navigator Interface}
 % The chrome
 % gui/
@@ -1755,7 +1783,7 @@ let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
 in
 Entry.configure e [TextVariable entryv; TextWidth 40];
 @
-% absolutegoto!
+% absolutegoto()!
 % f is the widget that will be packed
 
 
@@ -1765,6 +1793,7 @@ Entry.configure e [TextVariable entryv; TextWidth 40];
 <<[[Nav.t]] other fields>>=
 nav_show_current: Viewers.display_info -> string option -> unit;
 @
+% second argument is fragment
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_show_current = show_current;
 @
@@ -1775,14 +1804,15 @@ nav_show_current = show_current;
 let show_current di frag =
   di#di_touch;
   (match !current_di with
-  | None -> display di
+  | None -> 
+      display di
   | Some olddi -> 
-     if olddi == di 
-     then () 
-     else begin
-       undisplay olddi;
-       display di
-     end
+      if olddi == di 
+      then () 
+      else begin
+        undisplay olddi;
+        display di
+      end
   );
   current_di := Some di;
   (* bogus if two views with fragment on the same pending document *)
@@ -1835,7 +1865,14 @@ if addhist
 then nav.nav_add_hist dh.document_id dh.document_fragment;
 @
 
-% ?? -> <>
+<<[[Nav.t]] other fields>>=
+nav_add_hist : Document.document_id -> string option -> unit;
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_add_hist = add_hist;
+@
+
+% Nav.process_viewer -> <> (as nav.nav_add_hist)
 <<local function Mmm.navigator.add_hist>>=
 let add_hist did frag =
   History.add hist did frag;
@@ -1851,15 +1888,45 @@ nav_id : int;  (* key for the gfx cache *)
 nav_id = hist.h_key;
 @
 
+\subsection{Back and forward buttons}
 
-<<[[Nav.t]] other fields>>=
-nav_add_hist : Document.document_id -> string option -> unit;
+<<[[Mmm.navigator()]] navigation buttons>>=
+let backb = Button.create_named fb 
+  "back" [Text (I18n.sprintf "Back"); Command back ] in
 @
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_add_hist = add_hist;
+
+<<function Mmm.navigator.back>>=
+(*  The cache may have been cleared, so the document may be lost.
+ *  historygoto implements the proper logic for this, taking care
+ *  of non-unique documents.
+ *)
+let back () = 
+  match History.back hist with
+  | None -> ()
+  | Some (did, frag) -> 
+      if not (historygoto nav did frag true) 
+      then History.forward hist |> ignore
+in
+@
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let forwardb = Button.create_named fb 
+  "forward" [Text (I18n.sprintf "Forward"); Command forward] in
+@
+
+<<function Mmm.navigator.forward>>=
+let forward () =
+  match History.forward hist with
+  | None -> ()
+  | Some (did, frag) -> 
+      if not (historygoto nav did frag true) 
+      then History.back hist |> ignore
+in
 @
 
 
+
+\subsection{History menu}
 
 <<[[Mmm.navigator()]] locals>>=
 let update_vhistory = ref (fun () -> ()) (* duh *) in
@@ -1904,42 +1971,6 @@ update_vhistory := (fun () ->
 !update_vhistory();
 @
 
-\section{Back and forward}
-
-<<[[Mmm.navigator()]] navigation buttons>>=
-let backb = Button.create_named fb 
-  "back" [Text (I18n.sprintf "Back"); Command back ] in
-@
-
-<<function Mmm.navigator.back>>=
-(*  The cache may have been cleared, so the document may be lost.
- *  historygoto implements the proper logic for this, taking care
- *  of non-unique documents.
- *)
-let back () = 
-  match History.back hist with
-   | None -> ()
-   | Some (did, frag) -> 
-       if not (historygoto nav did frag true) 
-       then History.forward hist |> ignore
-in
-@
-
-<<[[Mmm.navigator()]] navigation buttons>>=
-let forwardb = Button.create_named fb 
-  "forward" [Text (I18n.sprintf "Forward"); Command forward] in
-@
-
-<<function Mmm.navigator.forward>>=
-let forward () =
-  match History.forward hist with
-  | None -> ()
-  | Some (did, frag) -> 
-      if not (historygoto nav did frag true) 
-      then History.back hist |> ignore
-in
-@
-
 
 \section{Home}
 
@@ -1965,78 +1996,6 @@ let home = ref ""
 
 
 
-<<signature Version.home>>=
-val home : string -> string    (* MMM home page *)
-@
-<<function Version.home>>=
-let home = function 
-  | "iso8859" -> "http://pauillac.inria.fr/mmm/"
-  | _ -> assert false
-@
-
-\section{Refresh and stop}
-
-<<[[Mmm.navigator()]] navigation buttons>>=
-let reloadb = Button.create_named fb
-  "reload" [Text (I18n.sprintf "Reload"); Command reload] in
-@
-
-<<function Mmm.navigator.reload>>=
-let reload () =
-  let did = hist.h_current.h_did in
-  let frag = hist.h_current.h_fragment in
-  if did.document_stamp = no_stamp then begin
-    (* kill both in cache and in gcache *)
-    Cache.kill did; 
-    Gcache.remove hist.h_key did;
-    historygoto nav did frag false |> ignore
-  end
-    else error#f (I18n.sprintf 
-      "Document cannot be reloaded from its url\n(probably a POST request)")
-in
-@
-
-% see also update_true alias
-<<function Mmm.navigator.update>>=
-let update nocache =
-  let did = hist.h_current.h_did in
-  if did.document_stamp = no_stamp then
-    Nav.update nav did nocache
-  else (* POST result *)
-    error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
-in
-@
-
-
-
-<<[[Mmm.navigator()]] navigation buttons>>=
-let abortb = Button.create_named fb 
-  "abort" [Text (I18n.sprintf "Abort"); Command abort] in
-@
-
-<<local Mmm.navigator.actives>>=
-let actives = Hashtbl.create 37 in
-@
-
-<<function Mmm.navigator.abort>>=
-let abort () =
-  actives |> Hashtbl.iter (fun _url abort -> abort());
-  Hashtbl.clear actives;
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_abort
-in
-@
-
-% Nav.request -> <>
-<<[[Nav.t]] other fields>>=
-nav_add_active : Url.t -> (unit -> unit) -> unit;
-nav_rem_active : Url.t -> unit;
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_add_active = Hashtbl.add actives;
-nav_rem_active = Hashtbl.remove actives;
-@
 
 
 \section{Menus}
@@ -2136,7 +2095,7 @@ in
 
 <<function Mmm.navigator.save>>=
 let save () = 
- Save.document hist.h_current.h_did None 
+  Save.document hist.h_current.h_did None 
 in
 @
 
@@ -2162,7 +2121,6 @@ in
 @
 
 
-
 <<function Mmm.quit>>=
 let quit confirm =
   if confirm then
@@ -2185,12 +2143,14 @@ let navb = Menubutton.create_named mbar "navigate" [Text (I18n.sprintf "Navigate
 let navm = Menu.create_named navb "menu" [] in
 Menubutton.configure navb [Menu navm];
 configure_menu_elements navm [ 
-  [Label (I18n.sprintf "Home"); Command gohome];
-  [Label (I18n.sprintf "Back"); Command back];
+  [Label (I18n.sprintf "Home");    Command gohome];
+  [Label (I18n.sprintf "Back");    Command back];
   [Label (I18n.sprintf "Forward"); Command forward];
   []
 ];
 @
+
+% we've seen those functions before
 
 \subsection{Document menu}
 
@@ -2203,21 +2163,12 @@ configure_menu_elements docm [
   [Label (I18n.sprintf "Reload")         ; Command reload];
   [Label (I18n.sprintf "Update")         ; Command update_true];
   [Label (I18n.sprintf "Redisplay")      ; Command redisplay];
-  [Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
   [Label (I18n.sprintf "Load Images")    ; Command load_images];
   <<Document menu elements>>
 ];
 @
+% diff between update and redisplay?
 
-<<function Mmm.navigator.add_to_hotlist>>=
-let add_to_hotlist () =
-  match !current_di with
-  | None -> ()
-  | Some di -> 
-      Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
-                  di#di_title
-in
-@
 
 <<function Mmm.navigator.load_images>>=
 let load_images () =
@@ -2243,13 +2194,10 @@ in
 let othersb = Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
 let othersm = Menu.create_named othersb "menu" [] in
 Menubutton.configure othersb [Menu othersm];
-Menu.add_command othersm
-  [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
-Menu.add_command othersm
-  [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
-Menu.add_command othersm
-  [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+<<Other menu elements>>
 @
+
+
 % (*      Menu.add_command othersm
 %     [Label (I18n.sprintf "Caml Modules"); 
 %      Command (fun _ -> Applets.edit())];
@@ -2274,20 +2222,33 @@ Menu.add_command othersm
 let helpb = Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
 let helpm = Menu.create_named helpb "menu" [] in
 Menubutton.configure helpb [Menu helpm];
+<<Help menu elements>>
+@
+
+
+<<Help menu elements>>=
 Menu.add_command helpm
   [Label (I18n.sprintf "Version information");
    Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
-Menu.add_command helpm
-  [Label (I18n.sprintf "Help on MMM");
-   Command (fun () -> navigator false !helpurl |> ignore)];
 Menu.add_command helpm
   [Label (I18n.sprintf "Home Page of MMM");
    Command (fun () -> 
      navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
 @
 
+% less: rename homemmm
+<<signature Version.home>>=
+val home : string -> string    (* MMM home page *)
+@
+<<function Version.home>>=
+let home = function 
+  | "iso8859" -> "http://pauillac.inria.fr/mmm/"
+  | _ -> assert false
+@
+
 %\subsection{Applet user menu}
 % see later
+
 
 \section{Status bar}
 % it's actually on the right of the buttons for now,
@@ -6087,116 +6048,6 @@ let remove_headers hs names =
 
 
 
-\section{Suffixes}
-
-<<type Http_headers.hint>>=
-(* Associating MIME type or Content-Encoding with file/URI suffix *)
-type hint =
-  | ContentType     of header
-  | ContentEncoding of header
-@
-
-
-<<constant Http_headers.suffixes>>=
-let suffixes =
-   (Hashtbl.create 101 : (string, hint) Hashtbl.t)
-@
-
-<<toplevel Http_headers._1>>=
-(* If the suffix file says otherwise, it will have priority *)
-let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
-[ 
-  "html",	ContentType  "Content-Type: text/html";
-  "htm",	ContentType  "Content-Type: text/html";
-
-  "txt",  	ContentType  "Content-Type: text/plain";
-
-  "ps",  	ContentType  "Content-Type: application/postscript";
-  "dvi",  	ContentType  "Content-Type: application/x-dvi";
-
-  "gif",	ContentType  "Content-Type: image/gif";
-  "jpeg",	ContentType  "Content-Type: image/jpeg";
-  "jpg",	ContentType  "Content-Type: image/jpeg";
-  "tiff",	ContentType  "Content-Type: image/tiff";
-  "tif",	ContentType  "Content-Type: image/tiff";
-
-  "au",		ContentType  "Content-Type: audio/basic";
-  "snd",	ContentType  "Content-Type: audio/basic";
-  "wav",	ContentType  "Content-Type: audio/x-wav";
-  "mid",	ContentType  "Content-Type: audio/midi";
-
-  "mpeg",	ContentType  "Content-Type: video/mpeg";
-  "mpg",	ContentType  "Content-Type: video/mpeg";
-  "avi",	ContentType  "Content-Type: video/avi";
-  "fli",	ContentType  "Content-Type: video/fli";
-  "flc",	ContentType  "Content-Type: video/fli";
-
-  "gz",		ContentEncoding  "Content-Encoding: gzip";
-  "Z",		ContentEncoding  "Content-Encoding: compress";
-
-  "asc",	ContentEncoding  "Content-Encoding: pgp";
-  "pgp",	ContentEncoding  "Content-Encoding: pgp";
-
-   <<[[Http_headers.suffixes]] elements>>
-]
-@
-% cmo, hehe :)
-
-<<[[Main.main()]] locals>>=
-let sufxfile = ref (Mmm.user_file "mime.types") in
-@
-<<[[Main.main()]] command line options>>=
-"-suffixes", Arg.String (fun s -> sufxfile := s),
-"<file>\tSuffix file";
-@
-
-<<[[Main.main()]] suffix initialisation>>=
-(* Suffix mapping to Content-Type and Content-Encoding *)
-if Sys.file_exists !sufxfile 
-then Http_headers.read_suffix_file !sufxfile;
-@
-
-<<signature Http_headers.read_suffix_file>>=
-val read_suffix_file : string -> unit
-@
-<<function Http_headers.read_suffix_file>>=
-(* In the file, we select ContentType if there is a slash,
-   ContentEncoding otherwise *)
-let read_suffix_file f =
- try
-  let ic = open_in f in
-  try while true do
-    let l = input_line ic in
-    if l <> "" && l.[0] <> '#' then
-      let tokens = 
-    split_str (function ' '|'\t' -> true | _ -> false) l in
-    match tokens with
-      [] -> ()
-    | x::l ->
-       try 
-        let _ = String.index x '/' in
-        List.iter 
-          (function sufx -> 
-               Hashtbl.add suffixes sufx 
-                  (ContentType ("Content-Type: "^x)))
-
-        l
-       with
-         Not_found ->
-        List.iter 
-          (function sufx ->
-               Hashtbl.add suffixes sufx 
-                   (ContentEncoding ("Content-Encoding: "^x)))
-          l
-
-    done
-  with End_of_file -> close_in ic
- with Sys_error _ ->  ()
-@
-
-
-
-
 
 \section{Time}
 % could be in Stdlib? with Date?
@@ -6498,8 +6349,7 @@ let rec unknown frame ctx dh =
 
 \section{Content types}
 
-
-\subsection{[[text/plain]]}
+\subsection{[[text/plain]], [[display_plain()]]}
 
 <<toplevel Plain._1>>=
 let _ =
@@ -6646,7 +6496,7 @@ class plain ((top : Widget.widget),
 end
 @
 
-\subsection{[[text/html]]}
+\subsection{[[text/html]], [[display_html()]]}
 
 % htmlw = html viewer
 
@@ -6662,6 +6512,174 @@ let display_html mediapars top ctx dh =
   viewer#init true;
   Some (viewer :> Viewers.display_info)
 @
+
+\section{MIME types}
+%\section{Filename suffixe content type hint, [[mime.types]]}
+
+% MIME = Multi-Purpose Internet Mail Extensions
+
+<<type Http_headers.hint>>=
+(* Associating MIME type or Content-Encoding with file/URI suffix *)
+type hint =
+  | ContentType     of header
+  | ContentEncoding of header
+@
+
+<<constant Http_headers.default_hints>>=
+let default_hints = [ 
+  "html",	ContentType  "Content-Type: text/html";
+  "htm",	ContentType  "Content-Type: text/html";
+
+  "txt",  	ContentType  "Content-Type: text/plain";
+
+  "ps",  	ContentType  "Content-Type: application/postscript";
+  "dvi",  	ContentType  "Content-Type: application/x-dvi";
+
+  "gif",	ContentType  "Content-Type: image/gif";
+  "jpeg",	ContentType  "Content-Type: image/jpeg";
+  "jpg",	ContentType  "Content-Type: image/jpeg";
+  "tiff",	ContentType  "Content-Type: image/tiff";
+  "tif",	ContentType  "Content-Type: image/tiff";
+
+  "au",		ContentType  "Content-Type: audio/basic";
+  "snd",	ContentType  "Content-Type: audio/basic";
+  "wav",	ContentType  "Content-Type: audio/x-wav";
+  "mid",	ContentType  "Content-Type: audio/midi";
+
+  "mpeg",	ContentType  "Content-Type: video/mpeg";
+  "mpg",	ContentType  "Content-Type: video/mpeg";
+  "avi",	ContentType  "Content-Type: video/avi";
+  "fli",	ContentType  "Content-Type: video/fli";
+  "flc",	ContentType  "Content-Type: video/fli";
+
+   <<[[Http_headers.suffixes]] elements>>
+]
+@
+
+
+
+\subsection{[[Http_headers.suffixes]]}
+
+% but who uses that?
+% http_check -> wrap_cache -> Retype.f -> ... 
+<<constant Http_headers.suffixes>>=
+let suffixes =
+   (Hashtbl.create 101 : (string, hint) Hashtbl.t)
+@
+
+<<toplevel Http_headers._1>>=
+(* If the suffix file says otherwise, it will have priority *)
+let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
+@
+% cmo, hehe :)
+
+\subsection{[[-suffixes]]}
+
+<<[[Main.main()]] locals>>=
+let sufxfile = ref (Mmm.user_file "mime.types") in
+@
+<<[[Main.main()]] command line options>>=
+"-suffixes", Arg.String (fun s -> sufxfile := s),
+"<file>\tSuffix file";
+@
+
+<<[[Main.main()]] suffix initialisation>>=
+(* Suffix mapping to Content-Type and Content-Encoding *)
+if Sys.file_exists !sufxfile 
+then Http_headers.read_suffix_file !sufxfile;
+@
+
+%\subsection{[[Http_headers.read_suffix_file()]]}
+
+<<signature Http_headers.read_suffix_file>>=
+val read_suffix_file : string -> unit
+@
+<<function Http_headers.read_suffix_file>>=
+(* In the file, we select ContentType if there is a slash,
+   ContentEncoding otherwise *)
+let read_suffix_file f =
+ try
+   let ic = open_in f in
+   try while true do
+     let l = input_line ic in
+     if l <> "" && l.[0] <> '#' 
+     then
+       let tokens = 
+         split_str (function ' '|'\t' -> true | _ -> false) l in
+       match tokens with
+       | [] -> ()
+       | x::l ->
+           try 
+             let _ = String.index x '/' in
+             l |> List.iter  (fun sufx -> 
+                Hashtbl.add suffixes sufx  (ContentType ("Content-Type: "^x))
+             )
+          with Not_found ->
+            l |> List.iter  (fun sufx ->
+                Hashtbl.add suffixes sufx  
+                  (ContentEncoding ("Content-Encoding: "^x))
+            )
+     done
+   with End_of_file -> close_in ic
+ with Sys_error _ ->  ()
+@
+
+\subsection{Filename suffix to content type}
+
+% ??? -> <>
+<<function Http_headers.hints>>=
+let hints path =
+  (* Get the url suffix *)
+  let sufx = Mstring.get_suffix path in
+  try
+    let v = 
+      try Hashtbl.find suffixes sufx 
+      with Not_found -> 
+        Hashtbl.find suffixes (String.lowercase sufx)
+    in
+    match v with
+    | ContentType t -> [t] (* good, we have a type *)
+    | ContentEncoding e ->
+       (* we have an encoding, but do we have a type too ? *)
+       let path2 = Filename.chop_suffix path ("."^sufx) in
+       let sufx2 = Mstring.get_suffix path2 in
+       begin try 
+         let v2 = Hashtbl.find suffixes sufx2 in
+         match v2 with
+         | ContentType t -> (* good, we have a type *)
+            [t;e]
+         | ContentEncoding _ -> [e] (* nah, forget it *)
+        with Not_found -> [e] (* no type *)
+      end
+  with Not_found -> [] (* no hint ... *)
+@
+
+\subsection{[[Retype.f()]]}
+
+<<signature Retype.f>>=
+val f : Document.handle -> unit
+  (* physically modify the headers, adding ContentType/ContentEncoding
+   * from URL suffixes if this information is missing from the headers.
+   *)
+@
+% Retrieve.f -> http_check -> wrap_cache | ??? ... -> <>
+<<function Retype.f>>=
+(* Attempt to find a decent Content-Type *)
+let f dh =
+  let url = Url.string_of dh.document_id.document_url in
+  try
+    let ctype = Http_headers.contenttype dh.document_headers in 
+    let mtyp,_pars = Lexheaders.media_type ctype in
+    if mtyp = ("application","octet-stream") 
+    then dh.document_headers <- merge_headers dh.document_headers (hints url)
+  with Not_found ->
+    let hints = Http_headers.hints url in
+    dh.document_headers <- merge_headers dh.document_headers hints
+@
+%less: LP split octet-stream stuff
+
+% put merging headers here?
+
 
 \section{[[Nav.stdctx]]}
 
@@ -7060,81 +7078,7 @@ let rec interactive cont dh =
 @
 
 
-\section{Embedded objects}
 
-% advanced topic?
-
-<<type Embed.embobject>>=
-(* Embedded objects *)
-type embobject = {
-  embed_hlink : Hyper.link;               (* hyperlink to the object *)
-  embed_frame : Widget.widget;  
-     (* the frame where the viewers can do their stuff *)
-  embed_context : Viewers.context;
-  embed_map : Maps.t;                  (* associated map *)
-  embed_alt : string
- }
-@
-
-
-<<signature Embed.add>>=
-val add : embobject -> unit
-@
-
-<<signature Embed.update>>=
-val update : 
-    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
-    -> unit
-@
-
-
-
-<<signature Embed.add_viewer>>=
-val add_viewer : 
-  Http_headers.media_type -> 
-  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
-    Document.document -> unit) -> unit
-@
-
-<<signature Embed.rem_viewer>>=
-val rem_viewer :  Http_headers.media_type -> unit
-@
-
-
-<<constant Embed.embedded_viewers>>=
-(* Embedded viewers *)
-
-let embedded_viewers = Hashtbl.create 11
-@
-
-<<function Embed.embedded_viewer>>=
-let embedded_viewer frame ctx doc =
-  (* Destroy the alt window *)
-  List.iter Tk.destroy (Winfo.children frame);
-  try
-    let ctype = contenttype doc.document_info in
-    let (typ,subtyp),l = Lexheaders.media_type ctype in
-    try
-      let viewer = 
-    try Hashtbl.find embedded_viewers (typ,subtyp)
-        with Not_found -> Hashtbl.find embedded_viewers (typ,"*") in
-      viewer l frame ctx doc
-    with
-    Not_found ->
-      let t = 
-        I18n.sprintf "Embed Error: no viewer for type %s/%s" typ subtyp in
-      let l = Label.create frame [Text t] in pack [l][]
-  with
-    Not_found ->
-      let t = I18n.sprintf "Embed Error: no type for document %s" 
-                          (Url.string_of doc.document_address) in 
-      let l = Label.create frame [Text t] in pack [l][]
-  | Invalid_HTTP_header e ->
-      let t = 
-       I18n.sprintf "Embed Error: malformed type %s (%s)"
-         (contenttype doc.document_info) e in
-      let l = Label.create frame [Text t] in pack [l][]
-@
 
 
 \chapter{HTML}
@@ -7335,7 +7279,7 @@ let get name =
 % display/
 % layout engine? or layout engine is actually in viewers/ ?
 
-
+\section{[[Html.display_html]]}
 
 <<class Htmlw.display_html>>=
 class display_html ((top : Widget.widget),
@@ -7350,15 +7294,18 @@ class display_html ((top : Widget.widget),
   inherit html_body () as body
   inherit bored ()
 
-  val frame = if not (Winfo.exists top) then failwith "too late"
+  val frame = 
+    if not (Winfo.exists top) 
+    then failwith "too late"
     else Frame.create_named top (Mstring.gensym "html") [Class "Html"]
       (* this might as well fail if the window was destroyed before we
-     finally could get the headers of the document.
-     *)
+       * finally could get the headers of the document.
+       *)
   method frame = frame
 
   (* val imgmanager = imgmanager *)
-  val mutable mach = F.create (ctx, imgmanager)
+  val mutable mach = 
+    F.create (ctx, imgmanager)
   method mach = mach
 
   val mutable init_mode = true
@@ -7392,9 +7339,9 @@ class display_html ((top : Widget.widget),
   val (*private*) annotations = ref []
   method annotate loc = function
     | OpenTag {tag_name=name} ->
-    annotations := (name, loc) :: !annotations
+        annotations := (name, loc) :: !annotations
     | CloseTag name ->
-    annotations := (name, loc) :: !annotations
+        annotations := (name, loc) :: !annotations
     | _ -> ()
 
   val mutable add_extra_header = fun f -> ()
@@ -7407,12 +7354,11 @@ class display_html ((top : Widget.widget),
       !Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
     else
       try
-       dh <- Decoders.insert (Cache.renew_handle dh);
-       List.iter destroy (Winfo.children frame);
-       self#init init_mode
-      with
-       Not_found ->
-      !Error.default#f (I18n.sprintf "Document not in cache anymore")
+        dh <- Decoders.insert (Cache.renew_handle dh);
+        List.iter destroy (Winfo.children frame);
+        self#init init_mode
+      with Not_found ->
+        !Error.default#f (I18n.sprintf "Document not in cache anymore")
 
 
   val mutable title = Url.string_of ctx#base.document_url
@@ -7724,6 +7670,24 @@ end
 
 \chapter{Images}
 
+% display_html -> <>
+
+<<signature Imgload.create>>=
+val create : unit -> loader
+@
+
+<<class Imgload.loader signature>>=
+class loader : (unit) -> object
+  method add_image : Embed.embobject -> unit	 (* add one image *)
+  method flush_images : unit	         (* flush when document is loaded *)
+  method load_images : unit		 (* manual flush *)
+  method update_images : unit
+end
+@
+
+\section{Animaged GIFs}
+% or put in Extra features?
+
 \chapter{CSS}
 
 %http://www.w3.org/TR/CSS2/
@@ -7894,12 +7858,113 @@ let container_frame = ref None
 
 \chapter{Extra features}
 
+\section{Refresh}
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let reloadb = Button.create_named fb
+  "reload" [Text (I18n.sprintf "Reload"); Command reload] in
+@
+
+<<function Mmm.navigator.reload>>=
+let reload () =
+  let did = hist.h_current.h_did in
+  let frag = hist.h_current.h_fragment in
+  if did.document_stamp = no_stamp then begin
+    (* kill both in cache and in gcache *)
+    Cache.kill did; 
+    Gcache.remove hist.h_key did;
+    historygoto nav did frag false |> ignore
+  end
+    else error#f (I18n.sprintf 
+      "Document cannot be reloaded from its url\n(probably a POST request)")
+in
+@
+
+% see also update_true alias
+<<function Mmm.navigator.update>>=
+let update nocache =
+  let did = hist.h_current.h_did in
+  if did.document_stamp = no_stamp then
+    Nav.update nav did nocache
+  else (* POST result *)
+    error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
+in
+@
+
+
+\section{Abort}
+% advanced topic?
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let abortb = Button.create_named fb 
+  "abort" [Text (I18n.sprintf "Abort"); Command abort] in
+@
+
+<<local Mmm.navigator.actives>>=
+let actives = Hashtbl.create 37 in
+@
+
+<<function Mmm.navigator.abort>>=
+let abort () =
+  actives |> Hashtbl.iter (fun _url abort -> abort());
+  Hashtbl.clear actives;
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_abort
+in
+@
+
+% Nav.request -> <>
+<<[[Nav.t]] other fields>>=
+nav_add_active : Url.t -> (unit -> unit) -> unit;
+nav_rem_active : Url.t -> unit;
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_add_active = Hashtbl.add actives;
+nav_rem_active = Hashtbl.remove actives;
+@
+
+
 \section{Bookmarks}
-% aka  hotlist
+
+\section{Hotlist}
+% same as bookmarks?
+% does not look like
 
 <<constant Mmm.hotlist>>=
 (* Preference settings *)
 let hotlist = ref ""
+@
+% dead?
+
+<<Document menu elements>>=
+[Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
+@
+
+<<function Mmm.navigator.add_to_hotlist>>=
+let add_to_hotlist () =
+  match !current_di with
+  | None -> ()
+  | Some di -> 
+      Hotlist.f (Url.string_of hist.h_current.h_did.document_url) di#di_title
+in
+@
+
+
+
+<<constant Hotlist.program>>=
+(* A cool module *)
+let program = ref ""
+@
+
+<<function Hotlist.f>>=
+let f url title =
+  match !program with 
+  | "" -> (!Error.default)#f (I18n.sprintf "No hotlist command defined")
+  | s -> 
+      let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
+      (!Error.default)#ok
+        (I18n.sprintf "%s\nadded to hotlist with title\n%s" url title)
 @
 
 
@@ -8040,6 +8105,15 @@ let helpurl = function
   | _ -> assert false
 @
 
+
+
+<<Help menu elements>>=
+Menu.add_command helpm
+  [Label (I18n.sprintf "Help on MMM");
+   Command (fun () -> navigator false !helpurl |> ignore)];
+@
+% false means not toplevel, no_tachy
+
 \section{Multi windows}
 
 % mv later?
@@ -8124,6 +8198,14 @@ in
 
 \section{Gzip decoders}
 
+<<[[Http_headers.suffixes]] elements>>=
+"gz",		ContentEncoding  "Content-Encoding: gzip";
+"Z",		ContentEncoding  "Content-Encoding: compress";
+
+"asc",	ContentEncoding  "Content-Encoding: pgp";
+"pgp",	ContentEncoding  "Content-Encoding: pgp";
+@
+
 % for gzip stuff?
 
 <<signature Decoders.insert>>=
@@ -8155,7 +8237,8 @@ let _ =
 
 
 
-\section{Animated GIFs}
+%\section{Animated GIFs}
+% now in Image section?
 
 \section{Extra Protocols}
 
@@ -9327,6 +9410,16 @@ let sprintf (fmt : ('a, unit, string) format) =
 \section{Security}
 
 
+<<Other menu elements>>=
+Menu.add_command othersm
+  [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
+Menu.add_command othersm
+  [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
+Menu.add_command othersm
+  [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+@
+
+
 <<[[Http.full_request()]] write auth stuff>>=
 write_realm_auth ();
 if proxy_mode 
@@ -9864,6 +9957,85 @@ let fake_cgi wwwr cont path =
   with Unix_error(_,_,_) -> 
     raise (File_error (I18n.sprintf "cannot exec file"))
 @
+
+
+
+\section{Embedded objects}
+
+% advanced topic?
+
+<<type Embed.embobject>>=
+(* Embedded objects *)
+type embobject = {
+  embed_hlink : Hyper.link;               (* hyperlink to the object *)
+  embed_frame : Widget.widget;  
+     (* the frame where the viewers can do their stuff *)
+  embed_context : Viewers.context;
+  embed_map : Maps.t;                  (* associated map *)
+  embed_alt : string
+ }
+@
+
+
+<<signature Embed.add>>=
+val add : embobject -> unit
+@
+
+<<signature Embed.update>>=
+val update : 
+    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
+    -> unit
+@
+
+
+
+<<signature Embed.add_viewer>>=
+val add_viewer : 
+  Http_headers.media_type -> 
+  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
+    Document.document -> unit) -> unit
+@
+
+<<signature Embed.rem_viewer>>=
+val rem_viewer :  Http_headers.media_type -> unit
+@
+
+
+<<constant Embed.embedded_viewers>>=
+(* Embedded viewers *)
+
+let embedded_viewers = Hashtbl.create 11
+@
+
+<<function Embed.embedded_viewer>>=
+let embedded_viewer frame ctx doc =
+  (* Destroy the alt window *)
+  List.iter Tk.destroy (Winfo.children frame);
+  try
+    let ctype = contenttype doc.document_info in
+    let (typ,subtyp),l = Lexheaders.media_type ctype in
+    try
+      let viewer = 
+    try Hashtbl.find embedded_viewers (typ,subtyp)
+        with Not_found -> Hashtbl.find embedded_viewers (typ,"*") in
+      viewer l frame ctx doc
+    with
+    Not_found ->
+      let t = 
+        I18n.sprintf "Embed Error: no viewer for type %s/%s" typ subtyp in
+      let l = Label.create frame [Text t] in pack [l][]
+  with
+    Not_found ->
+      let t = I18n.sprintf "Embed Error: no type for document %s" 
+                          (Url.string_of doc.document_address) in 
+      let l = Label.create frame [Text t] in pack [l][]
+  | Invalid_HTTP_header e ->
+      let t = 
+       I18n.sprintf "Embed Error: malformed type %s (%s)"
+         (contenttype doc.document_info) e in
+      let l = Label.create frame [Text t] in pack [l][]
+@
+
 
 
 \section{Applets}
@@ -10987,7 +11159,7 @@ CSS  = Cascading Style Sheets
 JS   = Javascript
 HTTP =
 WWW  = World Wide Web
-MIME = ??
+MIME = Multi-Purpose Internet Mail Extensions
 
 DID  = Document IDentifier
 \end{verbatim}

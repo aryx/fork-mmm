@@ -234,41 +234,33 @@ let suffixes =
    ContentEncoding otherwise *)
 let read_suffix_file f =
  try
-  let ic = open_in f in
-  try while true do
-    let l = input_line ic in
-    if l <> "" && l.[0] <> '#' then
-      let tokens = 
-    split_str (function ' '|'\t' -> true | _ -> false) l in
-    match tokens with
-      [] -> ()
-    | x::l ->
-       try 
-        let _ = String.index x '/' in
-        List.iter 
-          (function sufx -> 
-               Hashtbl.add suffixes sufx 
-                  (ContentType ("Content-Type: "^x)))
-
-        l
-       with
-         Not_found ->
-        List.iter 
-          (function sufx ->
-               Hashtbl.add suffixes sufx 
-                   (ContentEncoding ("Content-Encoding: "^x)))
-          l
-
-    done
-  with End_of_file -> close_in ic
+   let ic = open_in f in
+   try while true do
+     let l = input_line ic in
+     if l <> "" && l.[0] <> '#' 
+     then
+       let tokens = 
+         split_str (function ' '|'\t' -> true | _ -> false) l in
+       match tokens with
+       | [] -> ()
+       | x::l ->
+           try 
+             let _ = String.index x '/' in
+             l |> List.iter  (fun sufx -> 
+                Hashtbl.add suffixes sufx  (ContentType ("Content-Type: "^x))
+             )
+          with Not_found ->
+            l |> List.iter  (fun sufx ->
+                Hashtbl.add suffixes sufx  
+                  (ContentEncoding ("Content-Encoding: "^x))
+            )
+     done
+   with End_of_file -> close_in ic
  with Sys_error _ ->  ()
 (*e: function Http_headers.read_suffix_file *)
 
-(* Even if we don't have a suffix file... *)
-(*s: toplevel Http_headers._1 *)
-(* If the suffix file says otherwise, it will have priority *)
-let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
-[ 
+(*s: constant Http_headers.default_hints *)
+let default_hints = [ 
   "html",	ContentType  "Content-Type: text/html";
   "htm",	ContentType  "Content-Type: text/html";
 
@@ -294,46 +286,49 @@ let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
   "fli",	ContentType  "Content-Type: video/fli";
   "flc",	ContentType  "Content-Type: video/fli";
 
-  "gz",		ContentEncoding  "Content-Encoding: gzip";
-  "Z",		ContentEncoding  "Content-Encoding: compress";
-
-  "asc",	ContentEncoding  "Content-Encoding: pgp";
-  "pgp",	ContentEncoding  "Content-Encoding: pgp";
-
    (*s: [[Http_headers.suffixes]] elements *)
+   "gz",		ContentEncoding  "Content-Encoding: gzip";
+   "Z",		ContentEncoding  "Content-Encoding: compress";
+
+   "asc",	ContentEncoding  "Content-Encoding: pgp";
+   "pgp",	ContentEncoding  "Content-Encoding: pgp";
+   (*x: [[Http_headers.suffixes]] elements *)
    "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
    (*e: [[Http_headers.suffixes]] elements *)
 ]
+(*e: constant Http_headers.default_hints *)
+
+(* Even if we don't have a suffix file... *)
+(*s: toplevel Http_headers._1 *)
+(* If the suffix file says otherwise, it will have priority *)
+let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 (*e: toplevel Http_headers._1 *)
 
 (*s: function Http_headers.hints *)
 let hints path =
   (* Get the url suffix *)
-  let sufx = get_suffix path in
+  let sufx = Mstring.get_suffix path in
   try
     let v = 
-      try 
-    Hashtbl.find suffixes sufx 
-      with
-    Not_found -> 
-      Hashtbl.find suffixes (String.lowercase sufx)
+      try Hashtbl.find suffixes sufx 
+      with Not_found -> 
+        Hashtbl.find suffixes (String.lowercase sufx)
     in
-      match v with
-       ContentType t -> [t] (* good, we have a type *)
-     | ContentEncoding e ->
+    match v with
+    | ContentType t -> [t] (* good, we have a type *)
+    | ContentEncoding e ->
        (* we have an encoding, but do we have a type too ? *)
-     let path2 = Filename.chop_suffix path ("."^sufx) in
-     let sufx2 = get_suffix path2 in
-      begin try let v2 = Hashtbl.find suffixes sufx2 in
-        match v2 with
-          ContentType t -> (* good, we have a type *)
+       let path2 = Filename.chop_suffix path ("."^sufx) in
+       let sufx2 = Mstring.get_suffix path2 in
+       begin try 
+         let v2 = Hashtbl.find suffixes sufx2 in
+         match v2 with
+         | ContentType t -> (* good, we have a type *)
             [t;e]
-        | ContentEncoding _ -> [e] (* nah, forget it *)
-      with
-        Not_found -> [e] (* no type *)
+         | ContentEncoding _ -> [e] (* nah, forget it *)
+        with Not_found -> [e] (* no type *)
       end
-  with
-    Not_found -> [] (* no hint ... *)
+  with Not_found -> [] (* no hint ... *)
 (*e: function Http_headers.hints *)
 
 

@@ -17,12 +17,14 @@ val no_images : bool ref
 val gif_anim_auto : bool ref
 (*e: signature Imgload.gif_anim_auto *)
 
+(*s: class Imgload.loader signature *)
 class loader : (unit) -> object
   method add_image : Embed.embobject -> unit	 (* add one image *)
   method flush_images : unit	         (* flush when document is loaded *)
   method load_images : unit		 (* manual flush *)
   method update_images : unit
 end
+(*e: class Imgload.loader signature *)
 
 (*s: signature Imgload.create *)
 val create : unit -> loader

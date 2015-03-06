@@ -33,24 +33,27 @@ type hyper_func = {
 
 (*s: signature class Viewers.context *)
 (* The context given to a viewer *)
-(* Standard hyper functions are: "goto", "save", "gotonew" *)
 class virtual context : (Document.document_id * vparams) -> object ('a)
 
   method base : Document.document_id
-  method params : vparams
 
+  (*s: [[Viewers.context]] other methods signatures *)
   method goto : Hyper.link -> unit
   method gotonew : Hyper.link -> unit
   method save : Hyper.link -> unit
   method invoke : string -> Hyper.link -> unit    
-
+  (*x: [[Viewers.context]] other methods signatures *)
   method virtual log : string -> unit
+  (*x: [[Viewers.context]] other methods signatures *)
   method add_nav : string * hyper_func -> unit
+  method hyper_funs : (string * hyper_func) list
+  (*x: [[Viewers.context]] other methods signatures *)
   (*-*)
   method for_embed : vparams -> frame_targets -> 'a
   method in_embed : Document.document_id -> 'a
-  method hyper_funs : (string * hyper_func) list
-
+  (*x: [[Viewers.context]] other methods signatures *)
+  method params : vparams
+  (*e: [[Viewers.context]] other methods signatures *)
 end
 (*e: signature class Viewers.context *)
 
@@ -61,13 +64,11 @@ class  virtual display_info : (unit) -> object ('a)
   method virtual di_fragment : string option -> unit	(* for # URIs *)
 
   method virtual di_widget : Widget.widget
-
-  method virtual di_abort : unit		(* stop display *)
-  method virtual di_destroy : unit		(* die *)
-
-
   method virtual di_redisplay : unit		(* redisplay *)
-  method virtual di_load_images : unit	        (* load images *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_abort : unit		 (* stop display *)
+  method virtual di_destroy : unit	 (* die *)
+  method virtual di_load_images : unit (* load images *)
   method virtual di_update : unit      (* update embedded objects *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_source : unit 	        (* source viewer *)

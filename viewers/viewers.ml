@@ -104,13 +104,11 @@ class  virtual display_info () =
   method virtual di_fragment : string option -> unit	(* for # URIs *)
 
   method virtual di_widget : Widget.widget
-
-  method virtual di_abort : unit		(* stop display *)
-  method virtual di_destroy : unit		(* die *)
-
-
   method virtual di_redisplay : unit		(* redisplay *)
-  method virtual di_load_images : unit	        (* load images *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_abort : unit		 (* stop display *)
+  method virtual di_destroy : unit	 (* die *)
+  method virtual di_load_images : unit (* load images *)
   method virtual di_update : unit      (* update embedded objects *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_source : unit 	        (* source viewer *)

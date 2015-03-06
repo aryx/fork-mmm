@@ -1803,22 +1803,6 @@ open Tk
 
 \subsection*{[[./commons/hotlist.ml]]}
 
-<<constant Hotlist.program>>=
-(* A cool module *)
-let program = ref ""
-@
-
-<<function Hotlist.f>>=
-let f url title =
-  match !program with 
-    "" -> (!Error.default)#f (I18n.sprintf "No hotlist command defined")
-  | s -> 
-      let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
-      (!Error.default)#ok
-    (I18n.sprintf "%s\nadded to hotlist with title\n%s" url title)
-@
-
-
 %-------------------------------------------------------------
 
 <<./commons/hotlist.ml>>=
@@ -3100,8 +3084,6 @@ open Date
 \subsection*{[[./http/http_headers.mli]]}
 
 
-
-
 <<signature Http_headers.location>>=
 val location : header list -> string
   (* Location *)
@@ -3115,9 +3097,6 @@ val rem_contentencoding : header list -> header list
 <<signature Http_headers.status_msg>>=
 val status_msg : header list -> string
 @
-
-
-
 
 
 <<signature Http_headers.status_message>>=
@@ -3192,9 +3171,6 @@ open Messages
 
 
 
-
-
-
 <<function Http_headers.status_msg>>=
 let rec status_msg = function
     [] -> raise Not_found
@@ -3225,35 +3201,6 @@ let rec rem_contentencoding = function
 
 
 
-<<function Http_headers.hints>>=
-let hints path =
-  (* Get the url suffix *)
-  let sufx = get_suffix path in
-  try
-    let v = 
-      try 
-    Hashtbl.find suffixes sufx 
-      with
-    Not_found -> 
-      Hashtbl.find suffixes (String.lowercase sufx)
-    in
-      match v with
-       ContentType t -> [t] (* good, we have a type *)
-     | ContentEncoding e ->
-       (* we have an encoding, but do we have a type too ? *)
-     let path2 = Filename.chop_suffix path ("."^sufx) in
-     let sufx2 = get_suffix path2 in
-      begin try let v2 = Hashtbl.find suffixes sufx2 in
-        match v2 with
-          ContentType t -> (* good, we have a type *)
-            [t;e]
-        | ContentEncoding _ -> [e] (* nah, forget it *)
-      with
-        Not_found -> [e] (* no type *)
-      end
-  with
-    Not_found -> [] (* no hint ... *)
-@
 
 
 
@@ -3324,6 +3271,8 @@ let expires hs =
 <<constant Http_headers.suffixes>>
 
 <<function Http_headers.read_suffix_file>>
+
+<<constant Http_headers.default_hints>>
 
 (* Even if we don't have a suffix file... *)
 <<toplevel Http_headers._1>>
@@ -3554,25 +3503,6 @@ and lit_slash = parse
 
 \subsection*{[[./http/retype.ml]]}
 
-<<signature Retype.f>>=
-val f : Document.handle -> unit
-  (* physically modify the headers, adding ContentType/ContentEncoding
-   * from URL suffixes if this information is missing from the headers.
-   *)
-@
-<<function Retype.f>>=
-(* Attempt to find a decent Content-Type *)
-let f dh =
-  let url = Url.string_of dh.document_id.document_url in
-  try
-    let ctype = contenttype dh.document_headers in 
-    let mtyp,pars = Lexheaders.media_type ctype in
-    if mtyp = ("application","octet-stream") then
-      dh.document_headers <- merge_headers dh.document_headers (hints url)
-  with
-    Not_found ->
-      dh.document_headers <- merge_headers dh.document_headers (hints url)
-@
 
 
 %-------------------------------------------------------------
@@ -4525,7 +4455,7 @@ open Document
 
 \subsection*{[[./retrieve/retrieve.ml]]}
 
-
+% ??? -> <> -> Retype.f
 <<function Retrieve.wrap_cache>>=
 (* What do we cache ? : text/html and text/plain in memory *)
 let wrap_cache cache dh =
@@ -8820,18 +8750,13 @@ type mode =
 <<signature Imgload.mode>>=
 val mode : mode ref
 @
-
 <<signature Imgload.no_images>>=
 val no_images : bool ref
 @
-
 <<signature Imgload.gif_anim_auto>>=
 val gif_anim_auto : bool ref
 @
 
-<<signature Imgload.create>>=
-val create : unit -> loader
-@
 
 
 %-------------------------------------------------------------
@@ -8844,12 +8769,7 @@ val create : unit -> loader
 <<signature Imgload.no_images>>
 <<signature Imgload.gif_anim_auto>>
 
-class loader : (unit) -> object
-  method add_image : Embed.embobject -> unit	 (* add one image *)
-  method flush_images : unit	         (* flush when document is loaded *)
-  method load_images : unit		 (* manual flush *)
-  method update_images : unit
-end
+<<class Imgload.loader signature>>
 
 <<signature Imgload.create>>
 

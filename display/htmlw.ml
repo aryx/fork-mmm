@@ -406,15 +406,18 @@ class display_html ((top : Widget.widget),
   inherit html_body () as body
   inherit bored ()
 
-  val frame = if not (Winfo.exists top) then failwith "too late"
+  val frame = 
+    if not (Winfo.exists top) 
+    then failwith "too late"
     else Frame.create_named top (Mstring.gensym "html") [Class "Html"]
       (* this might as well fail if the window was destroyed before we
-     finally could get the headers of the document.
-     *)
+       * finally could get the headers of the document.
+       *)
   method frame = frame
 
   (* val imgmanager = imgmanager *)
-  val mutable mach = F.create (ctx, imgmanager)
+  val mutable mach = 
+    F.create (ctx, imgmanager)
   method mach = mach
 
   val mutable init_mode = true
@@ -448,9 +451,9 @@ class display_html ((top : Widget.widget),
   val (*private*) annotations = ref []
   method annotate loc = function
     | OpenTag {tag_name=name} ->
-    annotations := (name, loc) :: !annotations
+        annotations := (name, loc) :: !annotations
     | CloseTag name ->
-    annotations := (name, loc) :: !annotations
+        annotations := (name, loc) :: !annotations
     | _ -> ()
 
   val mutable add_extra_header = fun f -> ()
@@ -463,12 +466,11 @@ class display_html ((top : Widget.widget),
       !Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
     else
       try
-       dh <- Decoders.insert (Cache.renew_handle dh);
-       List.iter destroy (Winfo.children frame);
-       self#init init_mode
-      with
-       Not_found ->
-      !Error.default#f (I18n.sprintf "Document not in cache anymore")
+        dh <- Decoders.insert (Cache.renew_handle dh);
+        List.iter destroy (Winfo.children frame);
+        self#init init_mode
+      with Not_found ->
+        !Error.default#f (I18n.sprintf "Document not in cache anymore")
 
 
   val mutable title = Url.string_of ctx#base.document_url

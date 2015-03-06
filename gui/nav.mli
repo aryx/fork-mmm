@@ -5,16 +5,16 @@ type t = {
   (*s: [[Nav.t]] other fields *)
   nav_show_current: Viewers.display_info -> string option -> unit;
   (*x: [[Nav.t]] other fields *)
-  nav_id : int;  (* key for the gfx cache *)
-  (*x: [[Nav.t]] other fields *)
   nav_add_hist : Document.document_id -> string option -> unit;
   (*x: [[Nav.t]] other fields *)
-  nav_add_active : Url.t -> (unit -> unit) -> unit;
-  nav_rem_active : Url.t -> unit;
+  nav_id : int;  (* key for the gfx cache *)
   (*x: [[Nav.t]] other fields *)
   nav_log : string -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_error : Error.t;			(* popping error dialogs *)
+  (*x: [[Nav.t]] other fields *)
+  nav_add_active : Url.t -> (unit -> unit) -> unit;
+  nav_rem_active : Url.t -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_new : Hyper.link -> unit;
   (*e: [[Nav.t]] other fields *)

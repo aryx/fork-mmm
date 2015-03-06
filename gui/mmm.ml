@@ -185,14 +185,15 @@ let rec navigator has_tachy initial_url =
     let show_current di frag =
       di#di_touch;
       (match !current_di with
-      | None -> display di
+      | None -> 
+          display di
       | Some olddi -> 
-         if olddi == di 
-         then () 
-         else begin
-           undisplay olddi;
-           display di
-         end
+          if olddi == di 
+          then () 
+          else begin
+            undisplay olddi;
+            display di
+          end
       );
       current_di := Some di;
       (* bogus if two views with fragment on the same pending document *)
@@ -223,16 +224,16 @@ let rec navigator has_tachy initial_url =
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_show_current = show_current;
       (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_id = hist.h_key;
-      (*x: [[Mmm.navigator()]] set nav fields *)
       nav_add_hist = add_hist;
       (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_add_active = Hashtbl.add actives;
-      nav_rem_active = Hashtbl.remove actives;
+      nav_id = hist.h_key;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_log = (fun s -> Textvariable.set loggingv s);
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_error = error;
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_add_active = Hashtbl.add actives;
+      nav_rem_active = Hashtbl.remove actives;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_new = (fun link ->
            try
@@ -254,10 +255,10 @@ let rec navigator has_tachy initial_url =
      *)
     let back () = 
       match History.back hist with
-       | None -> ()
-       | Some (did, frag) -> 
-           if not (historygoto nav did frag true) 
-           then History.forward hist |> ignore
+      | None -> ()
+      | Some (did, frag) -> 
+          if not (historygoto nav did frag true) 
+          then History.forward hist |> ignore
     in
     (*e: function Mmm.navigator.back *)
     (*s: function Mmm.navigator.forward *)
@@ -329,7 +330,7 @@ let rec navigator has_tachy initial_url =
     (*e: function Mmm.navigator.open_file *)
     (*s: function Mmm.navigator.save *)
     let save () = 
-     Save.document hist.h_current.h_did None 
+      Save.document hist.h_current.h_did None 
     in
     (*e: function Mmm.navigator.save *)
     (*s: function Mmm.navigator.print *)
@@ -367,8 +368,7 @@ let rec navigator has_tachy initial_url =
       match !current_di with
       | None -> ()
       | Some di -> 
-          Hotlist.f (Url.string_of hist.h_current.h_did.document_url)
-                      di#di_title
+          Hotlist.f (Url.string_of hist.h_current.h_did.document_url) di#di_title
     in
     (*e: function Mmm.navigator.add_to_hotlist *)
     (*s: function Mmm.navigator.load_images *)
@@ -516,8 +516,8 @@ let rec navigator has_tachy initial_url =
     let navm = Menu.create_named navb "menu" [] in
     Menubutton.configure navb [Menu navm];
     configure_menu_elements navm [ 
-      [Label (I18n.sprintf "Home"); Command gohome];
-      [Label (I18n.sprintf "Back"); Command back];
+      [Label (I18n.sprintf "Home");    Command gohome];
+      [Label (I18n.sprintf "Back");    Command back];
       [Label (I18n.sprintf "Forward"); Command forward];
       []
     ];
@@ -565,9 +565,10 @@ let rec navigator has_tachy initial_url =
       [Label (I18n.sprintf "Reload")         ; Command reload];
       [Label (I18n.sprintf "Update")         ; Command update_true];
       [Label (I18n.sprintf "Redisplay")      ; Command redisplay];
-      [Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
       [Label (I18n.sprintf "Load Images")    ; Command load_images];
       (*s: Document menu elements *)
+      [Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
+      (*x: Document menu elements *)
       [Label (I18n.sprintf "View Source")    ; Command view_source]
       (*e: Document menu elements *)
     ];
@@ -577,28 +578,33 @@ let rec navigator has_tachy initial_url =
     let othersb = Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
     let othersm = Menu.create_named othersb "menu" [] in
     Menubutton.configure othersb [Menu othersm];
+    (*s: Other menu elements *)
     Menu.add_command othersm
       [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
     Menu.add_command othersm
       [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
     Menu.add_command othersm
       [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+    (*e: Other menu elements *)
     (*e: [[Mmm.navigator()]] Other menu *)
     (*s: [[Mmm.navigator()]] Help menu *)
     (* Help menu *)
     let helpb = Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
     let helpm = Menu.create_named helpb "menu" [] in
     Menubutton.configure helpb [Menu helpm];
+    (*s: Help menu elements *)
     Menu.add_command helpm
       [Label (I18n.sprintf "Version information");
        Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
     Menu.add_command helpm
-      [Label (I18n.sprintf "Help on MMM");
-       Command (fun () -> navigator false !helpurl |> ignore)];
-    Menu.add_command helpm
       [Label (I18n.sprintf "Home Page of MMM");
        Command (fun () -> 
          navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
+    (*x: Help menu elements *)
+    Menu.add_command helpm
+      [Label (I18n.sprintf "Help on MMM");
+       Command (fun () -> navigator false !helpurl |> ignore)];
+    (*e: Help menu elements *)
     (*e: [[Mmm.navigator()]] Help menu *)
     (*s: [[Mmm.navigator()]] User menu *)
     (* User menu, extensible by applets *)
@@ -641,14 +647,14 @@ let rec navigator has_tachy initial_url =
     let homeb = Button.create_named fb "home"
       [ Text (I18n.sprintf "Home"); Command gohome] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
+    let loggingb = Label.create_named fb "logging"
+      [TextWidth 40; TextVariable loggingv; Anchor W] in
+    (*x: [[Mmm.navigator()]] navigation buttons *)
     let reloadb = Button.create_named fb
       "reload" [Text (I18n.sprintf "Reload"); Command reload] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
     let abortb = Button.create_named fb 
       "abort" [Text (I18n.sprintf "Abort"); Command abort] in
-    (*x: [[Mmm.navigator()]] navigation buttons *)
-    let loggingb = Label.create_named fb "logging"
-      [TextWidth 40; TextVariable loggingv; Anchor W] in
     (*e: [[Mmm.navigator()]] navigation buttons *)
 
     (*s: [[Mmm.navigator()]] packing part one *)
