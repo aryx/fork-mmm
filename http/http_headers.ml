@@ -301,7 +301,8 @@ let default_hints = [
 (* Even if we don't have a suffix file... *)
 (*s: toplevel Http_headers._1 *)
 (* If the suffix file says otherwise, it will have priority *)
-let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
+let _ = 
+  default_hints |> List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 (*e: toplevel Http_headers._1 *)
 
 (*s: function Http_headers.hints *)

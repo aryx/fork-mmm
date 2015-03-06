@@ -6569,7 +6569,8 @@ let suffixes =
 
 <<toplevel Http_headers._1>>=
 (* If the suffix file says otherwise, it will have priority *)
-let _ = List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
+let _ = 
+  default_hints |> List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
 @
 % cmo, hehe :)
 
@@ -8333,7 +8334,9 @@ let request wr cont =
               document_fragment = wr.www_fragment;
               document_logger = Document.tty_logger
             } in
-            Retype.f dh;
+
+            Retype.f dh; (* pad: to get the content type based on the suffix *)
+
             cont.document_process dh;
             (fun () -> ())
           end
@@ -8496,6 +8499,9 @@ let isdir path f =
 
 \subsection{Proxied protocols}
 
+% proxy are not just for security or speed!
+% can translate from unhandled protocol to http for us! :)
+
 <<toplevel Protos._1>>=
 let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
 @
@@ -8527,22 +8533,23 @@ and proxy_req wr cont =
   let cnx = proxy_request wr cont in
   (fun () -> cnx#abort)
 @
+% see Advanced topics chapter on proxy and the proxy_request function
 
 
 \subsection{[[ftp://]]}
 
 <<[[Lexurl.f]] protocol cases>>=
 | "FTP" -> (* we don't need the detail of path *)
-   slashslash lexbuf;
-   let u, p = userpass lexbuf in
-   let h, po = hostport lexbuf in
-   let path = slashpath lexbuf in
-   result.protocol <- FTP;
-   result.user <- u;
-   result.password <- p;
-   result.host <- h;
-   result.port <- normalize_port (FTP, po);
-   result.path <- path
+    slashslash lexbuf;
+    let u, p = userpass lexbuf in
+    let h, po = hostport lexbuf in
+    let path = slashpath lexbuf in
+    result.protocol <- FTP;
+    result.user <- u;
+    result.password <- p;
+    result.host <- h;
+    result.port <- normalize_port (FTP, po);
+    result.path <- path
 @
 
 
@@ -8953,6 +8960,12 @@ let view attach did redisplay errors annotations coding =
 \chapter{Advanced Topics}
 
 \section{Proxy}
+
+% for security,
+% for speed sometimes,
+% but also to easily access other protocols,
+%  e.g. if don't handle ftp://, then can ask the proxy
+%  to translate that into http for us!
 
 <<signature Http.proxy_xxx>>=
 val proxy: string ref
