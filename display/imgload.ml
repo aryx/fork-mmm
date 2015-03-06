@@ -75,7 +75,7 @@ let display emb i =
        and we can create the client side map *)
     let uri = Hyper.resolve hlink in
     let name =
-      match uri.uri_frag with 
+      match uri.uri_fragment with 
         None -> uri.uri_url
       | Some frag -> sprintf "%s#%s" uri.uri_url frag
     in
@@ -236,7 +236,7 @@ let make_map emb =
     [l] when Winfo.class_name l = "Label" ->
       let uri = Hyper.resolve hlink in
       let name =
-        match uri.uri_frag with 
+        match uri.uri_fragment with 
           None -> uri.uri_url
         | Some frag -> sprintf "%s#%s" uri.uri_url frag in
       begin match Maps.get name with

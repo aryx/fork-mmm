@@ -407,6 +407,10 @@ class display_html ((top : Widget.widget),
   inherit html_body () as body
   inherit bored ()
 
+  (*s: [[Htmlw.display_html]] private fields *)
+  val mutable (*private*) terminated = false
+  (*e: [[Htmlw.display_html]] private fields *)
+
   val frame = 
     if not (Winfo.exists top) 
     then failwith "too late"
@@ -424,20 +428,6 @@ class display_html ((top : Widget.widget),
   val mutable init_mode = true
   val mutable pending = true
 
-  (* [finish abort?] *)
-  val mutable (*private*) terminated = false
-  method finish abort =
-    if not terminated then begin
-      terminated <- true;
-      ctx#log (if abort then "Aborted" else "");
-      dclose true dh
-    end;
-    (* This has to happen even if we already finished displaying the document *)
-    if abort then begin
-      Img.ImageScheduler.stop dh.document_id;
-      Embed.EmbeddedScheduler.stop dh.document_id
-      (* TODO we should also require embedded objects to abort *)
-    end;
 
   (* error reporting *)
   val (*private*) errors = ref []
@@ -459,20 +449,6 @@ class display_html ((top : Widget.widget),
 
   val mutable add_extra_header = fun f -> ()
   method add_extra_header = add_extra_header
-
-  (* to redisplay, we have to destroy all widgets, then restart, except
-     that we don't use the initial feed, but rather the cache *)
-  method redisplay =
-    if pending 
-    then Error.f (s_ "Cannot redisplay document (pending)")
-    else
-      try
-        dh <- Decoders.insert (Cache.renew_handle dh);
-        List.iter destroy (Winfo.children frame);
-        self#init init_mode
-      with Not_found ->
-        Error.f (s_ "Document not in cache anymore")
-
 
   val mutable title = Url.string_of ctx#base.document_url
 
@@ -729,11 +705,9 @@ class display_html ((top : Widget.widget),
 
   (* What is exported ? *)
   method di_widget = frame
-  method di_abort = self#finish true
   method di_destroy = if Winfo.exists frame then destroy frame;
   method di_title = title
   method di_fragment = mach#see_frag
-  method di_redisplay = self#redisplay
   method di_load_images = 
     (* load our images *)
     imgmanager#load_images;
@@ -753,6 +727,42 @@ class display_html ((top : Widget.widget),
       List.iter (Frx_synth.send "update") (Winfo.children f))
       mach#embedded)
 
+  (*s: [[Htmlw.display_html]] abort methods *)
+  method di_abort = 
+    self#finish true
+
+  (* [finish abort?] *)
+  method finish abort =
+    if not terminated then begin
+      terminated <- true;
+      ctx#log (if abort then "Aborted" else "");
+      Document.dclose true dh
+    end;
+    (* This has to happen even if we already finished displaying the document *)
+    if abort then begin
+      Img.ImageScheduler.stop dh.document_id;
+      Embed.EmbeddedScheduler.stop dh.document_id
+      (* TODO we should also require embedded objects to abort *)
+    end
+  (*e: [[Htmlw.display_html]] abort methods *)
+
+  (*s: [[Htmlw.display_html]] redisplay methods *)
+  method di_redisplay = 
+    self#redisplay
+
+  (* to redisplay, we have to destroy all widgets, then restart, except
+     that we don't use the initial feed, but rather the cache *)
+  method redisplay =
+    if pending 
+    then Error.f (s_ "Cannot redisplay document (pending)")
+    else
+      try
+        dh <- Decoders.insert (Cache.renew_handle dh);
+        Winfo.children frame |> List.iter destroy;
+        self#init init_mode
+      with Not_found ->
+        Error.f (s_ "Document not in cache anymore")
+  (*e: [[Htmlw.display_html]] redisplay methods *)
 
   (*s: [[Htmlw.display_html]] other methods or fields *)
   method di_source = self#source

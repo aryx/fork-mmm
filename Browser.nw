@@ -432,12 +432,13 @@ type protocol =
 
 type abs_uri = {
    uri_url : string;
-   uri_frag : string option
+   uri_fragment : string option
  }
 @
 %abs for absolute! we want those URI to have been "resolved"
 %fragment is for the #xxx
 %  "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
+% note that there will be www_fragment, document_fragment, #di_fragment, etc
 %less: uri_url, hmmm should be uri_path no?
 %less: why not parse uri_url and make it a Url.t?
 
@@ -541,7 +542,7 @@ let make hlink =
     { www_link = hlink;
 
       www_url = url; (* should not fail ? *)
-      www_fragment = absuri.uri_frag;
+      www_fragment = absuri.uri_fragment;
 
       www_auth = [];
       www_headers = [];
@@ -1012,6 +1013,7 @@ type vparams = (string * string) list
 
 <<signature class Viewers.display_info>>=
 class  virtual display_info : (unit) -> object ('a)
+
   <<[[Viewers.display_info]] virtual fields signatures>>
   <<[[Viewers.display_info]] cache methods>>
 end
@@ -1019,24 +1021,25 @@ end
 %note: the <<[[Viewers.display_info]] virtual fields signatures>> chunk
 % is used both for the .mli and the .ml, so don't extract
 % anything from it otherwise it will not be copy pasted in the .mli and .ml
+%todo: transform in a regular record
 
 <<[[Viewers.display_info]] virtual fields signatures>>=
 method virtual di_title : string		(* some visible title *)
 method virtual di_fragment : string option -> unit	(* for # URIs *)
+@
+% di_title is used by the caller to modify the window's title
+% di_fragment is used by the caller to go to a fragment, in show_current_di()
 
+<<[[Viewers.display_info]] virtual fields signatures>>=
+(* the created widget containing the graphics *)
 method virtual di_widget : Widget.widget
-method virtual di_redisplay : unit		(* redisplay *)
 @
+% the widget that is packed in the top passed in, and
+% that will be deleted in undisplay
 
-%XXX
-<<[[Viewers.display_info]] cache methods>>=
-method di_last_used : int
-method di_touch : unit
-@
 
 %XXX
 <<[[Viewers.display_info]] virtual fields signatures>>=
-method virtual di_abort : unit		 (* stop display *)
 method virtual di_destroy : unit	 (* die *)
 method virtual di_load_images : unit (* load images *)
 method virtual di_update : unit      (* update embedded objects *)
@@ -1800,7 +1803,7 @@ nav_show_current = show_current;
 <<local function Mmm.navigator.show_current>>=
 (* Change view, independantly of history manip *)
 let show_current di frag =
-  di#di_touch;
+  <<[[Mmm.navigator.show_current()]] start hook>>
   (match !current_di with
   | None -> 
       display di
@@ -1819,6 +1822,9 @@ let show_current di frag =
   Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
 in
 @
+%less: need to set entryv? should be good already no?
+% or is it if we switch?
+
 
 <<[[Mmm.navigator()]] locals>>=
 let current_di = ref None in
@@ -2161,7 +2167,6 @@ configure_menu_elements docm [
   [Label (s_ "Abort")          ; Command abort];
   [Label (s_ "Reload")         ; Command reload];
   [Label (s_ "Update")         ; Command update_true];
-  [Label (s_ "Redisplay")      ; Command redisplay];
   [Label (s_ "Load Images")    ; Command load_images];
   <<Document menu elements>>
 ];
@@ -2177,13 +2182,6 @@ let load_images () =
 in
 @
 
-<<function Mmm.navigator.redisplay>>=
-let redisplay () =
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_redisplay
-in
-@
 
 
 \subsection{Other menu}
@@ -2773,7 +2771,7 @@ let resolve link =
   then
     try
       { uri_url = Lexurl.normalize newuri;
-        uri_frag = frag 
+        uri_fragment = frag 
       }
     with Url_Lexing _ ->
       raise (Invalid_link (LinkResolve (s_ "not a legal absolute uri")))
@@ -2792,7 +2790,7 @@ let resolve link =
              raise (Invalid_link (UrlLexing (err,pos)))
     in
     { uri_url = urlconcat contextp newuri;
-      uri_frag = frag
+      uri_fragment = frag
     }
   end
 @
@@ -6375,25 +6373,8 @@ class plain ((top : Widget.widget),
      else Frame.create top [Class "Plain"]
   method frame = frame
   method di_widget = frame
-  
-  (* to redisplay, we have to destroy all widgets, then restart, except
-     that we don't use the feed, but rather the cache *)
-  method redisplay =
-    try
-      dh <- Decoders.insert (Cache.renew_handle dh);
-      Winfo.children frame |> List.iter destroy;
-      self#init
-    with Not_found ->
-       Error.default#f (s_ "Document not in cache anymore")
+ 
 
-  (* [finish abort?] *)
-  val mutable (*private*) terminated = false
-  method finish abort =
-    if not terminated then begin
-      terminated <- true;
-      self#ctx#log (if abort then "Aborted" else "");
-      dclose true dh;
-    end
 
   val mutable (*private*) tw = Widget.default_toplevel
 
@@ -6473,18 +6454,19 @@ class plain ((top : Widget.widget),
          self#finish true
      );
 
-  method di_abort = 
-    self#finish true
   method di_destroy = 
     if Winfo.exists frame 
     then destroy frame
-  method di_redisplay = 
-    self#redisplay
   method di_title =
     Url.string_of dh.document_id.document_url
+  method di_fragment _frag = 
+    ()
   method di_load_images = ()
-  method di_fragment f = ()
   method di_update = ()
+
+  <<[[Plain.plain]] abort methods>>
+
+  <<[[Plain.plain]] redisplay methods>>
 
   <<[[Plain.plain]] other methods or fields>>
 end
@@ -7291,6 +7273,8 @@ class display_html ((top : Widget.widget),
   inherit html_body () as body
   inherit bored ()
 
+  <<[[Htmlw.display_html]] private fields>>
+
   val frame = 
     if not (Winfo.exists top) 
     then failwith "too late"
@@ -7308,20 +7292,6 @@ class display_html ((top : Widget.widget),
   val mutable init_mode = true
   val mutable pending = true
 
-  (* [finish abort?] *)
-  val mutable (*private*) terminated = false
-  method finish abort =
-    if not terminated then begin
-      terminated <- true;
-      ctx#log (if abort then "Aborted" else "");
-      dclose true dh
-    end;
-    (* This has to happen even if we already finished displaying the document *)
-    if abort then begin
-      Img.ImageScheduler.stop dh.document_id;
-      Embed.EmbeddedScheduler.stop dh.document_id
-      (* TODO we should also require embedded objects to abort *)
-    end;
 
   (* error reporting *)
   val (*private*) errors = ref []
@@ -7343,20 +7313,6 @@ class display_html ((top : Widget.widget),
 
   val mutable add_extra_header = fun f -> ()
   method add_extra_header = add_extra_header
-
-  (* to redisplay, we have to destroy all widgets, then restart, except
-     that we don't use the initial feed, but rather the cache *)
-  method redisplay =
-    if pending 
-    then Error.f (s_ "Cannot redisplay document (pending)")
-    else
-      try
-        dh <- Decoders.insert (Cache.renew_handle dh);
-        List.iter destroy (Winfo.children frame);
-        self#init init_mode
-      with Not_found ->
-        Error.f (s_ "Document not in cache anymore")
-
 
   val mutable title = Url.string_of ctx#base.document_url
 
@@ -7613,11 +7569,9 @@ class display_html ((top : Widget.widget),
 
   (* What is exported ? *)
   method di_widget = frame
-  method di_abort = self#finish true
   method di_destroy = if Winfo.exists frame then destroy frame;
   method di_title = title
   method di_fragment = mach#see_frag
-  method di_redisplay = self#redisplay
   method di_load_images = 
     (* load our images *)
     imgmanager#load_images;
@@ -7637,6 +7591,9 @@ class display_html ((top : Widget.widget),
       List.iter (Frx_synth.send "update") (Winfo.children f))
       mach#embedded)
 
+  <<[[Htmlw.display_html]] abort methods>>
+
+  <<[[Htmlw.display_html]] redisplay methods>>
 
   <<[[Htmlw.display_html]] other methods or fields>>
 end
@@ -7888,17 +7845,65 @@ let update nocache =
 in
 @
 
+\section{Redisplay}
+% diff?
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_redisplay : unit		(* redisplay *)
+@
+
+<<Document menu elements>>=
+[Label (s_ "Redisplay")      ; Command redisplay];
+@
+
+<<function Mmm.navigator.redisplay>>=
+let redisplay () =
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_redisplay
+in
+@
+
+<<[[Plain.plain]] redisplay methods>>=
+method di_redisplay = 
+  self#redisplay
+
+(* to redisplay, we have to destroy all widgets, then restart, except
+   that we don't use the feed, but rather the cache *)
+method redisplay =
+  try
+    dh <- Decoders.insert (Cache.renew_handle dh);
+    Winfo.children frame |> List.iter destroy;
+    self#init
+  with Not_found ->
+    Error.f (s_ "Document not in cache anymore")
+@
+
+<<[[Htmlw.display_html]] redisplay methods>>=
+method di_redisplay = 
+  self#redisplay
+
+(* to redisplay, we have to destroy all widgets, then restart, except
+   that we don't use the initial feed, but rather the cache *)
+method redisplay =
+  if pending 
+  then Error.f (s_ "Cannot redisplay document (pending)")
+  else
+    try
+      dh <- Decoders.insert (Cache.renew_handle dh);
+      Winfo.children frame |> List.iter destroy;
+      self#init init_mode
+    with Not_found ->
+      Error.f (s_ "Document not in cache anymore")
+@
 
 \section{Abort}
 % advanced topic?
+% important! you want the user to control things
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let abortb = Button.create_named fb 
   "abort" [Text (s_ "Abort"); Command abort] in
-@
-
-<<local Mmm.navigator.actives>>=
-let actives = Hashtbl.create 37 in
 @
 
 <<function Mmm.navigator.abort>>=
@@ -7911,6 +7916,13 @@ let abort () =
 in
 @
 
+
+<<local Mmm.navigator.actives>>=
+let actives = Hashtbl.create 37 in
+@
+%less: type? url * aborter! introduce type!
+
+
 % Nav.request -> <>
 <<[[Nav.t]] other fields>>=
 nav_add_active : Url.t -> (unit -> unit) -> unit;
@@ -7921,6 +7933,47 @@ nav_add_active = Hashtbl.add actives;
 nav_rem_active = Hashtbl.remove actives;
 @
 
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_abort : unit		 (* stop display *)
+@
+
+<<[[Plain.plain]] abort methods>>=
+method di_abort = 
+  self#finish true
+
+(* [finish abort?] *)
+val mutable (*private*) terminated = false
+method finish abort =
+  if not terminated then begin
+    terminated <- true;
+    self#ctx#log (if abort then "Aborted" else "");
+    Document.dclose true dh;
+  end
+@
+
+<<[[Htmlw.display_html]] private fields>>=
+val mutable (*private*) terminated = false
+@
+
+<<[[Htmlw.display_html]] abort methods>>=
+method di_abort = 
+  self#finish true
+
+(* [finish abort?] *)
+method finish abort =
+  if not terminated then begin
+    terminated <- true;
+    ctx#log (if abort then "Aborted" else "");
+    Document.dclose true dh
+  end;
+  (* This has to happen even if we already finished displaying the document *)
+  if abort then begin
+    Img.ImageScheduler.stop dh.document_id;
+    Embed.EmbeddedScheduler.stop dh.document_id
+    (* TODO we should also require embedded objects to abort *)
+  end
+@
 
 \section{Bookmarks}
 
@@ -9849,6 +9902,21 @@ let dont_check_cache wwwr =
 \subsection{Graphic cache, [[Gcache]]}
 % Graphic cache
 
+
+<<[[Mmm.navigator.show_current()]] start hook>>=
+di#di_touch;
+@
+
+<<[[Viewers.display_info]] cache methods>>=
+method di_last_used : int
+method di_touch : unit
+@
+
+<<function Viewers.di_compare>>=
+let di_compare di di' = 
+  di#di_last_used > di'#di_last_used
+@
+
 <<[[Nav.process_viewer()]] add in cache and history the document>>=
 Gcache.add nav.nav_id dh.document_id di;
 @
@@ -10492,7 +10560,7 @@ val string_of : link -> string
 <<function Hyper.string_of>>=
 let string_of link =
   let uri = resolve link in
-   match uri.uri_frag with 
+   match uri.uri_fragment with 
       None -> uri.uri_url
     | Some f -> Printf.sprintf "%s#%s" uri.uri_url f
 @

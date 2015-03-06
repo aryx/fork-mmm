@@ -103,14 +103,17 @@ class  virtual display_info () =
   (*s: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_title : string		(* some visible title *)
   method virtual di_fragment : string option -> unit	(* for # URIs *)
-
-  method virtual di_widget : Widget.widget
-  method virtual di_redisplay : unit		(* redisplay *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
-  method virtual di_abort : unit		 (* stop display *)
+  (* the created widget containing the graphics *)
+  method virtual di_widget : Widget.widget
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_destroy : unit	 (* die *)
   method virtual di_load_images : unit (* load images *)
   method virtual di_update : unit      (* update embedded objects *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_redisplay : unit		(* redisplay *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_abort : unit		 (* stop display *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_source : unit 	        (* source viewer *)
   (*e: [[Viewers.display_info]] virtual fields signatures *)
@@ -139,7 +142,8 @@ class trivial_display (w, url) =
 end
 
 (*s: function Viewers.di_compare *)
-let di_compare di di' = di#di_last_used > di'#di_last_used
+let di_compare di di' = 
+  di#di_last_used > di'#di_last_used
 (*e: function Viewers.di_compare *)
 
 (* 

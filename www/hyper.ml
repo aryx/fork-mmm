@@ -126,7 +126,7 @@ let resolve link =
   then
     try
       { uri_url = Lexurl.normalize newuri;
-        uri_frag = frag 
+        uri_fragment = frag 
       }
     with Url_Lexing _ ->
       raise (Invalid_link (LinkResolve (s_ "not a legal absolute uri")))
@@ -145,7 +145,7 @@ let resolve link =
              raise (Invalid_link (UrlLexing (err,pos)))
     in
     { uri_url = urlconcat contextp newuri;
-      uri_frag = frag
+      uri_fragment = frag
     }
   end
 (*e: function Hyper.resolve *)
@@ -153,7 +153,7 @@ let resolve link =
 (*s: function Hyper.string_of *)
 let string_of link =
   let uri = resolve link in
-   match uri.uri_frag with 
+   match uri.uri_fragment with 
       None -> uri.uri_url
     | Some f -> Printf.sprintf "%s#%s" uri.uri_url f
 (*e: function Hyper.string_of *)

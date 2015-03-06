@@ -20,25 +20,8 @@ class plain ((top : Widget.widget),
      else Frame.create top [Class "Plain"]
   method frame = frame
   method di_widget = frame
-  
-  (* to redisplay, we have to destroy all widgets, then restart, except
-     that we don't use the feed, but rather the cache *)
-  method redisplay =
-    try
-      dh <- Decoders.insert (Cache.renew_handle dh);
-      Winfo.children frame |> List.iter destroy;
-      self#init
-    with Not_found ->
-       Error.default#f (s_ "Document not in cache anymore")
+ 
 
-  (* [finish abort?] *)
-  val mutable (*private*) terminated = false
-  method finish abort =
-    if not terminated then begin
-      terminated <- true;
-      self#ctx#log (if abort then "Aborted" else "");
-      dclose true dh;
-    end
 
   val mutable (*private*) tw = Widget.default_toplevel
 
@@ -118,18 +101,44 @@ class plain ((top : Widget.widget),
          self#finish true
      );
 
-  method di_abort = 
-    self#finish true
   method di_destroy = 
     if Winfo.exists frame 
     then destroy frame
-  method di_redisplay = 
-    self#redisplay
   method di_title =
     Url.string_of dh.document_id.document_url
+  method di_fragment _frag = 
+    ()
   method di_load_images = ()
-  method di_fragment f = ()
   method di_update = ()
+
+  (*s: [[Plain.plain]] abort methods *)
+  method di_abort = 
+    self#finish true
+
+  (* [finish abort?] *)
+  val mutable (*private*) terminated = false
+  method finish abort =
+    if not terminated then begin
+      terminated <- true;
+      self#ctx#log (if abort then "Aborted" else "");
+      Document.dclose true dh;
+    end
+  (*e: [[Plain.plain]] abort methods *)
+
+  (*s: [[Plain.plain]] redisplay methods *)
+  method di_redisplay = 
+    self#redisplay
+
+  (* to redisplay, we have to destroy all widgets, then restart, except
+     that we don't use the feed, but rather the cache *)
+  method redisplay =
+    try
+      dh <- Decoders.insert (Cache.renew_handle dh);
+      Winfo.children frame |> List.iter destroy;
+      self#init
+    with Not_found ->
+      Error.f (s_ "Document not in cache anymore")
+  (*e: [[Plain.plain]] redisplay methods *)
 
   (*s: [[Plain.plain]] other methods or fields *)
   method di_source = ()

@@ -7,7 +7,7 @@ open Mstring
 
 type abs_uri = {
    uri_url : string;
-   uri_frag : string option
+   uri_fragment : string option
  }
 (*e: type Uri.abs_uri *)
 

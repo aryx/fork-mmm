@@ -185,7 +185,9 @@ let rec navigator has_tachy initial_url =
     (*s: local function Mmm.navigator.show_current *)
     (* Change view, independantly of history manip *)
     let show_current di frag =
+      (*s: [[Mmm.navigator.show_current()]] start hook *)
       di#di_touch;
+      (*e: [[Mmm.navigator.show_current()]] start hook *)
       (match !current_di with
       | None -> 
           display di
@@ -566,9 +568,10 @@ let rec navigator has_tachy initial_url =
       [Label (s_ "Abort")          ; Command abort];
       [Label (s_ "Reload")         ; Command reload];
       [Label (s_ "Update")         ; Command update_true];
-      [Label (s_ "Redisplay")      ; Command redisplay];
       [Label (s_ "Load Images")    ; Command load_images];
       (*s: Document menu elements *)
+      [Label (s_ "Redisplay")      ; Command redisplay];
+      (*x: Document menu elements *)
       [Label (s_ "Add to hotlist") ; Command add_to_hotlist];
       (*x: Document menu elements *)
       [Label (s_ "View Source")    ; Command view_source]

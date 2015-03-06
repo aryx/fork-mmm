@@ -43,7 +43,7 @@ let make hlink =
     { www_link = hlink;
 
       www_url = url; (* should not fail ? *)
-      www_fragment = absuri.uri_frag;
+      www_fragment = absuri.uri_fragment;
 
       www_auth = [];
       www_headers = [];
