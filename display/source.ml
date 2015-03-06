@@ -194,9 +194,8 @@ let view attach did redisplay errors annotations coding =
   Frx_text.addsearch t;
   load t
 
-  with
-    Not_found ->
-     !Error.default#f "document not in cache"
+  with Not_found ->
+    Error.f "document not in cache"
 (*e: function Source.view *)
 
 (*e: ./display/source.ml *)

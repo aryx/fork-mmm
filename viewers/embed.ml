@@ -59,8 +59,7 @@ module EmbeddedData =
       |	_ -> failwith "load"
 
     let error url jobs = 
-      !Error.default#f 
-        (s_ "Can't find embedded document %s"  (Url.string_of url))
+      Error.f (s_ "Can't find embedded document %s"  (Url.string_of url))
 
     let error_msg (_,_) = ()
   end

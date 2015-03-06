@@ -83,7 +83,7 @@ let init () =
       with _ -> ());
     at_exit (fun () -> Msys.rm file)
  with e ->
-   !Error.default#f (s_ "Can't initialize %s\n%s" file (Printexc.to_string e))
+   Error.f (s_ "Can't initialize %s\n%s" file (Printexc.to_string e))
 (*e: function Cci.init *)
 
 (*e: ./gui/cci.ml *)

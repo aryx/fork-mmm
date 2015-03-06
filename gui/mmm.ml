@@ -94,7 +94,7 @@ let undisplay di =
 let display di = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
-  else !Error.default#f "fatal error: window was destroyed";
+  else Error.f "fatal error: window was destroyed";
 
   let tl = Winfo.toplevel di#di_widget in
   let title = s_ "MMM Browser@%s" di#di_title in
@@ -754,7 +754,7 @@ let rec navigator has_tachy initial_url =
     Some nav
 
   with e -> 
-    !Error.default#f (s_ "Can't view initial document: %s\n%s"
+    Error.f (s_ "Can't view initial document: %s\n%s"
                            (Url.string_of initial_url)
                            (Printexc.to_string e));
     if !navigators = 1 then begin

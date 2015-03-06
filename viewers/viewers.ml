@@ -222,7 +222,7 @@ let extern dh ctype =
             kill();
             close pout;
             Document.destroy_log dh false;
-            !Error.default#f (s_ "Error during retrieval of %s" url)
+            Error.f (s_ "Error during retrieval of %s" url)
        )
 (*e: function Viewers.extern *)
 
@@ -420,7 +420,7 @@ let reset () =
       let (typ,sub),pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
     with Invalid_HTTP_header e ->
-      !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
+      Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*e: [[Viewers.reset()]] setting other viewers *)
   ()

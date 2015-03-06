@@ -25,9 +25,9 @@ let error body =
     let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
     output_string oc body;
     close_out oc;
-    !Error.default#f (s_ "Can't send mail (saved in $HOME/dead.letter)")
+    Error.f (s_ "Can't send mail (saved in $HOME/dead.letter)")
   with _ -> 
-    !Error.default#f (s_ "Can't send mail, can't save dead.letter")
+    Error.f (s_ "Can't send mail, can't save dead.letter")
 (*e: function Mailto.error *)
 
 (*s: function Mailto.sendmail *)
@@ -43,7 +43,7 @@ let sendmail msg =
      Munix.write_string fd_out msg.body;
      close fd_out;
      (match waitpid [] n with
-     | _, WEXITED 0 -> !Error.default#ok (s_ "Mail sent")
+     | _, WEXITED 0 -> Error.ok (s_ "Mail sent")
      | _, _ -> error msg.body
      )
  with

@@ -463,15 +463,15 @@ class display_html ((top : Widget.widget),
   (* to redisplay, we have to destroy all widgets, then restart, except
      that we don't use the initial feed, but rather the cache *)
   method redisplay =
-    if pending then 
-      !Error.default#f (s_ "Cannot redisplay document (pending)")
+    if pending 
+    then Error.f (s_ "Cannot redisplay document (pending)")
     else
       try
         dh <- Decoders.insert (Cache.renew_handle dh);
         List.iter destroy (Winfo.children frame);
         self#init init_mode
       with Not_found ->
-        !Error.default#f (s_ "Document not in cache anymore")
+        Error.f (s_ "Document not in cache anymore")
 
 
   val mutable title = Url.string_of ctx#base.document_url
@@ -760,7 +760,7 @@ class display_html ((top : Widget.widget),
   (* The source is attached to this frame so we can destroy the interior widgets*)
   method source =
     if pending 
-    then !Error.default#f (s_ "Cannot view document source (pending)")
+    then Error.f (s_ "Cannot view document source (pending)")
     else Source.view frame did (fun () -> self#redisplay) errors annotations
            feed_read#get_code
   (*e: [[Htmlw.display_html]] other methods or fields *)

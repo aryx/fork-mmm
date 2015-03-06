@@ -1427,7 +1427,7 @@ let rec navigator has_tachy initial_url =
     Some nav
 
   with e -> 
-    !Error.default#f (s_ "Can't view initial document: %s\n%s"
+    Error.f (s_ "Can't view initial document: %s\n%s"
                            (Url.string_of initial_url)
                            (Printexc.to_string e));
     if !navigators = 1 then begin
@@ -1437,7 +1437,7 @@ let rec navigator has_tachy initial_url =
     <<[[Mmm.navigator()]] exn handler, else if multiple navigators>>
 @
 % => top widget
-%less: rewrite !Error.default#f -> Error.f ?
+
 
 
 % absolutegoto!! initiate the whole thing!
@@ -1834,7 +1834,7 @@ let undisplay di =
 let display di = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
-  else !Error.default#f "fatal error: window was destroyed";
+  else Error.f "fatal error: window was destroyed";
 
   let tl = Winfo.toplevel di#di_widget in
   let title = s_ "MMM Browser@%s" di#di_title in
@@ -6959,7 +6959,7 @@ let extern dh ctype =
             kill();
             close pout;
             Document.destroy_log dh false;
-            !Error.default#f (s_ "Error during retrieval of %s" url)
+            Error.f (s_ "Error during retrieval of %s" url)
        )
 @
 
@@ -7030,7 +7030,7 @@ Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype ->
     let (typ,sub),pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) Save
   with Invalid_HTTP_header e ->
-    !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
+    Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
 
@@ -7064,7 +7064,7 @@ let rec interactive cont dh =
               (* channel is not closed ! *)
               (fun () -> Msys.rm fname)
         with Sys_error msg -> 
-          !Error.default#f (s_ "Cannot save to %s\n(%s)" fname msg);
+          Error.f (s_ "Cannot save to %s\n(%s)" fname msg);
           interactive cont dh
         end
     | l -> raise (Failure "multiple selection")
@@ -7347,15 +7347,15 @@ class display_html ((top : Widget.widget),
   (* to redisplay, we have to destroy all widgets, then restart, except
      that we don't use the initial feed, but rather the cache *)
   method redisplay =
-    if pending then 
-      !Error.default#f (s_ "Cannot redisplay document (pending)")
+    if pending 
+    then Error.f (s_ "Cannot redisplay document (pending)")
     else
       try
         dh <- Decoders.insert (Cache.renew_handle dh);
         List.iter destroy (Winfo.children frame);
         self#init init_mode
       with Not_found ->
-        !Error.default#f (s_ "Document not in cache anymore")
+        Error.f (s_ "Document not in cache anymore")
 
 
   val mutable title = Url.string_of ctx#base.document_url
@@ -7957,10 +7957,10 @@ let program = ref ""
 <<function Hotlist.f>>=
 let f url title =
   match !program with 
-  | "" -> (!Error.default)#f (s_ "No hotlist command defined")
+  | "" -> Error.f (s_ "No hotlist command defined")
   | s -> 
       let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
-      (!Error.default)#ok (s_ "%s\nadded to hotlist with title\n%s" url title)
+      Error.ok (s_ "%s\nadded to hotlist with title\n%s" url title)
 @
 
 
@@ -8754,7 +8754,7 @@ method di_source = self#source
 (* The source is attached to this frame so we can destroy the interior widgets*)
 method source =
   if pending 
-  then !Error.default#f (s_ "Cannot view document source (pending)")
+  then Error.f (s_ "Cannot view document source (pending)")
   else Source.view frame did (fun () -> self#redisplay) errors annotations
          feed_read#get_code
 @
@@ -8945,9 +8945,8 @@ let view attach did redisplay errors annotations coding =
   Frx_text.addsearch t;
   load t
 
-  with
-    Not_found ->
-     !Error.default#f "document not in cache"
+  with Not_found ->
+    Error.f "document not in cache"
 @
 
 
@@ -9610,7 +9609,7 @@ let ask_cookie forwhere =
   | Failure "cancelled" -> 
       failwith "cancelled"
   | _ -> 
-      (!Error.default)#f (s_ "Error in base 64 encoding");
+      Error.f (s_ "Error in base 64 encoding");
       failwith "cancelled"
 @
 
@@ -9700,14 +9699,12 @@ let save () =
       flush oc;
       close o
   with
-    Unix_error(e,_,_) ->
-      !Error.default#f (s_ "Error in authorisation save\n%s" 
-                 (Unix.error_message e))
+  | Unix_error(e,_,_) ->
+      Error.f (s_ "Error in authorisation save\n%s" (Unix.error_message e))
   | Sys_error s ->
-      !Error.default#f (s_ "Error in authorisation save\n%s" s)
-
+      Error.f (s_ "Error in authorisation save\n%s" s)
  else 
-   !Error.default#f (s_ "No authorisation file defined")
+   Error.f (s_ "No authorisation file defined")
 @
 
 <<function Auth.load>>=
@@ -9724,11 +9721,10 @@ let load () =
            Hashtbl.add authorizations spacerealm entry)
           table;
     close_in ic
-    with
-      Sys_error s ->
-       !Error.default#f (s_ "Error in authorisation load\n%s" s)
+    with Sys_error s ->
+      Error.f (s_ "Error in authorisation load\n%s" s)
  else 
-   !Error.default#f (s_ "No authorisation file defined")
+   Error.f (s_ "No authorisation file defined")
 @
 
 <<signature Auth.init>>=
@@ -10550,19 +10546,22 @@ let print = function
 <<signature Error.f>>=
 val f : string -> unit
 @
+% ? fatal?
 <<signature Error.ok>>=
 val ok : string -> unit
 @
 <<signature Error.choose>>=
 val choose : string -> bool
 @
+% ?
 <<signature Error.ari>>=
 val ari : string -> int
 @
+% ??
 
-%todo: should actually use those functions
-% instead of those !Error.default#xxx everywhere. How better to use oo
-% for that?
+%note: I now use those functions instead of !Error.default#xxx 
+% that they used to use everywhere. Error.f is far cleaner than
+% using explicitly references and oo
 
 
 <<signature class Error.t>>=
@@ -10573,7 +10572,7 @@ class virtual t : object
  method virtual ari : string -> int
 end
 @
-
+% why not simply use a record?
 
 <<signature Error.default>>=
 val default : t ref
@@ -10583,10 +10582,14 @@ let default = ref (new x)
 @
 
 <<functions Error.xxx>>=
-let f msg = !default#f msg
-and ok msg = !default#ok msg
-and choose msg = !default#choose msg
-and ari msg = !default#ari msg
+let f msg = 
+  !default#f msg
+let ok msg = 
+  !default#ok msg
+let choose msg = 
+  !default#choose msg
+let ari msg = 
+  !default#ari msg
 @
 
 <<class Error.t>>=

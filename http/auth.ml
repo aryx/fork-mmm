@@ -73,7 +73,7 @@ let ask_cookie forwhere =
   | Failure "cancelled" -> 
       failwith "cancelled"
   | _ -> 
-      (!Error.default)#f (s_ "Error in base 64 encoding");
+      Error.f (s_ "Error in base 64 encoding");
       failwith "cancelled"
 (*e: function Auth.ask_cookie *)
 
@@ -167,14 +167,12 @@ let save () =
       flush oc;
       close o
   with
-    Unix_error(e,_,_) ->
-      !Error.default#f (s_ "Error in authorisation save\n%s" 
-                 (Unix.error_message e))
+  | Unix_error(e,_,_) ->
+      Error.f (s_ "Error in authorisation save\n%s" (Unix.error_message e))
   | Sys_error s ->
-      !Error.default#f (s_ "Error in authorisation save\n%s" s)
-
+      Error.f (s_ "Error in authorisation save\n%s" s)
  else 
-   !Error.default#f (s_ "No authorisation file defined")
+   Error.f (s_ "No authorisation file defined")
 (*e: function Auth.save *)
 
 (*s: function Auth.load *)
@@ -191,11 +189,10 @@ let load () =
            Hashtbl.add authorizations spacerealm entry)
           table;
     close_in ic
-    with
-      Sys_error s ->
-       !Error.default#f (s_ "Error in authorisation load\n%s" s)
+    with Sys_error s ->
+      Error.f (s_ "Error in authorisation load\n%s" s)
  else 
-   !Error.default#f (s_ "No authorisation file defined")
+   Error.f (s_ "No authorisation file defined")
 (*e: function Auth.load *)
 
 
