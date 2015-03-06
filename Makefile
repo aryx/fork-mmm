@@ -246,6 +246,7 @@ dotall:
 	mv dot.ps Fig_graph_ml.ps
 	ps2pdf Fig_graph_ml.ps
 	rm -f Fig_graph_ml.ps
+# if choke on viewer.ml, see Browser.tex note on Viewers.for_embed method
 
 tags:
 	~/pfff/stags -verbose -lang ml .
