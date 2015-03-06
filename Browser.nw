@@ -489,6 +489,9 @@ type link_method =
 @
 % HEAD?
 
+% the web server is like a set of functions! can call those
+% functions! see my pfff/www/ endpoints, a bit like my -actions.
+
 \subsection{Web requests, [[Www.request]]}
 % =~ url + some state info in the browser (e.g. authentification, cookie?)
 
