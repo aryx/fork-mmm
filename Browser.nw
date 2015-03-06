@@ -4778,12 +4778,14 @@ let contenttype =
 @
 
 
+% http://en.wikipedia.org/wiki/Internet_media_type
+%less: mv in core DS?
 % ex: text/html, text/plain
 <<type Http_headers.media_type>>=
 type media_type = string * string
 @
 
-% ex:
+% ex: text/html; charset=UTF-8
 <<type Http_headers.media_parameter>>=
 (* Media types *)
 type media_parameter = string * string
@@ -6517,6 +6519,7 @@ let display_html mediapars top ctx dh =
 %\section{Filename suffixe content type hint, [[mime.types]]}
 
 % MIME = Multi-Purpose Internet Mail Extensions
+%http://en.wikipedia.org/wiki/MIME
 
 <<type Http_headers.hint>>=
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
