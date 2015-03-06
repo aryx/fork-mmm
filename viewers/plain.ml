@@ -14,6 +14,10 @@ class plain ((top : Widget.widget),
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit Htmlw.viewer_globs (ctx,dh)
 
+  (*s: [[Plain.plain]] private fields *)
+  val mutable (*private*) terminated = false
+  (*e: [[Plain.plain]] private fields *)
+
   val frame = 
      if not (Winfo.exists top) 
      then failwith "too late"
@@ -116,7 +120,6 @@ class plain ((top : Widget.widget),
     self#finish true
 
   (* [finish abort?] *)
-  val mutable (*private*) terminated = false
   method finish abort =
     if not terminated then begin
       terminated <- true;

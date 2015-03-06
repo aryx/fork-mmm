@@ -28,10 +28,10 @@ let main () =
   let s = socket PF_UNIX SOCK_STREAM 0 in
   connect s (ADDR_UNIX file);
   Arg.parse [ 
-  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
-  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
-  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
-  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
+    "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
+    "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
+    "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
+    "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
   ]
     (fun url -> request s !cmd url)
     "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n

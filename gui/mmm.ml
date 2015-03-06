@@ -284,8 +284,8 @@ let rec navigator has_tachy initial_url =
         Gcache.remove hist.h_key did;
         historygoto nav did frag false |> ignore
       end
-        else error#f (s_ 
-          "Document cannot be reloaded from its url\n(probably a POST request)")
+        else error#f 
+          (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
     in
     (*e: function Mmm.navigator.reload *)
     (*s: function Mmm.navigator.update *)
@@ -302,7 +302,9 @@ let rec navigator has_tachy initial_url =
 
     (*s: function Mmm.navigator.abort *)
     let abort () =
-      actives |> Hashtbl.iter (fun _url abort -> abort());
+      actives |> Hashtbl.iter (fun _url aborter -> 
+       aborter()
+      );
       Hashtbl.clear actives;
       match !current_di with
       | None -> ()
@@ -655,11 +657,11 @@ let rec navigator has_tachy initial_url =
     let loggingb = Label.create_named fb "logging"
       [TextWidth 40; TextVariable loggingv; Anchor W] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
-    let reloadb = Button.create_named fb
-      "reload" [Text (s_ "Reload"); Command reload] in
-    (*x: [[Mmm.navigator()]] navigation buttons *)
     let abortb = Button.create_named fb 
       "abort" [Text (s_ "Abort"); Command abort] in
+    (*x: [[Mmm.navigator()]] navigation buttons *)
+    let reloadb = Button.create_named fb
+      "reload" [Text (s_ "Reload"); Command reload] in
     (*e: [[Mmm.navigator()]] navigation buttons *)
 
     (*s: [[Mmm.navigator()]] packing part one *)

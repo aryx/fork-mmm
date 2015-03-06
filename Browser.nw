@@ -6367,6 +6367,8 @@ class plain ((top : Widget.widget),
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit Htmlw.viewer_globs (ctx,dh)
 
+  <<[[Plain.plain]] private fields>>
+
   val frame = 
      if not (Winfo.exists top) 
      then failwith "too late"
@@ -7812,6 +7814,89 @@ let container_frame = ref None
 
 \chapter{Extra features}
 
+\section{Abort}
+% advanced topic?
+% important! you want the user to control things
+
+<<[[Mmm.navigator()]] navigation buttons>>=
+let abortb = Button.create_named fb 
+  "abort" [Text (s_ "Abort"); Command abort] in
+@
+
+<<function Mmm.navigator.abort>>=
+let abort () =
+  actives |> Hashtbl.iter (fun _url aborter -> 
+   aborter()
+  );
+  Hashtbl.clear actives;
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_abort
+in
+@
+
+
+<<local Mmm.navigator.actives>>=
+let actives = Hashtbl.create 37 in
+@
+%less: type? url * aborter! introduce type!
+
+
+% Nav.request -> <>
+<<[[Nav.t]] other fields>>=
+nav_add_active : Url.t -> (unit -> unit) -> unit;
+nav_rem_active : Url.t -> unit;
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_add_active = Hashtbl.add actives;
+nav_rem_active = Hashtbl.remove actives;
+@
+
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_abort : unit		 (* stop display *)
+@
+
+<<[[Plain.plain]] private fields>>=
+val mutable (*private*) terminated = false
+@
+
+<<[[Plain.plain]] abort methods>>=
+method di_abort = 
+  self#finish true
+
+(* [finish abort?] *)
+method finish abort =
+  if not terminated then begin
+    terminated <- true;
+    self#ctx#log (if abort then "Aborted" else "");
+    Document.dclose true dh;
+  end
+@
+
+<<[[Htmlw.display_html]] private fields>>=
+val mutable (*private*) terminated = false
+@
+
+<<[[Htmlw.display_html]] abort methods>>=
+method di_abort = 
+  self#finish true
+
+(* [finish abort?] *)
+method finish abort =
+  if not terminated then begin
+    terminated <- true;
+    ctx#log (if abort then "Aborted" else "");
+    Document.dclose true dh
+  end;
+  (* This has to happen even if we already finished displaying the document *)
+  if abort then begin
+    Img.ImageScheduler.stop dh.document_id;
+    Embed.EmbeddedScheduler.stop dh.document_id
+    (* TODO we should also require embedded objects to abort *)
+  end
+@
+
 \section{Refresh}
 
 <<[[Mmm.navigator()]] navigation buttons>>=
@@ -7829,8 +7914,8 @@ let reload () =
     Gcache.remove hist.h_key did;
     historygoto nav did frag false |> ignore
   end
-    else error#f (s_ 
-      "Document cannot be reloaded from its url\n(probably a POST request)")
+    else error#f 
+      (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
 in
 @
 
@@ -7897,84 +7982,6 @@ method redisplay =
       Error.f (s_ "Document not in cache anymore")
 @
 
-\section{Abort}
-% advanced topic?
-% important! you want the user to control things
-
-<<[[Mmm.navigator()]] navigation buttons>>=
-let abortb = Button.create_named fb 
-  "abort" [Text (s_ "Abort"); Command abort] in
-@
-
-<<function Mmm.navigator.abort>>=
-let abort () =
-  actives |> Hashtbl.iter (fun _url abort -> abort());
-  Hashtbl.clear actives;
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_abort
-in
-@
-
-
-<<local Mmm.navigator.actives>>=
-let actives = Hashtbl.create 37 in
-@
-%less: type? url * aborter! introduce type!
-
-
-% Nav.request -> <>
-<<[[Nav.t]] other fields>>=
-nav_add_active : Url.t -> (unit -> unit) -> unit;
-nav_rem_active : Url.t -> unit;
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_add_active = Hashtbl.add actives;
-nav_rem_active = Hashtbl.remove actives;
-@
-
-
-<<[[Viewers.display_info]] virtual fields signatures>>=
-method virtual di_abort : unit		 (* stop display *)
-@
-
-<<[[Plain.plain]] abort methods>>=
-method di_abort = 
-  self#finish true
-
-(* [finish abort?] *)
-val mutable (*private*) terminated = false
-method finish abort =
-  if not terminated then begin
-    terminated <- true;
-    self#ctx#log (if abort then "Aborted" else "");
-    Document.dclose true dh;
-  end
-@
-
-<<[[Htmlw.display_html]] private fields>>=
-val mutable (*private*) terminated = false
-@
-
-<<[[Htmlw.display_html]] abort methods>>=
-method di_abort = 
-  self#finish true
-
-(* [finish abort?] *)
-method finish abort =
-  if not terminated then begin
-    terminated <- true;
-    ctx#log (if abort then "Aborted" else "");
-    Document.dclose true dh
-  end;
-  (* This has to happen even if we already finished displaying the document *)
-  if abort then begin
-    Img.ImageScheduler.stop dh.document_id;
-    Embed.EmbeddedScheduler.stop dh.document_id
-    (* TODO we should also require embedded objects to abort *)
-  end
-@
-
 \section{Bookmarks}
 
 \section{Hotlist}
@@ -8015,7 +8022,7 @@ let f url title =
       let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
       Error.ok (s_ "%s\nadded to hotlist with title\n%s" url title)
 @
-
+%less: rename, Hotlist.f is bad
 
 \section{User preferences}
 
@@ -8163,7 +8170,7 @@ Menu.add_command helpm
 @
 % false means not toplevel, no_tachy
 
-\section{Multi windows}
+\section{Multiple windows}
 
 % mv later?
 <<signature Mmm.main_navigator>>=
@@ -8244,50 +8251,6 @@ let new_window_sel () =
   with _ -> navigator false initial_url |> ignore
 in
 @
-
-\section{Gzip decoders}
-
-<<[[Http_headers.suffixes]] elements>>=
-"gz",		ContentEncoding  "Content-Encoding: gzip";
-"Z",		ContentEncoding  "Content-Encoding: compress";
-
-"asc",	ContentEncoding  "Content-Encoding: pgp";
-"pgp",	ContentEncoding  "Content-Encoding: pgp";
-@
-
-% for gzip stuff?
-
-<<signature Decoders.insert>>=
-val insert  : Document.handle -> Document.handle
-@
-
-<<signature Decoders.add>>=
-val add : string -> (Document.handle -> Document.handle) -> unit
-@
-
-<<constant Decoders.decoders>>=
-(* Insert a decoding if necessary.
- * We don't do it in http, since we don't want do decompress when we
- * save for example.
- *)
-
-let decoders = Hashtbl.create 37
-@
-
-
-<<toplevel Decoders._1>>=
-let _ =  
-  [ "COMPRESS", gzip;
-    "X-COMPRESS", gzip;
-    "GZIP", gzip;
-    "X-GZIP", gzip
-  ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
-@
-
-
-
-%\section{Animated GIFs}
-% now in Image section?
 
 \section{Extra Protocols}
 
@@ -8689,6 +8652,50 @@ and slashpath = parse
 
 
 
+\section{Gzip decoders}
+
+<<[[Http_headers.suffixes]] elements>>=
+"gz",		ContentEncoding  "Content-Encoding: gzip";
+"Z",		ContentEncoding  "Content-Encoding: compress";
+
+"asc",	ContentEncoding  "Content-Encoding: pgp";
+"pgp",	ContentEncoding  "Content-Encoding: pgp";
+@
+
+% for gzip stuff?
+
+<<signature Decoders.insert>>=
+val insert  : Document.handle -> Document.handle
+@
+
+<<signature Decoders.add>>=
+val add : string -> (Document.handle -> Document.handle) -> unit
+@
+
+<<constant Decoders.decoders>>=
+(* Insert a decoding if necessary.
+ * We don't do it in http, since we don't want do decompress when we
+ * save for example.
+ *)
+
+let decoders = Hashtbl.create 37
+@
+
+
+<<toplevel Decoders._1>>=
+let _ =  
+  [ "COMPRESS", gzip;
+    "X-COMPRESS", gzip;
+    "GZIP", gzip;
+    "X-GZIP", gzip
+  ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
+@
+
+
+
+%\section{Animated GIFs}
+% now in Image section?
+
 \section{Audio}
 
 <<function Audio.fake_embed>>=
@@ -8762,10 +8769,10 @@ let main () =
   let s = socket PF_UNIX SOCK_STREAM 0 in
   connect s (ADDR_UNIX file);
   Arg.parse [ 
-  "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
-  "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
-  "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
-  "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
+    "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
+    "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
+    "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
+    "-show", Arg.Unit (fun () -> cmd := "DISPLAY "), "Open browser on this URL";
   ]
     (fun url -> request s !cmd url)
     "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
