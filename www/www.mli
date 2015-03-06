@@ -39,4 +39,8 @@ val add_active_cnx : Url.t -> unit
 val rem_active_cnx : Url.t -> unit
 (*e: signature Www.rem_active_cnx *)
 
+(*s: type Www.aborter *)
+type aborter = unit -> unit
+(*e: type Www.aborter *)
+
 (*e: ./www/www.mli *)

@@ -714,16 +714,14 @@ let find did =
 % Nav.request -> Retrieve.f -> <>
 <<signature Protos.get>>=
 val get: Url.protocol ->
-  (Www.request -> Document.document_continuation -> 
-      (unit -> unit)) 
+  (Www.request -> Document.document_continuation -> Www.aborter) 
   *
-  (Document.handle -> 
-      Document.document_data * Cache.cache_fill)
+  (Document.handle -> Document.document_data * Cache.cache_fill)
 @
 % will see below what are those Document.xxx
 %less: define a record type?
-% the unit -> unit is actually a returned aborter hook! so caller
-%  can abort the request, maybe could do a type?
+%old: the unit -> unit is actually a returned aborter hook! so caller
+%  can abort the request, so I did a type instead of having unit -> unit
 
 <<constant Protos.protos>>=
 let protos = Hashtbl.create 11
@@ -4916,7 +4914,7 @@ val f : Www.request ->  (* the request *)
 
 <<type Retrieve.retrievalStatus>>=
 type retrievalStatus =
- | Started of (unit -> unit)  
+ | Started of Www.aborter
  | InUse
 @
 % abort hook
@@ -5256,7 +5254,7 @@ let progress_log dh = dh.document_logger.logger_progress
 
 <<type Document.display_info>>=
 type display_info = {
-    di_abort : unit -> unit;
+    di_abort : Www.aborter;
     di_destroy : unit -> unit;
     di_fragment : string option -> unit;
     di_redisplay: unit -> unit;
@@ -5353,7 +5351,7 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 %rappel:
 %<<signature Protos.get>>=
 %val get: Url.protocol ->
-%  (Www.request -> Document.document_continuation -> (unit -> unit)) *
+%  (Www.request -> Document.document_continuation -> Www.aborter) *
 %  (Document.handle -> Document.document_data * Cache.cache_fill)
 %@
 
@@ -5387,8 +5385,7 @@ let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 % Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
 %  (as Retrieve.f.req <- Protos.get HTTP wr <- Hashtbl.add protos (<>) <- _top
 <<signature Http.req>>=
-val req:
-  Www.request -> Document.document_continuation -> (unit -> unit)
+val req: Www.request -> Document.document_continuation -> Www.aborter
 @
 %todo: do a Aborted and type aborter = abort -> unit?
 % so here we return an aborter
@@ -7823,6 +7820,12 @@ let abortb = Button.create_named fb
   "abort" [Text (s_ "Abort"); Command abort] in
 @
 
+<<type Www.aborter>>=
+type aborter = unit -> unit
+@
+% I introduced that, makes the code clearer I think
+
+
 <<function Mmm.navigator.abort>>=
 let abort () =
   actives |> Hashtbl.iter (fun _url aborter -> 
@@ -7919,6 +7922,7 @@ let reload () =
 in
 @
 
+% ??? -> <>
 % see also update_true alias
 <<function Mmm.navigator.update>>=
 let update nocache =
@@ -7933,13 +7937,14 @@ in
 \section{Redisplay}
 % diff?
 
+<<Document menu elements>>=
+[Label (s_ "Redisplay")      ; Command redisplay];
+@
+
 <<[[Viewers.display_info]] virtual fields signatures>>=
 method virtual di_redisplay : unit		(* redisplay *)
 @
 
-<<Document menu elements>>=
-[Label (s_ "Redisplay")      ; Command redisplay];
-@
 
 <<function Mmm.navigator.redisplay>>=
 let redisplay () =
@@ -7988,15 +7993,16 @@ method redisplay =
 % same as bookmarks?
 % does not look like
 
+<<Document menu elements>>=
+[Label (s_ "Add to hotlist") ; Command add_to_hotlist];
+@
+
 <<constant Mmm.hotlist>>=
 (* Preference settings *)
 let hotlist = ref ""
 @
 % dead?
 
-<<Document menu elements>>=
-[Label (s_ "Add to hotlist") ; Command add_to_hotlist];
-@
 
 <<function Mmm.navigator.add_to_hotlist>>=
 let add_to_hotlist () =
@@ -8290,8 +8296,7 @@ and fhost = parse
 
 <<signature File.request>>=
 (* file: protocol *)
-val request : Www.request -> Document.document_continuation -> 
-   (unit -> unit)
+val request : Www.request -> Document.document_continuation -> Www.aborter
     (* [request wr cont] returns [abort] *)
 @
 
@@ -8535,8 +8540,7 @@ let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
 
 
 <<signature Http.proxy_req>>=
-val proxy_req:
-  Www.request -> Document.document_continuation -> (unit -> unit)
+val proxy_req: Www.request -> Document.document_continuation -> Www.aborter
 @
 
 <<function Http.prox_req>>=

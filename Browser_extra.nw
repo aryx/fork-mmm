@@ -2206,6 +2206,8 @@ module UrlSet : Set.S with type elt = Url.t
 <<signature Www.add_active_cnx>>
 <<signature Www.rem_active_cnx>>
 
+<<type Www.aborter>>
+
 @
 
 
@@ -2233,6 +2235,8 @@ open Url
 
 <<constant Www.active_connexions>>
 <<functions Www.xxx_active_cnx>>
+
+<<type Www.aborter>>
 
 @
 

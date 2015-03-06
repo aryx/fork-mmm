@@ -12,7 +12,7 @@ open Auth
 
 (*s: type Retrieve.retrievalStatus *)
 type retrievalStatus =
- | Started of (unit -> unit)  
+ | Started of Www.aborter
  | InUse
 (*e: type Retrieve.retrievalStatus *)
 

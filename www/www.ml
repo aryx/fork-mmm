@@ -85,4 +85,8 @@ let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 (*e: functions Www.xxx_active_cnx *)
 
+(*s: type Www.aborter *)
+type aborter = unit -> unit
+(*e: type Www.aborter *)
+
 (*e: ./www/www.ml *)

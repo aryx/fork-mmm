@@ -148,7 +148,7 @@ let end_log dh msg =
 
 (*s: type Document.display_info *)
 type display_info = {
-    di_abort : unit -> unit;
+    di_abort : Www.aborter;
     di_destroy : unit -> unit;
     di_fragment : string option -> unit;
     di_redisplay: unit -> unit;
