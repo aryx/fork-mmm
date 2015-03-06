@@ -1520,12 +1520,8 @@ val follow_link : t -> Hyper.link -> unit
 @
 <<function Nav.follow_link>>=
 let follow_link nav lk =
-  request 
-   nav 
-   true 
-   id_wr 
-   (fun nav wr dh -> process_viewer true make_ctx nav wr dh) 
-   (specific_viewer true)
+  request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+    (true, id_wr, specific_viewer true)
    lk
 @
 % all those true booleans ... hard to read
@@ -1539,11 +1535,11 @@ let id_wr wr = wr
 
 <<signature Nav.request>>=
 val request :
-  t ->
-  bool ->
-  (Www.request -> Www.request) ->
-  (t -> Www.request -> Document.handle -> unit) ->
-  (t -> Document.document_id -> Www.request -> unit) -> 
+  t -> (t -> Www.request -> Document.handle -> unit) ->
+  ( bool * 
+    (Www.request -> Www.request) * 
+    (t -> Document.document_id -> Www.request -> unit)
+  ) ->
   Hyper.link -> 
   unit
 @
@@ -1559,7 +1555,7 @@ val request :
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request nav  usecache wrapwr  process  specific lk =
+let request nav process (usecache, wrapwr, specific) lk =
 
   <<function Nav.request.retrieve_and_handle>>
   <<function Nav.request.handle_wr>>
@@ -6731,14 +6727,15 @@ class stdctx (did, nav) =
       end;
       (newctx#for_embed [] targets :> Viewers.context) in
     (* by default, use the cache, don't touch the request *)
-    let default_request = request nav true id_wr in
     let follow_link _ = 
-      default_request (process_viewer true make_ctx) (specific_viewer true)
+      request nav (process_viewer true make_ctx) 
+        (true, id_wr, specific_viewer true)
     and save_link _ =
-      default_request (process_save None) nothing_specific
-    and copy_link _ = copy_link nav
+      request nav (process_save None) (true, id_wr, nothing_specific)
+    and copy_link _ = 
+      copy_link nav
     and head_link = 
-      let f = default_request process_head nothing_specific in
+      let f = request nav process_head (true, id_wr, nothing_specific) in
       (fun _ hlink -> f (make_head hlink))
     and new_link _ = nav.nav_new
     in 

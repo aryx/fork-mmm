@@ -23,11 +23,11 @@ type t = {
 
 (*s: signature Nav.request *)
 val request :
-  t ->
-  bool ->
-  (Www.request -> Www.request) ->
-  (t -> Www.request -> Document.handle -> unit) ->
-  (t -> Document.document_id -> Www.request -> unit) -> 
+  t -> (t -> Www.request -> Document.handle -> unit) ->
+  ( bool * 
+    (Www.request -> Www.request) * 
+    (t -> Document.document_id -> Www.request -> unit)
+  ) ->
   Hyper.link -> 
   unit
 (*e: signature Nav.request *)

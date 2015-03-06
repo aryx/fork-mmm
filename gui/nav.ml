@@ -65,7 +65,7 @@ let dont_check_cache wwwr =
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request nav  usecache wrapwr  process  specific lk =
+let request nav process (usecache, wrapwr, specific) lk =
 
   (*s: function Nav.request.retrieve_and_handle *)
   (* Normally execute the request and process its answer (dh) *)
@@ -282,14 +282,15 @@ class stdctx (did, nav) =
       end;
       (newctx#for_embed [] targets :> Viewers.context) in
     (* by default, use the cache, don't touch the request *)
-    let default_request = request nav true id_wr in
     let follow_link _ = 
-      default_request (process_viewer true make_ctx) (specific_viewer true)
+      request nav (process_viewer true make_ctx) 
+        (true, id_wr, specific_viewer true)
     and save_link _ =
-      default_request (process_save None) nothing_specific
-    and copy_link _ = copy_link nav
+      request nav (process_save None) (true, id_wr, nothing_specific)
+    and copy_link _ = 
+      copy_link nav
     and head_link = 
-      let f = default_request process_head nothing_specific in
+      let f = request nav process_head (true, id_wr, nothing_specific) in
       (fun _ hlink -> f (make_head hlink))
     and new_link _ = nav.nav_new
     in 
@@ -368,16 +369,12 @@ let make_ctx nav did =
 (*s: function Nav.save_link *)
 (* Simple wrappers *)
 let save_link nav whereto =
-  request nav true id_wr (process_save whereto) nothing_specific
+  request nav (process_save whereto) (true, id_wr, nothing_specific)
 (*e: function Nav.save_link *)
 (*s: function Nav.follow_link *)
 let follow_link nav lk =
-  request 
-   nav 
-   true 
-   id_wr 
-   (fun nav wr dh -> process_viewer true make_ctx nav wr dh) 
-   (specific_viewer true)
+  request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+    (true, id_wr, specific_viewer true)
    lk
 (*e: function Nav.follow_link *)
     
@@ -409,18 +406,20 @@ let historygoto nav did frag usecache =
     in
     (* modify wr *)
     let follow_link =
-      request nav usecache
-    (function wr ->
-      if not usecache then
-        wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
-      wr)
-    (process_viewer false make_ctx) (* don't add to history *)
-    (specific_viewer false)
+      request nav  (process_viewer false make_ctx) (* don't add to history *)
+        (usecache,
+         (fun wr ->
+            if not usecache 
+            then wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
+            wr),
+         specific_viewer false)
     in
-    follow_link { h_uri = uri;
-          h_context = None;
-          h_method = GET;
-          h_params = []};
+    follow_link { 
+      h_uri = uri;
+      h_context = None;
+      h_method = GET;
+      h_params = []
+    };
     true
   end else begin
     (* the url is a "non-unique" document, that is, its url is not
@@ -464,8 +463,7 @@ let update nav did nocache =
     let newurl = Url.string_of dh.document_id.document_url in
     let add_hist = oldurl <> newurl in
     if add_hist then 
-      wr.www_error#ok (s_ "Document %s is relocated to:\n%s"
-                 oldurl newurl);
+      wr.www_error#ok (s_ "Document %s is relocated to:\n%s" oldurl newurl);
      wr.www_logging <- nav.nav_log;
      process_viewer add_hist make_ctx nav wr dh
   in
@@ -475,26 +473,27 @@ let update nav did nocache =
       (* find the date of previous download, (or last-modified ?) *)
       let date_received = get_header "date" doc.document_info in
       let follow_link =
-    request nav 
-      false (* we don't want to use cache here *)
-          (* setup additional headers *)
-      (fun wr -> 
-        wr.www_headers <- 
-           ("If-Modified-Since: "^date_received) :: wr.www_headers;
-        if nocache then
-          wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
-        wr)
-      process_update nothing_specific in
-      follow_link { h_uri = Url.string_of did.document_url;
-            h_context = None;
-            h_method = GET;
-            h_params = []}
-    with
-      Not_found ->
-    nav.nav_error#f ("Document has no Date: header.")
-  with
-    Not_found ->
-      nav.nav_error#f (s_ "Document %s\nhas been flushed from cache"
+        request nav process_update
+        (false, (* we don't want to use cache here *)
+         (* setup additional headers *)
+         (fun wr -> 
+           wr.www_headers <- 
+             ("If-Modified-Since: "^date_received) :: wr.www_headers;
+           if nocache 
+           then wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
+           wr),
+         nothing_specific)
+      in
+      follow_link { 
+        h_uri = Url.string_of did.document_url;
+        h_context = None;
+        h_method = GET;
+        h_params = []
+      }
+    with Not_found ->
+      nav.nav_error#f ("Document has no Date: header.")
+  with Not_found ->
+   nav.nav_error#f (s_ "Document %s\nhas been flushed from cache"
                         (Url.string_of did.document_url))
 (*e: function Nav.update *)
 (*e: ./gui/nav.ml *)
