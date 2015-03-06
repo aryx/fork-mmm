@@ -51,10 +51,6 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
   method in_embed : Document.document_id -> 'a
   method hyper_funs : (string * hyper_func) list
 
-  (* pad: this is just because of some bugs in camlp4o *)
-  method with_target: frame_targets -> 'a
-  method with_viewer_params: (string * string) list -> 'a
-
 end
 (*e: signature class Viewers.context *)
 
