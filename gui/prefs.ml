@@ -1,5 +1,6 @@
 (*s: ./gui/prefs.ml *)
 (* Preferences *)
+open I18n
 open Tk
 open Mstring
 open Fontprefs
@@ -9,9 +10,9 @@ open Fontprefs
 let pref_error msg =
    ignore (
      Frx_dialog.f Widget.default_toplevel (gensym "error")
-      (I18n.sprintf "Preference Error") 
+      (s_ "Preference Error") 
       msg
-      (Predefined "") 0 [I18n.sprintf "Ok"])
+      (Predefined "") 0 [s_ "Ok"])
 (*e: function Prefs.pref_error *)
 
 (*s: function Prefs.resource_name *)
@@ -25,9 +26,9 @@ let resource_name pref_name =
     let buf = String.create (String.length word) in
     let pos = ref 0 in
     for i = 0 to String.length word - 1 do
-      if   ('A' <= word.[i] && word.[i] <= 'Z') 
-    or ('a' <= word.[i] && word.[i] <= 'z') 
-    or ('0' <= word.[i] && word.[i] <= '9') then begin
+      if ('A' <= word.[i] && word.[i] <= 'Z') ||
+         ('a' <= word.[i] && word.[i] <= 'z') ||
+         ('0' <= word.[i] && word.[i] <= '9') then begin
         buf.[!pos] <- word.[i];
         incr pos
     end;
@@ -107,13 +108,13 @@ let set_pref {pref_type = typ; pref_variable = v} = match typ with
      let s = Textvariable.get v in
       begin try r := int_of_string s
       with Failure "int_of_string" ->
-            pref_error (I18n.sprintf "Not an integer: %s" s)
+            pref_error (s_ "Not an integer: %s" s)
       end
  | Float r ->
      let s = Textvariable.get v in
       begin try r := float_of_string s
       with Failure "float_of_string" ->
-            pref_error (I18n.sprintf "Not a float: %s" s)
+            pref_error (s_ "Not a float: %s" s)
       end
  | AbstractType(_,s) -> s v
 (*e: function Prefs.set_pref *)
@@ -326,7 +327,7 @@ let load_file f =
     Tkresource.readfile f Interactive
   with
     Protocol.TkError _ -> 
-      failwith (I18n.sprintf "Can't open preference file: %s" f)
+      failwith (s_ "Can't open preference file: %s" f)
 (*e: function Prefs.load_file *)
 
 (*s: function Prefs.save_file *)
@@ -364,7 +365,7 @@ let save_file prefmaps f =
     Unix.rename (f ^ ".tmp") f
   with
     Sys_error s ->
-      pref_error (I18n.sprintf "Can't open preference file: %s (%s)" f s)
+      pref_error (s_ "Can't open preference file: %s (%s)" f s)
 (*e: function Prefs.save_file *)
       
 (*s: type Prefs.pref_family (./gui/prefs.ml) *)
@@ -414,7 +415,7 @@ let family top title preff =
 let rec init filename status interactive mute =
   let top = Toplevel.create_named Widget.default_toplevel "prefs" 
                  [Class "MMMPrefs"] in
-   Wm.title_set top (I18n.sprintf "MMM Preferences");
+   Wm.title_set top (s_ "MMM Preferences");
    Wm.withdraw top;
    status := Some top;
    bind top [[], Destroy] 
@@ -427,7 +428,7 @@ let rec init filename status interactive mute =
   let mbar = Frame.create_named top "menubar" [] in
   let file = 
       Menubutton.create_named mbar "file"
-        [Text (I18n.sprintf "File"); UnderlinedChar 0]
+        [Text (s_ "File"); UnderlinedChar 0]
   in
   pack [file][Side Side_Left];
   pack [mbar][Side Side_Top; Anchor W; Fill Fill_X];
@@ -466,7 +467,7 @@ let rec init filename status interactive mute =
 
   (* select a preference file to load *)
   let rec load () =
-    Fileselect.f (I18n.sprintf "Load a preference file")
+    Fileselect.f (s_ "Load a preference file")
       (function [] -> ()
               | [s] -> 
          (* we must restart the panel, because resources
@@ -477,7 +478,7 @@ let rec init filename status interactive mute =
             init filename status interactive mute
           end
           else
-            pref_error (I18n.sprintf "%s : no such preference file"
+            pref_error (s_ "%s : no such preference file"
                              s)
               | l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
@@ -488,7 +489,7 @@ let rec init filename status interactive mute =
 
   (* select a new preference file to save in *)
   and save_as () =
-    Fileselect.f (I18n.sprintf "Save preferences to file")
+    Fileselect.f (s_ "Save preferences to file")
       (function 
       [] -> ()
         | [s] ->
@@ -524,22 +525,22 @@ let rec init filename status interactive mute =
   (* Fill in the menu *)
   let mfile = Menu.create_named file "filemenu" [] in
     Menu.add_command mfile 
-       [Label (I18n.sprintf "Load"); Command load; UnderlinedChar 0];
+       [Label (s_ "Load"); Command load; UnderlinedChar 0];
     Menu.add_command mfile 
-       [Label (I18n.sprintf "Save"); Command save; UnderlinedChar 0];
+       [Label (s_ "Save"); Command save; UnderlinedChar 0];
     Menu.add_command mfile 
-       [Label (I18n.sprintf "Save As"); Command save_as; UnderlinedChar 0];
+       [Label (s_ "Save As"); Command save_as; UnderlinedChar 0];
     Menu.add_command mfile 
-        [Label (I18n.sprintf "Dismiss"); Command dismiss; UnderlinedChar 0];
+        [Label (s_ "Dismiss"); Command dismiss; UnderlinedChar 0];
     Menubutton.configure file [Menu mfile];
 
   (* Define the buttons *)
     let saveb = Button.create_named buttonsf "save"
-      [Text (I18n.sprintf "Save"); Command save]
+      [Text (s_ "Save"); Command save]
     and resetb = Button.create_named buttonsf "reset"
-      [Text (I18n.sprintf "Reset"); Command reset]
+      [Text (s_ "Reset"); Command reset]
     and dismissb = Button.create_named buttonsf "dismiss"
-      [Text (I18n.sprintf "Dismiss"); Command dismiss]
+      [Text (s_ "Dismiss"); Command dismiss]
     in
     pack [saveb;resetb;dismissb][Side Side_Left; PadX (Pixels 20)];
 

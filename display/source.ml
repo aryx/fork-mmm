@@ -1,4 +1,5 @@
 (*s: ./display/source.ml *)
+open I18n
 open Printf
 open Tk
 open Frx_text
@@ -85,9 +86,9 @@ let view attach did redisplay errors annotations coding =
   let f, t = new_scrollable_text top [Foreground Black; Background White] false
   and f' = Frame.create_named top "buttons" [] in
   let dismiss = Button.create_named f' "dismiss"
-    [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] 
-  and commit = Button.create_named f' "commit" [Text (I18n.sprintf "Commit")]
-  and save = Button.create_named f' "save" [Text (I18n.sprintf "Save")]
+    [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] 
+  and commit = Button.create_named f' "commit" [Text (s_ "Commit")]
+  and save = Button.create_named f' "save" [Text (s_ "Save")]
   and err = Button.create_named f' "errors" []
   in
   let ferr = Frame.create top [] in
@@ -135,10 +136,10 @@ let view attach did redisplay errors annotations coding =
         !errors;
     match List.length !errors with
       0 ->
-       Button.configure err [Text (I18n.sprintf "No Errors"); State Disabled]
+       Button.configure err [Text (s_ "No Errors"); State Disabled]
     | n ->
     Button.configure err
-        [Text (I18n.sprintf "%d errors" (List.length !errors));
+        [Text (s_ "%d errors" (List.length !errors));
             State Normal; Command loop_in_errors]
   and decorate = annotate t
   in
@@ -155,7 +156,7 @@ let view attach did redisplay errors annotations coding =
     remall (Text.tag_ranges t "errors");
     errors := [];
     Button.configure err 
-       [Text (I18n.sprintf "Display Errors"); Command mark_errors;
+       [Text (s_ "Display Errors"); Command mark_errors;
         State Normal]
 
   in
@@ -167,7 +168,7 @@ let view attach did redisplay errors annotations coding =
           Button.configure save
           [Command (fun () -> reset(); f t; redisplay())]);
      Button.configure err 
-       [Text (I18n.sprintf "Display Errors");
+       [Text (s_ "Display Errors");
      Command (fun () -> mark_errors(); decorate !annotations);
         State Normal];
      Text.configure t [Background (NamedColor "white")];

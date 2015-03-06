@@ -1,5 +1,6 @@
 (*s: ./retrieve/retrieve.ml *)
 (* Document retrieval *)
+open I18n
 open Printf
 open Www
 open Hyper
@@ -76,35 +77,34 @@ let rec http_check cache retry cont wwwr dh =
   Log.debug "Retrieve.http_check";
   try (* the appropriate behavior *)
     let behav = Hashtbl.find http_process dh.document_status in
-      match behav wwwr dh with
-    Ok -> 
-      (* do I cache ? *)
-      let cacheable = wwwr.www_link.h_method = GET in
-            cont.document_process
+    match behav wwwr dh with
+    | Ok -> 
+        (* do I cache ? *)
+        let cacheable = wwwr.www_link.h_method = GET in
+        cont.document_process
           (if cacheable then wrap_cache cache dh else dh)
-      | Stop msg ->
-          dclose true dh;
-          cont.document_finish false;
-          wwwr.www_error#ok msg
-      | Error msg ->
-          dclose true dh;
-          cont.document_finish false;
-          wwwr.www_error#f msg
-      | Retry hlink ->
-          dclose true dh;
-          cont.document_finish false;
-      retry hlink
-      | Restart transform ->
-      dclose true dh;
-          f wwwr retry {document_finish = cont.document_finish;
-            document_process = (fun dh ->
-                cont.document_process (transform dh))};
-          () (* we should probably do something of the result ! *)
-  with
-    Not_found ->
+    | Stop msg ->
+        dclose true dh;
+        cont.document_finish false;
+        wwwr.www_error#ok msg
+    | Error msg ->
+        dclose true dh;
+        cont.document_finish false;
+        wwwr.www_error#f msg
+    | Retry hlink ->
+        dclose true dh;
+        cont.document_finish false;
+        retry hlink
+    | Restart transform ->
+        dclose true dh;
+        f wwwr retry 
+         { cont with 
+          document_process = (fun dh -> cont.document_process (transform dh))}
+        |> ignore; (* we should probably do something of the result ! *)
+  with Not_found ->
      (* default behavior is to call the normal continuation 
-    BUT WE DON'T CACHE !
-        e.g. 404 Not found, 500, ...
+      * BUT WE DON'T CACHE !
+      * e.g. 404 Not found, 500, ...
       *)
       cont.document_process dh
 
@@ -129,10 +129,10 @@ and f request retry cont =
    with 
    | Not_found ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, I18n.sprintf "unknown protocol"))
+       raise (Invalid_request (request, s_ "unknown protocol"))
    | Http.HTTP_error s ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, I18n.sprintf "HTTP Error \"%s\"" s))
+       raise (Invalid_request (request, s_ "HTTP Error \"%s\"" s))
    | File.File_error s ->
        Www.rem_active_cnx request.www_url;
        raise (Invalid_request (request, s))
@@ -155,7 +155,7 @@ let code200 wwwr dh = Ok
 (*s: function Retrieve.code204 *)
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 wwwr dh =
-  Stop (I18n.sprintf "Request fulfilled.\n(%s)"
+  Stop (s_ "Request fulfilled.\n(%s)"
                     (status_msg dh.document_headers))
 (*e: function Retrieve.code204 *)
 
@@ -169,7 +169,7 @@ let forward wwwr dh =
       GET -> true
     | POST _ ->
         (* Do NOT redirect automatically if method was POST *)
-        wwwr.www_error#choose (I18n.sprintf 
+        wwwr.www_error#choose (s_ 
          "Destination for your POST request has changed\n\
               from %s\nto %s\nConfirm action ?"
             (Url.string_of wwwr.www_url) newurl)
@@ -189,7 +189,7 @@ let forward wwwr dh =
        Ok
   with 
     Not_found -> 
-      Error (I18n.sprintf "No Location: in forwarding header")
+      Error (s_ "No Location: in forwarding header")
 (*e: function Retrieve.forward *)
 
 (*s: function Retrieve.forward_permanent *)
@@ -197,31 +197,31 @@ let forward wwwr dh =
 let forward_permanent wwwr dh =
   try
     let newurl = Http_headers.location dh.document_headers in
-      wwwr.www_error#ok (I18n.sprintf "Document moved permanently to\n%s"
+      wwwr.www_error#ok (s_ "Document moved permanently to\n%s"
                           newurl);
       forward wwwr dh
   with
     Not_found -> 
-      Error (I18n.sprintf "No Location: in forwarding header")
+      Error (s_ "No Location: in forwarding header")
 (*e: function Retrieve.forward_permanent *)
 
 (* 304 : Response to a conditional GET, the document is not modified
 let update wwwr dh =
    Cache.patch dh.document_id dh.document_headers;
-   Stop (I18n.sprintf "Document %s has not changed.\n"
+   Stop (s_ "Document %s has not changed.\n"
                   (Url.string_of wwwr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
 
 (*s: function Retrieve.code400 *)
 (* 400 Bad request *)
-let code400 wwwr dh = Error (I18n.sprintf "Bad Request")
+let code400 wwwr dh = Error (s_ "Bad Request")
 (*e: function Retrieve.code400 *)
 
 (*s: function Retrieve.ask_auth *)
 (* 401 Unauthorized *)
 let ask_auth wwwr dh =
-  wwwr.www_logging (I18n.sprintf "Checking authentication");
+  wwwr.www_logging (s_ "Checking authentication");
   let rawchallenge = challenge dh.document_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
@@ -254,7 +254,7 @@ let unauthorized wwwr dh =
     to check if authorization was valid, and then proceed
     to the normal intended continuation *)
      Restart (fun newdh ->
-        if newdh.document_status <> 401 & isnew then
+        if newdh.document_status <> 401 && isnew then
           Auth.add space cookie;
         (* Put the challenge header again *)
         begin try
@@ -272,7 +272,7 @@ let unauthorized wwwr dh =
 (* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
 let ask_proxy_auth wwwr dh =
-  wwwr.www_logging (I18n.sprintf "Checking proxy authentication");
+  wwwr.www_logging (s_ "Checking proxy authentication");
   let rawchallenge = proxy_challenge dh.document_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
@@ -296,7 +296,7 @@ let proxy_unauthorized wwwr dh =
     to the normal intended continuation *)
       Restart (fun newdh -> 
          Log.debug "proxy_unauthorized wrapper";
-         if newdh.document_status <> 407 & isnew then
+         if newdh.document_status <> 407 && isnew then
            Auth.add space cookie;
          (* Put the challenge header again *)
          begin try

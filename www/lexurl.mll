@@ -74,16 +74,16 @@ rule f = parse
           result.path <- address
       (*x: [[Lexurl.f]] protocol cases *)
       | "FTP" -> (* we don't need the detail of path *)
-         slashslash lexbuf;
-         let u, p = userpass lexbuf in
-         let h, po = hostport lexbuf in
-         let path = slashpath lexbuf in
-         result.protocol <- FTP;
-         result.user <- u;
-         result.password <- p;
-         result.host <- h;
-         result.port <- normalize_port (FTP, po);
-         result.path <- path
+          slashslash lexbuf;
+          let u, p = userpass lexbuf in
+          let h, po = hostport lexbuf in
+          let path = slashpath lexbuf in
+          result.protocol <- FTP;
+          result.user <- u;
+          result.password <- p;
+          result.host <- h;
+          result.port <- normalize_port (FTP, po);
+          result.path <- path
       (*x: [[Lexurl.f]] protocol cases *)
       | "TELNET" ->
           slashslash lexbuf;

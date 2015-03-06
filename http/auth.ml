@@ -1,5 +1,6 @@
 (*s: ./http/auth.ml *)
 (* HTTP Basic Authentication *)
+open I18n
 open Printf
 open Unix
 open Http_headers
@@ -70,7 +71,7 @@ let ask_cookie forwhere =
       Base64.encode (u^":"^p)
   with
     Failure "cancelled" -> failwith "cancelled"
-  | _ -> (!Error.default)#f (I18n.sprintf "Error in base 64 encoding");
+  | _ -> (!Error.default)#f (s_ "Error in base 64 encoding");
         failwith "cancelled"
 (*e: function Auth.ask_cookie *)
 
@@ -105,7 +106,7 @@ let check wwwr challenge authspace =
         if List.mem_assoc kind wwwr.www_auth then begin
            (* we already tried, so the authorization is bad ! *)
            Hashtbl.remove authorizations authspace; (* in case *)
-           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+           ask_cookie (s_ "Authorization for %s \"%s\" on \
                                              %s:%d/%s" 
                             kind challenge.challenge_realm 
                             authspace.auth_host authspace.auth_port 
@@ -114,7 +115,7 @@ let check wwwr challenge authspace =
            end
        else (* ah, it is our first try,  get the authorization *)
          if authspace.auth_proxy then 
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+            ask_cookie (s_ "Authorization for %s \"%s\" on \
                                              %s:%d/%s" 
                             kind challenge.challenge_realm
                             authspace.auth_host authspace.auth_port 
@@ -126,7 +127,7 @@ let check wwwr challenge authspace =
               entry.auth_lastused <- Unix.time();
               entry.auth_cookie, false
            with Not_found ->
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+            ask_cookie (s_ "Authorization for %s \"%s\" on \
                                              %s:%d/%s" 
                             kind challenge.challenge_realm
                             authspace.auth_host authspace.auth_port 
@@ -165,13 +166,13 @@ let save () =
       close o
   with
     Unix_error(e,_,_) ->
-      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
+      !Error.default#f (s_ "Error in authorisation save\n%s" 
                  (Unix.error_message e))
   | Sys_error s ->
-      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
+      !Error.default#f (s_ "Error in authorisation save\n%s" s)
 
  else 
-   !Error.default#f (I18n.sprintf "No authorisation file defined")
+   !Error.default#f (s_ "No authorisation file defined")
 (*e: function Auth.save *)
 
 (*s: function Auth.load *)
@@ -190,9 +191,9 @@ let load () =
     close_in ic
     with
       Sys_error s ->
-       !Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+       !Error.default#f (s_ "Error in authorisation load\n%s" s)
  else 
-   !Error.default#f (I18n.sprintf "No authorisation file defined")
+   !Error.default#f (s_ "No authorisation file defined")
 (*e: function Auth.load *)
 
 

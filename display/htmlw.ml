@@ -1,4 +1,5 @@
 (*s: ./display/htmlw.ml *)
+open I18n
 open Printf
 open Tk
 open Html
@@ -118,7 +119,7 @@ let html_head_ui headers redisplay pscroll top ctx =
 
   let set_title t =
     let tl = Winfo.toplevel top
-    and title = I18n.sprintf "MMM Browser@%s" t in
+    and title = s_ "MMM Browser@%s" t in
     if Widget.known_class tl = "toplevel" then
       (Wm.title_set tl title; Wm.iconname_set tl title);
     Textvariable.set titlev t
@@ -463,14 +464,14 @@ class display_html ((top : Widget.widget),
      that we don't use the initial feed, but rather the cache *)
   method redisplay =
     if pending then 
-      !Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
+      !Error.default#f (s_ "Cannot redisplay document (pending)")
     else
       try
         dh <- Decoders.insert (Cache.renew_handle dh);
         List.iter destroy (Winfo.children frame);
         self#init init_mode
       with Not_found ->
-        !Error.default#f (I18n.sprintf "Document not in cache anymore")
+        !Error.default#f (s_ "Document not in cache anymore")
 
 
   val mutable title = Url.string_of ctx#base.document_url
@@ -759,7 +760,7 @@ class display_html ((top : Widget.widget),
   (* The source is attached to this frame so we can destroy the interior widgets*)
   method source =
     if pending 
-    then !Error.default#f (I18n.sprintf "Cannot view document source (pending)")
+    then !Error.default#f (s_ "Cannot view document source (pending)")
     else Source.view frame did (fun () -> self#redisplay) errors annotations
            feed_read#get_code
   (*e: [[Htmlw.display_html]] other methods or fields *)

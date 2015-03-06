@@ -1,4 +1,5 @@
 (*s: ./www/hyper.ml *)
+open I18n
 open Printf
 open Mstring
 open Uri
@@ -52,7 +53,7 @@ exception Invalid_link of link_error
 let urlconcat contextp newuri =
   let l = String.length newuri in 
     if l = 0 then string_of contextp 
-    else if l > 2 & newuri.[0] = '/' & newuri.[1] = '/' then
+    else if l > 2 && newuri.[0] = '/' && newuri.[1] = '/' then
       (* this is probably a gopher relative uri *)
       sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
     else if newuri.[0] = '/' then (* start from root *)
@@ -129,13 +130,13 @@ let resolve link =
       }
     with Url_Lexing _ ->
       raise (Invalid_link
-              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
+              (LinkResolve (s_ "not a legal absolute uri")))
 
   else begin (* It is a relative uri *)
     let context =
       match link.h_context with 
       | None -> 
-         raise (Invalid_link (LinkResolve (I18n.sprintf 
+         raise (Invalid_link (LinkResolve (s_ 
                   "no context and not an absolute url")))
       | Some c -> c 
     in

@@ -2,6 +2,7 @@
 (*
  * Multimedia
  *)
+open I18n
 open Printf
 open Unix
 open Lexing
@@ -160,11 +161,11 @@ let metamail ctype file =
 let extern_batch dh ctype = 
   let outfile = Msys.mktemp "mmm" in
   Document.add_log dh (
-    I18n.sprintf "Saving %s\nfor external display with MIME type %s"
+    s_ "Saving %s\nfor external display with MIME type %s"
           (Url.string_of dh.document_id.document_url) ctype)
     (fun () -> Msys.rm outfile);
   let endmsg =
-    I18n.sprintf "Running metamail with MIME media-type: %s" ctype in
+    s_ "Running metamail with MIME media-type: %s" ctype in
     Save.tofile (metamail ctype) (Decoders.insert dh) outfile endmsg
 (*e: function Viewers.extern_batch *)
 
@@ -192,7 +193,7 @@ let extern dh ctype =
       in
       let url = Url.string_of dh.document_id.document_url in
       Document.add_log dh 
-        (I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
+        (s_ "Retrieving %s\nfor external display with MIME type %s"
              url ctype)
         kill;
 
@@ -209,7 +210,7 @@ let extern dh ctype =
             if n = 0 then begin
               dclose true dh;
               close pout;
-              Document.end_log dh (I18n.sprintf "End of transmission")
+              Document.end_log dh (s_ "End of transmission")
             end else begin
               ignore (write pout buffer 0 n);
               red := !red + n;
@@ -222,7 +223,7 @@ let extern dh ctype =
             kill();
             close pout;
             Document.destroy_log dh false;
-            !Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
+            !Error.default#f (s_ "Error during retrieval of %s" url)
        )
 (*e: function Viewers.extern *)
 
@@ -278,18 +279,18 @@ let rem_viewer ctype =
 (*s: function Viewers.unknown *)
 let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
-         (I18n.sprintf "MMM Warning")
-         (I18n.sprintf "No MIME type given for the document\n%s"
+         (s_ "MMM Warning")
+         (s_ "No MIME type given for the document\n%s"
            (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
-     [I18n.sprintf "Retry with type";
-      I18n.sprintf "Save to file";
-      I18n.sprintf "Abort"] 
+     [s_ "Retry with type";
+      s_ "Save to file";
+      s_ "Abort"] 
   with
   | 0 ->
     let v = Textvariable.create_temporary frame in
     Textvariable.set v "text/html";
-    if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
+    if Frx_req.open_simple_synchronous (s_ "MIME type") v then
        let ctype = Textvariable.get v in
        dh.document_headers <- 
            ("Content-Type: " ^ ctype) :: dh.document_headers;
@@ -306,21 +307,21 @@ let rec unknown frame ctx dh =
 (*s: function Viewers.interactive *)
 and interactive frame ctx dh ctype =
   match Frx_dialog.f frame (Mstring.gensym "error")
-         (I18n.sprintf "MMM Viewers")
-         (I18n.sprintf
+         (s_ "MMM Viewers")
+         (s_
           "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
            ctype
            (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
-     [I18n.sprintf "Retry with another type";
-      I18n.sprintf "Display with metamail";
-      I18n.sprintf "Save to file";
-      I18n.sprintf "Abort"] 
+     [s_ "Retry with another type";
+      s_ "Display with metamail";
+      s_ "Save to file";
+      s_ "Abort"] 
   with
   | 0 ->
       let v = Textvariable.create_temporary frame in
       Textvariable.set v "text/html";
-      if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
+      if Frx_req.open_simple_synchronous (s_ "MIME type") v then
         let ctype = Textvariable.get v 
         in
         dh.document_headers <- 
@@ -350,11 +351,11 @@ and view frame ctx dh =
       match viewer with
       (*s: [[Viewers.view]] match viewer cases *)
       | Internal viewer ->
-          ctx#log (I18n.sprintf "Displaying...");
+          ctx#log (s_ "Displaying...");
           viewer pars frame ctx (Decoders.insert dh)
       (*x: [[Viewers.view]] match viewer cases *)
       | External ->
-          ctx#log (I18n.sprintf "Displaying externally");
+          ctx#log (s_ "Displaying externally");
           extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
           None
       (*x: [[Viewers.view]] match viewer cases *)
@@ -374,13 +375,13 @@ and view frame ctx dh =
     (*x: [[Viewers.view]] exn handler 1 *)
     | Not_found -> 
        (* we don't know how to handle this *)
-       ctx#log (I18n.sprintf "Displaying externally");
+       ctx#log (s_ "Displaying externally");
        interactive frame ctx dh ctype
     (*e: [[Viewers.view]] exn handler 1 *)
   with 
   (*s: [[Viewers.view]] exn handler 2 *)
   | Invalid_HTTP_header e ->
-      ctx#log (I18n.sprintf "Malformed type: %s" e);
+      ctx#log (s_ "Malformed type: %s" e);
       unknown frame ctx dh
   | Not_found -> 
       (* Content-type was not defined in the headers *)
@@ -412,7 +413,7 @@ let reset () =
       let (typ,sub), pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
     with Invalid_HTTP_header e ->
-      !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e)
+      !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*x: [[Viewers.reset()]] setting other viewers *)
   Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype -> 
@@ -420,7 +421,7 @@ let reset () =
       let (typ,sub),pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
     with Invalid_HTTP_header e ->
-      !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e)
+      !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*e: [[Viewers.reset()]] setting other viewers *)
   ()

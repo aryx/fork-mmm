@@ -1402,7 +1402,7 @@ let rec navigator has_tachy initial_url =
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
     <<[[Mmm.navigator()]] if not main window, create default toplevel>>
   in
-  Wm.title_set top (I18n.sprintf "MMM Browser");
+  Wm.title_set top (s_ "MMM Browser");
   <<[[Mmm.navigator()]] setup top packing>>
 
   <<[[Mmm.navigator()]] locals>>
@@ -1424,7 +1424,7 @@ let rec navigator has_tachy initial_url =
     Some nav
 
   with e -> 
-    !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
+    !Error.default#f (s_ "Can't view initial document: %s\n%s"
                       (Url.string_of initial_url)
                       (Printexc.to_string e));
     if !navigators = 1 then begin
@@ -1577,9 +1577,9 @@ and handle_link h =
     wr |> wrapwr |> handle_wr
   with
   | Invalid_link msg ->
-      nav.nav_error#f (I18n.sprintf "Invalid link")
+      nav.nav_error#f (s_ "Invalid link")
   | Invalid_request (wr, msg) ->
-      nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
+      nav.nav_error#f (s_ "Invalid request %s\n%s"
                         (Url.string_of wr.www_url) msg)
 in
 @
@@ -1597,7 +1597,7 @@ and handle_wr wr =
        else
          <<[[Nav.request.handle_wr()]] if use cache>>
   with Duplicate url ->
-    wr.www_error#f (I18n.sprintf 
+    wr.www_error#f (s_ 
         "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
 @
 % you want exception analysis ... this gets tricky
@@ -1778,7 +1778,7 @@ let entryv = Textvariable.create_temporary top in
 
 <<[[Mmm.navigator()]] setup open url entry>>=
 (* URL display and edit *)
-let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
+let f,e = Frx_entry.new_label_entry vgroup (s_ "Open URL:")
                    (fun url -> Nav.absolutegoto nav url)
 in
 Entry.configure e [TextVariable entryv; TextWidth 40];
@@ -1839,7 +1839,7 @@ let display di =
   else !Error.default#f "fatal error: window was destroyed";
 
   let tl = Winfo.toplevel di#di_widget in
-  let title = I18n.sprintf "MMM Browser@%s" di#di_title in
+  let title = s_ "MMM Browser@%s" di#di_title in
   if Widget.known_class tl = "toplevel" 
   then begin 
     Wm.title_set tl title; 
@@ -1892,7 +1892,7 @@ nav_id = hist.h_key;
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let backb = Button.create_named fb 
-  "back" [Text (I18n.sprintf "Back"); Command back ] in
+  "back" [Text (s_ "Back"); Command back ] in
 @
 
 <<function Mmm.navigator.back>>=
@@ -1911,7 +1911,7 @@ in
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let forwardb = Button.create_named fb 
-  "forward" [Text (I18n.sprintf "Forward"); Command forward] in
+  "forward" [Text (s_ "Forward"); Command forward] in
 @
 
 <<function Mmm.navigator.forward>>=
@@ -1937,9 +1937,9 @@ let update_vhistory = ref (fun () -> ()) (* duh *) in
  * Deleting all entries will cause a callback leak since
  *  entries are associated to the menu itself 
  *)
-let history_mindex = Pattern (I18n.sprintf "History") in
+let history_mindex = Pattern (s_ "History") in
 let hmenu = ref (Menu.create_named navm "history" []) in 
-Menu.add_cascade navm [Label (I18n.sprintf "History")];
+Menu.add_cascade navm [Label (s_ "History")];
 update_vhistory := (fun () ->
   destroy !hmenu;
   hmenu := Menu.create_named navm "history" [];
@@ -1976,7 +1976,7 @@ update_vhistory := (fun () ->
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let homeb = Button.create_named fb "home"
-  [ Text (I18n.sprintf "Home"); Command gohome] in
+  [ Text (s_ "Home"); Command gohome] in
 @
 
 <<function Mmm.navigator.gohome>>=
@@ -2049,22 +2049,22 @@ in
 
 <<[[Mmm.navigator()]] MMM menu>>=
 (* MMM menu *)
-let mmm = Menubutton.create_named mbar "mmm" [Text (I18n.sprintf "MMM")] in
+let mmm = Menubutton.create_named mbar "mmm" [Text (s_ "MMM")] in
 let mmmm = Menu.create_named mmm "menu" [] in
 Menubutton.configure mmm [Menu mmmm];
 configure_menu_elements mmmm [
-  [Label (I18n.sprintf "About")            ; Command About.f];
+  [Label (s_ "About")            ; Command About.f];
   [];
-  [Label (I18n.sprintf "New Window")       ; Command new_window];
-  [Label (I18n.sprintf "Open Selection")   ; Command open_sel];
-  [Label (I18n.sprintf "Open File...")     ; Command open_file];
-  [Label (I18n.sprintf "Save document...") ; Command save];
-  [Label (I18n.sprintf "Print document")   ; Command print];
-  [Label (I18n.sprintf "Preferences...")   ; Command !preferences];
+  [Label (s_ "New Window")       ; Command new_window];
+  [Label (s_ "Open Selection")   ; Command open_sel];
+  [Label (s_ "Open File...")     ; Command open_file];
+  [Label (s_ "Save document...") ; Command save];
+  [Label (s_ "Print document")   ; Command print];
+  [Label (s_ "Preferences...")   ; Command !preferences];
   [];
-  [Label (I18n.sprintf "Close Window")     ; Command close];
+  [Label (s_ "Close Window")     ; Command close];
   [];
-  [Label (I18n.sprintf "Quit")             ; Command really_quit]
+  [Label (s_ "Quit")             ; Command really_quit]
 ];
 @
 
@@ -2079,7 +2079,7 @@ in
 
 <<function Mmm.navigator.open_file>>=
 let open_file () =
-  Fileselect.f (I18n.sprintf "Open File") (function
+  Fileselect.f (s_ "Open File") (function
     | [] -> ()
     | [s] -> 
         let path = Msys.tilde_subst s in
@@ -2125,10 +2125,10 @@ in
 let quit confirm =
   if confirm then
     match Frx_dialog.f Widget.default_toplevel (gensym "quit")
-      (I18n.sprintf "Confirm") 
-      (I18n.sprintf "Do you really want to quit ?")
+      (s_ "Confirm") 
+      (s_ "Do you really want to quit ?")
        (Predefined "question") 0 
-       [I18n.sprintf "Yep"; I18n.sprintf "Nope"] 
+       [s_ "Yep"; s_ "Nope"] 
     with
     |  0 -> destroy Widget.default_toplevel
     | _ -> ()
@@ -2139,13 +2139,13 @@ let quit confirm =
 
 <<[[Mmm.navigator()]] Navigation menu>>=
 (* Navigation menu *)
-let navb = Menubutton.create_named mbar "navigate" [Text (I18n.sprintf "Navigate")] in
+let navb = Menubutton.create_named mbar "navigate" [Text (s_ "Navigate")] in
 let navm = Menu.create_named navb "menu" [] in
 Menubutton.configure navb [Menu navm];
 configure_menu_elements navm [ 
-  [Label (I18n.sprintf "Home");    Command gohome];
-  [Label (I18n.sprintf "Back");    Command back];
-  [Label (I18n.sprintf "Forward"); Command forward];
+  [Label (s_ "Home");    Command gohome];
+  [Label (s_ "Back");    Command back];
+  [Label (s_ "Forward"); Command forward];
   []
 ];
 @
@@ -2155,15 +2155,15 @@ configure_menu_elements navm [
 \subsection{Document menu}
 
 <<[[Mmm.navigator()]] Document menu>>=
-let docb = Menubutton.create_named mbar "document" [Text (I18n.sprintf "Document")] in
+let docb = Menubutton.create_named mbar "document" [Text (s_ "Document")] in
 let docm = Menu.create_named docb "menu" [] in
 Menubutton.configure docb [Menu docm];
 configure_menu_elements docm [	    
-  [Label (I18n.sprintf "Abort")          ; Command abort];
-  [Label (I18n.sprintf "Reload")         ; Command reload];
-  [Label (I18n.sprintf "Update")         ; Command update_true];
-  [Label (I18n.sprintf "Redisplay")      ; Command redisplay];
-  [Label (I18n.sprintf "Load Images")    ; Command load_images];
+  [Label (s_ "Abort")          ; Command abort];
+  [Label (s_ "Reload")         ; Command reload];
+  [Label (s_ "Update")         ; Command update_true];
+  [Label (s_ "Redisplay")      ; Command redisplay];
+  [Label (s_ "Load Images")    ; Command load_images];
   <<Document menu elements>>
 ];
 @
@@ -2191,7 +2191,7 @@ in
 
 <<[[Mmm.navigator()]] Other menu>>=
 (* Other stuff *)
-let othersb = Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
+let othersb = Menubutton.create_named mbar "others" [Text (s_ "Others")] in
 let othersm = Menu.create_named othersb "menu" [] in
 Menubutton.configure othersb [Menu othersm];
 <<Other menu elements>>
@@ -2199,12 +2199,12 @@ Menubutton.configure othersb [Menu othersm];
 
 
 % (*      Menu.add_command othersm
-%     [Label (I18n.sprintf "Caml Modules"); 
+%     [Label (s_ "Caml Modules"); 
 %      Command (fun _ -> Applets.edit())];
 %    Menu.add_command othersm
-%     [Label (I18n.sprintf "Load Caml Extension");
+%     [Label (s_ "Load Caml Extension");
 %   Command (fun _ ->
-%              Fileselect.f (I18n.sprintf "Load Caml Extension")
+%              Fileselect.f (s_ "Load Caml Extension")
 %          (function [] -> ()
 %                  | [s] -> Applets.load_local s
 %              | l -> raise (Failure "multiple selection"))
@@ -2219,7 +2219,7 @@ Menubutton.configure othersb [Menu othersm];
 
 <<[[Mmm.navigator()]] Help menu>>=
 (* Help menu *)
-let helpb = Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
+let helpb = Menubutton.create_named mbar "help" [Text (s_ "Help")] in
 let helpm = Menu.create_named helpb "menu" [] in
 Menubutton.configure helpb [Menu helpm];
 <<Help menu elements>>
@@ -2228,10 +2228,10 @@ Menubutton.configure helpb [Menu helpm];
 
 <<Help menu elements>>=
 Menu.add_command helpm
-  [Label (I18n.sprintf "Version information");
+  [Label (s_ "Version information");
    Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
 Menu.add_command helpm
-  [Label (I18n.sprintf "Home Page of MMM");
+  [Label (s_ "Home Page of MMM");
    Command (fun () -> 
      navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
 @
@@ -2778,13 +2778,13 @@ let resolve link =
       }
     with Url_Lexing _ ->
       raise (Invalid_link
-              (LinkResolve (I18n.sprintf "not a legal absolute uri")))
+              (LinkResolve (s_ "not a legal absolute uri")))
 
   else begin (* It is a relative uri *)
     let context =
       match link.h_context with 
       | None -> 
-         raise (Invalid_link (LinkResolve (I18n.sprintf 
+         raise (Invalid_link (LinkResolve (s_ 
                   "no context and not an absolute url")))
       | Some c -> c 
     in
@@ -2817,7 +2817,7 @@ val urlconcat: Url.t -> string -> string
 let urlconcat contextp newuri =
   let l = String.length newuri in 
     if l = 0 then string_of contextp 
-    else if l > 2 & newuri.[0] = '/' & newuri.[1] = '/' then
+    else if l > 2 && newuri.[0] = '/' && newuri.[1] = '/' then
       (* this is probably a gopher relative uri *)
       sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
     else if newuri.[0] = '/' then (* start from root *)
@@ -4949,10 +4949,10 @@ and f request retry cont =
    with 
    | Not_found ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, I18n.sprintf "unknown protocol"))
+       raise (Invalid_request (request, s_ "unknown protocol"))
    | Http.HTTP_error s ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, I18n.sprintf "HTTP Error \"%s\"" s))
+       raise (Invalid_request (request, s_ "HTTP Error \"%s\"" s))
    | File.File_error s ->
        Www.rem_active_cnx request.www_url;
        raise (Invalid_request (request, s))
@@ -5190,7 +5190,7 @@ let code200 wwwr dh = Ok
 
 <<function Retrieve.code400>>=
 (* 400 Bad request *)
-let code400 wwwr dh = Error (I18n.sprintf "Bad Request")
+let code400 wwwr dh = Error (s_ "Bad Request")
 @
 
 \section{Logging}
@@ -5423,7 +5423,7 @@ and request wr cont =
       let host = 
         match urlp.host with
         | Some h -> h 
-        | _ -> raise (HTTP_error (I18n.sprintf "Missing host in url"))
+        | _ -> raise (HTTP_error (s_ "Missing host in url"))
       in
       let port =  
         match urlp.port with
@@ -5438,7 +5438,7 @@ and request wr cont =
       with HTTP_error _ -> (* direct failed, go through proxy *)
         <<[[Http.request()]] if http error on tcp_connect, try proxy>>
     else 
-      raise (HTTP_error (I18n.sprintf 
+      raise (HTTP_error (s_ 
              "INTERNAL ERROR\nHttp.request (not a distant http url): %s" 
                (Url.string_of wr.www_url)))
 @
@@ -5466,13 +5466,13 @@ let tcp_connect server_name port  log  cont error =
   Unix.clear_nonblock sock;
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, error "User abort") in
-  log (I18n.sprintf "Contacting host...");
+  log (s_ "Contacting host...");
   try
     begin try
       Unix.connect sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
-      log (I18n.sprintf "connection established");
+      log (s_ "connection established");
       Log.debug "Connect returned without error !";
 
       (* because we need to return cnx *)
@@ -5486,7 +5486,7 @@ let tcp_connect server_name port  log  cont error =
     end
   with Unix_error(e,fn,_) ->  (* other errors in connect *)
     cnx#close;
-    raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
+    raise (HTTP_error (s_ "Cannot establish connection\n%s:%s"
                              (error_message e) fn))
 @
 
@@ -5548,12 +5548,12 @@ end
 
 <<[[Http.tcp_connect()]] if inet_add_of_string fails>>=
 try
-  log (I18n.sprintf "Looking for %s ..." server_name);
+  log (s_ "Looking for %s ..." server_name);
   let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
-  log (I18n.sprintf "%s found" server_name);
+  log (s_ "%s found" server_name);
   adr
 with Not_found -> 
- raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) 
+ raise (HTTP_error (s_ "Unknown host: %s" server_name)) 
 @
 
 <<[[Http.tcp_connect()]] if unix error when connect>>=
@@ -5567,11 +5567,11 @@ with Not_found ->
      Unix.clear_nonblock sock; (* return to blocking mode *)
      begin try (* But has there been a cnx actually *)
        let _ = getpeername sock in
-       log (I18n.sprintf "connection established");
+       log (s_ "connection established");
        cont cnx
      with Unix_error(ENOTCONN, "getpeername", _) ->
        cnx#close;
-       error (I18n.sprintf "Connection refused to %s" server_name) false
+       error (s_ "Connection refused to %s" server_name) false
       end
    );
   <<[[Http.tcp_connect()]] setup timeout>>
@@ -5596,7 +5596,7 @@ Timer_.set (1000 * !timeout)
      then begin
        Fileevent_.remove_fileoutput sock;
        cnx#close;
-       error (I18n.sprintf "Timeout during connect to %s" server_name)
+       error (s_ "Timeout during connect to %s" server_name)
              false
       end
   );
@@ -5626,7 +5626,7 @@ and async_request proxy_mode wwwr cont cnx =
   let req = Ebuffer.get b in
   let len = Ebuffer.used b in
   let curpos = ref 0 in
-  wwwr.www_logging (I18n.sprintf "Writing request...");
+  wwwr.www_logging (s_ "Writing request...");
   Fileevent_.add_fileoutput cnx#fd (fun _ ->
     let n = Unix.write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
     curpos := !curpos  + n;
@@ -5801,8 +5801,8 @@ let failed_request wr finish =
  fun s aborted ->
   finish aborted;
   Www.rem_active_cnx wr.www_url;
-  wr.www_logging (I18n.sprintf "Failed");
-  wr.www_error#f (I18n.sprintf "Request for %s failed\n%s" 
+  wr.www_logging (s_ "Failed");
+  wr.www_error#f (s_ "Request for %s failed\n%s" 
                    (Url.string_of wr.www_url) s)
 @
 % aborted is a bool
@@ -5817,7 +5817,7 @@ let failed_request wr finish =
 let rec process_response wwwr cont =
  fun cnx ->
   let url = Url.string_of wwwr.www_url in
-  wwwr.www_logging (I18n.sprintf "Reading headers...");
+  wwwr.www_logging (s_ "Reading headers...");
 
   let dh = 
     { document_id = document_id wwwr;
@@ -5932,7 +5932,7 @@ let read_headers fd previous =
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | Unix_error(e,_,_) ->
     cnx#abort;
-    wwwr.www_error#f (I18n.sprintf 
+    wwwr.www_error#f (s_ 
                "Error while reading headers of %s\n%s" url 
                (error_message e))
 @
@@ -5940,13 +5940,13 @@ let read_headers fd previous =
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | Invalid_HTTP_header s ->
     cnx#abort;
-    wwwr.www_error#f (I18n.sprintf 
+    wwwr.www_error#f (s_ 
                "Error while reading headers of %s\n%s" url s)
 @
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | End_of_file ->
     cnx#abort;
-    wwwr.www_error#f (I18n.sprintf 
+    wwwr.www_error#f (s_ 
                "Error while reading headers of %s\n%s" url "eof"))
 @
 
@@ -5966,7 +5966,7 @@ let rec timout () =
        if not cnx#aborted && !stuck 
        then
          match wwwr.www_error#ari
-           (I18n.sprintf "Timeout while waiting for headers of %s" url) 
+           (s_ "Timeout while waiting for headers of %s" url) 
          with
          | 0 -> (* abort *) if !stuck then cnx#abort
          | 1 -> (* retry *) timout ()
@@ -6296,7 +6296,7 @@ let reset () =
 
 <<[[Viewers.view]] match viewer cases>>=
 | Internal viewer ->
-    ctx#log (I18n.sprintf "Displaying...");
+    ctx#log (s_ "Displaying...");
     viewer pars frame ctx (Decoders.insert dh)
 @
 
@@ -6313,7 +6313,7 @@ let reset () =
 
 <<[[Viewers.view]] exn handler 2>>=
 | Invalid_HTTP_header e ->
-    ctx#log (I18n.sprintf "Malformed type: %s" e);
+    ctx#log (s_ "Malformed type: %s" e);
     unknown frame ctx dh
 | Not_found -> 
     (* Content-type was not defined in the headers *)
@@ -6324,18 +6324,18 @@ let reset () =
 <<function Viewers.unknown>>=
 let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
-         (I18n.sprintf "MMM Warning")
-         (I18n.sprintf "No MIME type given for the document\n%s"
+         (s_ "MMM Warning")
+         (s_ "No MIME type given for the document\n%s"
            (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
-     [I18n.sprintf "Retry with type";
-      I18n.sprintf "Save to file";
-      I18n.sprintf "Abort"] 
+     [s_ "Retry with type";
+      s_ "Save to file";
+      s_ "Abort"] 
   with
   | 0 ->
     let v = Textvariable.create_temporary frame in
     Textvariable.set v "text/html";
-    if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
+    if Frx_req.open_simple_synchronous (s_ "MIME type") v then
        let ctype = Textvariable.get v in
        dh.document_headers <- 
            ("Content-Type: " ^ ctype) :: dh.document_headers;
@@ -6392,7 +6392,7 @@ class plain ((top : Widget.widget),
       Winfo.children frame |> List.iter destroy;
       self#init
     with Not_found ->
-       Error.default#f (I18n.sprintf "Document not in cache anymore")
+       Error.default#f (s_ "Document not in cache anymore")
 
   (* [finish abort?] *)
   val mutable (*private*) terminated = false
@@ -6796,11 +6796,11 @@ class stdctx (did, nav) =
     List.iter (fun (name, f, txt) ->
       self#add_nav
     (name, {hyper_visible = true; hyper_func = f; hyper_title = txt}))
-       ["copy", copy_link, I18n.sprintf "Copy this Link to clipboard";
-    "head", head_link, I18n.sprintf "Headers of document";
-    "save", save_link, I18n.sprintf "Save this Link";
-    "gotonew", new_link, I18n.sprintf "New window with this Link";
-        "goto", frame_goto, I18n.sprintf "Open this Link";
+       ["copy", copy_link, s_ "Copy this Link to clipboard";
+    "head", head_link, s_ "Headers of document";
+    "save", save_link, s_ "Save this Link";
+    "gotonew", new_link, s_ "New window with this Link";
+        "goto", frame_goto, s_ "Open this Link";
        ];
     self
 
@@ -6899,14 +6899,14 @@ Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype ->
     let (typ,sub), pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) External
   with Invalid_HTTP_header e ->
-    !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e)
+    !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
 
 
 <<[[Viewers.view]] match viewer cases>>=
 | External ->
-    ctx#log (I18n.sprintf "Displaying externally");
+    ctx#log (s_ "Displaying externally");
     extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
     None
 @
@@ -6936,7 +6936,7 @@ let extern dh ctype =
       in
       let url = Url.string_of dh.document_id.document_url in
       Document.add_log dh 
-        (I18n.sprintf "Retrieving %s\nfor external display with MIME type %s"
+        (s_ "Retrieving %s\nfor external display with MIME type %s"
              url ctype)
         kill;
 
@@ -6953,7 +6953,7 @@ let extern dh ctype =
             if n = 0 then begin
               dclose true dh;
               close pout;
-              Document.end_log dh (I18n.sprintf "End of transmission")
+              Document.end_log dh (s_ "End of transmission")
             end else begin
               ignore (write pout buffer 0 n);
               red := !red + n;
@@ -6966,7 +6966,7 @@ let extern dh ctype =
             kill();
             close pout;
             Document.destroy_log dh false;
-            !Error.default#f (I18n.sprintf "Error during retrieval of %s" url)
+            !Error.default#f (s_ "Error during retrieval of %s" url)
        )
 @
 
@@ -6986,7 +6986,7 @@ let extern dh ctype =
 <<[[Viewers.view]] exn handler 1>>=
 | Not_found -> 
    (* we don't know how to handle this *)
-   ctx#log (I18n.sprintf "Displaying externally");
+   ctx#log (s_ "Displaying externally");
    interactive frame ctx dh ctype
 @
 
@@ -6994,21 +6994,21 @@ let extern dh ctype =
 <<function Viewers.interactive>>=
 and interactive frame ctx dh ctype =
   match Frx_dialog.f frame (Mstring.gensym "error")
-         (I18n.sprintf "MMM Viewers")
-         (I18n.sprintf
+         (s_ "MMM Viewers")
+         (s_
           "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
            ctype
            (Url.string_of dh.document_id.document_url))
          (Tk.Predefined "question") 0
-     [I18n.sprintf "Retry with another type";
-      I18n.sprintf "Display with metamail";
-      I18n.sprintf "Save to file";
-      I18n.sprintf "Abort"] 
+     [s_ "Retry with another type";
+      s_ "Display with metamail";
+      s_ "Save to file";
+      s_ "Abort"] 
   with
   | 0 ->
       let v = Textvariable.create_temporary frame in
       Textvariable.set v "text/html";
-      if Frx_req.open_simple_synchronous (I18n.sprintf "MIME type") v then
+      if Frx_req.open_simple_synchronous (s_ "MIME type") v then
         let ctype = Textvariable.get v 
         in
         dh.document_headers <- 
@@ -7036,7 +7036,7 @@ Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype ->
     let (typ,sub),pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) Save
   with Invalid_HTTP_header e ->
-    !Error.default#f (I18n.sprintf "Invalid MIME type %s\n%s" ctype e)
+    !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
 
@@ -7057,21 +7057,21 @@ let rec interactive cont dh =
   let path = 
     match dh.document_id.document_url.path with Some p -> p | None -> "" in
 
-  Fileselect.f (I18n.sprintf "Save document")
+  Fileselect.f (s_ "Save document")
     (function 
     | [] ->
          (* by closing dh, we might break the cache *)
          dclose true dh
     | [fname] ->
         begin try 
-          let endmsg = (I18n.sprintf "URL %s\nsaved as %s" url fname) in
+          let endmsg = (s_ "URL %s\nsaved as %s" url fname) in
           f cont dh fname endmsg;
           Document.add_log dh 
-              (I18n.sprintf "Saving %s\nto %s" url fname)
+              (s_ "Saving %s\nto %s" url fname)
               (* channel is not closed ! *)
               (fun () -> Msys.rm fname)
         with Sys_error msg -> 
-          !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
+          !Error.default#f (s_ "Cannot save to %s\n(%s)" fname msg);
           interactive cont dh
         end
     | l -> raise (Failure "multiple selection")
@@ -7355,14 +7355,14 @@ class display_html ((top : Widget.widget),
      that we don't use the initial feed, but rather the cache *)
   method redisplay =
     if pending then 
-      !Error.default#f (I18n.sprintf "Cannot redisplay document (pending)")
+      !Error.default#f (s_ "Cannot redisplay document (pending)")
     else
       try
         dh <- Decoders.insert (Cache.renew_handle dh);
         List.iter destroy (Winfo.children frame);
         self#init init_mode
       with Not_found ->
-        !Error.default#f (I18n.sprintf "Document not in cache anymore")
+        !Error.default#f (s_ "Document not in cache anymore")
 
 
   val mutable title = Url.string_of ctx#base.document_url
@@ -7866,7 +7866,7 @@ let container_frame = ref None
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let reloadb = Button.create_named fb
-  "reload" [Text (I18n.sprintf "Reload"); Command reload] in
+  "reload" [Text (s_ "Reload"); Command reload] in
 @
 
 <<function Mmm.navigator.reload>>=
@@ -7879,7 +7879,7 @@ let reload () =
     Gcache.remove hist.h_key did;
     historygoto nav did frag false |> ignore
   end
-    else error#f (I18n.sprintf 
+    else error#f (s_ 
       "Document cannot be reloaded from its url\n(probably a POST request)")
 in
 @
@@ -7891,7 +7891,7 @@ let update nocache =
   if did.document_stamp = no_stamp then
     Nav.update nav did nocache
   else (* POST result *)
-    error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
+    error#f (s_ "Can't update document\n(probably a POST request)")
 in
 @
 
@@ -7901,7 +7901,7 @@ in
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let abortb = Button.create_named fb 
-  "abort" [Text (I18n.sprintf "Abort"); Command abort] in
+  "abort" [Text (s_ "Abort"); Command abort] in
 @
 
 <<local Mmm.navigator.actives>>=
@@ -7942,7 +7942,7 @@ let hotlist = ref ""
 % dead?
 
 <<Document menu elements>>=
-[Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
+[Label (s_ "Add to hotlist") ; Command add_to_hotlist];
 @
 
 <<function Mmm.navigator.add_to_hotlist>>=
@@ -7964,11 +7964,11 @@ let program = ref ""
 <<function Hotlist.f>>=
 let f url title =
   match !program with 
-  | "" -> (!Error.default)#f (I18n.sprintf "No hotlist command defined")
+  | "" -> (!Error.default)#f (s_ "No hotlist command defined")
   | s -> 
       let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
       (!Error.default)#ok
-        (I18n.sprintf "%s\nadded to hotlist with title\n%s" url title)
+        (s_ "%s\nadded to hotlist with title\n%s" url title)
 @
 
 
@@ -8113,7 +8113,7 @@ let helpurl = function
 
 <<Help menu elements>>=
 Menu.add_command helpm
-  [Label (I18n.sprintf "Help on MMM");
+  [Label (s_ "Help on MMM");
    Command (fun () -> navigator false !helpurl |> ignore)];
 @
 % false means not toplevel, no_tachy
@@ -8159,7 +8159,7 @@ nav_new = (fun link ->
        let wwwr = Plink.make link in
        navigator false wwwr.www_url |> ignore; ()
      with Invalid_link msg -> 
-      error#f (I18n.sprintf "Invalid link")
+      error#f (s_ "Invalid link")
 );
 @
 
@@ -8314,7 +8314,7 @@ let request wr cont =
     let st =
       try 
         stat path 
-      with _ -> raise (File_error (I18n.sprintf "cannot stat file")) 
+      with _ -> raise (File_error (s_ "cannot stat file")) 
     in
     match st.st_kind with
     | S_REG ->
@@ -8349,7 +8349,7 @@ let request wr cont =
           let s = 
             try openfile path [O_RDONLY] 0
             with Unix_error(_,_,_) -> 
-              raise (File_error (I18n.sprintf "cannot open file")) 
+              raise (File_error (s_ "cannot open file")) 
           in
           let dh =
             { document_id = document_id wr;
@@ -8381,7 +8381,7 @@ let request wr cont =
            };
          (fun () -> ())
 
-    | _ -> raise (File_error (I18n.sprintf "cannot open file"))
+    | _ -> raise (File_error (s_ "cannot open file"))
 @
 
 
@@ -8410,7 +8410,7 @@ let dir path =
         cin (*duh*)
      | n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
-    raise (File_error (I18n.sprintf "cannot open dir"))
+    raise (File_error (s_ "cannot open dir"))
 @
 
 
@@ -8737,7 +8737,7 @@ let _ = Printexc.catch main ()
 \section{View source}
 
 <<Document menu elements>>=
-[Label (I18n.sprintf "View Source")    ; Command view_source]
+[Label (s_ "View Source")    ; Command view_source]
 @
 
 <<function Mmm.navigator.view_source>>=
@@ -8762,7 +8762,7 @@ method di_source = self#source
 (* The source is attached to this frame so we can destroy the interior widgets*)
 method source =
   if pending 
-  then !Error.default#f (I18n.sprintf "Cannot view document source (pending)")
+  then !Error.default#f (s_ "Cannot view document source (pending)")
   else Source.view frame did (fun () -> self#redisplay) errors annotations
          feed_read#get_code
 @
@@ -8845,9 +8845,9 @@ let view attach did redisplay errors annotations coding =
   let f, t = new_scrollable_text top [Foreground Black; Background White] false
   and f' = Frame.create_named top "buttons" [] in
   let dismiss = Button.create_named f' "dismiss"
-    [Text (I18n.sprintf "Dismiss"); Command (fun _ -> destroy top)] 
-  and commit = Button.create_named f' "commit" [Text (I18n.sprintf "Commit")]
-  and save = Button.create_named f' "save" [Text (I18n.sprintf "Save")]
+    [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] 
+  and commit = Button.create_named f' "commit" [Text (s_ "Commit")]
+  and save = Button.create_named f' "save" [Text (s_ "Save")]
   and err = Button.create_named f' "errors" []
   in
   let ferr = Frame.create top [] in
@@ -8895,10 +8895,10 @@ let view attach did redisplay errors annotations coding =
         !errors;
     match List.length !errors with
       0 ->
-       Button.configure err [Text (I18n.sprintf "No Errors"); State Disabled]
+       Button.configure err [Text (s_ "No Errors"); State Disabled]
     | n ->
     Button.configure err
-        [Text (I18n.sprintf "%d errors" (List.length !errors));
+        [Text (s_ "%d errors" (List.length !errors));
             State Normal; Command loop_in_errors]
   and decorate = annotate t
   in
@@ -8915,7 +8915,7 @@ let view attach did redisplay errors annotations coding =
     remall (Text.tag_ranges t "errors");
     errors := [];
     Button.configure err 
-       [Text (I18n.sprintf "Display Errors"); Command mark_errors;
+       [Text (s_ "Display Errors"); Command mark_errors;
         State Normal]
 
   in
@@ -8927,7 +8927,7 @@ let view attach did redisplay errors annotations coding =
           Button.configure save
           [Command (fun () -> reset(); f t; redisplay())]);
      Button.configure err 
-       [Text (I18n.sprintf "Display Errors");
+       [Text (s_ "Display Errors");
      Command (fun () -> mark_errors(); decorate !annotations);
         State Normal];
      Text.configure t [Background (NamedColor "white")];
@@ -9428,11 +9428,11 @@ let sprintf (fmt : ('a, unit, string) format) =
 
 <<Other menu elements>>=
 Menu.add_command othersm
-  [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
+  [Label (s_ "Load Authorizations..."); Command Auth.load];
 Menu.add_command othersm
-  [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
+  [Label (s_ "Edit Authorizations..."); Command Auth.edit];
 Menu.add_command othersm
-  [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+  [Label (s_ "Save Authorizations..."); Command Auth.save];
 @
 
 
@@ -9617,7 +9617,7 @@ let ask_cookie forwhere =
       Base64.encode (u^":"^p)
   with
     Failure "cancelled" -> failwith "cancelled"
-  | _ -> (!Error.default)#f (I18n.sprintf "Error in base 64 encoding");
+  | _ -> (!Error.default)#f (s_ "Error in base 64 encoding");
         failwith "cancelled"
 @
 
@@ -9651,7 +9651,7 @@ let check wwwr challenge authspace =
         if List.mem_assoc kind wwwr.www_auth then begin
            (* we already tried, so the authorization is bad ! *)
            Hashtbl.remove authorizations authspace; (* in case *)
-           ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+           ask_cookie (s_ "Authorization for %s \"%s\" on \
                                              %s:%d/%s" 
                             kind challenge.challenge_realm 
                             authspace.auth_host authspace.auth_port 
@@ -9660,7 +9660,7 @@ let check wwwr challenge authspace =
            end
        else (* ah, it is our first try,  get the authorization *)
          if authspace.auth_proxy then 
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+            ask_cookie (s_ "Authorization for %s \"%s\" on \
                                              %s:%d/%s" 
                             kind challenge.challenge_realm
                             authspace.auth_host authspace.auth_port 
@@ -9672,7 +9672,7 @@ let check wwwr challenge authspace =
               entry.auth_lastused <- Unix.time();
               entry.auth_cookie, false
            with Not_found ->
-            ask_cookie (I18n.sprintf "Authorization for %s \"%s\" on \
+            ask_cookie (s_ "Authorization for %s \"%s\" on \
                                              %s:%d/%s" 
                             kind challenge.challenge_realm
                             authspace.auth_host authspace.auth_port 
@@ -9708,13 +9708,13 @@ let save () =
       close o
   with
     Unix_error(e,_,_) ->
-      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" 
+      !Error.default#f (s_ "Error in authorisation save\n%s" 
                  (Unix.error_message e))
   | Sys_error s ->
-      !Error.default#f (I18n.sprintf "Error in authorisation save\n%s" s)
+      !Error.default#f (s_ "Error in authorisation save\n%s" s)
 
  else 
-   !Error.default#f (I18n.sprintf "No authorisation file defined")
+   !Error.default#f (s_ "No authorisation file defined")
 @
 
 <<function Auth.load>>=
@@ -9733,9 +9733,9 @@ let load () =
     close_in ic
     with
       Sys_error s ->
-       !Error.default#f (I18n.sprintf "Error in authorisation load\n%s" s)
+       !Error.default#f (s_ "Error in authorisation load\n%s" s)
  else 
-   !Error.default#f (I18n.sprintf "No authorisation file defined")
+   !Error.default#f (s_ "No authorisation file defined")
 @
 
 <<signature Auth.init>>=
@@ -9831,11 +9831,11 @@ with Not_found ->
       process nav wr (Cache.make_handle wr doc)
     with 
     | Sys_error s ->
-        wr.www_error#f (I18n.sprintf
+        wr.www_error#f (s_
          "Cache error occurred during save of temporary buffer (%s)"
             s)
     | Unix_error (e,fname,arg) ->
-        wr.www_error#f (I18n.sprintf 
+        wr.www_error#f (s_ 
           "Cache error occurred when opening temporary file\n%s: %s (%s)"
           fname (Unix.error_message e) arg)
  with Not_found -> (* we don't have the document *)
@@ -9959,19 +9959,19 @@ let fake_cgi wwwr cont path =
                cont.document_process dh
            | Unix_error(_,_,_) ->
                dclose true dh;
-               raise (File_error (I18n.sprintf 
+               raise (File_error (s_ 
                   "Error while reading headers of %s\n%s" path "(read)"))
            | Invalid_HTTP_header s ->
                dclose true dh;
-               raise (File_error (I18n.sprintf 
+               raise (File_error (s_ 
                       "Error while reading headers of %s\n%s" path s))
            | End_of_file ->
                dclose true dh;
-               raise (File_error (I18n.sprintf 
+               raise (File_error (s_ 
                   "Error while reading headers of %s\n%s" path "eof"))
           )
   with Unix_error(_,_,_) -> 
-    raise (File_error (I18n.sprintf "cannot exec file"))
+    raise (File_error (s_ "cannot exec file"))
 @
 
 
@@ -10038,16 +10038,16 @@ let embedded_viewer frame ctx doc =
     with
     Not_found ->
       let t = 
-        I18n.sprintf "Embed Error: no viewer for type %s/%s" typ subtyp in
+        s_ "Embed Error: no viewer for type %s/%s" typ subtyp in
       let l = Label.create frame [Text t] in pack [l][]
   with
     Not_found ->
-      let t = I18n.sprintf "Embed Error: no type for document %s" 
+      let t = s_ "Embed Error: no type for document %s" 
                           (Url.string_of doc.document_address) in 
       let l = Label.create frame [Text t] in pack [l][]
   | Invalid_HTTP_header e ->
       let t = 
-       I18n.sprintf "Embed Error: malformed type %s (%s)"
+       s_ "Embed Error: malformed type %s (%s)"
          (contenttype doc.document_info) e in
       let l = Label.create frame [Text t] in pack [l][]
 @
@@ -10092,7 +10092,7 @@ let applet_init = ref (fun _ -> ())
 
 <<[[Mmm.navigator()]] User menu>>=
 (* User menu, extensible by applets *)
-let userb = Menubutton.create_named mbar "user" [Text (I18n.sprintf "User")] in
+let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
 let userm = ref (Menu.create_named userb "menu" []) in
 let reset_user_menu _ =
   destroy !userm;

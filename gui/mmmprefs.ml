@@ -1,4 +1,6 @@
 (*s: ./gui/mmmprefs.ml *)
+open I18n
+
 open Tk
 open Prefs
 
@@ -61,7 +63,7 @@ and dtd_p = Dtd.names()
 
 (*s: function Mmmprefs.network *)
 let network top = 
-  family top (I18n.sprintf "Protocols") [
+  family top (s_ "Protocols") [
     string_pref "Proxy host" Http.proxy;
     int_pref "Proxy port" Http.proxy_port;
     bool_pref "Always Use Proxy" Http.always_proxy;
@@ -77,7 +79,7 @@ let network top =
 
 (*s: function Mmmprefs.internal *)
 let internal top =
-  family top (I18n.sprintf "Internal settings and debugging") [
+  family top (s_ "Internal settings and debugging") [
     bool_pref "Strict encoding of Form field names" Urlenc.strict_form_standard;
     bool_pref "HTTP Requests" Http.verbose;
     int_pref "Internal buffer" Textw_fo.internal_buffer;
@@ -95,7 +97,7 @@ let internal top =
 
 (*s: function Mmmprefs.html *)
 let html top = 
-  family top (I18n.sprintf "HTML parsing and display") [
+  family top (s_ "HTML parsing and display") [
     option_pref "DTD" (dtd_i, dtd_s, dtd_p);
     bool_pref "Strict HTML lexing" Lexhtml.strict;
     bool_pref "Attempt tables" Html_disp.attempt_tables;
@@ -137,14 +139,14 @@ let html top =
 
 (*s: function Mmmprefs.i18n *)
 let i18n top =
-  family top (I18n.sprintf "Internationalization (Japanese)") [
+  family top (s_ "Internationalization (Japanese)") [
     bool_pref "Ignore META charset" Htmlw.ignore_meta_charset
   ] 
 (*e: function Mmmprefs.i18n *)
 
 (*s: function Mmmprefs.images *)
 let images top =
-  family top (I18n.sprintf "Images") [
+  family top (s_ "Images") [
     bool_pref "No images at all" Imgload.no_images;
     option_pref "Image loading" image_loading;
        (* image_loading_i image_loading_s image_loading_p; *)
@@ -158,7 +160,7 @@ let images top =
 
 (*s: function Mmmprefs.cache *)
 let cache top =
-  family top (I18n.sprintf "Cache settings") [
+  family top (s_ "Cache settings") [
     int_pref "Max number of documents"  Cache.max_documents;
     int_pref "Delete how much when full" Cache.cleann;
     bool_pref "Keep only history" Cache.history_mode;
@@ -168,7 +170,7 @@ let cache top =
 
 (*s: function Mmmprefs.progs *)
 let progs top =
-  family top (I18n.sprintf "External programs") [
+  family top (s_ "External programs") [
     string_pref "Mailto program" Mailto.mailer;
     string_pref "Hotlist program" Hotlist.program;
     string_pref "Printing program" Save.print_command;
@@ -177,7 +179,7 @@ let progs top =
 
 (*s: function Mmmprefs.misc *)
 let misc top =
-  family top (I18n.sprintf "Misc. settings") [
+  family top (s_ "Misc. settings") [
     bool_pref "Use balloon helps" Balloon.flag;
     bool_pref "Use GIF animation" Img.gif_anim_load;
     bool_pref "Automatic GIF animation display" Imgload.gif_anim_auto
@@ -190,9 +192,9 @@ let misc top =
  *)
 let appsys_plug = ref (fun top -> 
   let f = Frame.create top [Relief Sunken; BorderWidth (Pixels 1)] in
-  let t = Label.create f [Text (I18n.sprintf "Applets")] in
+  let t = Label.create f [Text (s_ "Applets")] in
   let msg =
-   Message.create f [Text (I18n.sprintf "Applets are not available \
+   Message.create f [Text (s_ "Applets are not available \
                                          in the native version")] in
   pack [t][Side Side_Top];
   pack [msg][Side Side_Bottom];
@@ -219,7 +221,7 @@ let appsys_plug = ref (fun top ->
   in
   {family_widget = f; family_init = init;
    family_save = save; family_load = load;
-   family_title = I18n.sprintf "Applets"})
+   family_title = s_ "Applets"})
 (*e: constant Mmmprefs.appsys_plug *)
 
 (*s: function Mmmprefs.plug_applets *)

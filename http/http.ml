@@ -1,5 +1,6 @@
 (*s: ./http/http.ml *)
 (* Retrieve an HTTP document *)
+open I18n
 open Unix
 open Www
 open Hyper
@@ -104,12 +105,12 @@ let tcp_connect server_name port  log  cont error =
     with Failure _ ->
       (*s: [[Http.tcp_connect()]] if inet_add_of_string fails *)
       try
-        log (I18n.sprintf "Looking for %s ..." server_name);
+        log (s_ "Looking for %s ..." server_name);
         let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
-        log (I18n.sprintf "%s found" server_name);
+        log (s_ "%s found" server_name);
         adr
       with Not_found -> 
-       raise (HTTP_error (I18n.sprintf "Unknown host: %s" server_name)) 
+       raise (HTTP_error (s_ "Unknown host: %s" server_name)) 
       (*e: [[Http.tcp_connect()]] if inet_add_of_string fails *)
   in
 
@@ -118,13 +119,13 @@ let tcp_connect server_name port  log  cont error =
   Unix.clear_nonblock sock;
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, error "User abort") in
-  log (I18n.sprintf "Contacting host...");
+  log (s_ "Contacting host...");
   try
     begin try
       Unix.connect sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
-      log (I18n.sprintf "connection established");
+      log (s_ "connection established");
       Log.debug "Connect returned without error !";
 
       (* because we need to return cnx *)
@@ -145,11 +146,11 @@ let tcp_connect server_name port  log  cont error =
            Unix.clear_nonblock sock; (* return to blocking mode *)
            begin try (* But has there been a cnx actually *)
              let _ = getpeername sock in
-             log (I18n.sprintf "connection established");
+             log (s_ "connection established");
              cont cnx
            with Unix_error(ENOTCONN, "getpeername", _) ->
              cnx#close;
-             error (I18n.sprintf "Connection refused to %s" server_name) false
+             error (s_ "Connection refused to %s" server_name) false
             end
          );
         (*s: [[Http.tcp_connect()]] setup timeout *)
@@ -162,7 +163,7 @@ let tcp_connect server_name port  log  cont error =
              then begin
                Fileevent_.remove_fileoutput sock;
                cnx#close;
-               error (I18n.sprintf "Timeout during connect to %s" server_name)
+               error (s_ "Timeout during connect to %s" server_name)
                      false
               end
           );
@@ -172,7 +173,7 @@ let tcp_connect server_name port  log  cont error =
     end
   with Unix_error(e,fn,_) ->  (* other errors in connect *)
     cnx#close;
-    raise (HTTP_error (I18n.sprintf "Cannot establish connection\n%s:%s"
+    raise (HTTP_error (s_ "Cannot establish connection\n%s:%s"
                              (error_message e) fn))
 (*e: function Http.tcp_connect *)
 
@@ -320,8 +321,8 @@ let failed_request wr finish =
  fun s aborted ->
   finish aborted;
   Www.rem_active_cnx wr.www_url;
-  wr.www_logging (I18n.sprintf "Failed");
-  wr.www_error#f (I18n.sprintf "Request for %s failed\n%s" 
+  wr.www_logging (s_ "Failed");
+  wr.www_error#f (s_ "Request for %s failed\n%s" 
                    (Url.string_of wr.www_url) s)
 (*e: function Http.failed_request *)
 
@@ -359,7 +360,7 @@ let read_headers fd previous =
 let rec process_response wwwr cont =
  fun cnx ->
   let url = Url.string_of wwwr.www_url in
-  wwwr.www_logging (I18n.sprintf "Reading headers...");
+  wwwr.www_logging (s_ "Reading headers...");
 
   let dh = 
     { document_id = document_id wwwr;
@@ -384,7 +385,7 @@ let rec process_response wwwr cont =
          if not cnx#aborted && !stuck 
          then
            match wwwr.www_error#ari
-             (I18n.sprintf "Timeout while waiting for headers of %s" url) 
+             (s_ "Timeout while waiting for headers of %s" url) 
            with
            | 0 -> (* abort *) if !stuck then cnx#abort
            | 1 -> (* retry *) timout ()
@@ -427,18 +428,18 @@ let rec process_response wwwr cont =
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Unix_error(e,_,_) ->
            cnx#abort;
-           wwwr.www_error#f (I18n.sprintf 
+           wwwr.www_error#f (s_ 
                       "Error while reading headers of %s\n%s" url 
                       (error_message e))
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Invalid_HTTP_header s ->
            cnx#abort;
-           wwwr.www_error#f (I18n.sprintf 
+           wwwr.www_error#f (s_ 
                       "Error while reading headers of %s\n%s" url s)
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | End_of_file ->
            cnx#abort;
-           wwwr.www_error#f (I18n.sprintf 
+           wwwr.www_error#f (s_ 
                       "Error while reading headers of %s\n%s" url "eof"))
        (*e: [[Http.process_response()]] feed schedule callback failure cases *)
        (*e: [[Http.process_response()]] reading headers *)
@@ -470,7 +471,7 @@ and async_request proxy_mode wwwr cont cnx =
   let req = Ebuffer.get b in
   let len = Ebuffer.used b in
   let curpos = ref 0 in
-  wwwr.www_logging (I18n.sprintf "Writing request...");
+  wwwr.www_logging (s_ "Writing request...");
   Fileevent_.add_fileoutput cnx#fd (fun _ ->
     let n = Unix.write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
     curpos := !curpos  + n;
@@ -529,7 +530,7 @@ and request wr cont =
       let host = 
         match urlp.host with
         | Some h -> h 
-        | _ -> raise (HTTP_error (I18n.sprintf "Missing host in url"))
+        | _ -> raise (HTTP_error (s_ "Missing host in url"))
       in
       let port =  
         match urlp.port with
@@ -546,7 +547,7 @@ and request wr cont =
         proxy_request wr cont
         (*e: [[Http.request()]] if http error on tcp_connect, try proxy *)
     else 
-      raise (HTTP_error (I18n.sprintf 
+      raise (HTTP_error (s_ 
              "INTERNAL ERROR\nHttp.request (not a distant http url): %s" 
                (Url.string_of wr.www_url)))
 (*e: function Http.request *)
@@ -560,7 +561,7 @@ and request09 wr cont =
       let host = 
         match urlp.host with
         | Some h -> h 
-        | _ -> raise (HTTP_error (I18n.sprintf "Missing host in url"))
+        | _ -> raise (HTTP_error (s_ "Missing host in url"))
       in
       let port = 
         match urlp.port with
@@ -576,7 +577,7 @@ and request09 wr cont =
                (start_request09 true wr cont)
               (failed_request wr cont.document_finish)
     else 
-      raise (HTTP_error (I18n.sprintf "INTERNAL ERROR\nHttp.request09 (not a distant http url): %s" (Url.string_of wr.www_url)))
+      raise (HTTP_error (s_ "INTERNAL ERROR\nHttp.request09 (not a distant http url): %s" (Url.string_of wr.www_url)))
 
 (* Wrappers returning the abort callback *)
 (*s: function Http.req *)

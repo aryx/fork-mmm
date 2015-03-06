@@ -1,5 +1,6 @@
 (*s: ./display/form.ml *)
 (* Tk based FormDisplay  *)
+open I18n
 open Printf
 open Tk
 open Hyper
@@ -237,7 +238,7 @@ let image_input prev_widget ctx base behav top tag =
 let submit_input prev_widget ctx behav top tag = 
   let l = 
     try get_attribute tag "value"
-    with Not_found -> I18n.sprintf "Submit"
+    with Not_found -> s_ "Submit"
   in
   try
     let n = get_attribute tag "name" in
@@ -257,7 +258,7 @@ let submit_input prev_widget ctx behav top tag =
 let reset_input prev_widget behav top tag = 
   let l = 
     try get_attribute tag "value"
-    with Not_found -> I18n.sprintf "Reset" in
+    with Not_found -> s_ "Reset" in
   let b = Button.create top [Text l; TakeFocus false;
                  Command (fun () -> behav#reset)] in
     pack[b][]

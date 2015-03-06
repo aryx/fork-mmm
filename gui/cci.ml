@@ -1,4 +1,5 @@
 (*s: ./gui/cci.ml *)
+open I18n
 open Tk
 open Unix
 open Hyper
@@ -60,11 +61,11 @@ let init () =
     begin match 
       Frx_dialog.f Widget.default_toplevel 
         (Mstring.gensym "confirm")
-        (I18n.sprintf "Confirm")
-        (I18n.sprintf "%s already exists. This may mean that there is another MMM already running. Do you want to remove this file and create again ? (Note that you must be sure there is no other MMM with -external option)" file)
+        (s_ "Confirm")
+        (s_ "%s already exists. This may mean that there is another MMM already running. Do you want to remove this file and create again ? (Note that you must be sure there is no other MMM with -external option)" file)
         (Predefined "question") 0
-        [ I18n.sprintf "Yes"; 
-          I18n.sprintf "No, I give up to use -external option"] 
+        [ s_ "Yes"; 
+          s_ "No, I give up to use -external option"] 
     with
       0 -> 
         Unix.unlink file;  
@@ -83,7 +84,7 @@ let init () =
     at_exit (fun () -> Msys.rm file)
  with
    e ->
-     !Error.default#f (I18n.sprintf "Can't initialize %s\n%s"
+     !Error.default#f (s_ "Can't initialize %s\n%s"
                        file (Printexc.to_string e))
 (*e: function Cci.init *)
 

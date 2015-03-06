@@ -1,4 +1,5 @@
 (*s: ./viewers/save.ml *)
+open I18n
 open Lexing
 open Unix
 open Document
@@ -38,7 +39,7 @@ let f cont dh fname endmsg =
       close_out oc;
       Document.destroy_log dh false;
       Msys.rm fname;
-      !Error.default#f (I18n.sprintf
+      !Error.default#f (s_
                  "Error during retrieval of %s" 
                  (Url.string_of dh.document_id.document_url))
         )
@@ -52,7 +53,7 @@ let tofile cont dh fname endmsg =
   with Sys_error msg -> 
     dclose true dh;
     Document.destroy_log dh false;
-    !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg)
+    !Error.default#f (s_ "Cannot save to %s\n(%s)" fname msg)
 (*e: function Save.tofile *)
 
 (*s: function Save.interactive *)
@@ -62,21 +63,21 @@ let rec interactive cont dh =
   let path = 
     match dh.document_id.document_url.path with Some p -> p | None -> "" in
 
-  Fileselect.f (I18n.sprintf "Save document")
+  Fileselect.f (s_ "Save document")
     (function 
     | [] ->
          (* by closing dh, we might break the cache *)
          dclose true dh
     | [fname] ->
         begin try 
-          let endmsg = (I18n.sprintf "URL %s\nsaved as %s" url fname) in
+          let endmsg = (s_ "URL %s\nsaved as %s" url fname) in
           f cont dh fname endmsg;
           Document.add_log dh 
-              (I18n.sprintf "Saving %s\nto %s" url fname)
+              (s_ "Saving %s\nto %s" url fname)
               (* channel is not closed ! *)
               (fun () -> Msys.rm fname)
         with Sys_error msg -> 
-          !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" fname msg);
+          !Error.default#f (s_ "Cannot save to %s\n(%s)" fname msg);
           interactive cont dh
         end
     | l -> raise (Failure "multiple selection")
@@ -89,7 +90,7 @@ let rec interactive cont dh =
 
 (*s: function Save.transfer *)
 let transfer wr dh dest =
-  wr.www_logging (I18n.sprintf "Saving...");
+  wr.www_logging (s_ "Saving...");
   match dest with
     None -> interactive (fun s -> wr.www_logging "") dh
   | Some (fd, flag) ->
@@ -114,7 +115,7 @@ let transfer wr dh dest =
      Unix_error(_,_,_) | Sys_error _ ->
        dclose true dh;
        close fd;
-       !Error.default#f (I18n.sprintf
+       !Error.default#f (s_
            "Error during retrieval of %s" 
           (Url.string_of dh.document_id.document_url))
        )
@@ -126,16 +127,16 @@ let save_from_string url s f =
    let oc = open_out_bin f in
      begin try
       output_string oc s;
-      !Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+      !Error.default#ok (s_ "Document %s\nsaved in\n%s"
                          (Url.string_of url) f)
      with
        Sys_error e ->
-        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
      end;
      close_out oc
   with
     Sys_error e ->
-        !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" f e)
+        !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
 (*e: function Save.save_from_string *)
 
 (*s: function Save.copy_file *)
@@ -150,17 +151,17 @@ let copy_file url src dst =
     in
     begin try 
      copy();
-     !Error.default#ok (I18n.sprintf "Document %s\nsaved in\n%s"
+     !Error.default#ok (s_ "Document %s\nsaved in\n%s"
                         (Url.string_of url) dst)
     with 
      Sys_error e ->
-      !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+      !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
     end;
     close_in ic; 
     close_out oc
   with
     Sys_error e ->
-      !Error.default#f (I18n.sprintf "Cannot save to %s\n(%s)" dst e)
+      !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
 (*e: function Save.copy_file *)
 
 
@@ -190,14 +191,14 @@ let pipe_from_string url data cmd =
           Unix_error (_,_,_) -> (* can't write *)
         Fileevent.remove_fileoutput fd_out;
         close fd_out;
-        !Error.default#f (I18n.sprintf "Error during |%s in %s" cmd urls)
+        !Error.default#f (s_ "Error during |%s in %s" cmd urls)
       end else begin (* we're done *)
         Fileevent.remove_fileoutput fd_out;
         close fd_out
       end)
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      !Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+      !Error.default#f (s_ "Can't execute command %s for %s" cmd urls)
 (*e: function Save.pipe_from_string *)
 
 
@@ -216,13 +217,13 @@ let pipe_from_file url f cmd =
     ()
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      !Error.default#f (I18n.sprintf "Can't execute command %s for %s" cmd urls)
+      !Error.default#f (s_ "Can't execute command %s for %s" cmd urls)
 (*e: function Save.pipe_from_file *)
 
 (*s: function Save.document *)
 let document did arg =
   let open_selection_box act =
-    Fileselect.f (I18n.sprintf "Save or pipe to file")
+    Fileselect.f (s_ "Save or pipe to file")
       (function [] -> ()
              | [s] -> act s
           | l -> raise (Failure "multiple selection"))

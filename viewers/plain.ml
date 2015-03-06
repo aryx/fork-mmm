@@ -29,7 +29,7 @@ class plain ((top : Widget.widget),
       Winfo.children frame |> List.iter destroy;
       self#init
     with Not_found ->
-       Error.default#f (I18n.sprintf "Document not in cache anymore")
+       Error.default#f (s_ "Document not in cache anymore")
 
   (* [finish abort?] *)
   val mutable (*private*) terminated = false

@@ -1,5 +1,6 @@
 (*s: ./gui/mmm.ml *)
 (* The navigation window *)
+open I18n
 open Printf
 open Unix
 open Tk
@@ -96,7 +97,7 @@ let display di =
   else !Error.default#f "fatal error: window was destroyed";
 
   let tl = Winfo.toplevel di#di_widget in
-  let title = I18n.sprintf "MMM Browser@%s" di#di_title in
+  let title = s_ "MMM Browser@%s" di#di_title in
   if Widget.known_class tl = "toplevel" 
   then begin 
     Wm.title_set tl title; 
@@ -108,10 +109,10 @@ let display di =
 let quit confirm =
   if confirm then
     match Frx_dialog.f Widget.default_toplevel (gensym "quit")
-      (I18n.sprintf "Confirm") 
-      (I18n.sprintf "Do you really want to quit ?")
+      (s_ "Confirm") 
+      (s_ "Do you really want to quit ?")
        (Predefined "question") 0 
-       [I18n.sprintf "Yep"; I18n.sprintf "Nope"] 
+       [s_ "Yep"; s_ "Nope"] 
     with
     |  0 -> destroy Widget.default_toplevel
     | _ -> ()
@@ -151,7 +152,7 @@ let rec navigator has_tachy initial_url =
     else Toplevel.create Widget.default_toplevel [Class "MMM"]
     (*e: [[Mmm.navigator()]] if not main window, create default toplevel *)
   in
-  Wm.title_set top (I18n.sprintf "MMM Browser");
+  Wm.title_set top (s_ "MMM Browser");
   (*s: [[Mmm.navigator()]] setup top packing *)
   (* the size of the navigator MUST NOT depend on what is displayed inside *)
   (* Instead, we rely on defaults for class MMM, *MMM.Width, *MMM.Height   *)
@@ -240,7 +241,7 @@ let rec navigator has_tachy initial_url =
              let wwwr = Plink.make link in
              navigator false wwwr.www_url |> ignore; ()
            with Invalid_link msg -> 
-            error#f (I18n.sprintf "Invalid link")
+            error#f (s_ "Invalid link")
       );
       (*e: [[Mmm.navigator()]] set nav fields *)
     }
@@ -280,7 +281,7 @@ let rec navigator has_tachy initial_url =
         Gcache.remove hist.h_key did;
         historygoto nav did frag false |> ignore
       end
-        else error#f (I18n.sprintf 
+        else error#f (s_ 
           "Document cannot be reloaded from its url\n(probably a POST request)")
     in
     (*e: function Mmm.navigator.reload *)
@@ -290,7 +291,7 @@ let rec navigator has_tachy initial_url =
       if did.document_stamp = no_stamp then
         Nav.update nav did nocache
       else (* POST result *)
-        error#f (I18n.sprintf "Can't update document\n(probably a POST request)")
+        error#f (s_ "Can't update document\n(probably a POST request)")
     in
     (*e: function Mmm.navigator.update *)
 
@@ -315,7 +316,7 @@ let rec navigator has_tachy initial_url =
     (*e: function Mmm.navigator.open_sel *)
     (*s: function Mmm.navigator.open_file *)
     let open_file () =
-      Fileselect.f (I18n.sprintf "Open File") (function
+      Fileselect.f (s_ "Open File") (function
         | [] -> ()
         | [s] -> 
             let path = Msys.tilde_subst s in
@@ -492,33 +493,33 @@ let rec navigator has_tachy initial_url =
     (*e: function Mmm.navigator.configure_menu_elements *)
     (*s: [[Mmm.navigator()]] MMM menu *)
     (* MMM menu *)
-    let mmm = Menubutton.create_named mbar "mmm" [Text (I18n.sprintf "MMM")] in
+    let mmm = Menubutton.create_named mbar "mmm" [Text (s_ "MMM")] in
     let mmmm = Menu.create_named mmm "menu" [] in
     Menubutton.configure mmm [Menu mmmm];
     configure_menu_elements mmmm [
-      [Label (I18n.sprintf "About")            ; Command About.f];
+      [Label (s_ "About")            ; Command About.f];
       [];
-      [Label (I18n.sprintf "New Window")       ; Command new_window];
-      [Label (I18n.sprintf "Open Selection")   ; Command open_sel];
-      [Label (I18n.sprintf "Open File...")     ; Command open_file];
-      [Label (I18n.sprintf "Save document...") ; Command save];
-      [Label (I18n.sprintf "Print document")   ; Command print];
-      [Label (I18n.sprintf "Preferences...")   ; Command !preferences];
+      [Label (s_ "New Window")       ; Command new_window];
+      [Label (s_ "Open Selection")   ; Command open_sel];
+      [Label (s_ "Open File...")     ; Command open_file];
+      [Label (s_ "Save document...") ; Command save];
+      [Label (s_ "Print document")   ; Command print];
+      [Label (s_ "Preferences...")   ; Command !preferences];
       [];
-      [Label (I18n.sprintf "Close Window")     ; Command close];
+      [Label (s_ "Close Window")     ; Command close];
       [];
-      [Label (I18n.sprintf "Quit")             ; Command really_quit]
+      [Label (s_ "Quit")             ; Command really_quit]
     ];
     (*e: [[Mmm.navigator()]] MMM menu *)
     (*s: [[Mmm.navigator()]] Navigation menu *)
     (* Navigation menu *)
-    let navb = Menubutton.create_named mbar "navigate" [Text (I18n.sprintf "Navigate")] in
+    let navb = Menubutton.create_named mbar "navigate" [Text (s_ "Navigate")] in
     let navm = Menu.create_named navb "menu" [] in
     Menubutton.configure navb [Menu navm];
     configure_menu_elements navm [ 
-      [Label (I18n.sprintf "Home");    Command gohome];
-      [Label (I18n.sprintf "Back");    Command back];
-      [Label (I18n.sprintf "Forward"); Command forward];
+      [Label (s_ "Home");    Command gohome];
+      [Label (s_ "Back");    Command back];
+      [Label (s_ "Forward"); Command forward];
       []
     ];
     (*e: [[Mmm.navigator()]] Navigation menu *)
@@ -527,9 +528,9 @@ let rec navigator has_tachy initial_url =
      * Deleting all entries will cause a callback leak since
      *  entries are associated to the menu itself 
      *)
-    let history_mindex = Pattern (I18n.sprintf "History") in
+    let history_mindex = Pattern (s_ "History") in
     let hmenu = ref (Menu.create_named navm "history" []) in 
-    Menu.add_cascade navm [Label (I18n.sprintf "History")];
+    Menu.add_cascade navm [Label (s_ "History")];
     update_vhistory := (fun () ->
       destroy !hmenu;
       hmenu := Menu.create_named navm "history" [];
@@ -557,58 +558,58 @@ let rec navigator has_tachy initial_url =
 
     (*e: [[Mmm.navigator()]] History menu *)
     (*s: [[Mmm.navigator()]] Document menu *)
-    let docb = Menubutton.create_named mbar "document" [Text (I18n.sprintf "Document")] in
+    let docb = Menubutton.create_named mbar "document" [Text (s_ "Document")] in
     let docm = Menu.create_named docb "menu" [] in
     Menubutton.configure docb [Menu docm];
     configure_menu_elements docm [	    
-      [Label (I18n.sprintf "Abort")          ; Command abort];
-      [Label (I18n.sprintf "Reload")         ; Command reload];
-      [Label (I18n.sprintf "Update")         ; Command update_true];
-      [Label (I18n.sprintf "Redisplay")      ; Command redisplay];
-      [Label (I18n.sprintf "Load Images")    ; Command load_images];
+      [Label (s_ "Abort")          ; Command abort];
+      [Label (s_ "Reload")         ; Command reload];
+      [Label (s_ "Update")         ; Command update_true];
+      [Label (s_ "Redisplay")      ; Command redisplay];
+      [Label (s_ "Load Images")    ; Command load_images];
       (*s: Document menu elements *)
-      [Label (I18n.sprintf "Add to hotlist") ; Command add_to_hotlist];
+      [Label (s_ "Add to hotlist") ; Command add_to_hotlist];
       (*x: Document menu elements *)
-      [Label (I18n.sprintf "View Source")    ; Command view_source]
+      [Label (s_ "View Source")    ; Command view_source]
       (*e: Document menu elements *)
     ];
     (*e: [[Mmm.navigator()]] Document menu *)
     (*s: [[Mmm.navigator()]] Other menu *)
     (* Other stuff *)
-    let othersb = Menubutton.create_named mbar "others" [Text (I18n.sprintf "Others")] in
+    let othersb = Menubutton.create_named mbar "others" [Text (s_ "Others")] in
     let othersm = Menu.create_named othersb "menu" [] in
     Menubutton.configure othersb [Menu othersm];
     (*s: Other menu elements *)
     Menu.add_command othersm
-      [Label (I18n.sprintf "Load Authorizations..."); Command Auth.load];
+      [Label (s_ "Load Authorizations..."); Command Auth.load];
     Menu.add_command othersm
-      [Label (I18n.sprintf "Edit Authorizations..."); Command Auth.edit];
+      [Label (s_ "Edit Authorizations..."); Command Auth.edit];
     Menu.add_command othersm
-      [Label (I18n.sprintf "Save Authorizations..."); Command Auth.save];
+      [Label (s_ "Save Authorizations..."); Command Auth.save];
     (*e: Other menu elements *)
     (*e: [[Mmm.navigator()]] Other menu *)
     (*s: [[Mmm.navigator()]] Help menu *)
     (* Help menu *)
-    let helpb = Menubutton.create_named mbar "help" [Text (I18n.sprintf "Help")] in
+    let helpb = Menubutton.create_named mbar "help" [Text (s_ "Help")] in
     let helpm = Menu.create_named helpb "menu" [] in
     Menubutton.configure helpb [Menu helpm];
     (*s: Help menu elements *)
     Menu.add_command helpm
-      [Label (I18n.sprintf "Version information");
+      [Label (s_ "Version information");
        Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
     Menu.add_command helpm
-      [Label (I18n.sprintf "Home Page of MMM");
+      [Label (s_ "Home Page of MMM");
        Command (fun () -> 
          navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
     (*x: Help menu elements *)
     Menu.add_command helpm
-      [Label (I18n.sprintf "Help on MMM");
+      [Label (s_ "Help on MMM");
        Command (fun () -> navigator false !helpurl |> ignore)];
     (*e: Help menu elements *)
     (*e: [[Mmm.navigator()]] Help menu *)
     (*s: [[Mmm.navigator()]] User menu *)
     (* User menu, extensible by applets *)
-    let userb = Menubutton.create_named mbar "user" [Text (I18n.sprintf "User")] in
+    let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
     let userm = ref (Menu.create_named userb "menu" []) in
     let reset_user_menu _ =
       destroy !userm;
@@ -629,7 +630,7 @@ let rec navigator has_tachy initial_url =
     (*e: [[Mmm.navigator()]] setup menu *)
     (*s: [[Mmm.navigator()]] setup open url entry *)
     (* URL display and edit *)
-    let f,e = Frx_entry.new_label_entry vgroup (I18n.sprintf "Open URL:")
+    let f,e = Frx_entry.new_label_entry vgroup (s_ "Open URL:")
                        (fun url -> Nav.absolutegoto nav url)
     in
     Entry.configure e [TextVariable entryv; TextWidth 40];
@@ -639,22 +640,22 @@ let rec navigator has_tachy initial_url =
     let fb = Frame.create_named vgroup "buttons" [] in
     (*s: [[Mmm.navigator()]] navigation buttons *)
     let backb = Button.create_named fb 
-      "back" [Text (I18n.sprintf "Back"); Command back ] in
+      "back" [Text (s_ "Back"); Command back ] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
     let forwardb = Button.create_named fb 
-      "forward" [Text (I18n.sprintf "Forward"); Command forward] in
+      "forward" [Text (s_ "Forward"); Command forward] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
     let homeb = Button.create_named fb "home"
-      [ Text (I18n.sprintf "Home"); Command gohome] in
+      [ Text (s_ "Home"); Command gohome] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
     let loggingb = Label.create_named fb "logging"
       [TextWidth 40; TextVariable loggingv; Anchor W] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
     let reloadb = Button.create_named fb
-      "reload" [Text (I18n.sprintf "Reload"); Command reload] in
+      "reload" [Text (s_ "Reload"); Command reload] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
     let abortb = Button.create_named fb 
-      "abort" [Text (I18n.sprintf "Abort"); Command abort] in
+      "abort" [Text (s_ "Abort"); Command abort] in
     (*e: [[Mmm.navigator()]] navigation buttons *)
 
     (*s: [[Mmm.navigator()]] packing part one *)
@@ -752,7 +753,7 @@ let rec navigator has_tachy initial_url =
     Some nav
 
   with e -> 
-    !Error.default#f (I18n.sprintf "Can't view initial document: %s\n%s"
+    !Error.default#f (s_ "Can't view initial document: %s\n%s"
                       (Url.string_of initial_url)
                       (Printexc.to_string e));
     if !navigators = 1 then begin

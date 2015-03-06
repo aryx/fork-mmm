@@ -1,4 +1,5 @@
 (*s: ./display/fonts.ml *)
+open I18n
 open Tk80
 open Tk
 open Jpf_font
@@ -166,7 +167,7 @@ let rec compute_tag fd =
     
         fontid, [Font fontname]
       with (* Invalid_argument f *) _ ->  (* font is not available *)
-        Log.f (I18n.sprintf "Font for %s is not available" 
+        Log.f (s_ "Font for %s is not available" 
                  (Jpf_font.string_of_pattern pattern));
         if fd = !default 
         then ("fixedfont", [Font "fixed"])

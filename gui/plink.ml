@@ -1,4 +1,5 @@
 (*s: ./gui/plink.ml *)
+open I18n
 open Tk
 open Hyper
 
@@ -6,7 +7,7 @@ open Hyper
 let dial hlink err =
   let t = Toplevel.create Widget.default_toplevel [Class "Dialog"] in
   Focus.set t;
-  Wm.title_set t (I18n.sprintf "Malformed link error");
+  Wm.title_set t (s_ "Malformed link error");
 
   let vuri = Textvariable.create_temporary t 
   and vcontext = Textvariable.create_temporary t in
@@ -20,7 +21,7 @@ let dial hlink err =
       LinkResolve s -> s
    |  UrlLexing (s,_) -> s in
 
-  let tit = Label.create t [Text (I18n.sprintf "Malformed link error")]
+  let tit = Label.create t [Text (s_ "Malformed link error")]
   and fc,ec = Frx_entry.new_labelm_entry t "Context" vcontext
   and fu,eu = Frx_entry.new_labelm_entry t "Relative" vuri
   and lmsg = Label.create t [Text msg]

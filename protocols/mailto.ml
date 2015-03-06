@@ -1,5 +1,6 @@
 (*s: ./protocols/mailto.ml *)
 (* mailto: *)
+open I18n
 open Sys
 open Unix
 open Www
@@ -24,10 +25,10 @@ let error body =
     let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
      output_string oc body;
      close_out oc;
-     !Error.default#f (I18n.sprintf "Can't send mail (saved in $HOME/dead.letter)")
+     !Error.default#f (s_ "Can't send mail (saved in $HOME/dead.letter)")
   with
      _ -> 
-      !Error.default#f (I18n.sprintf "Can't send mail, can't save dead.letter")
+      !Error.default#f (s_ "Can't send mail, can't save dead.letter")
 (*e: function Mailto.error *)
 
 (*s: function Mailto.sendmail *)
@@ -43,7 +44,7 @@ let sendmail msg =
      Munix.write_string fd_out msg.body;
      close fd_out;
      begin match waitpid [] n with
-       _, WEXITED 0 -> !Error.default#ok (I18n.sprintf "Mail sent")
+       _, WEXITED 0 -> !Error.default#ok (s_ "Mail sent")
      | _, _ -> error msg.body
      end
  with
@@ -75,14 +76,14 @@ let get mailaddr referer =
 (*s: function Mailto.f *)
 let f wr =
   match wr.www_url.path with
-    None -> wr.www_error#f (I18n.sprintf "No address given for mailto:")
+    None -> wr.www_error#f (s_ "No address given for mailto:")
   | Some rawaddress ->
      let address = Urlenc.decode rawaddress in
        match wr.www_link.h_method with
      GET -> get address wr.www_link.h_context
        | POST d ->
        if wr.www_error#choose 
-           (I18n.sprintf "About to send mail with POST data to\n%s"
+           (s_ "About to send mail with POST data to\n%s"
                  address)
        then
          let subject = match wr.www_link.h_context with
@@ -92,6 +93,6 @@ let f wr =
         { dest = address; subject = subject; body = d}
        else ()
        | _ ->
-       wr.www_error#f (I18n.sprintf "Unsupported method for mailto:")
+       wr.www_error#f (s_ "Unsupported method for mailto:")
 (*e: function Mailto.f *)
 (*e: ./protocols/mailto.ml *)

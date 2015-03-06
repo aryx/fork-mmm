@@ -1,5 +1,6 @@
 (*s: ./viewers/embed.ml *)
 (* Embedded documents *)
+open I18n
 open Tk
 open Document
 open Www
@@ -58,7 +59,7 @@ module EmbeddedData =
       |	_ -> failwith "load"
 
     let error url jobs = 
-      !Error.default#f (I18n.sprintf "Can't find embedded document %s" 
+      !Error.default#f (s_ "Can't find embedded document %s" 
                         (Url.string_of url))
 
     let error_msg (_,_) = ()
@@ -93,16 +94,16 @@ let embedded_viewer frame ctx doc =
     with
     Not_found ->
       let t = 
-        I18n.sprintf "Embed Error: no viewer for type %s/%s" typ subtyp in
+        s_ "Embed Error: no viewer for type %s/%s" typ subtyp in
       let l = Label.create frame [Text t] in pack [l][]
   with
     Not_found ->
-      let t = I18n.sprintf "Embed Error: no type for document %s" 
+      let t = s_ "Embed Error: no type for document %s" 
                           (Url.string_of doc.document_address) in 
       let l = Label.create frame [Text t] in pack [l][]
   | Invalid_HTTP_header e ->
       let t = 
-       I18n.sprintf "Embed Error: malformed type %s (%s)"
+       s_ "Embed Error: malformed type %s (%s)"
          (contenttype doc.document_info) e in
       let l = Label.create frame [Text t] in pack [l][]
 (*e: function Embed.embedded_viewer *)
@@ -181,14 +182,14 @@ let add ({ embed_hlink = link;
    with
      Not_found -> (* no viewer for this *)
       let t = 
-        I18n.sprintf "Embed Error: no viewer for type %s" given_type in
+        s_ "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
    | Invalid_request (w,msg) ->
-       let t = I18n.sprintf "Embed Error: %s\n(%s)"
+       let t = s_ "Embed Error: %s\n(%s)"
                 (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
    | Invalid_link err ->
-       let t = I18n.sprintf "Embed Error: invalid link" in
+       let t = s_ "Embed Error: invalid link" in
        pack [Message.create frame [Text t ]][]
   with
      Not_found -> (* not type given, we have to retrieve to know *)
@@ -203,11 +204,11 @@ let add ({ embed_hlink = link;
      (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
-       let t = I18n.sprintf "Embed Error: %s\n(%s)"
+       let t = s_ "Embed Error: %s\n(%s)"
                 (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
        | Invalid_link err ->
-       let t = I18n.sprintf "Embed Error: invalid link" in
+       let t = s_ "Embed Error: invalid link" in
        pack [Message.create frame [Text t ]][]
 (*e: function Embed.add *)
 
@@ -261,14 +262,14 @@ let update frame embed_ctx doc notchanged =
       with
       Not_found -> (* no viewer for this *)
       let t = 
-            I18n.sprintf "Embed Error: no viewer for type %s" given_type in
+            s_ "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
       | Invalid_request (w,msg) ->
-      let t = I18n.sprintf "Embed Error: %s\n(%s)"
+      let t = s_ "Embed Error: %s\n(%s)"
           (Url.string_of w.www_url) msg in
       pack [Message.create frame [Text t]][]
       | Invalid_link err ->
-      let t = I18n.sprintf "Embed Error: invalid link" in
+      let t = s_ "Embed Error: invalid link" in
       pack [Message.create frame [Text t ]][]
     with
       Not_found -> (* not type given, we have to retrieve to know *)
@@ -283,11 +284,11 @@ let update frame embed_ctx doc notchanged =
         (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
-        let t = I18n.sprintf "Embed Error: %s\n(%s)"
+        let t = s_ "Embed Error: %s\n(%s)"
         (Url.string_of w.www_url) msg in
         pack [Message.create frame [Text t]][]
         | Invalid_link err ->
-        let t = I18n.sprintf "Embed Error: invalid link" in
+        let t = s_ "Embed Error: invalid link" in
         pack [Message.create frame [Text t ]][]
   with
     Not_found -> (* Document has no Date: header *)

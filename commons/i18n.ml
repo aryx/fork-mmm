@@ -111,6 +111,8 @@ let sprintf (fmt : ('a, unit, string) format) =
 
 (*e: function I18n.sprintf (./commons/i18n.ml) *)
 
+let s_ fmt = sprintf fmt
+
 let printf fmt = fprintf stdout fmt
 and eprintf fmt = fprintf stderr fmt
 

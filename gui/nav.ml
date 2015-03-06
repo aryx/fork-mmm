@@ -1,4 +1,5 @@
 (*s: ./gui/nav.ml *)
+open I18n
 open Printf
 open Unix
 open Tk
@@ -112,18 +113,18 @@ let request nav  usecache wrapwr  process  specific lk =
                  process nav wr (Cache.make_handle wr doc)
                with 
                | Sys_error s ->
-                   wr.www_error#f (I18n.sprintf
+                   wr.www_error#f (s_
                     "Cache error occurred during save of temporary buffer (%s)"
                        s)
                | Unix_error (e,fname,arg) ->
-                   wr.www_error#f (I18n.sprintf 
+                   wr.www_error#f (s_ 
                      "Cache error occurred when opening temporary file\n%s: %s (%s)"
                      fname (Unix.error_message e) arg)
             with Not_found -> (* we don't have the document *)
               retrieve_and_handle wr
            (*e: [[Nav.request.handle_wr()]] if use cache *)
     with Duplicate url ->
-      wr.www_error#f (I18n.sprintf 
+      wr.www_error#f (s_ 
           "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
   (*e: function Nav.request.handle_wr *)
   (*s: function Nav.request.handle_link *)
@@ -134,9 +135,9 @@ let request nav  usecache wrapwr  process  specific lk =
       wr |> wrapwr |> handle_wr
     with
     | Invalid_link msg ->
-        nav.nav_error#f (I18n.sprintf "Invalid link")
+        nav.nav_error#f (s_ "Invalid link")
     | Invalid_request (wr, msg) ->
-        nav.nav_error#f (I18n.sprintf "Invalid request %s\n%s"
+        nav.nav_error#f (s_ "Invalid request %s\n%s"
                           (Url.string_of wr.www_url) msg)
   in
   (*e: function Nav.request.handle_link *)
@@ -184,7 +185,7 @@ let process_save dest = fun nav wr dh ->
     200 -> Save.transfer wr dh dest
   | n ->
     if wr.www_error#choose 
-        (I18n.sprintf "Request for %s\nreturned %d %s.\nDo you wish to save ?"
+        (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
          (Url.string_of wr.www_url) n (status_msg dh.document_headers))
     then Save.transfer wr dh dest
     else dclose true dh
@@ -231,7 +232,7 @@ let make_head hlink =
 let copy_link nav h =
   try Frx_selection.set (Hyper.string_of h)
   with Invalid_link msg ->
-    nav.nav_error#f (I18n.sprintf "Invalid link")
+    nav.nav_error#f (s_ "Invalid link")
 (*e: function Nav.copy_link *)
 
 (*s: constant Nav.user_navigation *)
@@ -346,11 +347,11 @@ class stdctx (did, nav) =
     List.iter (fun (name, f, txt) ->
       self#add_nav
     (name, {hyper_visible = true; hyper_func = f; hyper_title = txt}))
-       ["copy", copy_link, I18n.sprintf "Copy this Link to clipboard";
-    "head", head_link, I18n.sprintf "Headers of document";
-    "save", save_link, I18n.sprintf "Save this Link";
-    "gotonew", new_link, I18n.sprintf "New window with this Link";
-        "goto", frame_goto, I18n.sprintf "Open this Link";
+       ["copy", copy_link, s_ "Copy this Link to clipboard";
+    "head", head_link, s_ "Headers of document";
+    "save", save_link, s_ "Save this Link";
+    "gotonew", new_link, s_ "New window with this Link";
+        "goto", frame_goto, s_ "Open this Link";
        ];
     self
 
@@ -433,7 +434,7 @@ let historygoto nav did frag usecache =
     with
       Not_found ->
         nav.nav_error#f 
-     (I18n.sprintf "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
+     (s_ "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
         false
    end
 (*e: function Nav.historygoto *)
@@ -453,7 +454,7 @@ let update nav did nocache =
     with
       Not_found -> () (* weird *)
     end;
-    wr.www_error#ok (I18n.sprintf "Document %s has not changed.\n"
+    wr.www_error#ok (s_ "Document %s has not changed.\n"
                (Url.string_of wr.www_url))
     | 200 | _ ->
         (* kill the previous displayed window *)
@@ -463,7 +464,7 @@ let update nav did nocache =
     let newurl = Url.string_of dh.document_id.document_url in
     let add_hist = oldurl <> newurl in
     if add_hist then 
-      wr.www_error#ok (I18n.sprintf "Document %s is relocated to:\n%s"
+      wr.www_error#ok (s_ "Document %s is relocated to:\n%s"
                  oldurl newurl);
      wr.www_logging <- nav.nav_log;
      process_viewer add_hist make_ctx nav wr dh
@@ -493,7 +494,7 @@ let update nav did nocache =
     nav.nav_error#f ("Document has no Date: header.")
   with
     Not_found ->
-      nav.nav_error#f (I18n.sprintf "Document %s\nhas been flushed from cache"
+      nav.nav_error#f (s_ "Document %s\nhas been flushed from cache"
                         (Url.string_of did.document_url))
 (*e: function Nav.update *)
 (*e: ./gui/nav.ml *)

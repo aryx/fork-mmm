@@ -1,5 +1,6 @@
 (*s: ./protocols/file.ml *)
 (* The file: protocol *)
+open I18n
 open Printf
 open Unix
 open Filename
@@ -96,7 +97,7 @@ let dir path =
         cin (*duh*)
      | n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
-    raise (File_error (I18n.sprintf "cannot open dir"))
+    raise (File_error (s_ "cannot open dir"))
 (*e: function File.dir *)
   
 
@@ -170,19 +171,19 @@ let fake_cgi wwwr cont path =
                cont.document_process dh
            | Unix_error(_,_,_) ->
                dclose true dh;
-               raise (File_error (I18n.sprintf 
+               raise (File_error (s_ 
                   "Error while reading headers of %s\n%s" path "(read)"))
            | Invalid_HTTP_header s ->
                dclose true dh;
-               raise (File_error (I18n.sprintf 
+               raise (File_error (s_ 
                       "Error while reading headers of %s\n%s" path s))
            | End_of_file ->
                dclose true dh;
-               raise (File_error (I18n.sprintf 
+               raise (File_error (s_ 
                   "Error while reading headers of %s\n%s" path "eof"))
           )
   with Unix_error(_,_,_) -> 
-    raise (File_error (I18n.sprintf "cannot exec file"))
+    raise (File_error (s_ "cannot exec file"))
 (*e: function File.fake_cgi *)
 
 (*s: constant File.binary_path *)
@@ -233,7 +234,7 @@ let request wr cont =
     let st =
       try 
         stat path 
-      with _ -> raise (File_error (I18n.sprintf "cannot stat file")) 
+      with _ -> raise (File_error (s_ "cannot stat file")) 
     in
     match st.st_kind with
     | S_REG ->
@@ -256,7 +257,9 @@ let request wr cont =
               document_fragment = wr.www_fragment;
               document_logger = Document.tty_logger
             } in
-            Retype.f dh;
+
+            Retype.f dh; (* pad: to get the content type based on the suffix *)
+
             cont.document_process dh;
             (fun () -> ())
           end
@@ -266,7 +269,7 @@ let request wr cont =
           let s = 
             try openfile path [O_RDONLY] 0
             with Unix_error(_,_,_) -> 
-              raise (File_error (I18n.sprintf "cannot open file")) 
+              raise (File_error (s_ "cannot open file")) 
           in
           let dh =
             { document_id = document_id wr;
@@ -298,6 +301,6 @@ let request wr cont =
            };
          (fun () -> ())
 
-    | _ -> raise (File_error (I18n.sprintf "cannot open file"))
+    | _ -> raise (File_error (s_ "cannot open file"))
 (*e: function File.request *)
 (*e: ./protocols/file.ml *)
