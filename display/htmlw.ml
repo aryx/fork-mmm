@@ -705,27 +705,36 @@ class display_html ((top : Widget.widget),
 
   (* What is exported ? *)
   method di_widget = frame
-  method di_destroy = if Winfo.exists frame then destroy frame;
   method di_title = title
   method di_fragment = mach#see_frag
+
+  (*s: [[Htmlw.display_html]] load images methods *)
   method di_load_images = 
     (* load our images *)
     imgmanager#load_images;
-    (* Recursively, for all embedded objects, send the load_images event *)
-    (* Because we work on the children of the frame, the *currently* 
-       displayed document in this frame gets the event *)
-    (* NOTE: because of textvariable handlings, we can NOT send the
-       event again during the processing of the event... *)
+
+    (* Recursively, for all embedded objects, send the load_images event.
+     * Because we work on the children of the frame, the *currently* 
+     *  displayed document in this frame gets the event.
+     * NOTE: because of textvariable handlings, we can NOT send the
+     *  event again during the processing of the event... 
+     *)
     Frx_after.idle (fun () ->
-    List.iter (fun {embed_frame = f} ->
-      List.iter (Frx_synth.send "load_images") (Winfo.children f))
-      mach#embedded)
+      mach#embedded |> List.iter (fun {embed_frame = f} ->
+        Winfo.children f |> List.iter (Frx_synth.send "load_images")
+      )
+    )
+  (*e: [[Htmlw.display_html]] load images methods *)
+  (*s: [[Htmlw.display_html]] update embedded objects methods *)
   method di_update =
     imgmanager#update_images;
+
     Frx_after.idle (fun () ->
-    List.iter (fun {embed_frame = f} ->
-      List.iter (Frx_synth.send "update") (Winfo.children f))
-      mach#embedded)
+      mach#embedded |> List.iter (fun {embed_frame = f} ->
+        Winfo.children f |> List.iter (Frx_synth.send "update")
+      )
+    )
+  (*e: [[Htmlw.display_html]] update embedded objects methods *)
 
   (*s: [[Htmlw.display_html]] abort methods *)
   method di_abort = 
@@ -745,7 +754,6 @@ class display_html ((top : Widget.widget),
       (* TODO we should also require embedded objects to abort *)
     end
   (*e: [[Htmlw.display_html]] abort methods *)
-
   (*s: [[Htmlw.display_html]] redisplay methods *)
   method di_redisplay = 
     self#redisplay
@@ -763,7 +771,11 @@ class display_html ((top : Widget.widget),
       with Not_found ->
         Error.f (s_ "Document not in cache anymore")
   (*e: [[Htmlw.display_html]] redisplay methods *)
-
+  (*s: [[Htmlw.display_html]] destroy methods *)
+  method di_destroy = 
+    if Winfo.exists frame 
+    then Tk.destroy frame;
+  (*e: [[Htmlw.display_html]] destroy methods *)
   (*s: [[Htmlw.display_html]] other methods or fields *)
   method di_source = self#source
 

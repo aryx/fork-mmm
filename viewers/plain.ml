@@ -105,15 +105,10 @@ class plain ((top : Widget.widget),
          self#finish true
      );
 
-  method di_destroy = 
-    if Winfo.exists frame 
-    then destroy frame
   method di_title =
     Url.string_of dh.document_id.document_url
   method di_fragment _frag = 
     ()
-  method di_load_images = ()
-  method di_update = ()
 
   (*s: [[Plain.plain]] abort methods *)
   method di_abort = 
@@ -142,6 +137,16 @@ class plain ((top : Widget.widget),
     with Not_found ->
       Error.f (s_ "Document not in cache anymore")
   (*e: [[Plain.plain]] redisplay methods *)
+  (*s: [[Plain.plain]] destroy methods *)
+  method di_destroy = 
+    if Winfo.exists frame 
+    then Tk.destroy frame
+  (*e: [[Plain.plain]] destroy methods *)
+  (*s: [[Plain.plain]] empty methods *)
+  method di_load_images = ()
+  (*x: [[Plain.plain]] empty methods *)
+  method di_update = ()
+  (*e: [[Plain.plain]] empty methods *)
 
   (*s: [[Plain.plain]] other methods or fields *)
   method di_source = ()

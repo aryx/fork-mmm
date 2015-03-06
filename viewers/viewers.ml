@@ -107,8 +107,8 @@ class  virtual display_info () =
   (* the created widget containing the graphics *)
   method virtual di_widget : Widget.widget
   (*x: [[Viewers.display_info]] virtual fields signatures *)
-  method virtual di_destroy : unit	 (* die *)
   method virtual di_load_images : unit (* load images *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_update : unit      (* update embedded objects *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_abort : unit		 (* stop display *)
@@ -116,6 +116,8 @@ class  virtual display_info () =
   method virtual di_redisplay : unit		(* redisplay *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_source : unit 	        (* source viewer *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_destroy : unit	 (* die *)
   (*e: [[Viewers.display_info]] virtual fields signatures *)
 
   val mutable di_last_used = !Low.global_time

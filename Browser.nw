@@ -885,10 +885,6 @@ type header = string
 %  text/plain, text/html
 
 
-\section{DOM}
-
-%https://dom.spec.whatwg.org/
-
 \section{Abstract syntax trees}
 
 % html
@@ -955,6 +951,10 @@ type attribute_value = string
 
 
 
+\section{DOM}
+
+%https://dom.spec.whatwg.org/
+
 \section{Viewers}
 
 \subsection{[[Viewers.context]]}
@@ -1007,7 +1007,7 @@ type vparams = (string * string) list
 \subsection{[[Viewers.display_info]]}
 
 % this is what will be returned by function like
-% display_html given a viewer_context
+% display_html given a Viewers.viewer_context
 
 <<signature class Viewers.display_info>>=
 class  virtual display_info : (unit) -> object ('a)
@@ -1036,12 +1036,6 @@ method virtual di_widget : Widget.widget
 % that will be deleted in undisplay
 
 
-%XXX
-<<[[Viewers.display_info]] virtual fields signatures>>=
-method virtual di_destroy : unit	 (* die *)
-method virtual di_load_images : unit (* load images *)
-method virtual di_update : unit      (* update embedded objects *)
-@
 
 \section{Display}
 
@@ -1432,7 +1426,7 @@ let rec navigator has_tachy initial_url =
                            (Url.string_of initial_url)
                            (Printexc.to_string e));
     if !navigators = 1 then begin
-      destroy Widget.default_toplevel;
+      Tk.destroy Widget.default_toplevel;
       raise e
     end 
     <<[[Mmm.navigator()]] exn handler, else if multiple navigators>>
@@ -1744,7 +1738,7 @@ bind top [[], Destroy] (BindSet ([Ev_Widget], (fun ei ->
 
     (* we were destroyed by wm *)
     if !navigators = 0 && Winfo.exists Widget.default_toplevel
-    then destroy Widget.default_toplevel
+    then Tk.destroy Widget.default_toplevel
   end
 )));
 @
@@ -1943,7 +1937,7 @@ let history_mindex = Pattern (s_ "History") in
 let hmenu = ref (Menu.create_named navm "history" []) in 
 Menu.add_cascade navm [Label (s_ "History")];
 update_vhistory := (fun () ->
-  destroy !hmenu;
+  Tk.destroy !hmenu;
   hmenu := Menu.create_named navm "history" [];
   History.contents hist |> List.iter (fun e ->
     let label = ref (Url.string_of e.h_did.document_url) in
@@ -2112,7 +2106,7 @@ in
 let close () =
   if !navigators = 1 
   then quit true
-  else destroy top
+  else Tk.destroy top
 in
 @
 
@@ -2133,9 +2127,9 @@ let quit confirm =
       0 
       [s_ "Yep"; s_ "Nope"] 
     with
-    | 0 -> destroy Widget.default_toplevel
+    | 0 -> Tk.destroy Widget.default_toplevel
     | _ -> ()
-  else destroy Widget.default_toplevel
+  else Tk.destroy Widget.default_toplevel
 @
 
 \subsection{Navigation menu}
@@ -2165,20 +2159,12 @@ configure_menu_elements docm [
   [Label (s_ "Abort")          ; Command abort];
   [Label (s_ "Reload")         ; Command reload];
   [Label (s_ "Update")         ; Command update_true];
-  [Label (s_ "Load Images")    ; Command load_images];
   <<Document menu elements>>
 ];
 @
 % diff between update and redisplay?
 
 
-<<function Mmm.navigator.load_images>>=
-let load_images () =
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_load_images
-in
-@
 
 
 
@@ -6453,19 +6439,16 @@ class plain ((top : Widget.widget),
          self#finish true
      );
 
-  method di_destroy = 
-    if Winfo.exists frame 
-    then destroy frame
   method di_title =
     Url.string_of dh.document_id.document_url
   method di_fragment _frag = 
     ()
-  method di_load_images = ()
-  method di_update = ()
 
   <<[[Plain.plain]] abort methods>>
 
   <<[[Plain.plain]] redisplay methods>>
+  <<[[Plain.plain]] destroy methods>>
+  <<[[Plain.plain]] empty methods>>
 
   <<[[Plain.plain]] other methods or fields>>
 end
@@ -7568,32 +7551,15 @@ class display_html ((top : Widget.widget),
 
   (* What is exported ? *)
   method di_widget = frame
-  method di_destroy = if Winfo.exists frame then destroy frame;
   method di_title = title
   method di_fragment = mach#see_frag
-  method di_load_images = 
-    (* load our images *)
-    imgmanager#load_images;
-    (* Recursively, for all embedded objects, send the load_images event *)
-    (* Because we work on the children of the frame, the *currently* 
-       displayed document in this frame gets the event *)
-    (* NOTE: because of textvariable handlings, we can NOT send the
-       event again during the processing of the event... *)
-    Frx_after.idle (fun () ->
-    List.iter (fun {embed_frame = f} ->
-      List.iter (Frx_synth.send "load_images") (Winfo.children f))
-      mach#embedded)
-  method di_update =
-    imgmanager#update_images;
-    Frx_after.idle (fun () ->
-    List.iter (fun {embed_frame = f} ->
-      List.iter (Frx_synth.send "update") (Winfo.children f))
-      mach#embedded)
+
+  <<[[Htmlw.display_html]] load images methods>>
+  <<[[Htmlw.display_html]] update embedded objects methods>>
 
   <<[[Htmlw.display_html]] abort methods>>
-
   <<[[Htmlw.display_html]] redisplay methods>>
-
+  <<[[Htmlw.display_html]] destroy methods>>
   <<[[Htmlw.display_html]] other methods or fields>>
 end
 @
@@ -7623,12 +7589,53 @@ end
 
 \chapter{Images}
 
-% display_html -> <>
+<<Document menu elements>>=
+[Label (s_ "Load Images")    ; Command load_images];
+@
+% but should be default
 
+
+<<function Mmm.navigator.load_images>>=
+let load_images () =
+  match !current_di with
+  | None -> ()
+  | Some di -> di#di_load_images
+in
+@
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_load_images : unit (* load images *)
+@
+
+<<[[Plain.plain]] empty methods>>=
+method di_load_images = ()
+@
+% no image in plain text
+
+<<[[Htmlw.display_html]] load images methods>>=
+method di_load_images = 
+  (* load our images *)
+  imgmanager#load_images;
+
+  (* Recursively, for all embedded objects, send the load_images event.
+   * Because we work on the children of the frame, the *currently* 
+   *  displayed document in this frame gets the event.
+   * NOTE: because of textvariable handlings, we can NOT send the
+   *  event again during the processing of the event... 
+   *)
+  Frx_after.idle (fun () ->
+    mach#embedded |> List.iter (fun {embed_frame = f} ->
+      Winfo.children f |> List.iter (Frx_synth.send "load_images")
+    )
+  )
+@
+
+\section{XXX}
+
+% display_html -> <>
 <<signature Imgload.create>>=
 val create : unit -> loader
 @
-
 <<class Imgload.loader signature>>=
 class loader : (unit) -> object
   method add_image : Embed.embobject -> unit	 (* add one image *)
@@ -7636,6 +7643,27 @@ class loader : (unit) -> object
   method load_images : unit		 (* manual flush *)
   method update_images : unit
 end
+@
+
+\section{Embedded objects}
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_update : unit      (* update embedded objects *)
+@
+
+<<[[Plain.plain]] empty methods>>=
+method di_update = ()
+@
+
+<<[[Htmlw.display_html]] update embedded objects methods>>=
+method di_update =
+  imgmanager#update_images;
+
+  Frx_after.idle (fun () ->
+    mach#embedded |> List.iter (fun {embed_frame = f} ->
+      Winfo.children f |> List.iter (Frx_synth.send "update")
+    )
+  )
 @
 
 \section{Animaged GIFs}
@@ -8202,7 +8230,7 @@ incr navigators;
 
 <<[[Mmm.navigator()]] exn handler, else if multiple navigators>>=
 else begin 
-  destroy top;
+  Tk.destroy top;
   None
 end
 @
@@ -9932,6 +9960,43 @@ let di_compare di di' =
 Gcache.add nav.nav_id dh.document_id di;
 @
 
+
+
+
+<<function Gcache.remove>>=
+(* Removes a given dinfo for a cached document
+ *   used when adding in the middle of the history
+ *)
+let remove hkey did =
+  if !debug then Log.f
+    (sprintf "Removing %s in window %d" (Url.string_of did.document_url) hkey);
+  try
+    let r = Hashtbl.find table hkey in
+    let di = List.assoc did !r in
+     di#di_abort;
+     di#di_destroy;
+     r := Mlist.except_assoc did !r;
+    if !Cache.history_mode then nocache did
+  with
+     Not_found -> Log.debug "Gcache.remove failed !"
+@
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_destroy : unit	 (* die *)
+@
+
+<<[[Plain.plain]] destroy methods>>=
+method di_destroy = 
+  if Winfo.exists frame 
+  then Tk.destroy frame
+@
+
+<<[[Htmlw.display_html]] destroy methods>>=
+method di_destroy = 
+  if Winfo.exists frame 
+  then Tk.destroy frame;
+@
+
 \section{Fake CGI}
 
 <<[[File.request()]] if CGI path>>=
@@ -10163,7 +10228,7 @@ let applet_init = ref (fun _ -> ())
 let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
 let userm = ref (Menu.create_named userb "menu" []) in
 let reset_user_menu _ =
-  destroy !userm;
+  Tk.destroy !userm;
   userm := Menu.create_named userb "menu" [];
   !user_menus |> List.iter (fun (entry, f) ->
       Menu.add_command !userm 

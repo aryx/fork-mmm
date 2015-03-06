@@ -115,9 +115,9 @@ let quit confirm =
       0 
       [s_ "Yep"; s_ "Nope"] 
     with
-    | 0 -> destroy Widget.default_toplevel
+    | 0 -> Tk.destroy Widget.default_toplevel
     | _ -> ()
-  else destroy Widget.default_toplevel
+  else Tk.destroy Widget.default_toplevel
 (*e: function Mmm.quit *)
 
 (*s: constant Mmm.user_menus *)
@@ -349,7 +349,7 @@ let rec navigator has_tachy initial_url =
     let close () =
       if !navigators = 1 
       then quit true
-      else destroy top
+      else Tk.destroy top
     in
     (*e: function Mmm.navigator.close *)
     (*s: function Mmm.navigator.really_quit *)
@@ -537,7 +537,7 @@ let rec navigator has_tachy initial_url =
     let hmenu = ref (Menu.create_named navm "history" []) in 
     Menu.add_cascade navm [Label (s_ "History")];
     update_vhistory := (fun () ->
-      destroy !hmenu;
+      Tk.destroy !hmenu;
       hmenu := Menu.create_named navm "history" [];
       History.contents hist |> List.iter (fun e ->
         let label = ref (Url.string_of e.h_did.document_url) in
@@ -570,8 +570,9 @@ let rec navigator has_tachy initial_url =
       [Label (s_ "Abort")          ; Command abort];
       [Label (s_ "Reload")         ; Command reload];
       [Label (s_ "Update")         ; Command update_true];
-      [Label (s_ "Load Images")    ; Command load_images];
       (*s: Document menu elements *)
+      [Label (s_ "Load Images")    ; Command load_images];
+      (*x: Document menu elements *)
       [Label (s_ "Redisplay")      ; Command redisplay];
       (*x: Document menu elements *)
       [Label (s_ "Add to hotlist") ; Command add_to_hotlist];
@@ -618,7 +619,7 @@ let rec navigator has_tachy initial_url =
     let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
     let userm = ref (Menu.create_named userb "menu" []) in
     let reset_user_menu _ =
-      destroy !userm;
+      Tk.destroy !userm;
       userm := Menu.create_named userb "menu" [];
       !user_menus |> List.iter (fun (entry, f) ->
           Menu.add_command !userm 
@@ -734,7 +735,7 @@ let rec navigator has_tachy initial_url =
 
         (* we were destroyed by wm *)
         if !navigators = 0 && Winfo.exists Widget.default_toplevel
-        then destroy Widget.default_toplevel
+        then Tk.destroy Widget.default_toplevel
       end
     )));
     (*e: [[Mmm.navigator()]] handling destroy event *)
@@ -763,12 +764,12 @@ let rec navigator has_tachy initial_url =
                            (Url.string_of initial_url)
                            (Printexc.to_string e));
     if !navigators = 1 then begin
-      destroy Widget.default_toplevel;
+      Tk.destroy Widget.default_toplevel;
       raise e
     end 
     (*s: [[Mmm.navigator()]] exn handler, else if multiple navigators *)
     else begin 
-      destroy top;
+      Tk.destroy top;
       None
     end
     (*e: [[Mmm.navigator()]] exn handler, else if multiple navigators *)
