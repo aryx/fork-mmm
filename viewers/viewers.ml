@@ -49,6 +49,7 @@ type hyper_func = {
   }
 (*e: type Viewers.hyper_func *)
 
+(*s: class Viewers.context *)
 class virtual context ((did : Document.document_id), 
                (v : vparams)) =
  object (self : 'a)
@@ -90,6 +91,7 @@ class virtual context ((did : Document.document_id),
 
   method virtual log : string -> unit
 end
+(*e: class Viewers.context *)
 
 
 

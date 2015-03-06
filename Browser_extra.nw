@@ -6421,47 +6421,7 @@ open Hyper
 
 <<type Viewers.hyper_func>>
 
-class virtual context ((did : Document.document_id), 
-               (v : vparams)) =
- object (self : 'a)
-
-  val base = did
-  method base = base
-
-  val viewer_params = v
-  method params = viewer_params
-
-  val mutable (*private*) funs = ([] : (string * hyper_func ) list)
-  method hyper_funs = funs
-
-  val targets = []
-
-  method goto hlink = self#invoke "goto" hlink
-  method gotonew hlink = self#invoke "gotonew" hlink
-  method save hlink = self#invoke "save" hlink
-  method invoke name hlink =
-    try (List.assoc name funs).hyper_func targets hlink
-    with Not_found -> ()
-
-  method add_nav (fname, hf) =
-    funs <- (fname, hf) :: funs
-
-  (* apply this on a copy ! *)
-  method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
-    {< viewer_params = vparams; 
-       targets = 
-         let _oldtargets = targets in (* for debug *)
-          match newtargets with 
-          (* keep exactly the same environment *)
-          | [] -> targets 
-          (* assume I'm given new _self and _parent *)
-          | l -> l @ frame_fugue targets 
-    >}
-  method in_embed did =
-    {< base = did >}
-
-  method virtual log : string -> unit
-end
+<<class Viewers.context>>
 
 
 
