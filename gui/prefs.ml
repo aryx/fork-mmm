@@ -8,11 +8,10 @@ open Fontprefs
 (*s: function Prefs.pref_error *)
 (* Generic report *)
 let pref_error msg =
-   ignore (
-     Frx_dialog.f Widget.default_toplevel (gensym "error")
-      (s_ "Preference Error") 
-      msg
-      (Predefined "") 0 [s_ "Ok"])
+  Frx_dialog.f Widget.default_toplevel (gensym "error")
+     (s_ "Preference Error") 
+     msg
+     (Predefined "") 0 [s_ "Ok"] |> ignore
 (*e: function Prefs.pref_error *)
 
 (*s: function Prefs.resource_name *)
@@ -106,16 +105,18 @@ let set_pref {pref_type = typ; pref_variable = v} = match typ with
  | String r -> r := Textvariable.get v
  | Int r ->
      let s = Textvariable.get v in
-      begin try r := int_of_string s
+      begin try 
+        r := int_of_string s
       with Failure "int_of_string" ->
-            pref_error (s_ "Not an integer: %s" s)
+        pref_error (s_ "Not an integer: %s" s)
       end
  | Float r ->
      let s = Textvariable.get v in
-      begin try r := float_of_string s
-      with Failure "float_of_string" ->
-            pref_error (s_ "Not a float: %s" s)
-      end
+     begin try 
+        r := float_of_string s
+     with Failure "float_of_string" ->
+        pref_error (s_ "Not a float: %s" s)
+     end
  | AbstractType(_,s) -> s v
 (*e: function Prefs.set_pref *)
 
@@ -363,9 +364,8 @@ let save_file prefmaps f =
       prefmaps;
     close_out oc;
     Unix.rename (f ^ ".tmp") f
-  with
-    Sys_error s ->
-      pref_error (s_ "Can't open preference file: %s (%s)" f s)
+  with Sys_error s ->
+    pref_error (s_ "Can't open preference file: %s (%s)" f s)
 (*e: function Prefs.save_file *)
       
 (*s: type Prefs.pref_family (./gui/prefs.ml) *)
@@ -427,9 +427,7 @@ let rec init filename status interactive mute =
   (* The menu bar *)
   let mbar = Frame.create_named top "menubar" [] in
   let file = 
-      Menubutton.create_named mbar "file"
-        [Text (s_ "File"); UnderlinedChar 0]
-  in
+    Menubutton.create_named mbar "file" [Text (s_ "File"); UnderlinedChar 0] in
   pack [file][Side Side_Left];
   pack [mbar][Side Side_Top; Anchor W; Fill Fill_X];
   (* The window *)
@@ -478,8 +476,7 @@ let rec init filename status interactive mute =
             init filename status interactive mute
           end
           else
-            pref_error (s_ "%s : no such preference file"
-                             s)
+            pref_error (s_ "%s : no such preference file" s)
               | l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
        "*")

@@ -163,8 +163,7 @@ let tcp_connect server_name port  log  cont error =
              then begin
                Fileevent_.remove_fileoutput sock;
                cnx#close;
-               error (s_ "Timeout during connect to %s" server_name)
-                     false
+               error (s_ "Timeout during connect to %s" server_name) false
               end
           );
         (*e: [[Http.tcp_connect()]] setup timeout *)
@@ -322,8 +321,7 @@ let failed_request wr finish =
   finish aborted;
   Www.rem_active_cnx wr.www_url;
   wr.www_logging (s_ "Failed");
-  wr.www_error#f (s_ "Request for %s failed\n%s" 
-                   (Url.string_of wr.www_url) s)
+  wr.www_error#f (s_ "Request for %s failed\n%s" (Url.string_of wr.www_url) s)
 (*e: function Http.failed_request *)
 
 
@@ -384,8 +382,8 @@ let rec process_response wwwr cont =
       (fun () -> 
          if not cnx#aborted && !stuck 
          then
-           match wwwr.www_error#ari
-             (s_ "Timeout while waiting for headers of %s" url) 
+           match 
+            wwwr.www_error#ari (s_ "Timeout while waiting for headers of %s" url) 
            with
            | 0 -> (* abort *) if !stuck then cnx#abort
            | 1 -> (* retry *) timout ()
@@ -428,19 +426,16 @@ let rec process_response wwwr cont =
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Unix_error(e,_,_) ->
            cnx#abort;
-           wwwr.www_error#f (s_ 
-                      "Error while reading headers of %s\n%s" url 
-                      (error_message e))
+           wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url 
+                                  (error_message e))
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Invalid_HTTP_header s ->
            cnx#abort;
-           wwwr.www_error#f (s_ 
-                      "Error while reading headers of %s\n%s" url s)
+           wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url s)
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | End_of_file ->
            cnx#abort;
-           wwwr.www_error#f (s_ 
-                      "Error while reading headers of %s\n%s" url "eof"))
+           wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url "eof"))
        (*e: [[Http.process_response()]] feed schedule callback failure cases *)
        (*e: [[Http.process_response()]] reading headers *)
 (*e: function Http.process_response *)

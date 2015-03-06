@@ -63,8 +63,7 @@ let rec interactive cont dh =
   let path = 
     match dh.document_id.document_url.path with Some p -> p | None -> "" in
 
-  Fileselect.f (s_ "Save document")
-    (function 
+  Fileselect.f (s_ "Save document") (function 
     | [] ->
          (* by closing dh, we might break the cache *)
          dclose true dh
@@ -124,19 +123,16 @@ let transfer wr dh dest =
 (*s: function Save.save_from_string *)
 let save_from_string url s f =
   try
-   let oc = open_out_bin f in
-     begin try
+    let oc = open_out_bin f in
+    begin try
       output_string oc s;
-      !Error.default#ok (s_ "Document %s\nsaved in\n%s"
-                         (Url.string_of url) f)
-     with
-       Sys_error e ->
-        !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
-     end;
-     close_out oc
-  with
-    Sys_error e ->
-        !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
+      !Error.default#ok (s_ "Document %s\nsaved in\n%s" (Url.string_of url) f)
+    with Sys_error e ->
+      !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
+   end;
+   close_out oc
+  with Sys_error e ->
+    !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
 (*e: function Save.save_from_string *)
 
 (*s: function Save.copy_file *)
@@ -150,18 +146,15 @@ let copy_file url src dst =
       if n <> 0 then begin output oc buf 0 n; copy() end
     in
     begin try 
-     copy();
-     !Error.default#ok (s_ "Document %s\nsaved in\n%s"
-                        (Url.string_of url) dst)
-    with 
-     Sys_error e ->
+      copy();
+      !Error.default#ok (s_ "Document %s\nsaved in\n%s" (Url.string_of url) dst)
+    with Sys_error e ->
       !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
     end;
     close_in ic; 
     close_out oc
-  with
-    Sys_error e ->
-      !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
+  with Sys_error e ->
+    !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
 (*e: function Save.copy_file *)
 
 
@@ -215,9 +208,8 @@ let pipe_from_file url f cmd =
     exit 0
     | n ->
     ()
-  with
-  | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      !Error.default#f (s_ "Can't execute command %s for %s" cmd urls)
+  with Unix_error(_,_,_) -> (* pipe failed, fork failed *)
+    !Error.default#f (s_ "Can't execute command %s for %s" cmd urls)
 (*e: function Save.pipe_from_file *)
 
 (*s: function Save.document *)

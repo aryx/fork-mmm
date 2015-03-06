@@ -1425,8 +1425,8 @@ let rec navigator has_tachy initial_url =
 
   with e -> 
     !Error.default#f (s_ "Can't view initial document: %s\n%s"
-                      (Url.string_of initial_url)
-                      (Printexc.to_string e));
+                           (Url.string_of initial_url)
+                           (Printexc.to_string e));
     if !navigators = 1 then begin
       destroy Widget.default_toplevel;
       raise e
@@ -1576,7 +1576,7 @@ and handle_link h =
       nav.nav_error#f (s_ "Invalid link")
   | Invalid_request (wr, msg) ->
       nav.nav_error#f (s_ "Invalid request %s\n%s"
-                        (Url.string_of wr.www_url) msg)
+                            (Url.string_of wr.www_url) msg)
 in
 @
 
@@ -1593,8 +1593,7 @@ and handle_wr wr =
        else
          <<[[Nav.request.handle_wr()]] if use cache>>
   with Duplicate url ->
-    wr.www_error#f (s_ 
-        "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
+    wr.www_error#f (s_ "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
 @
 % you want exception analysis ... this gets tricky
 
@@ -2123,10 +2122,11 @@ let quit confirm =
     match Frx_dialog.f Widget.default_toplevel (gensym "quit")
       (s_ "Confirm") 
       (s_ "Do you really want to quit ?")
-       (Predefined "question") 0 
-       [s_ "Yep"; s_ "Nope"] 
+      (Predefined "question") 
+      0 
+      [s_ "Yep"; s_ "Nope"] 
     with
-    |  0 -> destroy Widget.default_toplevel
+    | 0 -> destroy Widget.default_toplevel
     | _ -> ()
   else destroy Widget.default_toplevel
 @
@@ -2773,15 +2773,14 @@ let resolve link =
         uri_frag = frag 
       }
     with Url_Lexing _ ->
-      raise (Invalid_link
-              (LinkResolve (s_ "not a legal absolute uri")))
+      raise (Invalid_link (LinkResolve (s_ "not a legal absolute uri")))
 
   else begin (* It is a relative uri *)
     let context =
       match link.h_context with 
       | None -> 
-         raise (Invalid_link (LinkResolve (s_ 
-                  "no context and not an absolute url")))
+         raise (Invalid_link 
+                 (LinkResolve (s_ "no context and not an absolute url")))
       | Some c -> c 
     in
     let contextp = 
@@ -5592,8 +5591,7 @@ Timer_.set (1000 * !timeout)
      then begin
        Fileevent_.remove_fileoutput sock;
        cnx#close;
-       error (s_ "Timeout during connect to %s" server_name)
-             false
+       error (s_ "Timeout during connect to %s" server_name) false
       end
   );
 @
@@ -5798,8 +5796,7 @@ let failed_request wr finish =
   finish aborted;
   Www.rem_active_cnx wr.www_url;
   wr.www_logging (s_ "Failed");
-  wr.www_error#f (s_ "Request for %s failed\n%s" 
-                   (Url.string_of wr.www_url) s)
+  wr.www_error#f (s_ "Request for %s failed\n%s" (Url.string_of wr.www_url) s)
 @
 % aborted is a bool
 
@@ -5928,22 +5925,19 @@ let read_headers fd previous =
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | Unix_error(e,_,_) ->
     cnx#abort;
-    wwwr.www_error#f (s_ 
-               "Error while reading headers of %s\n%s" url 
-               (error_message e))
+    wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url 
+                           (error_message e))
 @
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | Invalid_HTTP_header s ->
     cnx#abort;
-    wwwr.www_error#f (s_ 
-               "Error while reading headers of %s\n%s" url s)
+    wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url s)
 @
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | End_of_file ->
     cnx#abort;
-    wwwr.www_error#f (s_ 
-               "Error while reading headers of %s\n%s" url "eof"))
+    wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url "eof"))
 @
 
 <<[[Http.cnx.abort()]] cases>>=
@@ -5961,8 +5955,8 @@ let rec timout () =
     (fun () -> 
        if not cnx#aborted && !stuck 
        then
-         match wwwr.www_error#ari
-           (s_ "Timeout while waiting for headers of %s" url) 
+         match 
+          wwwr.www_error#ari (s_ "Timeout while waiting for headers of %s" url) 
          with
          | 0 -> (* abort *) if !stuck then cnx#abort
          | 1 -> (* retry *) timout ()
@@ -6322,11 +6316,10 @@ let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Warning")
          (s_ "No MIME type given for the document\n%s"
-           (Url.string_of dh.document_id.document_url))
-         (Tk.Predefined "question") 0
-     [s_ "Retry with type";
-      s_ "Save to file";
-      s_ "Abort"] 
+               (Url.string_of dh.document_id.document_url))
+         (Tk.Predefined "question") 
+         0
+         [s_ "Retry with type"; s_ "Save to file"; s_ "Abort"] 
   with
   | 0 ->
     let v = Textvariable.create_temporary frame in
@@ -6789,16 +6782,17 @@ class stdctx (did, nav) =
       with
         Not_found -> follow_link targets hlink
     in
-    List.iter super#add_nav !user_navigation;
-    List.iter (fun (name, f, txt) ->
-      self#add_nav
-    (name, {hyper_visible = true; hyper_func = f; hyper_title = txt}))
-       ["copy", copy_link, s_ "Copy this Link to clipboard";
-    "head", head_link, s_ "Headers of document";
-    "save", save_link, s_ "Save this Link";
-    "gotonew", new_link, s_ "New window with this Link";
-        "goto", frame_goto, s_ "Open this Link";
-       ];
+    !user_navigation |> List.iter super#add_nav;
+    ["copy", copy_link, s_ "Copy this Link to clipboard";
+     "head", head_link, s_ "Headers of document";
+     "save", save_link, s_ "Save this Link";
+     "gotonew", new_link, s_ "New window with this Link";
+     "goto", frame_goto, s_ "Open this Link";
+    ] |> List.iter (fun (name, f, txt) ->
+        self#add_nav (name, { hyper_visible = true; 
+                              hyper_func = f; 
+                              hyper_title = txt })
+    );
     self
 
 end
@@ -6933,8 +6927,7 @@ let extern dh ctype =
       in
       let url = Url.string_of dh.document_id.document_url in
       Document.add_log dh 
-        (s_ "Retrieving %s\nfor external display with MIME type %s"
-             url ctype)
+        (s_ "Retrieving %s\nfor external display with MIME type %s" url ctype)
         kill;
 
       let red = ref 0 in
@@ -6996,11 +6989,12 @@ and interactive frame ctx dh ctype =
           "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
            ctype
            (Url.string_of dh.document_id.document_url))
-         (Tk.Predefined "question") 0
-     [s_ "Retry with another type";
-      s_ "Display with metamail";
-      s_ "Save to file";
-      s_ "Abort"] 
+         (Tk.Predefined "question") 
+         0
+         [s_ "Retry with another type";
+          s_ "Display with metamail";
+          s_ "Save to file";
+          s_ "Abort"] 
   with
   | 0 ->
       let v = Textvariable.create_temporary frame in
@@ -7054,8 +7048,7 @@ let rec interactive cont dh =
   let path = 
     match dh.document_id.document_url.path with Some p -> p | None -> "" in
 
-  Fileselect.f (s_ "Save document")
-    (function 
+  Fileselect.f (s_ "Save document") (function 
     | [] ->
          (* by closing dh, we might break the cache *)
          dclose true dh
@@ -7964,8 +7957,7 @@ let f url title =
   | "" -> (!Error.default)#f (s_ "No hotlist command defined")
   | s -> 
       let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
-      (!Error.default)#ok
-        (s_ "%s\nadded to hotlist with title\n%s" url title)
+      (!Error.default)#ok (s_ "%s\nadded to hotlist with title\n%s" url title)
 @
 
 
@@ -8110,7 +8102,7 @@ let helpurl = function
 
 <<Help menu elements>>=
 Menu.add_command helpm
-  [Label (s_ "Help on MMM");
+  [Label (s_ "Help on MMM"); 
    Command (fun () -> navigator false !helpurl |> ignore)];
 @
 % false means not toplevel, no_tachy
@@ -8152,11 +8144,11 @@ nav_new : Hyper.link -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_new = (fun link ->
-     try
-       let wwwr = Plink.make link in
-       navigator false wwwr.www_url |> ignore; ()
-     with Invalid_link msg -> 
-      error#f (s_ "Invalid link")
+   try
+     let wwwr = Plink.make link in
+     navigator false wwwr.www_url |> ignore
+   with Invalid_link msg -> 
+     error#f (s_ "Invalid link")
 );
 @
 
@@ -8896,7 +8888,7 @@ let view attach did redisplay errors annotations coding =
     | n ->
     Button.configure err
         [Text (s_ "%d errors" (List.length !errors));
-            State Normal; Command loop_in_errors]
+         State Normal; Command loop_in_errors]
   and decorate = annotate t
   in
   let reset () =
@@ -8912,8 +8904,7 @@ let view attach did redisplay errors annotations coding =
     remall (Text.tag_ranges t "errors");
     errors := [];
     Button.configure err 
-       [Text (s_ "Display Errors"); Command mark_errors;
-        State Normal]
+       [Text (s_ "Display Errors"); Command mark_errors; State Normal]
 
   in
      Button.configure commit
@@ -8925,7 +8916,7 @@ let view attach did redisplay errors annotations coding =
           [Command (fun () -> reset(); f t; redisplay())]);
      Button.configure err 
        [Text (s_ "Display Errors");
-     Command (fun () -> mark_errors(); decorate !annotations);
+        Command (fun () -> mark_errors(); decorate !annotations);
         State Normal];
      Text.configure t [Background (NamedColor "white")];
      Text.tag_configure t "errors" [Underline true];
@@ -9611,11 +9602,13 @@ let rec lookup space =
 let ask_cookie forwhere =
   try
     let u,p = !open_passwd_ref forwhere in
-      Base64.encode (u^":"^p)
+    Base64.encode (u^":"^p)
   with
-    Failure "cancelled" -> failwith "cancelled"
-  | _ -> (!Error.default)#f (s_ "Error in base 64 encoding");
-        failwith "cancelled"
+  | Failure "cancelled" -> 
+      failwith "cancelled"
+  | _ -> 
+      (!Error.default)#f (s_ "Error in base 64 encoding");
+      failwith "cancelled"
 @
 
 <<function Auth.replace>>=
@@ -9832,9 +9825,9 @@ with Not_found ->
          "Cache error occurred during save of temporary buffer (%s)"
             s)
     | Unix_error (e,fname,arg) ->
-        wr.www_error#f (s_ 
-          "Cache error occurred when opening temporary file\n%s: %s (%s)"
-          fname (Unix.error_message e) arg)
+        wr.www_error#f 
+          (s_ "Cache error occurred when opening temporary file\n%s: %s (%s)"
+                 fname (Unix.error_message e) arg)
  with Not_found -> (* we don't have the document *)
    retrieve_and_handle wr
 @

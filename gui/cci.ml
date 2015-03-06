@@ -82,10 +82,8 @@ let init () =
        handler fd (Munix.read_line fd)
       with _ -> ());
     at_exit (fun () -> Msys.rm file)
- with
-   e ->
-     !Error.default#f (s_ "Can't initialize %s\n%s"
-                       file (Printexc.to_string e))
+ with e ->
+   !Error.default#f (s_ "Can't initialize %s\n%s" file (Printexc.to_string e))
 (*e: function Cci.init *)
 
 (*e: ./gui/cci.ml *)

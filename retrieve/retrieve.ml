@@ -155,8 +155,7 @@ let code200 wwwr dh = Ok
 (*s: function Retrieve.code204 *)
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)"
-                    (status_msg dh.document_headers))
+  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.document_headers))
 (*e: function Retrieve.code204 *)
 
 (*s: function Retrieve.forward *)
@@ -197,19 +196,16 @@ let forward wwwr dh =
 let forward_permanent wwwr dh =
   try
     let newurl = Http_headers.location dh.document_headers in
-      wwwr.www_error#ok (s_ "Document moved permanently to\n%s"
-                          newurl);
-      forward wwwr dh
-  with
-    Not_found -> 
-      Error (s_ "No Location: in forwarding header")
+    wwwr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
+    forward wwwr dh
+  with Not_found -> 
+    Error (s_ "No Location: in forwarding header")
 (*e: function Retrieve.forward_permanent *)
 
 (* 304 : Response to a conditional GET, the document is not modified
 let update wwwr dh =
    Cache.patch dh.document_id dh.document_headers;
-   Stop (s_ "Document %s has not changed.\n"
-                  (Url.string_of wwwr.www_url))
+   Stop (s_ "Document %s has not changed.\n" (Url.string_of wwwr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
 

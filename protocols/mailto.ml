@@ -23,12 +23,11 @@ type msg = {
 let error body =
   try
     let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
-     output_string oc body;
-     close_out oc;
-     !Error.default#f (s_ "Can't send mail (saved in $HOME/dead.letter)")
-  with
-     _ -> 
-      !Error.default#f (s_ "Can't send mail, can't save dead.letter")
+    output_string oc body;
+    close_out oc;
+    !Error.default#f (s_ "Can't send mail (saved in $HOME/dead.letter)")
+  with _ -> 
+    !Error.default#f (s_ "Can't send mail, can't save dead.letter")
 (*e: function Mailto.error *)
 
 (*s: function Mailto.sendmail *)
@@ -43,10 +42,10 @@ let sendmail msg =
   | n -> close fd_in;
      Munix.write_string fd_out msg.body;
      close fd_out;
-     begin match waitpid [] n with
-       _, WEXITED 0 -> !Error.default#ok (s_ "Mail sent")
+     (match waitpid [] n with
+     | _, WEXITED 0 -> !Error.default#ok (s_ "Mail sent")
      | _, _ -> error msg.body
-     end
+     )
  with
    Unix_error(_,_,_) -> error msg.body
 (*e: function Mailto.sendmail *)
@@ -76,15 +75,14 @@ let get mailaddr referer =
 (*s: function Mailto.f *)
 let f wr =
   match wr.www_url.path with
-    None -> wr.www_error#f (s_ "No address given for mailto:")
+  | None -> wr.www_error#f (s_ "No address given for mailto:")
   | Some rawaddress ->
      let address = Urlenc.decode rawaddress in
        match wr.www_link.h_method with
      GET -> get address wr.www_link.h_context
        | POST d ->
        if wr.www_error#choose 
-           (s_ "About to send mail with POST data to\n%s"
-                 address)
+           (s_ "About to send mail with POST data to\n%s" address)
        then
          let subject = match wr.www_link.h_context with
          None -> "no subject"

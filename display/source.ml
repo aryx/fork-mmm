@@ -140,7 +140,7 @@ let view attach did redisplay errors annotations coding =
     | n ->
     Button.configure err
         [Text (s_ "%d errors" (List.length !errors));
-            State Normal; Command loop_in_errors]
+         State Normal; Command loop_in_errors]
   and decorate = annotate t
   in
   let reset () =
@@ -156,8 +156,7 @@ let view attach did redisplay errors annotations coding =
     remall (Text.tag_ranges t "errors");
     errors := [];
     Button.configure err 
-       [Text (s_ "Display Errors"); Command mark_errors;
-        State Normal]
+       [Text (s_ "Display Errors"); Command mark_errors; State Normal]
 
   in
      Button.configure commit
@@ -169,7 +168,7 @@ let view attach did redisplay errors annotations coding =
           [Command (fun () -> reset(); f t; redisplay())]);
      Button.configure err 
        [Text (s_ "Display Errors");
-     Command (fun () -> mark_errors(); decorate !annotations);
+        Command (fun () -> mark_errors(); decorate !annotations);
         State Normal];
      Text.configure t [Background (NamedColor "white")];
      Text.tag_configure t "errors" [Underline true];

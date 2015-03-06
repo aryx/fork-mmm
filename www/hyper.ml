@@ -129,15 +129,14 @@ let resolve link =
         uri_frag = frag 
       }
     with Url_Lexing _ ->
-      raise (Invalid_link
-              (LinkResolve (s_ "not a legal absolute uri")))
+      raise (Invalid_link (LinkResolve (s_ "not a legal absolute uri")))
 
   else begin (* It is a relative uri *)
     let context =
       match link.h_context with 
       | None -> 
-         raise (Invalid_link (LinkResolve (s_ 
-                  "no context and not an absolute url")))
+         raise (Invalid_link 
+                 (LinkResolve (s_ "no context and not an absolute url")))
       | Some c -> c 
     in
     let contextp = 

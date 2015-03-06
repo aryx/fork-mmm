@@ -59,8 +59,8 @@ module EmbeddedData =
       |	_ -> failwith "load"
 
     let error url jobs = 
-      !Error.default#f (s_ "Can't find embedded document %s" 
-                        (Url.string_of url))
+      !Error.default#f 
+        (s_ "Can't find embedded document %s"  (Url.string_of url))
 
     let error_msg (_,_) = ()
   end
@@ -181,12 +181,10 @@ let add ({ embed_hlink = link;
        (Tk_progress.meter frame)
    with
      Not_found -> (* no viewer for this *)
-      let t = 
-        s_ "Embed Error: no viewer for type %s" given_type in
+      let t = s_ "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
    | Invalid_request (w,msg) ->
-       let t = s_ "Embed Error: %s\n(%s)"
-                (Url.string_of w.www_url) msg in
+       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
    | Invalid_link err ->
        let t = s_ "Embed Error: invalid link" in
@@ -204,8 +202,7 @@ let add ({ embed_hlink = link;
      (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
-       let t = s_ "Embed Error: %s\n(%s)"
-                (Url.string_of w.www_url) msg in
+       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
        | Invalid_link err ->
        let t = s_ "Embed Error: invalid link" in
@@ -261,12 +258,10 @@ let update frame embed_ctx doc notchanged =
        (Tk_progress.meter frame)
       with
       Not_found -> (* no viewer for this *)
-      let t = 
-            s_ "Embed Error: no viewer for type %s" given_type in
+      let t = s_ "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
       | Invalid_request (w,msg) ->
-      let t = s_ "Embed Error: %s\n(%s)"
-          (Url.string_of w.www_url) msg in
+      let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
       pack [Message.create frame [Text t]][]
       | Invalid_link err ->
       let t = s_ "Embed Error: invalid link" in
@@ -284,8 +279,7 @@ let update frame embed_ctx doc notchanged =
         (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
-        let t = s_ "Embed Error: %s\n(%s)"
-        (Url.string_of w.www_url) msg in
+        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
         pack [Message.create frame [Text t]][]
         | Invalid_link err ->
         let t = s_ "Embed Error: invalid link" in

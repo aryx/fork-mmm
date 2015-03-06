@@ -68,11 +68,13 @@ let open_passwd_ref = ref (fun _ -> failwith "no Auth.open_passswd defined")
 let ask_cookie forwhere =
   try
     let u,p = !open_passwd_ref forwhere in
-      Base64.encode (u^":"^p)
+    Base64.encode (u^":"^p)
   with
-    Failure "cancelled" -> failwith "cancelled"
-  | _ -> (!Error.default)#f (s_ "Error in base 64 encoding");
-        failwith "cancelled"
+  | Failure "cancelled" -> 
+      failwith "cancelled"
+  | _ -> 
+      (!Error.default)#f (s_ "Error in base 64 encoding");
+      failwith "cancelled"
 (*e: function Auth.ask_cookie *)
 
 (*s: function Auth.replace *)

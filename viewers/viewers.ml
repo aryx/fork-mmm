@@ -193,8 +193,7 @@ let extern dh ctype =
       in
       let url = Url.string_of dh.document_id.document_url in
       Document.add_log dh 
-        (s_ "Retrieving %s\nfor external display with MIME type %s"
-             url ctype)
+        (s_ "Retrieving %s\nfor external display with MIME type %s" url ctype)
         kill;
 
       let red = ref 0 in
@@ -281,11 +280,10 @@ let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Warning")
          (s_ "No MIME type given for the document\n%s"
-           (Url.string_of dh.document_id.document_url))
-         (Tk.Predefined "question") 0
-     [s_ "Retry with type";
-      s_ "Save to file";
-      s_ "Abort"] 
+               (Url.string_of dh.document_id.document_url))
+         (Tk.Predefined "question") 
+         0
+         [s_ "Retry with type"; s_ "Save to file"; s_ "Abort"] 
   with
   | 0 ->
     let v = Textvariable.create_temporary frame in
@@ -312,11 +310,12 @@ and interactive frame ctx dh ctype =
           "No behavior specified for MIME type\n%s\ngiven for the document\n%s"
            ctype
            (Url.string_of dh.document_id.document_url))
-         (Tk.Predefined "question") 0
-     [s_ "Retry with another type";
-      s_ "Display with metamail";
-      s_ "Save to file";
-      s_ "Abort"] 
+         (Tk.Predefined "question") 
+         0
+         [s_ "Retry with another type";
+          s_ "Display with metamail";
+          s_ "Save to file";
+          s_ "Abort"] 
   with
   | 0 ->
       let v = Textvariable.create_temporary frame in

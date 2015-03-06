@@ -117,15 +117,14 @@ let request nav process (usecache, wrapwr, specific) lk =
                     "Cache error occurred during save of temporary buffer (%s)"
                        s)
                | Unix_error (e,fname,arg) ->
-                   wr.www_error#f (s_ 
-                     "Cache error occurred when opening temporary file\n%s: %s (%s)"
-                     fname (Unix.error_message e) arg)
+                   wr.www_error#f 
+                     (s_ "Cache error occurred when opening temporary file\n%s: %s (%s)"
+                            fname (Unix.error_message e) arg)
             with Not_found -> (* we don't have the document *)
               retrieve_and_handle wr
            (*e: [[Nav.request.handle_wr()]] if use cache *)
     with Duplicate url ->
-      wr.www_error#f (s_ 
-          "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
+      wr.www_error#f (s_ "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
   (*e: function Nav.request.handle_wr *)
   (*s: function Nav.request.handle_link *)
   and handle_link h =
@@ -138,7 +137,7 @@ let request nav process (usecache, wrapwr, specific) lk =
         nav.nav_error#f (s_ "Invalid link")
     | Invalid_request (wr, msg) ->
         nav.nav_error#f (s_ "Invalid request %s\n%s"
-                          (Url.string_of wr.www_url) msg)
+                              (Url.string_of wr.www_url) msg)
   in
   (*e: function Nav.request.handle_link *)
   handle_link lk
@@ -186,7 +185,7 @@ let process_save dest = fun nav wr dh ->
   | n ->
     if wr.www_error#choose 
         (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
-         (Url.string_of wr.www_url) n (status_msg dh.document_headers))
+              (Url.string_of wr.www_url) n (status_msg dh.document_headers))
     then Save.transfer wr dh dest
     else dclose true dh
 (*e: function Nav.process_save *)
@@ -230,7 +229,8 @@ let make_head hlink =
 (*s: function Nav.copy_link *)
 (* Copying a link to the X Selection *)
 let copy_link nav h =
-  try Frx_selection.set (Hyper.string_of h)
+  try 
+    Frx_selection.set (Hyper.string_of h)
   with Invalid_link msg ->
     nav.nav_error#f (s_ "Invalid link")
 (*e: function Nav.copy_link *)
@@ -344,16 +344,17 @@ class stdctx (did, nav) =
       with
         Not_found -> follow_link targets hlink
     in
-    List.iter super#add_nav !user_navigation;
-    List.iter (fun (name, f, txt) ->
-      self#add_nav
-    (name, {hyper_visible = true; hyper_func = f; hyper_title = txt}))
-       ["copy", copy_link, s_ "Copy this Link to clipboard";
-    "head", head_link, s_ "Headers of document";
-    "save", save_link, s_ "Save this Link";
-    "gotonew", new_link, s_ "New window with this Link";
-        "goto", frame_goto, s_ "Open this Link";
-       ];
+    !user_navigation |> List.iter super#add_nav;
+    ["copy", copy_link, s_ "Copy this Link to clipboard";
+     "head", head_link, s_ "Headers of document";
+     "save", save_link, s_ "Save this Link";
+     "gotonew", new_link, s_ "New window with this Link";
+     "goto", frame_goto, s_ "Open this Link";
+    ] |> List.iter (fun (name, f, txt) ->
+        self#add_nav (name, { hyper_visible = true; 
+                              hyper_func = f; 
+                              hyper_title = txt })
+    );
     self
 
 end
@@ -453,8 +454,8 @@ let update nav did nocache =
     with
       Not_found -> () (* weird *)
     end;
-    wr.www_error#ok (s_ "Document %s has not changed.\n"
-               (Url.string_of wr.www_url))
+    wr.www_error#ok 
+      (s_ "Document %s has not changed.\n" (Url.string_of wr.www_url))
     | 200 | _ ->
         (* kill the previous displayed window *)
      Gcache.displace nav.nav_id did;

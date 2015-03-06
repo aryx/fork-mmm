@@ -4278,12 +4278,11 @@ type msg = {
 let error body =
   try
     let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
-     output_string oc body;
-     close_out oc;
-     !Error.default#f (s_ "Can't send mail (saved in $HOME/dead.letter)")
-  with
-     _ -> 
-      !Error.default#f (s_ "Can't send mail, can't save dead.letter")
+    output_string oc body;
+    close_out oc;
+    !Error.default#f (s_ "Can't send mail (saved in $HOME/dead.letter)")
+  with _ -> 
+    !Error.default#f (s_ "Can't send mail, can't save dead.letter")
 @
 %$
 
@@ -4299,10 +4298,10 @@ let sendmail msg =
   | n -> close fd_in;
      Munix.write_string fd_out msg.body;
      close fd_out;
-     begin match waitpid [] n with
-       _, WEXITED 0 -> !Error.default#ok (s_ "Mail sent")
+     (match waitpid [] n with
+     | _, WEXITED 0 -> !Error.default#ok (s_ "Mail sent")
      | _, _ -> error msg.body
-     end
+     )
  with
    Unix_error(_,_,_) -> error msg.body
 @
@@ -4329,15 +4328,14 @@ let get mailaddr referer =
 <<function Mailto.f>>=
 let f wr =
   match wr.www_url.path with
-    None -> wr.www_error#f (s_ "No address given for mailto:")
+  | None -> wr.www_error#f (s_ "No address given for mailto:")
   | Some rawaddress ->
      let address = Urlenc.decode rawaddress in
        match wr.www_link.h_method with
      GET -> get address wr.www_link.h_context
        | POST d ->
        if wr.www_error#choose 
-           (s_ "About to send mail with POST data to\n%s"
-                 address)
+           (s_ "About to send mail with POST data to\n%s" address)
        then
          let subject = match wr.www_link.h_context with
          None -> "no subject"
@@ -4495,8 +4493,7 @@ let wrap_cache cache dh =
 <<function Retrieve.code204>>=
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)"
-                    (status_msg dh.document_headers))
+  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.document_headers))
 @
 
 <<function Retrieve.forward>>=
@@ -4537,12 +4534,10 @@ let forward wwwr dh =
 let forward_permanent wwwr dh =
   try
     let newurl = Http_headers.location dh.document_headers in
-      wwwr.www_error#ok (s_ "Document moved permanently to\n%s"
-                          newurl);
-      forward wwwr dh
-  with
-    Not_found -> 
-      Error (s_ "No Location: in forwarding header")
+    wwwr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
+    forward wwwr dh
+  with Not_found -> 
+    Error (s_ "No Location: in forwarding header")
 @
 
 
@@ -4723,8 +4718,7 @@ let rec http_check cache retry cont wwwr dh =
 (* 304 : Response to a conditional GET, the document is not modified
 let update wwwr dh =
    Cache.patch dh.document_id dh.document_headers;
-   Stop (s_ "Document %s has not changed.\n"
-                  (Url.string_of wwwr.www_url))
+   Stop (s_ "Document %s has not changed.\n" (Url.string_of wwwr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
 
@@ -5686,12 +5680,10 @@ let add ({ embed_hlink = link;
        (Tk_progress.meter frame)
    with
      Not_found -> (* no viewer for this *)
-      let t = 
-        s_ "Embed Error: no viewer for type %s" given_type in
+      let t = s_ "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
    | Invalid_request (w,msg) ->
-       let t = s_ "Embed Error: %s\n(%s)"
-                (Url.string_of w.www_url) msg in
+       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
    | Invalid_link err ->
        let t = s_ "Embed Error: invalid link" in
@@ -5709,8 +5701,7 @@ let add ({ embed_hlink = link;
      (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
-       let t = s_ "Embed Error: %s\n(%s)"
-                (Url.string_of w.www_url) msg in
+       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
        | Invalid_link err ->
        let t = s_ "Embed Error: invalid link" in
@@ -5765,12 +5756,10 @@ let update frame embed_ctx doc notchanged =
        (Tk_progress.meter frame)
       with
       Not_found -> (* no viewer for this *)
-      let t = 
-            s_ "Embed Error: no viewer for type %s" given_type in
+      let t = s_ "Embed Error: no viewer for type %s" given_type in
       pack[Label.create frame [Text t]][]
       | Invalid_request (w,msg) ->
-      let t = s_ "Embed Error: %s\n(%s)"
-          (Url.string_of w.www_url) msg in
+      let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
       pack [Message.create frame [Text t]][]
       | Invalid_link err ->
       let t = s_ "Embed Error: invalid link" in
@@ -5788,8 +5777,7 @@ let update frame embed_ctx doc notchanged =
         (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
-        let t = s_ "Embed Error: %s\n(%s)"
-        (Url.string_of w.www_url) msg in
+        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
         pack [Message.create frame [Text t]][]
         | Invalid_link err ->
         let t = s_ "Embed Error: invalid link" in
@@ -5863,8 +5851,8 @@ module EmbeddedData =
       |	_ -> failwith "load"
 
     let error url jobs = 
-      !Error.default#f (s_ "Can't find embedded document %s" 
-                        (Url.string_of url))
+      !Error.default#f 
+        (s_ "Can't find embedded document %s"  (Url.string_of url))
 
     let error_msg (_,_) = ()
   end
@@ -6018,19 +6006,16 @@ let transfer wr dh dest =
 <<function Save.save_from_string>>=
 let save_from_string url s f =
   try
-   let oc = open_out_bin f in
-     begin try
+    let oc = open_out_bin f in
+    begin try
       output_string oc s;
-      !Error.default#ok (s_ "Document %s\nsaved in\n%s"
-                         (Url.string_of url) f)
-     with
-       Sys_error e ->
-        !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
-     end;
-     close_out oc
-  with
-    Sys_error e ->
-        !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
+      !Error.default#ok (s_ "Document %s\nsaved in\n%s" (Url.string_of url) f)
+    with Sys_error e ->
+      !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
+   end;
+   close_out oc
+  with Sys_error e ->
+    !Error.default#f (s_ "Cannot save to %s\n(%s)" f e)
 @
 
 <<function Save.copy_file>>=
@@ -6044,18 +6029,15 @@ let copy_file url src dst =
       if n <> 0 then begin output oc buf 0 n; copy() end
     in
     begin try 
-     copy();
-     !Error.default#ok (s_ "Document %s\nsaved in\n%s"
-                        (Url.string_of url) dst)
-    with 
-     Sys_error e ->
+      copy();
+      !Error.default#ok (s_ "Document %s\nsaved in\n%s" (Url.string_of url) dst)
+    with Sys_error e ->
       !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
     end;
     close_in ic; 
     close_out oc
-  with
-    Sys_error e ->
-      !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
+  with Sys_error e ->
+    !Error.default#f (s_ "Cannot save to %s\n(%s)" dst e)
 @
 
 <<function Save.pipe_from_string>>=
@@ -6107,9 +6089,8 @@ let pipe_from_file url f cmd =
     exit 0
     | n ->
     ()
-  with
-  | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
-      !Error.default#f (s_ "Can't execute command %s for %s" cmd urls)
+  with Unix_error(_,_,_) -> (* pipe failed, fork failed *)
+    !Error.default#f (s_ "Can't execute command %s for %s" cmd urls)
 @
 
 <<function Save.document>>=
@@ -14361,11 +14342,10 @@ module PrefMap : Map.S with type key = string
 <<function Prefs.pref_error>>=
 (* Generic report *)
 let pref_error msg =
-   ignore (
-     Frx_dialog.f Widget.default_toplevel (gensym "error")
-      (s_ "Preference Error") 
-      msg
-      (Predefined "") 0 [s_ "Ok"])
+  Frx_dialog.f Widget.default_toplevel (gensym "error")
+     (s_ "Preference Error") 
+     msg
+     (Predefined "") 0 [s_ "Ok"] |> ignore
 @
 
 <<function Prefs.resource_name>>=
@@ -14458,16 +14438,18 @@ let set_pref {pref_type = typ; pref_variable = v} = match typ with
  | String r -> r := Textvariable.get v
  | Int r ->
      let s = Textvariable.get v in
-      begin try r := int_of_string s
+      begin try 
+        r := int_of_string s
       with Failure "int_of_string" ->
-            pref_error (s_ "Not an integer: %s" s)
+        pref_error (s_ "Not an integer: %s" s)
       end
  | Float r ->
      let s = Textvariable.get v in
-      begin try r := float_of_string s
-      with Failure "float_of_string" ->
-            pref_error (s_ "Not a float: %s" s)
-      end
+     begin try 
+        r := float_of_string s
+     with Failure "float_of_string" ->
+        pref_error (s_ "Not a float: %s" s)
+     end
  | AbstractType(_,s) -> s v
 @
 
@@ -14705,9 +14687,8 @@ let save_file prefmaps f =
       prefmaps;
     close_out oc;
     Unix.rename (f ^ ".tmp") f
-  with
-    Sys_error s ->
-      pref_error (s_ "Can't open preference file: %s (%s)" f s)
+  with Sys_error s ->
+    pref_error (s_ "Can't open preference file: %s (%s)" f s)
 @
 %$
 
@@ -14769,9 +14750,7 @@ let rec init filename status interactive mute =
   (* The menu bar *)
   let mbar = Frame.create_named top "menubar" [] in
   let file = 
-      Menubutton.create_named mbar "file"
-        [Text (s_ "File"); UnderlinedChar 0]
-  in
+    Menubutton.create_named mbar "file" [Text (s_ "File"); UnderlinedChar 0] in
   pack [file][Side Side_Left];
   pack [mbar][Side Side_Top; Anchor W; Fill Fill_X];
   (* The window *)
@@ -14820,8 +14799,7 @@ let rec init filename status interactive mute =
             init filename status interactive mute
           end
           else
-            pref_error (s_ "%s : no such preference file"
-                             s)
+            pref_error (s_ "%s : no such preference file" s)
               | l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
        "*")
@@ -15261,7 +15239,7 @@ let process_save dest = fun nav wr dh ->
   | n ->
     if wr.www_error#choose 
         (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
-         (Url.string_of wr.www_url) n (status_msg dh.document_headers))
+              (Url.string_of wr.www_url) n (status_msg dh.document_headers))
     then Save.transfer wr dh dest
     else dclose true dh
 @
@@ -15301,7 +15279,8 @@ let make_head hlink =
 <<function Nav.copy_link>>=
 (* Copying a link to the X Selection *)
 let copy_link nav h =
-  try Frx_selection.set (Hyper.string_of h)
+  try 
+    Frx_selection.set (Hyper.string_of h)
   with Invalid_link msg ->
     nav.nav_error#f (s_ "Invalid link")
 @
@@ -15384,8 +15363,8 @@ let update nav did nocache =
     with
       Not_found -> () (* weird *)
     end;
-    wr.www_error#ok (s_ "Document %s has not changed.\n"
-               (Url.string_of wr.www_url))
+    wr.www_error#ok 
+      (s_ "Document %s has not changed.\n" (Url.string_of wr.www_url))
     | 200 | _ ->
         (* kill the previous displayed window *)
      Gcache.displace nav.nav_id did;
@@ -16013,10 +15992,8 @@ let init () =
        handler fd (Munix.read_line fd)
       with _ -> ());
     at_exit (fun () -> Msys.rm file)
- with
-   e ->
-     !Error.default#f (s_ "Can't initialize %s\n%s"
-                       file (Printexc.to_string e))
+ with e ->
+   !Error.default#f (s_ "Can't initialize %s\n%s" file (Printexc.to_string e))
 @
 
 

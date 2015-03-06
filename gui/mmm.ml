@@ -111,10 +111,11 @@ let quit confirm =
     match Frx_dialog.f Widget.default_toplevel (gensym "quit")
       (s_ "Confirm") 
       (s_ "Do you really want to quit ?")
-       (Predefined "question") 0 
-       [s_ "Yep"; s_ "Nope"] 
+      (Predefined "question") 
+      0 
+      [s_ "Yep"; s_ "Nope"] 
     with
-    |  0 -> destroy Widget.default_toplevel
+    | 0 -> destroy Widget.default_toplevel
     | _ -> ()
   else destroy Widget.default_toplevel
 (*e: function Mmm.quit *)
@@ -237,11 +238,11 @@ let rec navigator has_tachy initial_url =
       nav_rem_active = Hashtbl.remove actives;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_new = (fun link ->
-           try
-             let wwwr = Plink.make link in
-             navigator false wwwr.www_url |> ignore; ()
-           with Invalid_link msg -> 
-            error#f (s_ "Invalid link")
+         try
+           let wwwr = Plink.make link in
+           navigator false wwwr.www_url |> ignore
+         with Invalid_link msg -> 
+           error#f (s_ "Invalid link")
       );
       (*e: [[Mmm.navigator()]] set nav fields *)
     }
@@ -603,7 +604,7 @@ let rec navigator has_tachy initial_url =
          navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
     (*x: Help menu elements *)
     Menu.add_command helpm
-      [Label (s_ "Help on MMM");
+      [Label (s_ "Help on MMM"); 
        Command (fun () -> navigator false !helpurl |> ignore)];
     (*e: Help menu elements *)
     (*e: [[Mmm.navigator()]] Help menu *)
@@ -754,8 +755,8 @@ let rec navigator has_tachy initial_url =
 
   with e -> 
     !Error.default#f (s_ "Can't view initial document: %s\n%s"
-                      (Url.string_of initial_url)
-                      (Printexc.to_string e));
+                           (Url.string_of initial_url)
+                           (Printexc.to_string e));
     if !navigators = 1 then begin
       destroy Widget.default_toplevel;
       raise e
