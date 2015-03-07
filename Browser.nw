@@ -1618,8 +1618,8 @@ let rec retrieve_and_handle wr =
     }
   in
   match Retrieve.f wr handle_link cont with
-  | Retrieve.Started abort -> 
-      nav.nav_add_active wr.www_url abort
+  | Retrieve.Started aborter -> 
+      nav.nav_add_active wr.www_url aborter
   | Retrieve.InUse -> 
       raise (Duplicate wr.www_url)
 @
@@ -4918,8 +4918,7 @@ type retrievalStatus =
  | Started of Www.aborter
  | InUse
 @
-% abort hook
-% less: typedef?
+
 
 \section{[[Retrieve.f()]]}
 
@@ -5199,7 +5198,7 @@ val dclose : bool -> handle -> unit
 @
 
 <<signature Document.add_log>>=
-val add_log: handle -> string -> (unit -> unit) -> unit
+val add_log: handle -> string -> Www.aborter -> unit
 @
 
 <<signature Document.put_log>>=
@@ -5237,8 +5236,8 @@ let dclose remactive dh =
 
 
 <<function Document.add_log>>=
-let add_log dh initmsg abort =
-  !add_log_backend dh initmsg abort
+let add_log dh initmsg aborter =
+  !add_log_backend dh initmsg aborter
 @
 
 <<function Document.end_log>>=
@@ -7949,7 +7948,7 @@ let actives = Hashtbl.create 37 in
 
 % Nav.request -> <>
 <<[[Nav.t]] other fields>>=
-nav_add_active : Url.t -> (unit -> unit) -> unit;
+nav_add_active : Url.t -> Www.aborter -> unit;
 nav_rem_active : Url.t -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
