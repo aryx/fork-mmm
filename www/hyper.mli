@@ -25,6 +25,10 @@ type link = {
 }
 (*e: type Hyper.link *)
 
+(*s: val Hyper.default_link *)
+val default_link: string -> link
+(*e: val Hyper.default_link *)
+
 (*s: type Hyper.link_error *)
 type link_error =
     LinkResolve of string

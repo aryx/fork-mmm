@@ -706,8 +706,7 @@ fixed_style "tt";
  *)
 
 let anchor_type = ref None
-and anchor_link = 
-  ref {h_uri = ""; h_context = None; h_method = GET; h_params = []}
+and anchor_link = ref (Hyper.default_link "")
 and in_anchor = ref false
 in
 let open_anchor fo tag =
@@ -1008,8 +1007,7 @@ mach#add_tag "img"
                   h_method = GET; h_params = []}
            with
          Not_found -> 
-           Hyper.string_of {h_uri = mach#base; h_context = None;
-                h_method = GET; h_params = []}
+           Hyper.string_of (Hyper.default_link mach#base)
          in
          mapname := absname;
          areas := [];

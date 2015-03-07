@@ -215,11 +215,7 @@ let process_head = fun nav wr dh ->
 (*s: function Nav.make_head *)
 (* But for head, we need to change the hlink *)
 let make_head hlink =
-  { h_uri = hlink.h_uri;
-    h_context = hlink.h_context;
-    h_method = HEAD;
-    h_params = hlink.h_params
-    }
+  { hlink with h_method = HEAD; }
 (*e: function Nav.make_head *)
 
 (*
@@ -256,8 +252,8 @@ let id_wr wr = wr
 class stdctx (did, nav) =
  object (self)
   inherit Viewers.context (did, []) as super
-  (* val nav = nav *)  
   (* val did = did *)
+  (* val nav = nav *)  
 
   method log = nav.nav_log
   method init =
@@ -362,9 +358,7 @@ end
 
 (*s: function Nav.make_ctx *)
 let make_ctx nav did = 
-  let o = new stdctx(did, nav) in
-  ignore (o#init);
-  (o :> Viewers.context)
+  ((new stdctx(did, nav))#init :> Viewers.context)
 (*e: function Nav.make_ctx *)
 
 (*s: function Nav.save_link *)
@@ -386,12 +380,7 @@ let follow_link nav lk =
 (*s: function Nav.absolutegoto *)
 (* Used outside an hyperlink *)
 let absolutegoto nav uri =
-  follow_link nav { 
-    h_uri = uri; 
-    h_context = None; 
-    h_method = GET; 
-    h_params = []
-  }
+  follow_link nav (Hyper.default_link uri)
 (*e: function Nav.absolutegoto *)
     
 (*s: function Nav.historygoto *)
@@ -415,12 +404,7 @@ let historygoto nav did frag usecache =
             wr),
          specific_viewer false)
     in
-    follow_link { 
-      h_uri = uri;
-      h_context = None;
-      h_method = GET;
-      h_params = []
-    };
+    follow_link (Hyper.default_link uri);
     true
   end else begin
     (* the url is a "non-unique" document, that is, its url is not
@@ -485,12 +469,7 @@ let update nav did nocache =
            wr),
          nothing_specific)
       in
-      follow_link { 
-        h_uri = Url.string_of did.document_url;
-        h_context = None;
-        h_method = GET;
-        h_params = []
-      }
+      follow_link (Hyper.default_link (Url.string_of did.document_url))
     with Not_found ->
       nav.nav_error#f ("Document has no Date: header.")
   with Not_found ->

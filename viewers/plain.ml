@@ -7,9 +7,9 @@ open Viewers
 open Feed
 
 (*s: class Plain.plain *)
-class plain ((top : Widget.widget),
-             (ctx : Viewers.context),
-             (dh : Document.handle)) =
+class display_plain ((top : Widget.widget),
+                     (ctx : Viewers.context),
+                     (dh : Document.handle)) =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit Htmlw.viewer_globs (ctx, dh)
@@ -171,7 +171,7 @@ end
 (* Viewing text/plain *)
 
 let display_plain _mediapars top vcontext dh =
-  let viewer = new plain (top,vcontext,dh) in
+  let viewer = new display_plain (top,vcontext,dh) in
   viewer#init;
   Some (viewer :> Viewers.display_info)
 (*e: function Plain.display_plain *)

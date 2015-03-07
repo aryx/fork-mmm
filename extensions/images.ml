@@ -80,11 +80,7 @@ let f ctx =
         show_images ctx l);
     document_finish = (fun _ -> ())
     } in
-  let link = {h_uri = Url.string_of ctx#base.document_url;
-          h_context = None;
-          h_method = GET;
-          h_params = []} in
-
+  let link = Hyper.default_link (Url.string_of ctx#base.document_url) in
   Net.retrieve link cont
 (*e: function Images.f *)
 

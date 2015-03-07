@@ -34,22 +34,26 @@ module DocumentIDSet =
 type handle = {
   document_id : document_id;
 
-  mutable document_status : int;
-    (* Status code of response *)
+  (* this should help to know what to do even if have not the data yet *)
+  mutable document_headers : string list;
+    (* HTTP headers of document, or faked ones *)
 
   document_feed : Feed.t;
     (* where to get the data *)
 
-  document_referer : string option;
-    (* URL of refering document, if any *)
-  mutable document_headers : string list;
-    (* HTTP headers of document, or faked ones *)
+  (*s: [[Document.handle]] other fields *)
+  mutable document_status : int;
+    (* Status code of response *)
+
   document_fragment : string option;
     (* fragment (#foo) if any *)
 
-
-  mutable document_logger : logger
+  mutable document_logger : logger;
     (* how to log information relative to this document processing *)
+  (*x: [[Document.handle]] other fields *)
+  document_referer: string option;
+    (* URL of refering document, if any *)
+  (*e: [[Document.handle]] other fields *)
 }
 (*e: type Document.handle *)
 

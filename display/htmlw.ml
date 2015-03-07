@@ -383,11 +383,10 @@ class  virtual bored () =
       let b = Button.create hgbas [
        Text "\182"; BorderWidth (Pixels 0);
        Command (fun () ->
-      self#ctx#goto {
-      h_uri = "http://www.columbiatristar.co.uk/the_net/contents.html";
-      h_context = None;
-      h_method = GET;
-      h_params = []})] in
+      self#ctx#goto 
+       (Hyper.default_link  
+         "http://www.columbiatristar.co.uk/the_net/contents.html")
+      )] in
       let l  = Winfo.children hgbas in
       pack [b][After (List.hd l); Side Side_Right]
     end
@@ -398,8 +397,8 @@ end
 class display_html ((top : Widget.widget),
                     (ctx : Viewers.context),
                     (mediapars : (string * string) list),
-                    imgmanager,
-                    dh') =
+                    (imgmanager: Imgload.loader),
+                    (dh': Document.handle)) =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit viewer_globs (ctx, dh')
@@ -407,10 +406,32 @@ class display_html ((top : Widget.widget),
   inherit html_body () as body
   inherit bored ()
 
+  (* val imgmanager = imgmanager *)
+
   (*s: [[Htmlw.display_html]] private fields *)
+  val (*private*) annotations = ref []
+  (*x: [[Htmlw.display_html]] private fields *)
+  val mutable add_extra_header = fun f -> ()
+  (*x: [[Htmlw.display_html]] private fields *)
+  val (*private*) errors = ref []
+  (*x: [[Htmlw.display_html]] private fields *)
+  val mutable init_mode = true
+  val mutable pending = true
+  (* flag for JP force redraw *)
+  val mutable force_redrawable = true (* this must not be initialized *)
+  (*x: [[Htmlw.display_html]] private fields *)
+  val mutable mach = F.create (ctx, imgmanager)
+  (*x: [[Htmlw.display_html]] private fields *)
   val mutable (*private*) terminated = false
+  (*x: [[Htmlw.display_html]] private fields *)
+  val mutable set_progress = Progress.no_meter
   (*e: [[Htmlw.display_html]] private fields *)
 
+  (*less: can be changed? *)
+  val mutable title = Url.string_of ctx#base.document_url
+  method di_title = title
+
+  (*s: [[Htmlw.display_html]] frame widget methods *)
   val frame = 
     if not (Winfo.exists top) 
     then failwith "too late"
@@ -419,70 +440,9 @@ class display_html ((top : Widget.widget),
        * finally could get the headers of the document.
        *)
   method frame = frame
-
-  (* val imgmanager = imgmanager *)
-  val mutable mach = 
-    F.create (ctx, imgmanager)
-  method mach = mach
-
-  val mutable init_mode = true
-  val mutable pending = true
-
-
-  (* error reporting *)
-  val (*private*) errors = ref []
-  method record_error loc msg =
-    errors := (loc,msg) :: !errors;
-    self#set_progress size (-1)
-
-  (* progress report *)
-  val mutable set_progress = Progress.no_meter
-  method set_progress = set_progress
-      
-  val (*private*) annotations = ref []
-  method annotate loc = function
-    | OpenTag {tag_name=name} ->
-        annotations := (name, loc) :: !annotations
-    | CloseTag name ->
-        annotations := (name, loc) :: !annotations
-    | _ -> ()
-
-  val mutable add_extra_header = fun f -> ()
-  method add_extra_header = add_extra_header
-
-  val mutable title = Url.string_of ctx#base.document_url
-
-  method load_frames frames =
-    (* all targets defined in all framesets in this document *)
-    let targets = 
-      List.map (function frdesc, w -> frdesc.frame_name, w) frames
-    in
-      List.iter (function (frdesc, w) ->
-    let thistargets =
-      ("_self", w) (* ourselves *)
-      :: ("_parent", Winfo.parent w) (* our direct parent *)
-      :: targets (* common targets *)
-    in
-    let ectx = ctx#for_embed frdesc.frame_params thistargets in
-    (* add frame parameters and targets to our ctx *)
-    (* NOTE: there is a redundancy between embed_frame and _self in ctx,
-       but frames are only an instance of embedded objects so we should
-       no rely on the existence of _self for embed display machinery *)
-    mach#add_embedded {
-    embed_hlink = { h_uri = frdesc.frame_src;
-                h_context = Some (Url.string_of ctx#base.document_url);
-            h_method = GET;
-            h_params = []};
-    embed_frame = w;
-    embed_context = ectx;
-    embed_map = Maps.NoMap;
-    embed_alt = frdesc.frame_name
-      }	)
-      frames
-
-  (* flag for JP force redraw *)
-  val mutable force_redrawable = true (* this must not be initialized *)
-
+  method di_widget = frame
+  (*e: [[Htmlw.display_html]] frame widget methods *)
+  (*s: [[Htmlw.display_html]] init method *)
   (* since we may be called multiple times, we have to clear some of the
      instance variables *)
   method init full =
@@ -491,7 +451,7 @@ class display_html ((top : Widget.widget),
     set_progress <- Progress.no_meter;
     init_mode <- full;
     mach <- F.create (ctx, imgmanager);
-    
+  
     (* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
     if not !ignore_meta_charset then begin 
       mach#add_tag "meta"
@@ -702,13 +662,14 @@ class display_html ((top : Widget.widget),
           Log.f (sprintf "FATAL ERROR (htmlw) %s" (Printexc.to_string e));
       self#finish true
         )
+  (*e: [[Htmlw.display_html]] init method *)
 
-  (* What is exported ? *)
-  method di_widget = frame
-  method di_title = title
+  (*s: [[Htmlw.display_html]] fragment methods *)
   method di_fragment = mach#see_frag
-
+  (*e: [[Htmlw.display_html]] fragment methods *)
   (*s: [[Htmlw.display_html]] load images methods *)
+  method mach = mach
+  (*x: [[Htmlw.display_html]] load images methods *)
   method di_load_images = 
     (* load our images *)
     imgmanager#load_images;
@@ -735,7 +696,49 @@ class display_html ((top : Widget.widget),
       )
     )
   (*e: [[Htmlw.display_html]] update embedded objects methods *)
+  (*s: [[Htmlw.display_html]] load frames methods *)
+  method load_frames frames =
+    (* all targets defined in all framesets in this document *)
+    let targets = 
+      List.map (function frdesc, w -> frdesc.frame_name, w) frames
+    in
+      List.iter (function (frdesc, w) ->
+    let thistargets =
+      ("_self", w) (* ourselves *)
+      :: ("_parent", Winfo.parent w) (* our direct parent *)
+      :: targets (* common targets *)
+    in
+    let ectx = ctx#for_embed frdesc.frame_params thistargets in
+    (* add frame parameters and targets to our ctx *)
+    (* NOTE: there is a redundancy between embed_frame and _self in ctx,
+       but frames are only an instance of embedded objects so we should
+       no rely on the existence of _self for embed display machinery *)
+    mach#add_embedded {
+      embed_hlink = { 
+        h_uri = frdesc.frame_src;
+        h_context = Some (Url.string_of ctx#base.document_url);
+        h_method = GET;
+        h_params = []
+      };
+      embed_frame = w;
+      embed_context = ectx;
+      embed_map = Maps.NoMap;
+      embed_alt = frdesc.frame_name
+    })
+      frames
+  (*e: [[Htmlw.display_html]] load frames methods *)
 
+  (*s: [[Htmlw.display_html]] error managment methods *)
+  (* error reporting *)
+  method record_error loc msg =
+    errors := (loc,msg) :: !errors;
+    self#set_progress size (-1)
+  (*e: [[Htmlw.display_html]] error managment methods *)
+
+  (*s: [[Htmlw.display_html]] progress method *)
+  (* progress report *)
+  method set_progress = set_progress
+  (*e: [[Htmlw.display_html]] progress method *)
   (*s: [[Htmlw.display_html]] abort methods *)
   method di_abort = 
     self#finish true
@@ -777,6 +780,15 @@ class display_html ((top : Widget.widget),
     then Tk.destroy frame;
   (*e: [[Htmlw.display_html]] destroy methods *)
   (*s: [[Htmlw.display_html]] other methods or fields *)
+  method annotate loc = function
+    | OpenTag {tag_name=name} ->
+        annotations := (name, loc) :: !annotations
+    | CloseTag name ->
+        annotations := (name, loc) :: !annotations
+    | _ -> ()
+  (*x: [[Htmlw.display_html]] other methods or fields *)
+  method add_extra_header = add_extra_header
+  (*x: [[Htmlw.display_html]] other methods or fields *)
   method di_source = self#source
 
   (* The source is attached to this frame so we can destroy the interior widgets*)
@@ -786,6 +798,7 @@ class display_html ((top : Widget.widget),
     else Source.view frame did (fun () -> self#redisplay) errors annotations
            feed_read#get_code
   (*e: [[Htmlw.display_html]] other methods or fields *)
+
 end
 (*e: class Htmlw.display_html *)
       

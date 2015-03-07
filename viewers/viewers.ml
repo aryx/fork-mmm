@@ -52,7 +52,7 @@ type hyper_func = {
 
 (*s: class Viewers.context *)
 class virtual context ((did : Document.document_id), 
-               (v : vparams)) =
+                       (v : vparams)) =
  object (self : 'a)
 
   val base = did
@@ -66,9 +66,9 @@ class virtual context ((did : Document.document_id),
 
   val targets = []
 
-  method goto hlink = self#invoke "goto" hlink
+  method goto hlink    = self#invoke "goto" hlink
   method gotonew hlink = self#invoke "gotonew" hlink
-  method save hlink = self#invoke "save" hlink
+  method save hlink    = self#invoke "save" hlink
   method invoke name hlink =
     try (List.assoc name funs).hyper_func targets hlink
     with Not_found -> ()
@@ -132,6 +132,7 @@ class trivial_display (w, url) =
   inherit display_info ()
   (* val w = w *)
   (* val url = url *)
+
   method di_widget = w
   method di_abort = ()
   method di_destroy = if Winfo.exists w then Tk.destroy w

@@ -2070,6 +2070,8 @@ open Url
 
 <<type Hyper.link>>
 
+<<val Hyper.default_link>>
+
 <<type Hyper.link_error>>
 
 <<exception Hyper.Invalid_link>>
@@ -2106,6 +2108,8 @@ open Url
 <<type Hyper.link>>
 
 <<type Hyper.link_error>>
+
+<<function Hyper.default_link>>
 
 <<exception Hyper.Invalid_link>>
 
@@ -4502,28 +4506,23 @@ let code204 wwwr dh =
 
 <<function Retrieve.forward>>=
 (* 302 Moved temporarily *)
-let forward wwwr dh =
+let forward wr dh =
   try 
    let newurl = Http_headers.location dh.document_headers in
      if (* do we forward automatically ?*)
-    match wwwr.www_link.h_method with
+    match wr.www_link.h_method with
       GET -> true
     | POST _ ->
         (* Do NOT redirect automatically if method was POST *)
-        wwwr.www_error#choose (s_ 
+        wr.www_error#choose (s_ 
          "Destination for your POST request has changed\n\
               from %s\nto %s\nConfirm action ?"
-            (Url.string_of wwwr.www_url) newurl)
+            (Url.string_of wr.www_url) newurl)
     | _ -> true 
      then begin (* consider forwarding as a link *)
-       wwwr.www_logging "Forwarding";
-       Retry {h_uri = newurl;
-          h_context = wwwr.www_link.h_context;
-          h_method = wwwr.www_link.h_method;
-          h_params = wwwr.www_link.h_params
-         }
-       end
-     else 
+       wr.www_logging "Forwarding";
+       Retry { wr.www_link with h_uri = newurl; }
+     end else 
       (* not forwarding a moved POST. We show the document after all,
         since some people (servers ?) use this trick to show the results
         of a POST, despite what the protocol says about this *)
@@ -4535,11 +4534,11 @@ let forward wwwr dh =
 
 <<function Retrieve.forward_permanent>>=
 (* 301 Moved permanently *)
-let forward_permanent wwwr dh =
+let forward_permanent wr dh =
   try
     let newurl = Http_headers.location dh.document_headers in
-    wwwr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
-    forward wwwr dh
+    wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
+    forward wr dh
   with Not_found -> 
     Error (s_ "No Location: in forwarding header")
 @
@@ -4547,23 +4546,23 @@ let forward_permanent wwwr dh =
 
 <<function Retrieve.ask_auth>>=
 (* 401 Unauthorized *)
-let ask_auth wwwr dh =
-  wwwr.www_logging (s_ "Checking authentication");
+let ask_auth wr dh =
+  wr.www_logging (s_ "Checking authentication");
   let rawchallenge = challenge dh.document_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
-  let host = match wwwr.www_url.host with
+  let host = match wr.www_url.host with
      Some h -> h
    | None -> ""
-  and dir = match wwwr.www_url.path with
+  and dir = match wr.www_url.path with
      Some "" -> "/"
    | Some h -> Filename.dirname h
    | None -> "/" 
-  and port = match wwwr.www_url.port with
+  and port = match wr.www_url.port with
      Some p -> p
    | None -> 80 (* should never happen *) in
 
-  Auth.check wwwr challenge
+  Auth.check wr challenge
       {auth_proxy = false;
        auth_host = host; 
        auth_port = port;
@@ -4572,8 +4571,8 @@ let ask_auth wwwr dh =
 @
 
 <<function Retrieve.unauthorized>>=
-let unauthorized wwwr dh =
-  match ask_auth wwwr dh with
+let unauthorized wr dh =
+  match ask_auth wr dh with
     None -> (* no attempt to answer challenge, display the message *)
       Ok
   | Some (cookie, isnew, space) ->
@@ -4598,12 +4597,12 @@ let unauthorized wwwr dh =
 <<function Retrieve.ask_proxy_auth>>=
 (* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
-let ask_proxy_auth wwwr dh =
-  wwwr.www_logging (s_ "Checking proxy authentication");
+let ask_proxy_auth wr dh =
+  wr.www_logging (s_ "Checking proxy authentication");
   let rawchallenge = proxy_challenge dh.document_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
-  Auth.check wwwr challenge
+  Auth.check wr challenge
       {auth_proxy = true;
        auth_host = !proxy;
        auth_port = !proxy_port;
@@ -4612,9 +4611,9 @@ let ask_proxy_auth wwwr dh =
 @
 
 <<function Retrieve.proxy_unauthorized>>=
-let proxy_unauthorized wwwr dh =
+let proxy_unauthorized wr dh =
   Log.debug "proxy_unauthorized handler";
-  match ask_proxy_auth wwwr dh with
+  match ask_proxy_auth wr dh with
     None -> (* no attempt to answer challenge, display the message *)
       Ok
   | Some (cookie, isnew, space) ->
@@ -4720,9 +4719,9 @@ let rec http_check cache retry cont wwwr dh =
 <<function Retrieve.forward_permanent>>
 
 (* 304 : Response to a conditional GET, the document is not modified
-let update wwwr dh =
+let update wr dh =
    Cache.patch dh.document_id dh.document_headers;
-   Stop (s_ "Document %s has not changed.\n" (Url.string_of wwwr.www_url))
+   Stop (s_ "Document %s has not changed.\n" (Url.string_of wr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
 
@@ -5723,10 +5722,7 @@ let update frame embed_ctx doc notchanged =
       wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
       wr
     in
-    let link = { h_uri = Url.string_of doc.document_address;
-         h_context = None;
-         h_method = GET;
-         h_params = []} in
+    let link = Hyper.default_link (Url.string_of doc.document_address) in
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx newdoc =
       let newdate = 
@@ -6363,6 +6359,7 @@ class trivial_display (w, url) =
   inherit display_info ()
   (* val w = w *)
   (* val url = url *)
+
   method di_widget = w
   method di_abort = ()
   method di_destroy = if Winfo.exists w then Tk.destroy w
@@ -6988,7 +6985,8 @@ class misc (tagdef, tagname, attr) =
   
   val mutable start_pos = TextIndex(LineChar(0,0),[])
   (* val tagdef = tagdef *)
-  val tagname = let _ = tagdef#define tagname  attr in
+  val tagname = 
+     let _ = tagdef#define tagname  attr in
      tagname
 
   method pop current_pos =
@@ -8115,8 +8113,7 @@ class  virtual active () =
              self#highlight true;
              ctx#invoke "pointsto" link
            with Not_found -> ())));
-  let fakehlink =
-    {h_uri = ""; h_context = None; h_method = GET; h_params = [] } in
+  let fakehlink = Hyper.default_link "" in
   self#binder [[], Leave]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
           (fun ei ->
@@ -9878,11 +9875,10 @@ class  virtual bored () =
       let b = Button.create hgbas [
        Text "\182"; BorderWidth (Pixels 0);
        Command (fun () ->
-      self#ctx#goto {
-      h_uri = "http://www.columbiatristar.co.uk/the_net/contents.html";
-      h_context = None;
-      h_method = GET;
-      h_params = []})] in
+      self#ctx#goto 
+       (Hyper.default_link  
+         "http://www.columbiatristar.co.uk/the_net/contents.html")
+      )] in
       let l  = Winfo.children hgbas in
       pack [b][After (List.hd l); Side Side_Right]
     end
@@ -12978,8 +12974,7 @@ fixed_style "tt";
  *)
 
 let anchor_type = ref None
-and anchor_link = 
-  ref {h_uri = ""; h_context = None; h_method = GET; h_params = []}
+and anchor_link = ref (Hyper.default_link "")
 and in_anchor = ref false
 in
 let open_anchor fo tag =
@@ -13280,8 +13275,7 @@ mach#add_tag "img"
                   h_method = GET; h_params = []}
            with
          Not_found -> 
-           Hyper.string_of {h_uri = mach#base; h_context = None;
-                h_method = GET; h_params = []}
+           Hyper.string_of (Hyper.default_link mach#base)
          in
          mapname := absname;
          areas := [];
@@ -15249,11 +15243,7 @@ let process_head = fun nav wr dh ->
 <<function Nav.make_head>>=
 (* But for head, we need to change the hlink *)
 let make_head hlink =
-  { h_uri = hlink.h_uri;
-    h_context = hlink.h_context;
-    h_method = HEAD;
-    h_params = hlink.h_params
-    }
+  { hlink with h_method = HEAD; }
 @
 
 <<function Nav.copy_link>>=
@@ -15305,12 +15295,7 @@ let historygoto nav did frag usecache =
             wr),
          specific_viewer false)
     in
-    follow_link { 
-      h_uri = uri;
-      h_context = None;
-      h_method = GET;
-      h_params = []
-    };
+    follow_link (Hyper.default_link uri);
     true
   end else begin
     (* the url is a "non-unique" document, that is, its url is not
@@ -15374,12 +15359,7 @@ let update nav did nocache =
            wr),
          nothing_specific)
       in
-      follow_link { 
-        h_uri = Url.string_of did.document_url;
-        h_context = None;
-        h_method = GET;
-        h_params = []
-      }
+      follow_link (Hyper.default_link (Url.string_of did.document_url))
     with Not_found ->
       nav.nav_error#f ("Document has no Date: header.")
   with Not_found ->
@@ -16139,11 +16119,7 @@ let f ctx =
         show_images ctx l);
     document_finish = (fun _ -> ())
     } in
-  let link = {h_uri = Url.string_of ctx#base.document_url;
-          h_context = None;
-          h_method = GET;
-          h_params = []} in
-
+  let link = Hyper.default_link (Url.string_of ctx#base.document_url) in
   Net.retrieve link cont
 @
 

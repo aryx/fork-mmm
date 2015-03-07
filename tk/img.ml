@@ -200,10 +200,7 @@ let get did link cont prog =
 let update url =
   try
     let (oldi,refs,headers) = ImageData.direct_cache_access url in
-    let link = { h_uri = Url.string_of url;
-         h_context = None;
-         h_method = GET;
-             h_params = []} in
+    let link = Hyper.default_link (Url.string_of url) in
     let wr = Www.make link in
     let date_received = get_header "date" headers in
     wr.www_headers <- 

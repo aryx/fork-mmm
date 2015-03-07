@@ -287,7 +287,8 @@ class misc (tagdef, tagname, attr) =
   
   val mutable start_pos = TextIndex(LineChar(0,0),[])
   (* val tagdef = tagdef *)
-  val tagname = let _ = tagdef#define tagname  attr in
+  val tagname = 
+     let _ = tagdef#define tagname  attr in
      tagname
 
   method pop current_pos =

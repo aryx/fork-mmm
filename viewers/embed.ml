@@ -220,10 +220,7 @@ let update frame embed_ctx doc notchanged =
       wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
       wr
     in
-    let link = { h_uri = Url.string_of doc.document_address;
-         h_context = None;
-         h_method = GET;
-         h_params = []} in
+    let link = Hyper.default_link (Url.string_of doc.document_address) in
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx newdoc =
       let newdate = 

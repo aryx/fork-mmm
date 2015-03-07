@@ -16,10 +16,7 @@ module Mmm = Get(Provide)
 let fake_embed media_pars w ctx dh =
   Document.dclose true dh;
   try 
-    let hlink = {h_uri = Url.string_of dh.document_id.document_url;
-         h_context = None;
-         h_method = GET;
-         h_params = []} in
+    let hlink = Hyper.default_link (Url.string_of dh.document_id.document_url)in
     pack [Label.create w [Text "Redispatched externally"]][];
     ctx#goto hlink
   with 

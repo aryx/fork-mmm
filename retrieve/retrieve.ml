@@ -160,28 +160,23 @@ let code204 wwwr dh =
 
 (*s: function Retrieve.forward *)
 (* 302 Moved temporarily *)
-let forward wwwr dh =
+let forward wr dh =
   try 
    let newurl = Http_headers.location dh.document_headers in
      if (* do we forward automatically ?*)
-    match wwwr.www_link.h_method with
+    match wr.www_link.h_method with
       GET -> true
     | POST _ ->
         (* Do NOT redirect automatically if method was POST *)
-        wwwr.www_error#choose (s_ 
+        wr.www_error#choose (s_ 
          "Destination for your POST request has changed\n\
               from %s\nto %s\nConfirm action ?"
-            (Url.string_of wwwr.www_url) newurl)
+            (Url.string_of wr.www_url) newurl)
     | _ -> true 
      then begin (* consider forwarding as a link *)
-       wwwr.www_logging "Forwarding";
-       Retry {h_uri = newurl;
-          h_context = wwwr.www_link.h_context;
-          h_method = wwwr.www_link.h_method;
-          h_params = wwwr.www_link.h_params
-         }
-       end
-     else 
+       wr.www_logging "Forwarding";
+       Retry { wr.www_link with h_uri = newurl; }
+     end else 
       (* not forwarding a moved POST. We show the document after all,
         since some people (servers ?) use this trick to show the results
         of a POST, despite what the protocol says about this *)
@@ -193,46 +188,46 @@ let forward wwwr dh =
 
 (*s: function Retrieve.forward_permanent *)
 (* 301 Moved permanently *)
-let forward_permanent wwwr dh =
+let forward_permanent wr dh =
   try
     let newurl = Http_headers.location dh.document_headers in
-    wwwr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
-    forward wwwr dh
+    wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
+    forward wr dh
   with Not_found -> 
     Error (s_ "No Location: in forwarding header")
 (*e: function Retrieve.forward_permanent *)
 
 (* 304 : Response to a conditional GET, the document is not modified
-let update wwwr dh =
+let update wr dh =
    Cache.patch dh.document_id dh.document_headers;
-   Stop (s_ "Document %s has not changed.\n" (Url.string_of wwwr.www_url))
+   Stop (s_ "Document %s has not changed.\n" (Url.string_of wr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
 
 (*s: function Retrieve.code400 *)
 (* 400 Bad request *)
-let code400 wwwr dh = Error (s_ "Bad Request")
+let code400 wr dh = Error (s_ "Bad Request")
 (*e: function Retrieve.code400 *)
 
 (*s: function Retrieve.ask_auth *)
 (* 401 Unauthorized *)
-let ask_auth wwwr dh =
-  wwwr.www_logging (s_ "Checking authentication");
+let ask_auth wr dh =
+  wr.www_logging (s_ "Checking authentication");
   let rawchallenge = challenge dh.document_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
-  let host = match wwwr.www_url.host with
+  let host = match wr.www_url.host with
      Some h -> h
    | None -> ""
-  and dir = match wwwr.www_url.path with
+  and dir = match wr.www_url.path with
      Some "" -> "/"
    | Some h -> Filename.dirname h
    | None -> "/" 
-  and port = match wwwr.www_url.port with
+  and port = match wr.www_url.port with
      Some p -> p
    | None -> 80 (* should never happen *) in
 
-  Auth.check wwwr challenge
+  Auth.check wr challenge
       {auth_proxy = false;
        auth_host = host; 
        auth_port = port;
@@ -241,8 +236,8 @@ let ask_auth wwwr dh =
 (*e: function Retrieve.ask_auth *)
 
 (*s: function Retrieve.unauthorized *)
-let unauthorized wwwr dh =
-  match ask_auth wwwr dh with
+let unauthorized wr dh =
+  match ask_auth wr dh with
     None -> (* no attempt to answer challenge, display the message *)
       Ok
   | Some (cookie, isnew, space) ->
@@ -267,12 +262,12 @@ let unauthorized wwwr dh =
 (*s: function Retrieve.ask_proxy_auth *)
 (* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
-let ask_proxy_auth wwwr dh =
-  wwwr.www_logging (s_ "Checking proxy authentication");
+let ask_proxy_auth wr dh =
+  wr.www_logging (s_ "Checking proxy authentication");
   let rawchallenge = proxy_challenge dh.document_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
-  Auth.check wwwr challenge
+  Auth.check wr challenge
       {auth_proxy = true;
        auth_host = !proxy;
        auth_port = !proxy_port;
@@ -281,9 +276,9 @@ let ask_proxy_auth wwwr dh =
 (*e: function Retrieve.ask_proxy_auth *)
 
 (*s: function Retrieve.proxy_unauthorized *)
-let proxy_unauthorized wwwr dh =
+let proxy_unauthorized wr dh =
   Log.debug "proxy_unauthorized handler";
-  match ask_proxy_auth wwwr dh with
+  match ask_proxy_auth wr dh with
     None -> (* no attempt to answer challenge, display the message *)
       Ok
   | Some (cookie, isnew, space) ->

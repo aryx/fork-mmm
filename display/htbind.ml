@@ -80,8 +80,7 @@ class  virtual active () =
              self#highlight true;
              ctx#invoke "pointsto" link
            with Not_found -> ())));
-  let fakehlink =
-    {h_uri = ""; h_context = None; h_method = GET; h_params = [] } in
+  let fakehlink = Hyper.default_link "" in
   self#binder [[], Leave]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
           (fun ei ->

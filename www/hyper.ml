@@ -42,6 +42,15 @@ type link_error =
   | UrlLexing of string * int
 (*e: type Hyper.link_error *)
 
+(*s: function Hyper.default_link *)
+let default_link uri = {
+ h_uri = uri;
+ h_context = None;
+ h_method = GET;
+ h_params = [];
+}
+(*e: function Hyper.default_link *)
+
 (*s: exception Hyper.Invalid_link *)
 exception Invalid_link of link_error
 (*e: exception Hyper.Invalid_link *)
