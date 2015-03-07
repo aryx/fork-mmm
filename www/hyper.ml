@@ -12,8 +12,8 @@ open Url
 (* Contains only the one we support *)
 type link_method =
    GET 
- | HEAD
  | POST of string
+ | HEAD
 (*e: type Hyper.link_method *)
 
 (*s: function Hyper.parse_method *)

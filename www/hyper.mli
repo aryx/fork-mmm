@@ -6,8 +6,8 @@
 (* Contains only the one we support *)
 type link_method =
    GET 
- | HEAD
  | POST of string
+ | HEAD
 (*e: type Hyper.link_method *)
 
 (*s: signature Hyper.parse_method *)

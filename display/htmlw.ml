@@ -35,10 +35,13 @@ static char mini-scroll-arrows_bits[] = {
 
 (*s: constant Htmlw.scroll_image *)
 let scroll_image = 
-(*e: constant Htmlw.scroll_image *)
   lazy (ImageBitmap(Imagebitmap.create [Data scroll_icon]))
+(*e: constant Htmlw.scroll_image *)
 
+(*s: module Htmlw.F *)
 module F = Html_disp.Make(Textw_fo)(Form)(Table)
+(*e: module Htmlw.F *)
+
 
 (*s: function Htmlw.progress_report *)
 (* Builds the progress report and pointsto zone.
@@ -409,18 +412,16 @@ class display_html ((top : Widget.widget),
   (* val imgmanager = imgmanager *)
 
   (*s: [[Htmlw.display_html]] private fields *)
+  val mutable init_mode = true
+  val mutable pending = true
+  (*x: [[Htmlw.display_html]] private fields *)
+  val mutable mach = F.create (ctx, imgmanager)
+  (*x: [[Htmlw.display_html]] private fields *)
   val (*private*) annotations = ref []
   (*x: [[Htmlw.display_html]] private fields *)
   val mutable add_extra_header = fun f -> ()
   (*x: [[Htmlw.display_html]] private fields *)
   val (*private*) errors = ref []
-  (*x: [[Htmlw.display_html]] private fields *)
-  val mutable init_mode = true
-  val mutable pending = true
-  (* flag for JP force redraw *)
-  val mutable force_redrawable = true (* this must not be initialized *)
-  (*x: [[Htmlw.display_html]] private fields *)
-  val mutable mach = F.create (ctx, imgmanager)
   (*x: [[Htmlw.display_html]] private fields *)
   val mutable (*private*) terminated = false
   (*x: [[Htmlw.display_html]] private fields *)
@@ -446,64 +447,70 @@ class display_html ((top : Widget.widget),
   (* since we may be called multiple times, we have to clear some of the
      instance variables *)
   method init full =
-    let meta_charset = ref None in
-    errors := []; annotations := []; terminated <- false; pending <- true;
-    set_progress <- Progress.no_meter;
+    (*s: [[Htmlw.display_html]] reset private fields *)
     init_mode <- full;
+    pending <- true;
+
+    errors := []; 
+    annotations := []; 
+    terminated <- false; 
+    set_progress <- Progress.no_meter;
+
     mach <- F.create (ctx, imgmanager);
-  
+    (*e: [[Htmlw.display_html]] reset private fields *)
+
+    (*s: [[Htmlw.display_html]] set meta tag *)
+    let meta_charset = ref None in
     (* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
     if not !ignore_meta_charset then begin 
-      mach#add_tag "meta"
-   (fun fo tag ->
-     try 
-       let h = get_attribute tag "http-equiv"
-       and v = get_attribute tag "content"
-       in
-       match String.lowercase h with
-         "content-type" ->
-    begin try
-      let (t,h), l = Lexheaders.media_type v in
-      if String.lowercase t <> "text" ||
-         String.lowercase h <> "html" then begin
-           Log.f ("Unknown meta content-type = "^t^"/"^h);
-           raise Exit
-         end;
-      try 
-        List.iter (fun (h,v) ->
-          if String.lowercase h = "charset" then begin
-     let v = String.lowercase v in
-     Log.f ("MetaCharset detect : " ^ v);
-     begin try
-              let code = 
-                let code = ref Japan.Unknown in
-                try List.iter (fun (x,c) -> 
-                  if Str.string_match (Str.regexp x) v 0 then begin
-                code := c;
-                raise Exit
-                  end) Japan.encode_table ;
-                  raise Not_found
-                with
-                  Exit -> !code
-              in
-       (* feed_read#set_code code; this does not work... *)
-              meta_charset := Some code
-     with
-       Not_found ->
-         Log.f (v ^ ": I don't know this charset")
-     end;
-     raise Exit
-          end) l;
-      with
-        Exit -> ()
-    with
-      _ -> () (* if failed to parse, ignore it *)
-    end
-       | _ -> ()
-     with Not_found -> ())
-   ignore_close
-    end;
+      mach#add_tag "meta" (fun fo tag ->
+       try 
+         let h = get_attribute tag "http-equiv" in
+         let v = get_attribute tag "content" in
+         match String.lowercase h with
+         | "content-type" ->
+              begin try
+                let (t,h), l = Lexheaders.media_type v in
+                if String.lowercase t <> "text" ||
+                   String.lowercase h <> "html" then begin
+                     Log.f ("Unknown meta content-type = "^t^"/"^h);
+                    raise Exit
+                end;
+                try 
+                  List.iter (fun (h,v) ->
+                    if String.lowercase h = "charset" then begin
+                      let v = String.lowercase v in
+                      Log.f ("MetaCharset detect : " ^ v);
+                      begin try
+                        let code = 
+                          let code = ref Japan.Unknown in
+                          try List.iter (fun (x,c) -> 
+                             if Str.string_match (Str.regexp x) v 0 then begin
+                               code := c;
+                               raise Exit
+                             end
+                             ) Japan.encode_table ;
+                             raise Not_found
+                          with Exit -> !code
+                        in
+                        (* feed_read#set_code code; this does not work... *)
+                        meta_charset := Some code
+                      with Not_found ->
+                        Log.f (v ^ ": I don't know this charset")
+                      end;
+                      raise Exit
+                   end) l;
+                with Exit -> ()
+              with _ -> () (* if failed to parse, ignore it *)
+            end
+         | _ -> ()
+       with Not_found -> ()
+     )
+     ignore_close
+      end;
+    (*e: [[Htmlw.display_html]] set meta tag *)
 
+    (*s: [[Htmlw.display_html]] set progress report and head UI *)
     (* We have full display, so put up progress report and head UI *)
     if full then begin 
       let hgbas, progf = progress_report frame ctx in
@@ -511,161 +518,106 @@ class display_html ((top : Widget.widget),
       self#bored_init hgbas;
       pack [hgbas] [Side Side_Bottom; Fill Fill_X];
       let headgroup, set_title, add_link, add_header, add_ext_header =
-    html_head_ui dh.document_headers (fun () -> self#redisplay) 
-      self#current_scroll_mode frame ctx
+        html_head_ui dh.document_headers (fun () -> self#redisplay)
+        self#current_scroll_mode frame ctx
       in
       add_extra_header <- add_ext_header;
       pack [headgroup] [Side Side_Top; Fill Fill_X];
-      let set_title s = title <- s; set_title s in
+      let set_title s = 
+        title <- s; 
+        set_title s 
+      in
       head_hook (headgroup, set_title, add_link, add_header) self#mach
     end;
+    (*e: [[Htmlw.display_html]] set progress report and head UI *)
+
     self#body_init full;
+
+    (*s: [[Htmlw.display_html]] display frames *)
     if not !frames_as_links then
-      Htframe.add_frames (self#load_frames) 
-    (fun () ->
-      match body_frame with
-        None -> ()
-      | Some f -> destroy f)
-    frame mach;
+      Htframe.add_frames (self#load_frames) (fun () ->
+        match body_frame with
+        | None -> ()
+        | Some f -> Tk.destroy f
+      ) frame mach;
+    (*e: [[Htmlw.display_html]] display frames *)
+
     (* Asynchronous parsing and display, token by token *)
     self#parse_init;
 
+    (*s: [[Htmlw.display_html]] i18 encoder for forms *)
     (* I18n encoder for Forms *)
     (*
     if !Lang.japan then begin
       mach#set_i18n_encoder (fun s -> Japan.encoder feed_read#get_code s)
     end;
     *)
+    (*e: [[Htmlw.display_html]] i18 encoder for forms *)
 
-    (* EOF Flags for JP *)
-    let eof = ref 0 in
     dh.document_feed.feed_schedule (fun () ->
       try 
-       let warnings, correct, tokens, loc = lexer self#lexbuf in
-       List.iter (fun (reason, pos) -> 
-      self#record_error (Loc(pos,succ pos)) reason)
-      warnings;
-       begin match correct with
-       | Legal -> ()
-       | Illegal reason -> self#record_error loc reason
-       end;
-    (* We annotate only the last token, which is normally the one
-       from the original token stream *)
-    let rec annot_last = function
-      | [] -> ()
-      | [x] -> self#annotate loc x
-      | x::l -> annot_last l
-    in
-    annot_last tokens;
-       List.iter 
-      (function token -> 
-        begin try mach#send token
-        with Invalid_Html s -> self#record_error loc s
-        end;
-        if token = EOF then begin
-          pending <- false;
-          imgmanager#flush_images;
-          raise End_of_file
-        end)
-      tokens
-      with End_of_file ->
-      (*
-      (* I don't know why but in some cases we have more than 1 EOF *)
-      if !Lang.japan && full && !eof = 0 then begin
-        (* We should bind for each frames... *)
-        let default = [
-          (fun c -> 
-        force_redrawable <- false;
-        Japan.change_to_jis c), "iso-2022-jp", [
-            [Control], KeyPressDetail "k"; 
-            [Control], KeyPressDetail "j"];
-          (fun c ->
-        force_redrawable <- false;
-        Japan.change_to_iso8859 c), "iso-8859", [
-            [Control], KeyPressDetail "k"; 
-            [Control], KeyPressDetail "l"];
-          (fun c ->
-        force_redrawable <- false;
-        Japan.change_to_euc c), "euc-jp", [
-            [Control], KeyPressDetail "k"; 
-            [Control], KeyPressDetail "e"];
-          (fun c ->
-        force_redrawable <- false;
-        Japan.change_to_sjis c), "sjis", [
-            [Control], KeyPressDetail "k"; 
-            [Control], KeyPressDetail "s"];
-          (fun c ->
-        force_redrawable <- true;
-        Japan.change_to_autodetect c), "autodetect", [
-            [Control], KeyPressDetail "k"; 
-            [Control], KeyPressDetail "a"]]
+        let warnings, correct,   tokens, loc = 
+          lexer self#lexbuf 
         in
-        let my_own = List.map (fun (f,i,devnt) ->
-          f,i,Tkresource.event_sequence ("ChangeEncoding-"^i) devnt)
-            default
+        (*s: [[Htmlw.display_html]] in feed, record possible errors after lexing *)
+        warnings |> List.iter (fun (reason, pos) -> 
+          self#record_error (Loc(pos,succ pos)) reason
+        );
+        (match correct with
+        | Legal -> ()
+        | Illegal reason -> self#record_error loc reason
+        );
+        (*e: [[Htmlw.display_html]] in feed, record possible errors after lexing *)
+
+        (*s: [[Htmlw.display_html]] in feed, annotate *)
+        (* We annotate only the last token, which is normally the one
+         * from the original token stream *)
+        let rec annot_last = function
+        | [] -> ()
+        | [x] -> self#annotate loc x
+        | x::l -> annot_last l
         in
-        (* Heck, this does not work... Key binds for frames... *)
-        (* We have to think about key bindings for each frames. (JPF) *)
-        (* List.iter (fun (f,_,evnt) ->
-          bind frame evnt (BindSetBreakable ([], fun _ -> 
-        f jpn_config; self#redisplay; break())))
-              my_own;
-           *)
-        self#add_extra_header (fun p ->
-          let encodingmenu = Menu.create_named p "encodingmenu" [] in
-          List.iter (fun (f,i,evnt) ->
-        Menu.add_command encodingmenu [ 
-          Label i; Command (fun () -> 
-            f jpn_config;
-            self#redisplay) (*;
-              Accelerator (Tkresource.short_event_sequence evnt)*) ])
-                my_own;
-          Menu.add_cascade p [
-            Menu encodingmenu;
-            Label ("Document encoding: " ^ 
-               try 
-                 List.assoc feed_read#get_code 
-                          Japan.detected_code_names
-               with
-             Not_found -> "???")])
-      end;
-      *)
-      self#set_progress (Some red) red;
-         self#finish false;
-      mach#see_frag dh.document_fragment;
-      (*
-      if !Lang.japan && !meta_charset <> None then begin
-        match !meta_charset with
-            | None -> assert false
-            | Some meta_charset ->
-               if Japan.Code meta_charset <> feed_read#get_code && 
-                 force_redrawable 
-               then begin
-                    force_redrawable <- false;
-                    (match meta_charset with
-                      Japan.JIS -> Japan.change_to_jis jpn_config 
-                    | Japan.SJIS -> Japan.change_to_sjis jpn_config 
-                    | Japan.EUC -> Japan.change_to_euc jpn_config 
-                    | Japan.ISO8859 -> Japan.change_to_iso8859 jpn_config 
-                    | _ -> ());
-                    self#redisplay
-                  end
-      end;
-      *)
-      incr eof
+        annot_last tokens;
+        (*e: [[Htmlw.display_html]] in feed, annotate *)
+         tokens |> List.iter (fun token -> 
+           begin  
+             try mach#send token
+             with Invalid_Html s -> self#record_error loc s
+           end;
+           if token = EOF then begin
+             pending <- false;
+             imgmanager#flush_images;
+             raise End_of_file
+           end
+         )
+      with 
+      | End_of_file ->
+          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler *)
+          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japan *)
+          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japan *)
+          self#set_progress (Some red) red;
+          self#finish false;
+          mach#see_frag dh.document_fragment;
+          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset *)
+          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset *)
+          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler *)
+      (*s: [[Htmlw.display_html]] in feed, other exceptions handler *)
       | Html_Lexing (s,n) ->
           (* this should not happen if Lexhtml was debugged *)
-      self#record_error (Html.Loc(n,n+1)) s
+          self#record_error (Html.Loc(n,n+1)) s
+      (*x: [[Htmlw.display_html]] in feed, other exceptions handler *)
       | Unix.Unix_error(_,_,_) ->
-      self#finish true
+          self#finish true
       | e ->
           Log.f (sprintf "FATAL ERROR (htmlw) %s" (Printexc.to_string e));
-      self#finish true
-        )
+          self#finish true
+      (*e: [[Htmlw.display_html]] in feed, other exceptions handler *)
+     )
   (*e: [[Htmlw.display_html]] init method *)
 
   (*s: [[Htmlw.display_html]] fragment methods *)
-  method di_fragment = mach#see_frag
+  method di_fragment = 
+    mach#see_frag
   (*e: [[Htmlw.display_html]] fragment methods *)
   (*s: [[Htmlw.display_html]] load images methods *)
   method mach = mach
@@ -681,7 +633,7 @@ class display_html ((top : Widget.widget),
      *  event again during the processing of the event... 
      *)
     Frx_after.idle (fun () ->
-      mach#embedded |> List.iter (fun {embed_frame = f} ->
+      mach#embedded |> List.iter (fun { embed_frame = f} ->
         Winfo.children f |> List.iter (Frx_synth.send "load_images")
       )
     )
@@ -700,32 +652,32 @@ class display_html ((top : Widget.widget),
   method load_frames frames =
     (* all targets defined in all framesets in this document *)
     let targets = 
-      List.map (function frdesc, w -> frdesc.frame_name, w) frames
+      frames |> List.map (fun (frdesc, w) -> frdesc.frame_name, w) 
     in
-      List.iter (function (frdesc, w) ->
-    let thistargets =
-      ("_self", w) (* ourselves *)
-      :: ("_parent", Winfo.parent w) (* our direct parent *)
-      :: targets (* common targets *)
-    in
-    let ectx = ctx#for_embed frdesc.frame_params thistargets in
-    (* add frame parameters and targets to our ctx *)
-    (* NOTE: there is a redundancy between embed_frame and _self in ctx,
-       but frames are only an instance of embedded objects so we should
-       no rely on the existence of _self for embed display machinery *)
-    mach#add_embedded {
-      embed_hlink = { 
-        h_uri = frdesc.frame_src;
-        h_context = Some (Url.string_of ctx#base.document_url);
-        h_method = GET;
-        h_params = []
-      };
-      embed_frame = w;
-      embed_context = ectx;
-      embed_map = Maps.NoMap;
-      embed_alt = frdesc.frame_name
-    })
-      frames
+    frames |> List.iter (fun (frdesc, w) ->
+      let thistargets =
+           ("_self", w) (* ourselves *)
+        :: ("_parent", Winfo.parent w) (* our direct parent *)
+        :: targets (* common targets *)
+      in
+      let ectx = ctx#for_embed frdesc.frame_params thistargets in
+      (* add frame parameters and targets to our ctx *)
+      (* NOTE: there is a redundancy between embed_frame and _self in ctx,
+         but frames are only an instance of embedded objects so we should
+         no rely on the existence of _self for embed display machinery *)
+       mach#add_embedded {
+         embed_hlink = { 
+           h_uri = frdesc.frame_src;
+           h_context = Some (Url.string_of ctx#base.document_url);
+           h_method = GET;
+           h_params = []
+         };
+         embed_frame = w;
+         embed_context = ectx;
+         embed_map = Maps.NoMap;
+         embed_alt = frdesc.frame_name
+       }
+    )
   (*e: [[Htmlw.display_html]] load frames methods *)
 
   (*s: [[Htmlw.display_html]] error managment methods *)

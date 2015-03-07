@@ -9440,10 +9440,6 @@ end
 
 \subsection*{[[./display/htmlw.ml]]}
 
-<<constant Htmlw.frames_as_links>>=
-(* Prefs globals *)
-let frames_as_links = ref false
-@
 
 <<constant Htmlw.pscrolling>>=
 let pscrolling = ref false
@@ -9465,46 +9461,9 @@ static char mini-scroll-arrows_bits[] = {
 
 <<constant Htmlw.scroll_image>>=
 let scroll_image = 
+  lazy (ImageBitmap(Imagebitmap.create [Data scroll_icon]))
 @
 
-<<function Htmlw.progress_report>>=
-(* Builds the progress report and pointsto zone.
- * Adds ctx nav function for pointsto
- *)
-let progress_report top ctx =
-  let f = Frame.create_named top "progress" [] in
-  let pointstov = Textvariable.create_temporary f in
-  let pointsto = Textvariable.set pointstov in
-  let lpoint = 
-    Label.create_named f "pointsto" [TextVariable pointstov; Anchor W]
-  and fprog = Frame.create_named f "fr" [Width (Pixels 200); Height (Pixels 5)]
-  in
-  (* progress meter requires an alt widget, but we don't have to pack it *)
-  let fakealt = Label.create_named fprog "alt" [] in
-  pack [fprog][Side Side_Left];
-  pack [lpoint][Side Side_Left; Fill Fill_X];
-  (* hack to avoid lpoint forcing the navigator to grow like hell *)
-  Frame.configure f
-    [ Width (Pixels (Winfo.reqwidth (Winfo.toplevel f)));
-      Height (Pixels (Winfo.reqheight lpoint))];
-  Pack.propagate_set f false;
-
-  ctx#add_nav ("pointsto" ,
-           { hyper_visible = false;
-         hyper_title = "Show target";
-         hyper_func = (fun _ h -> 
-           let target = 
-             try Hyper.string_of h
-             with Invalid_link msg -> "invalid link" in
-           pointsto target)});
-  ctx#add_nav ("clearpointsto" ,
-           { hyper_visible = false;
-         hyper_title = "Clear target";
-         hyper_func = (fun _ h -> pointsto "")
-           });
-  
-  f, Tk_progress.meter fprog
-@
 
 <<function Htmlw.html_head_ui>>=
 let html_head_ui headers redisplay pscroll top ctx =
@@ -9724,8 +9683,6 @@ let _ =
 @
 
 
-
-
 %-------------------------------------------------------------
 
 <<./display/htmlw.ml>>=
@@ -9749,9 +9706,9 @@ open Htframe
 <<constant Htmlw.scroll_icon>>
 
 <<constant Htmlw.scroll_image>>
-  lazy (ImageBitmap(Imagebitmap.create [Data scroll_icon]))
 
-module F = Html_disp.Make(Textw_fo)(Form)(Table)
+<<module Htmlw.F>>
+
 
 <<function Htmlw.progress_report>>
 
