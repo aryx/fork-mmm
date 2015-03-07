@@ -28,7 +28,7 @@ type t = {
   (*x: [[Nav.t]] other fields *)
   nav_error : Error.t;			(* popping error dialogs *)
   (*x: [[Nav.t]] other fields *)
-  nav_add_active : Url.t -> (unit -> unit) -> unit;
+  nav_add_active : Url.t -> Www.aborter -> unit;
   nav_rem_active : Url.t -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_new : Hyper.link -> unit;
@@ -79,8 +79,8 @@ let request nav process (usecache, wrapwr, specific) lk =
       }
     in
     match Retrieve.f wr handle_link cont with
-    | Retrieve.Started abort -> 
-        nav.nav_add_active wr.www_url abort
+    | Retrieve.Started aborter -> 
+        nav.nav_add_active wr.www_url aborter
     | Retrieve.InUse -> 
         raise (Duplicate wr.www_url)
   (*e: function Nav.request.retrieve_and_handle *)

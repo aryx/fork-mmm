@@ -7603,6 +7603,14 @@ Text.configure text opts;
 
 \subsection{Tables}
 
+<<signature Html_disp.attempt_tables>>=
+val attempt_tables : bool ref
+@
+<<constant Html_disp.attempt_tables>>=
+(* Preference settings *)
+let attempt_tables = ref false
+@
+
 \subsection{Frames}
 % related to embed?
 

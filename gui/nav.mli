@@ -13,7 +13,7 @@ type t = {
   (*x: [[Nav.t]] other fields *)
   nav_error : Error.t;			(* popping error dialogs *)
   (*x: [[Nav.t]] other fields *)
-  nav_add_active : Url.t -> (unit -> unit) -> unit;
+  nav_add_active : Url.t -> Www.aborter -> unit;
   nav_rem_active : Url.t -> unit;
   (*x: [[Nav.t]] other fields *)
   nav_new : Hyper.link -> unit;

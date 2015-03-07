@@ -99,7 +99,7 @@ val dclose : bool -> handle -> unit
 val add_log_backend: (handle -> string -> (unit -> unit) -> unit) ref
 
 (*s: signature Document.add_log *)
-val add_log: handle -> string -> (unit -> unit) -> unit
+val add_log: handle -> string -> Www.aborter -> unit
 (*e: signature Document.add_log *)
 (*s: signature Document.put_log *)
 val put_log : handle -> string -> unit

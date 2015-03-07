@@ -12121,9 +12121,6 @@ open Fonts
 
 \subsection*{[[./display/html_disp.mli]]}
 
-<<signature Html_disp.attempt_tables>>=
-val attempt_tables : bool ref
-@
 
 <<signature Html_disp.verbose>>=
 val verbose : bool ref
@@ -12202,10 +12199,6 @@ end
 
 \subsection*{[[./display/html_disp.ml]]}
 
-<<constant Html_disp.attempt_tables>>=
-(* Preference settings *)
-let attempt_tables = ref false
-@
 
 <<constant Html_disp.verbose>>=
 let verbose = ref false
@@ -12232,6 +12225,11 @@ let uppernumber n =
 
 <<constant Html_disp.romans>>=
 let romans = [|
+  [| ""; "I"; "II"; "III"; "IV"; "V"; "VI"; "VII"; "VIII"; "IX" |];
+  [| ""; "X"; "XX"; "XXX"; "XL"; "L"; "LX"; "LXX"; "LXXX"; "XC" |];
+  [| ""; "C"; "CC"; "CCC"; "CD"; "D"; "DC"; "DCC"; "DCCC"; "CM" |];
+  [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
+  |]
 @
 
 <<function Html_disp.roman>>=
@@ -12300,11 +12298,6 @@ open Fonts
 <<function Html_disp.uppernumber>>
 
 <<constant Html_disp.romans>>
-  [| ""; "I"; "II"; "III"; "IV"; "V"; "VI"; "VII"; "VIII"; "IX" |];
-  [| ""; "X"; "XX"; "XXX"; "XL"; "L"; "LX"; "LXX"; "LXXX"; "XC" |];
-  [| ""; "C"; "CC"; "CCC"; "CD"; "D"; "DC"; "DCC"; "DCCC"; "CM" |];
-  [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
-  |]
 
 <<function Html_disp.roman>>
 

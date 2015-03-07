@@ -40,12 +40,12 @@ let uppernumber n =
 
 (*s: constant Html_disp.romans *)
 let romans = [|
-(*e: constant Html_disp.romans *)
   [| ""; "I"; "II"; "III"; "IV"; "V"; "VI"; "VII"; "VIII"; "IX" |];
   [| ""; "X"; "XX"; "XXX"; "XL"; "L"; "LX"; "LXX"; "LXXX"; "XC" |];
   [| ""; "C"; "CC"; "CCC"; "CD"; "D"; "DC"; "DCC"; "DCCC"; "CM" |];
   [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
   |]
+(*e: constant Html_disp.romans *)
 
 (*s: function Html_disp.roman *)
 let roman n =

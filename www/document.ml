@@ -135,8 +135,8 @@ let tty_logger =
 let add_log_backend = ref (fun _ _ _ -> failwith "no add_log defined")
   
 (*s: function Document.add_log *)
-let add_log dh initmsg abort =
-  !add_log_backend dh initmsg abort
+let add_log dh initmsg aborter =
+  !add_log_backend dh initmsg aborter
 (*e: function Document.add_log *)
 (*s: functions Document.xxx_log *)
 let put_log dh = dh.document_logger.logger_msg
