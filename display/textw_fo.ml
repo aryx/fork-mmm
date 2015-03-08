@@ -441,6 +441,7 @@ let create namer spec top ctx =
         put_embedded f "";
         f)
     end;
+
     (* we try to remember the last "reading" position, so you can easily
      * switch back from a goto to some particular place in the document
      *)

@@ -595,13 +595,11 @@ class display_html ((top : Widget.widget),
       with 
       | End_of_file ->
           (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler *)
-          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japan *)
-          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japan *)
           self#set_progress (Some red) red;
           self#finish false;
+          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment *)
           mach#see_frag dh.document_fragment;
-          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset *)
-          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset *)
+          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment *)
           (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler *)
       (*s: [[Htmlw.display_html]] in feed, other exceptions handler *)
       | Html_Lexing (s,n) ->

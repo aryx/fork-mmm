@@ -73,45 +73,49 @@ class  virtual machine (unit : unit) =
  object
    (*s: [[Html_disp.machine]] virtual fields signatures *)
    method virtual ctx : Viewers.context
-
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   method virtual add_embedded : Embed.embobject -> unit
+   method virtual embedded : Embed.embobject list
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual base : string
    method virtual set_base : string -> unit
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual target : string option
    method virtual set_target : string -> unit
-
-   method virtual formatter : Htmlfmt.formatter
-   method virtual imgmanager : imgloader
-
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual add_tag: 
-     string -> (Htmlfmt.formatter -> Html.tag -> unit) -> 
-     (Htmlfmt.formatter -> unit) -> 
+     string -> 
+     (* open handler *)  (Htmlfmt.formatter -> Html.tag -> unit) -> 
+     (* close handler *) (Htmlfmt.formatter -> unit) -> 
      unit
    method virtual get_tag : 
      string -> 
-     (Htmlfmt.formatter -> Html.tag -> unit) * (Htmlfmt.formatter -> unit)
+     (Htmlfmt.formatter -> Html.tag -> unit) * 
+     (Htmlfmt.formatter -> unit)
    method virtual remove_tag : string -> unit
-
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual push_action : (string -> unit) -> unit
    method virtual pop_action : unit
-
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   method virtual formatter : Htmlfmt.formatter
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual push_formatter : Htmlfmt.formatter -> unit
    method virtual pop_formatter : Htmlfmt.formatter
-
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual create_formatter : 
-       Htmlfmt.formatterSpec -> Widget.widget -> 
-     Htmlfmt.formatter * Widget.widget
-   method virtual send : Html.token -> unit
-   method virtual look_for : Html.token -> unit
-
-   method virtual add_embedded : Embed.embobject -> unit
-   method virtual embedded : Embed.embobject list
-
-   method virtual see_frag : string option -> unit
-  
+     Htmlfmt.formatterSpec -> Widget.widget -> Htmlfmt.formatter * Widget.widget
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
    (* For other languages) *)
    (* encode the internal i18n strings to corresponding encodings *)
    method virtual i18n_encoder : string -> string
    method virtual set_i18n_encoder : (string -> string) -> unit
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   method virtual look_for : Html.token -> unit
+   method virtual send : Html.token -> unit
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   method virtual imgmanager : imgloader
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   method virtual see_frag : string option -> unit
    (*e: [[Html_disp.machine]] virtual fields signatures *)
 end
 (*e: class Html_disp.machine *)
@@ -128,29 +132,29 @@ let add_hook f =
 (*s: constant Html_disp.default_fo *)
 (* This is the default formatter *)
 let default_fo = {
-  new_paragraph = (fun () -> ());
+  new_paragraph   = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline = (fun b -> ());
-  print_verbatim = (fun s -> ());
-  format_string = (fun s -> ());
+  print_newline   = (fun b -> ());
+  print_verbatim  = (fun s -> ());
+  format_string   = (fun s -> ());
 
-  hr = (fun l n b -> ());
-  bullet = (fun n -> ());
+  hr              = (fun l n b -> ());
+  bullet          = (fun n -> ());
 
-  set_defaults = (fun s l -> ());
-  push_attr = (fun l -> ());
-  pop_attr = (fun l -> ());
+  set_defaults    = (fun s l -> ());
+  push_attr       = (fun l -> ());
+  pop_attr        = (fun l -> ());
 
-  isindex = (fun s s' -> ());
-  start_anchor = (fun () -> ());
-  end_anchor = (fun h -> ());
-  add_mark = (fun _ -> ());
+  isindex         = (fun s s' -> ());
+  start_anchor    = (fun () -> ());
+  end_anchor      = (fun h -> ());
+  add_mark        = (fun _ -> ());
 
   create_embedded = (fun a w h -> assert false);
 
-  see_frag = (fun _ -> ());
+  see_frag        = (fun _ -> ());
 
-  flush = (fun () -> ());
+  flush           = (fun () -> ());
 } 
 (*e: constant Html_disp.default_fo *)
 
@@ -181,8 +185,8 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
   (* Tag machinery *)
   (*s: type Html_disp.Make.html_behavior *)
   type html_behavior = {
-    tag_open  : formatter -> tag -> unit;
-    tag_close : formatter -> unit
+    tag_open  : Htmlfmt.formatter -> Html.tag -> unit;
+    tag_close : Htmlfmt.formatter -> unit
   }
   (*e: type Html_disp.Make.html_behavior *)
     
@@ -197,35 +201,34 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
       inherit machine ()
 
       (* Keep a copy of the arguments *) 
-      (* val ctx = (ctx : Viewers.context)  JPF: for ocaml2.00 *)
+      (* val ctx = ctx *)
       (* val imgmanager = imgmanager *)
       method ctx = ctx
       method imgmanager = imgmanager    
 
-      (* record all embedded objects in this machine *)
-      val mutable (*private*) embedded = []
-      method add_embedded x = 
-        Embed.add x;
-        embedded <- x :: embedded
-      method embedded = embedded
-
+      (*s: [[Html_disp.display_machine]] base methods *)
       val mutable base = Url.string_of ctx#base.document_url
       method base = base
       method set_base s = base <- s
-
+      (*e: [[Html_disp.display_machine]] base methods *)
+      (*s: [[Html_disp.display_machine]] target methods *)
       val mutable target = None
       method target = target
       method set_target t = target <- Some t
+      (*e: [[Html_disp.display_machine]] target methods *)
 
+      (*s: [[Html_disp.display_machine]] private fields *)
       val (*private*) tags = (Hashtbl.create 101 : (string, html_behavior) Hashtbl.t)
+      (*x: [[Html_disp.display_machine]] private fields *)
       val mutable (*private*) action = (fun s -> ())
       val mutable (*private*) action_stack = []
+      (*x: [[Html_disp.display_machine]] private fields *)
       val mutable (*private*) formatter_stack = []
-    
-      (* Accessing the variables *)
-      val mutable (*private*) formatter = default_fo
-      method formatter = formatter
+      (*x: [[Html_disp.display_machine]] private fields *)
+      val mutable see_frag = (fun _ -> ())
+      (*e: [[Html_disp.display_machine]] private fields *)
 
+      (*s: [[Html_disp.display_machine]] tag machinery methods *)
       (* Adding and removing tag behaviors *)
       method add_tag t o c = 
         Hashtbl.add tags t {tag_open = o; tag_close = c}
@@ -233,7 +236,8 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
         let {tag_open = o; tag_close = c} = Hashtbl.find tags t in 
         o,c
       method remove_tag = Hashtbl.remove tags
-
+      (*e: [[Html_disp.display_machine]] tag machinery methods *)
+      (*s: [[Html_disp.display_machine]] action stack methods *)
       (* Changing the default mode for pcdata and cdata *)
       method push_action f =
         action_stack <-  f :: action_stack;
@@ -244,13 +248,12 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
         |	old::l ->
         action_stack <- l;
         action <- match l with [] -> (fun s ->()) | newa::_ -> newa
-
-      (* This is an intrusion of graphics, but I don't see any other way 
-       * The last formatter always tries see_frag...
-       *)
-      val mutable see_frag = (fun _ -> ())
-      method see_frag = see_frag
-
+      (*e: [[Html_disp.display_machine]] action stack methods *)
+      (*s: [[Html_disp.display_machine]] formatter methods *)
+      (* Accessing the variables *)
+      val mutable (*private*) formatter = default_fo
+      method formatter = formatter
+      (*x: [[Html_disp.display_machine]] formatter methods *)
       (* Nested formatters for table cells and other usage *)
       method push_formatter fo =
         formatter <- fo;
@@ -261,37 +264,46 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
       method pop_formatter =
         self#pop_action;
         match formatter_stack with
-      [] -> 
-        Log.f "Warning: empty formatter stack";
-        default_fo
+        | [] -> 
+            Log.f "Warning: empty formatter stack";
+            default_fo
         | old::l ->
-        old.flush();
-        see_frag <- old.see_frag;
-        formatter_stack <- l;
-        formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
-        old
-
-      (* This is only for robustness *)
-      method flush_formatters =
-        while List.length formatter_stack > 0 do
-      Log.f "WARNING: too many formatters in stack";
-      self#pop_formatter.flush()
-        done
-
-
+            old.flush();
+            see_frag <- old.see_frag;
+            formatter_stack <- l;
+            formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
+            old
+      (*x: [[Html_disp.display_machine]] formatter methods *)
       (* Nested windows *)
       val table_namer = Mstring.egensym "tablecell"
       method create_formatter spec w = G.create table_namer spec w ctx
+      (*x: [[Html_disp.display_machine]] formatter methods *)
+      (* This is only for robustness *)
+      method flush_formatters =
+        while List.length formatter_stack > 0 do
+          Log.f "WARNING: too many formatters in stack";
+          self#pop_formatter.flush()
+        done
+      (*e: [[Html_disp.display_machine]] formatter methods *)
 
+
+      (*s: [[Html_disp.display_machine]] fragment methods *)
+      (* This is an intrusion of graphics, but I don't see any other way 
+       * The last formatter always tries see_frag...
+       *)
+      method see_frag = see_frag
+      (*e: [[Html_disp.display_machine]] fragment methods *)
+    
+      (*s: [[Html_disp.display_machine]] html token input methods *)
       (* ignore everything up to some tag *)
       val mutable look_for = None
 
       method look_for e = 
         look_for <- Some e
-
+      (*x: [[Html_disp.display_machine]] html token input methods *)
       (* Dispatching a token *)
       method private normal_send = function
-      EOF -> self#flush_formatters;
+      | EOF -> self#flush_formatters;
         | CData s -> action s
         | PCData s -> action s
         | OpenTag t ->
@@ -314,17 +326,29 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
         | Comment _ -> ()
         | Doctype _ -> ()
 
-     method send tok =
-       match look_for with
-         None -> self#normal_send tok
-       | Some it when it = tok -> 
-       self#normal_send tok;
-       look_for <- None
-       | _ -> ()
-     
+      method send tok =
+        match look_for with
+        | None -> self#normal_send tok
+        | Some it when it = tok -> 
+            self#normal_send tok;
+            look_for <- None
+        | _ -> ()
+      (*e: [[Html_disp.display_machine]] html token input methods *)
+
+     (*s: [[Html_disp.display_machine]] embedded methods *)
+     (* record all embedded objects in this machine *)
+     val mutable (*private*) embedded = []
+     method add_embedded x = 
+       Embed.add x;
+       embedded <- x :: embedded
+     method embedded = embedded
+     (*e: [[Html_disp.display_machine]] embedded methods *)
+     (*s: [[Html_disp.display_machine]] i18n methods *)
      val mutable i18n_encoder = (fun s -> s : string -> string)
      method i18n_encoder = i18n_encoder
      method set_i18n_encoder enc = i18n_encoder <- enc
+     (*e: [[Html_disp.display_machine]] i18n methods *)
+     
   end
   (*e: class Html_disp.Make.display_machine *)
 

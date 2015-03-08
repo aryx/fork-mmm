@@ -27,7 +27,9 @@
 
 %thx to this manual, better understand web browsers?:
 % - TODO encodings, accents, base64, iso8559, etc
-% - TODO better understand html, cs, js?
+% - TODO better understand html
+% - TODO better understand css
+% - TODO better understand js
 
 %history LP-ization:
 % - skeleton, mostly copy paste of Template.nw skeleton
@@ -36,13 +38,13 @@
 %    * function, global, struct, enum, constant, macro(actually function)
 %    * TODO ctor/dtor, dumper
 %    * TODO [[xxx]] other fields, [[xxx]] extra fields
-% - SEMI read Extra section, identify concepts, first TOC
-% - SEMI distribute parts of the Extra section in the main file
-% - TODO understand main(), LP split main, improve TOC
-% - TODO understand main functions, LP split, cluster, improve TOC
-% - TODO LP split the structures, use datalog for flow to field info
+% - read Extra section, identify concepts, first TOC
+% - distribute parts of the Extra section in the main file
+% - understand main(), LP split main, improve TOC
+% - understand main functions, LP split, cluster, improve TOC
+% - SEMI LP split the structures, use datalog for flow to field info
 % - TODO nullify, boolify, errorify, enumify,  typeify,    scheckify, plan9ify
-% - TODO aspecify advanced features! remove useless features
+% - SEMI aspecify advanced features! remove useless features
 % - TODO add figures
 % - TODO add explanations
 
@@ -91,8 +93,7 @@
 % Config
 %------------------------------------------------------------------------------
 \allcodefalse
-% used for forward decl, pragmas, func decl, extern decl, stats, #ifdef,
-% debugging macros
+% used for redundant class decl, nested locals order, nested functions order
 
 %\setcounter{tocdepth}{1}
 
@@ -111,7 +112,10 @@ Principia Softwarica: The Web Browser [[mmm]]
 
 \author{
 Yoann Padioleau\\
-\texttt{yoann.padioleau@gmail.com}
+\texttt{yoann.padioleau@gmail.com}\\
+\\
+with code from\\
+Francois Rouaix
 }
 
 \maketitle 
@@ -162,7 +166,7 @@ Here are other candidates that were considered but ultimately discarded:
 \item gecko (firefox)
 % descendant of mosaic, netscape, introduced IMG
 % huge now
-\item khtml/webkit/blink (kconqueror, chrome, safari)
+\item khtml/webkit/blink (kconqueror, safari, chrome)
 % started from scratch by kde people originally, now used by google/apple
 % huge
 \item netsurf
@@ -258,6 +262,7 @@ let usage_str =
   "Usage: meuh <opts> <initial url>"
 @
 % meuh :)
+% actually it's a URI no?
 
 <<signature Version.http>>=
 val http : string              (* the version in User-Agent field *)
@@ -276,7 +281,7 @@ val number : int
 (* Version *)
 let number = 418
 @
-
+% lol
 
 
 <<signature Version.about>>=
@@ -359,7 +364,8 @@ let version_number =
 %todo: see docs/website/tech.html
 
 \section{Trace of a web request}
-% enter url in address bar and type enter, what happens?
+
+% enter URL in address bar and type enter, what happens?
 % lots of components involved I think
 
 \section{Trace of a mouse click}
@@ -478,6 +484,7 @@ type link = {
 }
 @
 % context? useful for relative uri, seems to be a URL too.
+%  usually the referring site
 % Why not parse h_uri? and make it a Uri.t?
 
 <<type Hyper.link_method>>=
@@ -760,9 +767,17 @@ type document_continuation = {
     (* What to do if a request does not yield a document *)
 }
 @
+%less: could defined a type abort = Abort and then
+% transform the bool in abort option, then could also transform
+% the aborter type as abort -> unit
+
 % to pass to the protocol handler, callback to called
 % when he got the data.
 % bool is true when things were aborted
+
+% note than the handle is built by the protocol! it's data filled
+% by the protocol retriever, the caller just want to be called
+% with something filled by the protocol retriever
 
 % often build a serie of continuations for document_process
 % where you add some intermediate processing.
@@ -808,13 +823,9 @@ type handle = {
 <<[[Document.handle]] other fields>>=
 mutable document_status : int;
   (* Status code of response *)
-
-document_fragment : string option;
-  (* fragment (#foo) if any *)
-
-mutable document_logger : logger;
-  (* how to log information relative to this document processing *)
 @
+
+
 \section{HTTP}
 
 % apparently mmm handles http 1.0 and 0.9
@@ -926,29 +937,10 @@ method invoke : string -> Hyper.link -> unit
 @
 
 <<[[Viewers.context]] other methods signatures>>=
-method virtual log : string -> unit
-@
-
-<<[[Viewers.context]] other methods signatures>>=
 method add_nav : string * hyper_func -> unit
 method hyper_funs : (string * hyper_func) list
 @
 
-<<[[Viewers.context]] other methods signatures>>=
-(*-*)
-method for_embed : vparams -> frame_targets -> 'a
-method in_embed : Document.document_id -> 'a
-@
-
-<<[[Viewers.context]] other methods signatures>>=
-method params : vparams
-@
-
-<<type Viewers.vparams>>=
-(* hyper functions are: "goto", "save", "gotonew" *)
-type vparams = (string * string) list
-@
-% ???
 
 \subsection{[[Viewers.display_info]]}
 
@@ -969,10 +961,8 @@ end
 
 <<[[Viewers.display_info]] virtual fields signatures>>=
 method virtual di_title : string		(* some visible title *)
-method virtual di_fragment : string option -> unit	(* for # URIs *)
 @
 % di_title is used by the caller to modify the window's title
-% di_fragment is used by the caller to go to a fragment, in show_current_di()
 
 <<[[Viewers.display_info]] virtual fields signatures>>=
 (* the created widget containing the graphics *)
@@ -1069,53 +1059,56 @@ type formatter = {
   (* Text primitives of the device *)
   <<[[Htmlfmt.formatter]] primitives methods>>
 
-  (* Predefined Images *)
-  <<[[Htmlfmt.formatter]] predefined images methods>>
-
   (* Graphical attributes *)
   <<[[Htmlfmt.formatter]] graphical attributes methods>>
 
-  (* Structure primitives *)
-  <<[[Htmlfmt.formatter]] structure primitives methods>>
-
-  (* Embedding primitives *)
-  <<[[Htmlfmt.formatter]] embedding primitives methods>>
-
-  (* Re-centering on a fragment *)
-  <<[[Htmlfmt.formatter]] fragment method>>
+  <<[[Htmlfmt.formatter]] other methods>>
 
   flush : unit -> unit;			(* Flush the device *)
 }
 @
 
 
+\ifallcode
+<<[[Htmlfmt.formatter]] other methods>>=
+(* Predefined Images *)
+<<[[Htmlfmt.formatter]] predefined images methods>>
+(* Structure primitives *)
+<<[[Htmlfmt.formatter]] structure primitives methods>>
+(* Embedding primitives *)
+<<[[Htmlfmt.formatter]] embedding primitives methods>>
+(* Re-centering on a fragment *)
+<<[[Htmlfmt.formatter]] fragment method>>
+@
+\fi
+
 
 <<constant Html_disp.default_fo>>=
 (* This is the default formatter *)
 let default_fo = {
-  new_paragraph = (fun () -> ());
+  new_paragraph   = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline = (fun b -> ());
-  print_verbatim = (fun s -> ());
-  format_string = (fun s -> ());
+  print_newline   = (fun b -> ());
+  print_verbatim  = (fun s -> ());
+  format_string   = (fun s -> ());
 
-  hr = (fun l n b -> ());
-  bullet = (fun n -> ());
+  hr              = (fun l n b -> ());
+  bullet          = (fun n -> ());
 
-  set_defaults = (fun s l -> ());
-  push_attr = (fun l -> ());
-  pop_attr = (fun l -> ());
+  set_defaults    = (fun s l -> ());
+  push_attr       = (fun l -> ());
+  pop_attr        = (fun l -> ());
 
-  isindex = (fun s s' -> ());
-  start_anchor = (fun () -> ());
-  end_anchor = (fun h -> ());
-  add_mark = (fun _ -> ());
+  isindex         = (fun s s' -> ());
+  start_anchor    = (fun () -> ());
+  end_anchor      = (fun h -> ());
+  add_mark        = (fun _ -> ());
 
   create_embedded = (fun a w h -> assert false);
 
-  see_frag = (fun _ -> ());
+  see_frag        = (fun _ -> ());
 
-  flush = (fun () -> ());
+  flush           = (fun () -> ());
 } 
 @
 
@@ -1133,49 +1126,12 @@ end
 % anything from it otherwise it will not be copy pasted in the .mli and .ml
 %later: transform in a regular record
 
-%XXX
 <<[[Html_disp.machine]] virtual fields signatures>>=
 method virtual ctx : Viewers.context
-
-method virtual base : string
-method virtual set_base : string -> unit
-method virtual target : string option
-method virtual set_target : string -> unit
-
-method virtual formatter : Htmlfmt.formatter
-method virtual imgmanager : imgloader
-
-method virtual add_tag: 
-  string -> (Htmlfmt.formatter -> Html.tag -> unit) -> 
-  (Htmlfmt.formatter -> unit) -> 
-  unit
-method virtual get_tag : 
-  string -> 
-  (Htmlfmt.formatter -> Html.tag -> unit) * (Htmlfmt.formatter -> unit)
-method virtual remove_tag : string -> unit
-
-method virtual push_action : (string -> unit) -> unit
-method virtual pop_action : unit
-
-method virtual push_formatter : Htmlfmt.formatter -> unit
-method virtual pop_formatter : Htmlfmt.formatter
-
-method virtual create_formatter : 
-    Htmlfmt.formatterSpec -> Widget.widget -> 
-  Htmlfmt.formatter * Widget.widget
-method virtual send : Html.token -> unit
-method virtual look_for : Html.token -> unit
-
-method virtual add_embedded : Embed.embobject -> unit
-method virtual embedded : Embed.embobject list
-
-method virtual see_frag : string option -> unit
-  
-(* For other languages) *)
-(* encode the internal i18n strings to corresponding encodings *)
-method virtual i18n_encoder : string -> string
-method virtual set_i18n_encoder : (string -> string) -> unit
 @
+%todo: structure more, virtual formatter methods, 
+%  virtual action stack methods, etc
+
 
 \ifallcode
 <<class Html_disp.machine>>=
@@ -1185,6 +1141,9 @@ class  virtual machine (unit : unit) =
 end
 @
 \fi
+
+
+
 
 \chapter{[[main()]]}
 
@@ -1950,8 +1909,7 @@ let show_current di frag =
       end
   );
   current_di := Some di;
-  (* bogus if two views with fragment on the same pending document *)
-  di#di_fragment frag;
+  <<[[Mmm.navigator.show_current()]] goto fragment>>
   (* Bof *)
   Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
 in
@@ -5393,6 +5351,7 @@ type display_info = {
     di_load_images : unit -> unit
 }
 @
+% dead?
 
 \section{Images}
 
@@ -6488,10 +6447,6 @@ end
 % di_title could also use ctx#base.document_url, like in display_html
 %  probably
 
-<<[[Plain.plain]] empty methods>>=
-method di_fragment _frag = 
-  ()
-@
 
 
 <<[[Plain.plain]] frame widget methods>>=
@@ -7350,23 +7305,15 @@ method init full =
 
 
 <<[[Htmlw.display_html]] in feed, End_of_file exn handler>>=
-<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japan>>
 self#set_progress (Some red) red;
 self#finish false;
-mach#see_frag dh.document_fragment;
-<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset>>
+<<[[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment>>
 @
-
-
-<<[[Htmlw.display_html]] fragment methods>>=
-method di_fragment = 
-  mach#see_frag
-@
-
-<<[[Htmlfmt.formatter]] fragment method>>=
-see_frag : string option -> unit;
-@
-
+%<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japan>>
+%self#set_progress (Some red) red;
+%self#finish false;
+%<<[[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment>>
+%<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset>>
 
 
 
@@ -7431,150 +7378,254 @@ let create (ctx, imgmanager) =
 
 \subsection{class [[Html_disp.display_machine]]}
 
-% rename html_machine?
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual add_embedded : Embed.embobject -> unit
+method virtual embedded : Embed.embobject list
+@
+<<[[Html_disp.display_machine]] embedded methods>>=
+(* record all embedded objects in this machine *)
+val mutable (*private*) embedded = []
+method add_embedded x = 
+  Embed.add x;
+  embedded <- x :: embedded
+method embedded = embedded
+@
+
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual base : string
+method virtual set_base : string -> unit
+@
+<<[[Html_disp.display_machine]] base methods>>=
+val mutable base = Url.string_of ctx#base.document_url
+method base = base
+method set_base s = base <- s
+@
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual target : string option
+method virtual set_target : string -> unit
+@
+<<[[Html_disp.display_machine]] target methods>>=
+val mutable target = None
+method target = target
+method set_target t = target <- Some t
+@
+
+
+
+
+
+
+<<type Html_disp.Make.html_behavior>>=
+type html_behavior = {
+  tag_open  : Htmlfmt.formatter -> Html.tag -> unit;
+  tag_close : Htmlfmt.formatter -> unit
+}
+@
+<<[[Html_disp.display_machine]] private fields>>=
+val (*private*) tags = (Hashtbl.create 101 : (string, html_behavior) Hashtbl.t)
+@
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual add_tag: 
+  string -> 
+  (* open handler *)  (Htmlfmt.formatter -> Html.tag -> unit) -> 
+  (* close handler *) (Htmlfmt.formatter -> unit) -> 
+  unit
+method virtual get_tag : 
+  string -> 
+  (Htmlfmt.formatter -> Html.tag -> unit) * 
+  (Htmlfmt.formatter -> unit)
+method virtual remove_tag : string -> unit
+@
+<<[[Html_disp.display_machine]] tag machinery methods>>=
+(* Adding and removing tag behaviors *)
+method add_tag t o c = 
+  Hashtbl.add tags t {tag_open = o; tag_close = c}
+method get_tag t =
+  let {tag_open = o; tag_close = c} = Hashtbl.find tags t in 
+  o,c
+method remove_tag = Hashtbl.remove tags
+@
+
+
+<<[[Html_disp.display_machine]] private fields>>=
+val mutable (*private*) action = (fun s -> ())
+val mutable (*private*) action_stack = []
+@
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual push_action : (string -> unit) -> unit
+method virtual pop_action : unit
+@
+<<[[Html_disp.display_machine]] action stack methods>>=
+(* Changing the default mode for pcdata and cdata *)
+method push_action f =
+  action_stack <-  f :: action_stack;
+  action <- f
+method pop_action =
+  match action_stack with
+  | [] -> Log.f "Warning: empty action stack"
+  |	old::l ->
+  action_stack <- l;
+  action <- match l with [] -> (fun s ->()) | newa::_ -> newa
+@
+
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual formatter : Htmlfmt.formatter
+@
+<<[[Html_disp.display_machine]] formatter methods>>=
+(* Accessing the variables *)
+val mutable (*private*) formatter = default_fo
+method formatter = formatter
+@
+
+<<[[Html_disp.display_machine]] private fields>>=
+val mutable (*private*) formatter_stack = []
+@
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual push_formatter : Htmlfmt.formatter -> unit
+method virtual pop_formatter : Htmlfmt.formatter
+@
+<<[[Html_disp.display_machine]] formatter methods>>=
+(* Nested formatters for table cells and other usage *)
+method push_formatter fo =
+  formatter <- fo;
+  formatter_stack <- fo :: formatter_stack;
+  self#push_action fo.format_string;
+  see_frag <- fo.see_frag
+
+method pop_formatter =
+  self#pop_action;
+  match formatter_stack with
+  | [] -> 
+      Log.f "Warning: empty formatter stack";
+      default_fo
+  | old::l ->
+      old.flush();
+      see_frag <- old.see_frag;
+      formatter_stack <- l;
+      formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
+      old
+@
+
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual create_formatter : 
+  Htmlfmt.formatterSpec -> Widget.widget -> Htmlfmt.formatter * Widget.widget
+@
+
+<<[[Html_disp.display_machine]] formatter methods>>=
+(* Nested windows *)
+val table_namer = Mstring.egensym "tablecell"
+method create_formatter spec w = G.create table_namer spec w ctx
+@
+
+% no virtual signature?
+<<[[Html_disp.display_machine]] formatter methods>>=
+(* This is only for robustness *)
+method flush_formatters =
+  while List.length formatter_stack > 0 do
+    Log.f "WARNING: too many formatters in stack";
+    self#pop_formatter.flush()
+  done
+@
+
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+(* For other languages) *)
+(* encode the internal i18n strings to corresponding encodings *)
+method virtual i18n_encoder : string -> string
+method virtual set_i18n_encoder : (string -> string) -> unit
+@
+<<[[Html_disp.display_machine]] i18n methods>>=
+val mutable i18n_encoder = (fun s -> s : string -> string)
+method i18n_encoder = i18n_encoder
+method set_i18n_encoder enc = i18n_encoder <- enc
+@
+
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual look_for : Html.token -> unit
+method virtual send : Html.token -> unit
+@
+
+<<[[Html_disp.display_machine]] html token input methods>>=
+(* ignore everything up to some tag *)
+val mutable look_for = None
+
+method look_for e = 
+  look_for <- Some e
+@
+
+<<[[Html_disp.display_machine]] html token input methods>>=
+(* Dispatching a token *)
+method private normal_send = function
+| EOF -> self#flush_formatters;
+  | CData s -> action s
+  | PCData s -> action s
+  | OpenTag t ->
+   begin try
+     let tag = Hashtbl.find tags t.tag_name in
+       tag.tag_open formatter t
+   with
+     Not_found ->
+       if !verbose then
+     Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
+   end
+  | CloseTag n ->
+   begin try
+     (Hashtbl.find tags n).tag_close formatter
+   with
+     Not_found ->
+       if !verbose then
+     Log.f (sprintf "Display machine: </%s> ignored" n)
+   end
+  | Comment _ -> ()
+  | Doctype _ -> ()
+
+method send tok =
+  match look_for with
+  | None -> self#normal_send tok
+  | Some it when it = tok -> 
+      self#normal_send tok;
+      look_for <- None
+  | _ -> ()
+@
+
+% rename display_html_machine? html_machine?
 <<class Html_disp.Make.display_machine>>=
 class display_machine (ctx, imgmanager) =
  object (self) 
     inherit machine ()
 
     (* Keep a copy of the arguments *) 
-    (* val ctx = (ctx : Viewers.context)  JPF: for ocaml2.00 *)
+    (* val ctx = ctx *)
     (* val imgmanager = imgmanager *)
     method ctx = ctx
     method imgmanager = imgmanager    
 
-    (* record all embedded objects in this machine *)
-    val mutable (*private*) embedded = []
-    method add_embedded x = 
-      Embed.add x;
-      embedded <- x :: embedded
-    method embedded = embedded
+    <<[[Html_disp.display_machine]] base methods>>
+    <<[[Html_disp.display_machine]] target methods>>
 
-    val mutable base = Url.string_of ctx#base.document_url
-    method base = base
-    method set_base s = base <- s
+    <<[[Html_disp.display_machine]] private fields>>
 
-    val mutable target = None
-    method target = target
-    method set_target t = target <- Some t
+    <<[[Html_disp.display_machine]] tag machinery methods>>
+    <<[[Html_disp.display_machine]] action stack methods>>
+    <<[[Html_disp.display_machine]] formatter methods>>
 
-    val (*private*) tags = (Hashtbl.create 101 : (string, html_behavior) Hashtbl.t)
-    val mutable (*private*) action = (fun s -> ())
-    val mutable (*private*) action_stack = []
-    val mutable (*private*) formatter_stack = []
+
+    <<[[Html_disp.display_machine]] fragment methods>>
     
-    (* Accessing the variables *)
-    val mutable (*private*) formatter = default_fo
-    method formatter = formatter
+    <<[[Html_disp.display_machine]] html token input methods>>
 
-    (* Adding and removing tag behaviors *)
-    method add_tag t o c = 
-      Hashtbl.add tags t {tag_open = o; tag_close = c}
-    method get_tag t =
-      let {tag_open = o; tag_close = c} = Hashtbl.find tags t in 
-      o,c
-    method remove_tag = Hashtbl.remove tags
-
-    (* Changing the default mode for pcdata and cdata *)
-    method push_action f =
-      action_stack <-  f :: action_stack;
-      action <- f
-    method pop_action =
-      match action_stack with
-      | [] -> Log.f "Warning: empty action stack"
-      |	old::l ->
-      action_stack <- l;
-      action <- match l with [] -> (fun s ->()) | newa::_ -> newa
-
-    (* This is an intrusion of graphics, but I don't see any other way 
-     * The last formatter always tries see_frag...
-     *)
-    val mutable see_frag = (fun _ -> ())
-    method see_frag = see_frag
-
-    (* Nested formatters for table cells and other usage *)
-    method push_formatter fo =
-      formatter <- fo;
-      formatter_stack <- fo :: formatter_stack;
-      self#push_action fo.format_string;
-      see_frag <- fo.see_frag
-
-    method pop_formatter =
-      self#pop_action;
-      match formatter_stack with
-    [] -> 
-      Log.f "Warning: empty formatter stack";
-      default_fo
-      | old::l ->
-      old.flush();
-      see_frag <- old.see_frag;
-      formatter_stack <- l;
-      formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
-      old
-
-    (* This is only for robustness *)
-    method flush_formatters =
-      while List.length formatter_stack > 0 do
-    Log.f "WARNING: too many formatters in stack";
-    self#pop_formatter.flush()
-      done
-
-
-    (* Nested windows *)
-    val table_namer = Mstring.egensym "tablecell"
-    method create_formatter spec w = G.create table_namer spec w ctx
-
-    (* ignore everything up to some tag *)
-    val mutable look_for = None
-
-    method look_for e = 
-      look_for <- Some e
-
-    (* Dispatching a token *)
-    method private normal_send = function
-    EOF -> self#flush_formatters;
-      | CData s -> action s
-      | PCData s -> action s
-      | OpenTag t ->
-       begin try
-         let tag = Hashtbl.find tags t.tag_name in
-           tag.tag_open formatter t
-       with
-         Not_found ->
-           if !verbose then
-         Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
-       end
-      | CloseTag n ->
-       begin try
-         (Hashtbl.find tags n).tag_close formatter
-       with
-         Not_found ->
-           if !verbose then
-         Log.f (sprintf "Display machine: </%s> ignored" n)
-       end
-      | Comment _ -> ()
-      | Doctype _ -> ()
-
-   method send tok =
-     match look_for with
-       None -> self#normal_send tok
-     | Some it when it = tok -> 
-     self#normal_send tok;
-     look_for <- None
-     | _ -> ()
+   <<[[Html_disp.display_machine]] embedded methods>>
+   <<[[Html_disp.display_machine]] i18n methods>>
      
-   val mutable i18n_encoder = (fun s -> s : string -> string)
-   method i18n_encoder = i18n_encoder
-   method set_i18n_encoder enc = i18n_encoder <- enc
 end
 @
 
-<<type Html_disp.Make.html_behavior>>=
-type html_behavior = {
-  tag_open  : formatter -> tag -> unit;
-  tag_close : formatter -> unit
-}
-@
 
 
 \subsection{[[Html_disp.Make.init()]]}
@@ -8000,6 +8051,7 @@ let create namer spec top ctx =
         put_embedded f "";
         f)
     end;
+
     (* we try to remember the last "reading" position, so you can easily
      * switch back from a goto to some particular place in the document
      *)
@@ -9519,8 +9571,6 @@ let (_, opts) = Fonts.compute_tag fd in
 Text.configure text opts;
 @
 
-\section{Images and embedded elements}
-
 \section{Forms}
 
 <<type Htmlfmt.input_kind>>=
@@ -9673,7 +9723,36 @@ warnings |> List.iter (fun (reason, pos) ->
     self#finish true
 @
 
+\chapter{Embedded Elements}
+
+<<[[Viewers.context]] other methods signatures>>=
+(*-*)
+method for_embed : vparams -> frame_targets -> 'a
+method in_embed : Document.document_id -> 'a
+@
+
+<<[[Viewers.context]] other methods signatures>>=
+method params : vparams
+@
+
+<<type Viewers.vparams>>=
+(* hyper functions are: "goto", "save", "gotonew" *)
+type vparams = (string * string) list
+@
+% ???
+
 \chapter{Images}
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual imgmanager : imgloader
+@
+
+
+
+
+
+
+
 
 <<Document menu elements>>=
 [Label (s_ "Load Images")    ; Command load_images];
@@ -9952,6 +10031,69 @@ let container_frame = ref None
 
 \chapter{Extra features}
 
+\section{Fragments}
+
+% saw already
+% - uri_abs.uri_fragment, 
+% - request.www_fragment
+
+<<[[Document.handle]] other fields>>=
+document_fragment : string option;
+  (* fragment (#foo) if any *)
+@
+% copied from request.www_fragment in process_response
+
+%saw:
+%      nav.nav_show_current di dh.document_fragment
+% and in show_current:
+<<[[Mmm.navigator.show_current()]] goto fragment>>=
+(* bogus if two views with fragment on the same pending document *)
+di#di_fragment frag;
+@
+
+<<[[Viewers.display_info]] virtual fields signatures>>=
+method virtual di_fragment : string option -> unit	(* for # URIs *)
+@
+% di_fragment is used by the caller to go to a fragment, in show_current_di()
+
+% easy case:
+<<[[Plain.plain]] empty methods>>=
+method di_fragment _frag = 
+  ()
+@
+
+<<[[Htmlw.display_html]] fragment methods>>=
+method di_fragment = 
+  mach#see_frag
+@
+
+<<[[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment>>=
+mach#see_frag dh.document_fragment;
+@
+
+
+
+
+<<[[Html_disp.display_machine]] private fields>>=
+val mutable see_frag = (fun _ -> ())
+@
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual see_frag : string option -> unit
+@
+<<[[Html_disp.display_machine]] fragment methods>>=
+(* This is an intrusion of graphics, but I don't see any other way 
+ * The last formatter always tries see_frag...
+ *)
+method see_frag = see_frag
+@
+
+
+<<[[Htmlfmt.formatter]] fragment method>>=
+see_frag : string option -> unit;
+@
+
+
 \section{Abort}
 % advanced topic?
 % important! you want the user to control things
@@ -9970,7 +10112,7 @@ type aborter = unit -> unit
 <<function Mmm.navigator.abort>>=
 let abort () =
   actives |> Hashtbl.iter (fun _url aborter -> 
-   aborter()
+    aborter()
   );
   Hashtbl.clear actives;
   match !current_di with
@@ -9981,7 +10123,7 @@ in
 
 
 <<local Mmm.navigator.actives>>=
-let actives = Hashtbl.create 37 in
+let actives = (Hashtbl.create 37: (Url.t, Www.aborter) Hashtbl.t) in
 @
 %less: type? url * aborter! introduce type!
 
@@ -9992,8 +10134,8 @@ nav_add_active : Url.t -> Www.aborter -> unit;
 nav_rem_active : Url.t -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
-nav_add_active = Hashtbl.add actives;
-nav_rem_active = Hashtbl.remove actives;
+nav_add_active = (fun url aborter -> Hashtbl.add actives url aborter);
+nav_rem_active = (fun url -> Hashtbl.remove actives url);
 @
 
 
@@ -10004,7 +10146,6 @@ method virtual di_abort : unit		 (* stop display *)
 <<[[Plain.plain]] private fields>>=
 val mutable (*private*) terminated = false
 @
-
 <<[[Plain.plain]] abort methods>>=
 method di_abort = 
   self#finish true
@@ -10017,11 +10158,14 @@ method finish abort =
     Document.dclose true dh;
   end
 @
+%less: could say "Finish" at least in the log?
+
+
+% very similar for html one
 
 <<[[Htmlw.display_html]] private fields>>=
 val mutable (*private*) terminated = false
 @
-
 <<[[Htmlw.display_html]] abort methods>>=
 method di_abort = 
   self#finish true
@@ -10468,18 +10612,18 @@ let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
 <<[[Lexurl.f]] protocol cases>>=
 (* the spec says file://host/ dammit *)
 | "FILE" ->
-  (try
-     slashslash lexbuf;
-     let h = fhost lexbuf in
-     let p = slashpath lexbuf in
-     result.protocol <- FILE;
-     result.host <- h;
-     result.path <- p
-  with Url_Lexing _ ->
-    let p = slashpath lexbuf in
-    result.protocol <- FILE;
-    result.path <- p
-  )
+    (try
+       slashslash lexbuf;
+       let h = fhost lexbuf in
+       let p = slashpath lexbuf in
+       result.protocol <- FILE;
+       result.host <- h;
+       result.path <- p
+     with Url_Lexing _ ->
+       let p = slashpath lexbuf in
+       result.protocol <- FILE;
+       result.path <- p
+    )
 @
 
 <<functions Lexurl.xxx>>=
@@ -10713,6 +10857,103 @@ let isdir path f =
 
 % this seems to work! there is a new window appearing
 
+
+
+<<type Mailto.msg>>=
+type msg = {
+  dest    : string;
+  subject : string;
+  body    : string 
+}
+@
+
+<<function Mailto.f>>=
+let f wr =
+  match wr.www_url.path with
+  | None -> wr.www_error#f (s_ "No address given for mailto:")
+  | Some rawaddress ->
+      let address = Urlenc.decode rawaddress in
+      (match wr.www_link.h_method with
+      | GET -> get address wr.www_link.h_context
+      | POST d ->
+          if wr.www_error#choose 
+            (s_ "About to send mail with POST data to\n%s" address)
+          then
+            let subject = 
+              match wr.www_link.h_context with
+              | None -> "no subject"
+              | Some s -> "POST data for "^s 
+            in
+            sendmail  { dest = address; subject = subject; body = d}
+          else ()
+     | _ ->
+        wr.www_error#f (s_ "Unsupported method for mailto:")
+     )
+@
+
+<<constant Mailto.mailer>>=
+let mailer = ref ""
+@
+
+<<function Mailto.get>>=
+let get mailaddr referer =
+  let subject = 
+    match referer with
+    | None -> "no subject"
+    | Some s -> "About url "^s  
+  in
+  match !mailer with
+   | "" -> internal mailaddr subject
+   | s -> 
+       Munix.system_eval s ["_", "-s"; "SUBJECT", subject; "TO", mailaddr] true
+        |> ignore
+@
+
+<<function Mailto.internal>>=
+let internal address referer =
+  !internal_backend address referer
+@
+
+% who sets that?
+<<global Mailto.internal_backend>>=
+let internal_backend = 
+  ref (fun _ _ -> failwith "no Mailto.internal defined")
+@
+
+
+<<function Mailto.sendmail>>=
+(* if the mail contains a dot line, we're f*cked *)
+let sendmail msg =
+  let cmd = try Sys.getenv "MMM_MAIL" with Not_found -> "mail" in
+  try
+    let (fd_in,fd_out) = pipe() in
+    match Low.fork () with
+    | 0 -> 
+        close fd_out; 
+        dup2 fd_in stdin;
+        Munix.execvp cmd [| cmd; "-s"; msg.subject; msg.dest |]
+    | n -> 
+       close fd_in;
+       Munix.write_string fd_out msg.body;
+       close fd_out;
+       (match waitpid [] n with
+       | _, WEXITED 0 -> Error.ok (s_ "Mail sent")
+       | _, _ -> error msg.body
+       )
+ with Unix_error(_,_,_) -> error msg.body
+@
+
+<<function Mailto.error>>=
+let error body =
+  try
+    let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
+    output_string oc body;
+    close_out oc;
+    Error.f (s_ "Can't send mail (saved in $HOME/dead.letter)")
+  with _ -> 
+    Error.f (s_ "Can't send mail, can't save dead.letter")
+@
+%$
 
 \subsection{Proxied protocols}
 
@@ -12739,6 +12980,12 @@ let tty_logger =
 
 % who sets something more complex?
 
+
+<<[[Document.handle]] other fields>>=
+mutable document_logger : logger;
+  (* how to log information relative to this document processing *)
+@
+
 \subsection{HTML}
 
 <<signature Html.verbose>>=
@@ -12801,6 +13048,13 @@ let debug = ref false
 @
 
 % code using that? can be set via command line?
+
+\subsection{Viewer}
+
+<<[[Viewers.context]] other methods signatures>>=
+method virtual log : string -> unit
+@
+
 
 \subsection{Scheduler}
 

@@ -43,8 +43,6 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
   method save : Hyper.link -> unit
   method invoke : string -> Hyper.link -> unit    
   (*x: [[Viewers.context]] other methods signatures *)
-  method virtual log : string -> unit
-  (*x: [[Viewers.context]] other methods signatures *)
   method add_nav : string * hyper_func -> unit
   method hyper_funs : (string * hyper_func) list
   (*x: [[Viewers.context]] other methods signatures *)
@@ -53,6 +51,8 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
   method in_embed : Document.document_id -> 'a
   (*x: [[Viewers.context]] other methods signatures *)
   method params : vparams
+  (*x: [[Viewers.context]] other methods signatures *)
+  method virtual log : string -> unit
   (*e: [[Viewers.context]] other methods signatures *)
 end
 (*e: signature class Viewers.context *)
@@ -62,7 +62,6 @@ class  virtual display_info : (unit) -> object ('a)
 
   (*s: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_title : string		(* some visible title *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   (* the created widget containing the graphics *)
   method virtual di_widget : Widget.widget
@@ -70,6 +69,8 @@ class  virtual display_info : (unit) -> object ('a)
   method virtual di_load_images : unit (* load images *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_update : unit      (* update embedded objects *)
+  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)
   method virtual di_abort : unit		 (* stop display *)
   (*x: [[Viewers.display_info]] virtual fields signatures *)

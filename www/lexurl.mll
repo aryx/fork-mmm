@@ -55,18 +55,18 @@ rule f = parse
       (*x: [[Lexurl.f]] protocol cases *)
       (* the spec says file://host/ dammit *)
       | "FILE" ->
-        (try
-           slashslash lexbuf;
-           let h = fhost lexbuf in
-           let p = slashpath lexbuf in
-           result.protocol <- FILE;
-           result.host <- h;
-           result.path <- p
-        with Url_Lexing _ ->
-          let p = slashpath lexbuf in
-          result.protocol <- FILE;
-          result.path <- p
-        )
+          (try
+             slashslash lexbuf;
+             let h = fhost lexbuf in
+             let p = slashpath lexbuf in
+             result.protocol <- FILE;
+             result.host <- h;
+             result.path <- p
+           with Url_Lexing _ ->
+             let p = slashpath lexbuf in
+             result.protocol <- FILE;
+             result.path <- p
+          )
       (*x: [[Lexurl.f]] protocol cases *)
       | "MAILTO" ->
           let address = any lexbuf in

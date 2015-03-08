@@ -154,12 +154,12 @@ class display_plain ((top : Widget.widget),
     then Tk.destroy frame
   (*e: [[Plain.plain]] destroy methods *)
   (*s: [[Plain.plain]] empty methods *)
-  method di_fragment _frag = 
-    ()
-  (*x: [[Plain.plain]] empty methods *)
   method di_load_images = ()
   (*x: [[Plain.plain]] empty methods *)
   method di_update = ()
+  (*x: [[Plain.plain]] empty methods *)
+  method di_fragment _frag = 
+    ()
   (*e: [[Plain.plain]] empty methods *)
   (*s: [[Plain.plain]] other methods or fields *)
   method di_source = ()

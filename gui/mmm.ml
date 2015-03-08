@@ -200,8 +200,10 @@ let rec navigator has_tachy initial_url =
           end
       );
       current_di := Some di;
+      (*s: [[Mmm.navigator.show_current()]] goto fragment *)
       (* bogus if two views with fragment on the same pending document *)
       di#di_fragment frag;
+      (*e: [[Mmm.navigator.show_current()]] goto fragment *)
       (* Bof *)
       Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
     in
@@ -219,7 +221,7 @@ let rec navigator has_tachy initial_url =
     let loggingv = Textvariable.create_temporary top in
     (*e: local Mmm.navigator.loggingv *)
     (*s: local Mmm.navigator.actives *)
-    let actives = Hashtbl.create 37 in
+    let actives = (Hashtbl.create 37: (Url.t, Www.aborter) Hashtbl.t) in
     (*e: local Mmm.navigator.actives *)
     (*e: [[Mmm.navigator()]] locals before nav setting *)
     let nav = { 
@@ -236,8 +238,8 @@ let rec navigator has_tachy initial_url =
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_error = error;
       (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_add_active = Hashtbl.add actives;
-      nav_rem_active = Hashtbl.remove actives;
+      nav_add_active = (fun url aborter -> Hashtbl.add actives url aborter);
+      nav_rem_active = (fun url -> Hashtbl.remove actives url);
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_new = (fun link ->
          try
@@ -303,7 +305,7 @@ let rec navigator has_tachy initial_url =
     (*s: function Mmm.navigator.abort *)
     let abort () =
       actives |> Hashtbl.iter (fun _url aborter -> 
-       aborter()
+        aborter()
       );
       Hashtbl.clear actives;
       match !current_di with

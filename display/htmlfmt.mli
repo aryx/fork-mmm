@@ -54,13 +54,6 @@ type formatter = {
   print_newline : bool -> unit;		(* Force a line break *)
   (*e: [[Htmlfmt.formatter]] primitives methods *)
 
-  (* Predefined Images *)
-  (*s: [[Htmlfmt.formatter]] predefined images methods *)
-  bullet : string -> unit;
-  (*x: [[Htmlfmt.formatter]] predefined images methods *)
-  hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
-  (*e: [[Htmlfmt.formatter]] predefined images methods *)
-
   (* Graphical attributes *)
   (*s: [[Htmlfmt.formatter]] graphical attributes methods *)
   push_attr : gattr list -> unit;
@@ -69,6 +62,13 @@ type formatter = {
   set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
   (*e: [[Htmlfmt.formatter]] graphical attributes methods *)
 
+  (*s: [[Htmlfmt.formatter]] other methods *)
+  (* Predefined Images *)
+  (*s: [[Htmlfmt.formatter]] predefined images methods *)
+  bullet : string -> unit;
+  (*x: [[Htmlfmt.formatter]] predefined images methods *)
+  hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
+  (*e: [[Htmlfmt.formatter]] predefined images methods *)
   (* Structure primitives *)
   (*s: [[Htmlfmt.formatter]] structure primitives methods *)
   isindex : string -> string -> unit;         (* <ISINDEX> *)
@@ -78,7 +78,6 @@ type formatter = {
   start_anchor : unit -> unit;
   end_anchor : Hyper.link -> unit;
   (*e: [[Htmlfmt.formatter]] structure primitives methods *)
-
   (* Embedding primitives *)
   (*s: [[Htmlfmt.formatter]] embedding primitives methods *)
   create_embedded : 
@@ -88,11 +87,11 @@ type formatter = {
       Should respect background color ?
     *)
   (*e: [[Htmlfmt.formatter]] embedding primitives methods *)
-
   (* Re-centering on a fragment *)
   (*s: [[Htmlfmt.formatter]] fragment method *)
   see_frag : string option -> unit;
   (*e: [[Htmlfmt.formatter]] fragment method *)
+  (*e: [[Htmlfmt.formatter]] other methods *)
 
   flush : unit -> unit;			(* Flush the device *)
 }
