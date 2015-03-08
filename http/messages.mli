@@ -48,12 +48,12 @@ type header = string
 (* HTTP-Message *)
 type request_message = {
   request : request;
-
+  request_headers : header list;
+  request_body : string;
+  (*s: [[Messages.request_message]] other fields *)
   request_auth : (string * string) option;
            (* have we authentified the emitter (authtype, authuser) *)
-  request_headers : header list;
-
-  request_body : string;
+  (*e: [[Messages.request_message]] other fields *)
 }
 (*e: type Messages.request_message *)
 

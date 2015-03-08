@@ -74,9 +74,6 @@ class  virtual machine (unit : unit) =
    (*s: [[Html_disp.machine]] virtual fields signatures *)
    method virtual ctx : Viewers.context
    (*x: [[Html_disp.machine]] virtual fields signatures *)
-   method virtual add_embedded : Embed.embobject -> unit
-   method virtual embedded : Embed.embobject list
-   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual base : string
    method virtual set_base : string -> unit
    (*x: [[Html_disp.machine]] virtual fields signatures *)
@@ -105,17 +102,20 @@ class  virtual machine (unit : unit) =
    method virtual create_formatter : 
      Htmlfmt.formatterSpec -> Widget.widget -> Htmlfmt.formatter * Widget.widget
    (*x: [[Html_disp.machine]] virtual fields signatures *)
-   (* For other languages) *)
-   (* encode the internal i18n strings to corresponding encodings *)
-   method virtual i18n_encoder : string -> string
-   method virtual set_i18n_encoder : (string -> string) -> unit
-   (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual look_for : Html.token -> unit
    method virtual send : Html.token -> unit
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   method virtual add_embedded : Embed.embobject -> unit
+   method virtual embedded : Embed.embobject list
    (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual imgmanager : imgloader
    (*x: [[Html_disp.machine]] virtual fields signatures *)
    method virtual see_frag : string option -> unit
+   (*x: [[Html_disp.machine]] virtual fields signatures *)
+   (* For other languages) *)
+   (* encode the internal i18n strings to corresponding encodings *)
+   method virtual i18n_encoder : string -> string
+   method virtual set_i18n_encoder : (string -> string) -> unit
    (*e: [[Html_disp.machine]] virtual fields signatures *)
 end
 (*e: class Html_disp.machine *)
@@ -304,27 +304,23 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
       (* Dispatching a token *)
       method private normal_send = function
       | EOF -> self#flush_formatters;
-        | CData s -> action s
-        | PCData s -> action s
-        | OpenTag t ->
-         begin try
-           let tag = Hashtbl.find tags t.tag_name in
-             tag.tag_open formatter t
-         with
-           Not_found ->
-             if !verbose then
-           Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
+      | CData s -> action s
+      | PCData s -> action s
+      | OpenTag t ->
+          begin try
+            let tag = Hashtbl.find tags t.tag_name in
+            tag.tag_open formatter t
+         with Not_found ->
+           if !verbose then Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
          end
-        | CloseTag n ->
-         begin try
-           (Hashtbl.find tags n).tag_close formatter
-         with
-           Not_found ->
-             if !verbose then
-           Log.f (sprintf "Display machine: </%s> ignored" n)
-         end
-        | Comment _ -> ()
-        | Doctype _ -> ()
+      | CloseTag n ->
+          begin try
+            (Hashtbl.find tags n).tag_close formatter
+          with Not_found ->
+             if !verbose then Log.f (sprintf "Display machine: </%s> ignored" n)
+          end
+      | Comment _ -> ()
+      | Doctype _ -> ()
 
       method send tok =
         match look_for with

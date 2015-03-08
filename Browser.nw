@@ -526,11 +526,12 @@ type request =  {
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
 
-    mutable www_auth : (string * string) list;  (* basic auth *)
     mutable www_headers : string list;		  (* additional headers *)
 
     mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t;
+
+    <<[[Www.request]] other fields>>
   }
 @
 % fragment is for the URI, the #xxx
@@ -819,13 +820,6 @@ type handle = {
 %  is consuming it
 
 
-%XXX
-<<[[Document.handle]] other fields>>=
-mutable document_status : int;
-  (* Status code of response *)
-@
-
-
 \section{HTTP}
 
 % apparently mmm handles http 1.0 and 0.9
@@ -845,12 +839,9 @@ mutable document_status : int;
 (* HTTP-Message *)
 type request_message = {
   request : request;
-
-  request_auth : (string * string) option;
-           (* have we authentified the emitter (authtype, authuser) *)
   request_headers : header list;
-
   request_body : string;
+  <<[[Messages.request_message]] other fields>>
 }
 @
 %less: aspectize security
@@ -896,7 +887,7 @@ type status =  {
 }
 @
 
-\subsection{Headers}
+\subsection{Headers and content types}
 
 % headers for request, and for response
 % and in headers have lots of info,
@@ -910,6 +901,21 @@ type header = string
 %less: put here media_type and media_type_parameters?
 % with concrete ex of value?
 %  text/plain, text/html
+
+
+% http://en.wikipedia.org/wiki/Internet_media_type
+%less: mv in core DS?
+% ex: "text/html", "text/plain"
+<<type Http_headers.media_type>>=
+type media_type = string * string
+@
+
+% ex: text/html; charset=UTF-8
+<<type Http_headers.media_parameter>>=
+(* Media types *)
+type media_parameter = string * string
+@
+
 
 
 \section{Viewers}
@@ -4858,24 +4864,10 @@ let contenttype =
 @
 
 
-% http://en.wikipedia.org/wiki/Internet_media_type
-%less: mv in core DS?
-% ex: text/html, text/plain
-<<type Http_headers.media_type>>=
-type media_type = string * string
-@
-
-% ex: text/html; charset=UTF-8
-<<type Http_headers.media_parameter>>=
-(* Media types *)
-type media_parameter = string * string
-@
-
 <<signature Lexheaders.media_type>>=
 val media_type : 
   string -> Http_headers.media_type * Http_headers.media_parameter list
 @
-
 <<function Lexheaders.media_type>>=
 let media_type s =
   let lexbuf = Lexing.from_string s in
@@ -5088,33 +5080,34 @@ let rem_active_cnx url =
   active_connexions := UrlSet.remove url !active_connexions
 @
 
-\section{Connections}
+\section{Connections, [[Feed.t]]}
 
 <<type Feed.internal>>=
 (* An abstract notion of connection *)
 
 type internal = Unix.file_descr
 @
+%less: why not put as abstract type for real then?
 
 <<type Feed.t>>=
 type t = {
   feed_read : string -> int -> int -> int;
+
   feed_schedule : (unit -> unit) -> unit;
   feed_unschedule : unit -> unit;
+
   feed_close : unit -> unit;
+
   feed_internal : internal  
-  }
+}
 @
+
+
+
 
 <<signature Feed.of_fd>>=
 val of_fd : Unix.file_descr -> t
 @
-
-<<signature Feed.internal>>=
-val internal : t -> internal
-@
-
-
 <<function Feed.of_fd>>=
 (* We should distinguish internal/external connections *)
 let of_fd fd =
@@ -5126,7 +5119,9 @@ let of_fd fd =
   (* ASSUMES: this is the first read on the fileevent *)
   let safe_read buf offs len =
     first_read := false;
-    if !is_open then Low.read fd buf offs len else 0
+    if !is_open 
+    then Low.read fd buf offs len 
+    else 0
   in
 
   (* In other cases : this is non blocking but not fully threaded. *)
@@ -5140,70 +5135,82 @@ let of_fd fd =
      (* wait for the condition to happen *)
      Condition.wait condition;
      (* Meanwhile, someone may have unscheduled/closed the 
-    feed (e.g. abort). We call safe_read, but if the feed has been
-    closed, read will fail.
-    To know if we have to put back on schedule, check the *current*
-    state of action
+      * feed (e.g. abort). We call safe_read, but if the feed has been
+      * closed, read will fail.
+      * To know if we have to put back on schedule, check the *current*
+      * state of action
       *)
      let n = try safe_read buf ofs len with _ -> 0 in
      (* reschedule; it is essential that Low.add_fileinput does not
-        call the event loop, otherwise we loose sequentiality of reads *)
+      * call the event loop, otherwise we loose sequentiality of reads *)
      (match !action with
-        Some f ->
-      Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
-      | None -> ());
+      | Some f ->
+          Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
+      | None -> ()
+      );
      (* and return *)
      n
-  in {
-
-   feed_read = (fun buf ofs len -> 
-       if !first_read then safe_read buf ofs len
-       else special_read buf ofs len
+  in 
+  { feed_read = (fun buf ofs len -> 
+      if !first_read 
+      then safe_read buf ofs len
+      else special_read buf ofs len
    );
 
-   feed_schedule = (function f ->
-       if not !is_open then
-     Log.f "ERROR: feed is closed, can't schedule"
-       else match !action with
-     Some f -> (* we are already scheduled ! *)
-       Log.f "Warning: feed already scheduled"
-       | None -> begin
-        action := Some f;
-        Low.add_fileinput fd (fun () -> first_read := true; f())
-      end
+   feed_schedule = (fun f ->
+      if not !is_open 
+      then Log.f "ERROR: feed is closed, can't schedule"
+      else 
+       (match !action with
+        | Some f -> (* we are already scheduled ! *)
+            Log.f "Warning: feed already scheduled"
+        | None ->
+            action := Some f;
+            Low.add_fileinput fd (fun () -> first_read := true; f())
+        )
    );
 
-   feed_unschedule = (function () -> 
-       match !action with
-     Some f -> Low.remove_fileinput fd; action := None
-       | None -> (* this happens quite often (for all action codes which
-            do not process the body of the document, the feed got
-            unscheduled as the end of headers) *)
+   feed_unschedule = (fun () -> 
+     match !action with
+     | Some f -> 
+         Low.remove_fileinput fd; 
+         action := None
+     | None -> 
+         (* this happens quite often (for all action codes which
+          * do not process the body of the document, the feed got
+          * unscheduled as the end of headers) *)
        ()
    );
 
    (* feed_close must be called only if the feed it *not* scheduled *)
 
-   feed_close = (function () -> 
-       (* if we abort during a state when we are waiting on the condition,
-          the feed is unscheduled but we never get out. So always change
-      the state *)
-       Condition.set condition;
-       if !is_open then begin
-     match !action with 
-        Some f -> Log.f "ERROR: feed is scheduled, can't close"
-      | None -> Unix.close fd;
-                is_open := false;
+   feed_close = (fun () -> 
+     (* if we abort during a state when we are waiting on the condition,
+      * the feed is unscheduled but we never get out. So always change
+      * the state 
+      *)
+      Condition.set condition;
+      if !is_open 
+      then
+        (match !action with 
+        | Some f -> Log.f "ERROR: feed is scheduled, can't close"
+        | None -> 
+            Unix.close fd;
+            is_open := false;
             (* Condition.free condition RACE CONDITION HERE *)
-       end 
+        )
     );
 
     feed_internal = fd
    }
 @
 
+<<signature Feed.internal>>=
+val internal : t -> internal
+@
 <<function Feed.internal>>=
-let internal {feed_internal = fd} = fd
+let internal feed = 
+  feed.feed_internal
 @
 
 
@@ -5729,7 +5736,7 @@ and async_request proxy_mode wwwr cont cnx =
 <<function Http.full_request>>=
 let full_request w proxy_mode wwwr = 
   let url = 
-    <<[[Http.full_request()]] if proxy mode>>
+    <<[[Http.full_request()]] url value if proxy mode>>
     else distant_path wwwr.www_url 
   in
   <<[[Http.full_request()]] helper functions>>
@@ -5903,6 +5910,12 @@ let rec process_response wwwr cont =
 @
 
 \subsection{Reading headers}
+
+<<[[Document.handle]] other fields>>=
+mutable document_status : int;
+  (* Status code of response *)
+@
+
 
 <<[[Http.process_response()]] reading headers>>=
 try
@@ -7225,12 +7238,12 @@ terminated <- false;
 set_progress <- Progress.no_meter;
 @
 
-<<[[Htmlw.display_html]] reset private fields>>=
-mach <- F.create (ctx, imgmanager);
-@
 % mach for machine, vague
 <<[[Htmlw.display_html]] private fields>>=
 val mutable mach = F.create (ctx, imgmanager)
+@
+<<[[Htmlw.display_html]] reset private fields>>=
+mach <- F.create (ctx, imgmanager);
 @
 <<[[Htmlw.display_html]] load images methods>>=
 method mach = mach
@@ -7378,18 +7391,39 @@ let create (ctx, imgmanager) =
 
 \subsection{class [[Html_disp.display_machine]]}
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
-method virtual add_embedded : Embed.embobject -> unit
-method virtual embedded : Embed.embobject list
+
+% rename display_html_machine? html_machine?
+<<class Html_disp.Make.display_machine>>=
+class display_machine (ctx, imgmanager) =
+ object (self) 
+    inherit machine ()
+
+    (* Keep a copy of the arguments *) 
+    (* val ctx = ctx *)
+    (* val imgmanager = imgmanager *)
+    method ctx = ctx
+    method imgmanager = imgmanager    
+
+    <<[[Html_disp.display_machine]] base methods>>
+    <<[[Html_disp.display_machine]] target methods>>
+
+    <<[[Html_disp.display_machine]] private fields>>
+
+    <<[[Html_disp.display_machine]] tag machinery methods>>
+    <<[[Html_disp.display_machine]] action stack methods>>
+    <<[[Html_disp.display_machine]] formatter methods>>
+
+
+    <<[[Html_disp.display_machine]] fragment methods>>
+    
+    <<[[Html_disp.display_machine]] html token input methods>>
+
+   <<[[Html_disp.display_machine]] embedded methods>>
+   <<[[Html_disp.display_machine]] i18n methods>>
+     
+end
 @
-<<[[Html_disp.display_machine]] embedded methods>>=
-(* record all embedded objects in this machine *)
-val mutable (*private*) embedded = []
-method add_embedded x = 
-  Embed.add x;
-  embedded <- x :: embedded
-method embedded = embedded
-@
+
 
 
 <<[[Html_disp.machine]] virtual fields signatures>>=
@@ -7534,19 +7568,6 @@ method flush_formatters =
 
 
 <<[[Html_disp.machine]] virtual fields signatures>>=
-(* For other languages) *)
-(* encode the internal i18n strings to corresponding encodings *)
-method virtual i18n_encoder : string -> string
-method virtual set_i18n_encoder : (string -> string) -> unit
-@
-<<[[Html_disp.display_machine]] i18n methods>>=
-val mutable i18n_encoder = (fun s -> s : string -> string)
-method i18n_encoder = i18n_encoder
-method set_i18n_encoder enc = i18n_encoder <- enc
-@
-
-
-<<[[Html_disp.machine]] virtual fields signatures>>=
 method virtual look_for : Html.token -> unit
 method virtual send : Html.token -> unit
 @
@@ -7563,27 +7584,23 @@ method look_for e =
 (* Dispatching a token *)
 method private normal_send = function
 | EOF -> self#flush_formatters;
-  | CData s -> action s
-  | PCData s -> action s
-  | OpenTag t ->
-   begin try
-     let tag = Hashtbl.find tags t.tag_name in
-       tag.tag_open formatter t
-   with
-     Not_found ->
-       if !verbose then
-     Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
+| CData s -> action s
+| PCData s -> action s
+| OpenTag t ->
+    begin try
+      let tag = Hashtbl.find tags t.tag_name in
+      tag.tag_open formatter t
+   with Not_found ->
+     if !verbose then Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
    end
-  | CloseTag n ->
-   begin try
-     (Hashtbl.find tags n).tag_close formatter
-   with
-     Not_found ->
-       if !verbose then
-     Log.f (sprintf "Display machine: </%s> ignored" n)
-   end
-  | Comment _ -> ()
-  | Doctype _ -> ()
+| CloseTag n ->
+    begin try
+      (Hashtbl.find tags n).tag_close formatter
+    with Not_found ->
+       if !verbose then Log.f (sprintf "Display machine: </%s> ignored" n)
+    end
+| Comment _ -> ()
+| Doctype _ -> ()
 
 method send tok =
   match look_for with
@@ -7592,38 +7609,6 @@ method send tok =
       self#normal_send tok;
       look_for <- None
   | _ -> ()
-@
-
-% rename display_html_machine? html_machine?
-<<class Html_disp.Make.display_machine>>=
-class display_machine (ctx, imgmanager) =
- object (self) 
-    inherit machine ()
-
-    (* Keep a copy of the arguments *) 
-    (* val ctx = ctx *)
-    (* val imgmanager = imgmanager *)
-    method ctx = ctx
-    method imgmanager = imgmanager    
-
-    <<[[Html_disp.display_machine]] base methods>>
-    <<[[Html_disp.display_machine]] target methods>>
-
-    <<[[Html_disp.display_machine]] private fields>>
-
-    <<[[Html_disp.display_machine]] tag machinery methods>>
-    <<[[Html_disp.display_machine]] action stack methods>>
-    <<[[Html_disp.display_machine]] formatter methods>>
-
-
-    <<[[Html_disp.display_machine]] fragment methods>>
-    
-    <<[[Html_disp.display_machine]] html token input methods>>
-
-   <<[[Html_disp.display_machine]] embedded methods>>
-   <<[[Html_disp.display_machine]] i18n methods>>
-     
-end
 @
 
 
@@ -9725,6 +9710,22 @@ warnings |> List.iter (fun (reason, pos) ->
 
 \chapter{Embedded Elements}
 
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual add_embedded : Embed.embobject -> unit
+method virtual embedded : Embed.embobject list
+@
+<<[[Html_disp.display_machine]] embedded methods>>=
+(* record all embedded objects in this machine *)
+val mutable (*private*) embedded = []
+method add_embedded x = 
+  Embed.add x;
+  embedded <- x :: embedded
+method embedded = embedded
+@
+
+
+
+
 <<[[Viewers.context]] other methods signatures>>=
 (*-*)
 method for_embed : vparams -> frame_targets -> 'a
@@ -9740,6 +9741,84 @@ method params : vparams
 type vparams = (string * string) list
 @
 % ???
+
+
+
+
+
+<<type Embed.embobject>>=
+(* Embedded objects *)
+type embobject = {
+  embed_hlink : Hyper.link;               (* hyperlink to the object *)
+  embed_frame : Widget.widget;  
+     (* the frame where the viewers can do their stuff *)
+  embed_context : Viewers.context;
+  embed_map : Maps.t;                  (* associated map *)
+  embed_alt : string
+ }
+@
+
+
+<<signature Embed.add>>=
+val add : embobject -> unit
+@
+
+<<signature Embed.update>>=
+val update : 
+    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
+    -> unit
+@
+
+
+
+<<signature Embed.add_viewer>>=
+val add_viewer : 
+  Http_headers.media_type -> 
+  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
+    Document.document -> unit) -> unit
+@
+
+<<signature Embed.rem_viewer>>=
+val rem_viewer :  Http_headers.media_type -> unit
+@
+
+
+<<constant Embed.embedded_viewers>>=
+(* Embedded viewers *)
+
+let embedded_viewers = Hashtbl.create 11
+@
+
+<<function Embed.embedded_viewer>>=
+let embedded_viewer frame ctx doc =
+  (* Destroy the alt window *)
+  List.iter Tk.destroy (Winfo.children frame);
+  try
+    let ctype = contenttype doc.document_info in
+    let (typ,subtyp),l = Lexheaders.media_type ctype in
+    try
+      let viewer = 
+    try Hashtbl.find embedded_viewers (typ,subtyp)
+        with Not_found -> Hashtbl.find embedded_viewers (typ,"*") in
+      viewer l frame ctx doc
+    with
+    Not_found ->
+      let t = 
+        s_ "Embed Error: no viewer for type %s/%s" typ subtyp in
+      let l = Label.create frame [Text t] in pack [l][]
+  with
+    Not_found ->
+      let t = s_ "Embed Error: no type for document %s" 
+                          (Url.string_of doc.document_address) in 
+      let l = Label.create frame [Text t] in pack [l][]
+  | Invalid_HTTP_header e ->
+      let t = 
+       s_ "Embed Error: malformed type %s (%s)"
+         (contenttype doc.document_info) e in
+      let l = Label.create frame [Text t] in pack [l][]
+@
+
+
 
 \chapter{Images}
 
@@ -11462,7 +11541,7 @@ let view attach did redisplay errors annotations coding =
 % for speed sometimes,
 % but also to easily access other protocols,
 %  e.g. if don't handle ftp://, then can ask the proxy
-%  to translate that into http for us!
+%  to translate that into http for us! cool feature.
 
 <<signature Http.proxy_xxx>>=
 val proxy: string ref
@@ -11475,7 +11554,6 @@ let proxy = ref "no-proxy-defined"
 <<global Http.proxy_port>>=
 let proxy_port = ref 80
 @
-
 <<[[Main.main()]] command line options>>=
 "-proxy", Arg.String (fun s -> Http.proxy := s), 
 "<hostname>\tProxy host";
@@ -11487,17 +11565,6 @@ let proxy_port = ref 80
 
 
 
-
-
-
-<<[[Http.request()]] if http error on tcp_connect, try proxy>>=
-proxy_request wr cont
-@
-%old: but can factorize!
-%tcp_connect !proxy !proxy_port wr.www_logging
-%     (start_request true wr cont)
-%     (failed_request wr cont.document_finish)
-
 <<constant Http.always_proxy>>=
 let always_proxy = ref false
 @
@@ -11508,10 +11575,17 @@ if !always_proxy
 then proxy_request wr cont
 @
 
+<<[[Http.request()]] if http error on tcp_connect, try proxy>>=
+proxy_request wr cont
+@
+%old: was the code below, but can factorize!
+%tcp_connect !proxy !proxy_port wr.www_logging
+%     (start_request true wr cont)
+%     (failed_request wr cont.document_finish)
+
 
 <<function Http.proxy_request>>=
-(* Process an HTTP request using the proxy.
-   We pass on the continuation *)
+(* Process an HTTP request using the proxy. We pass on the continuation *)
 and proxy_request wr cont =
   tcp_connect !proxy !proxy_port wr.www_logging
        (start_request true wr cont)
@@ -11522,12 +11596,13 @@ and proxy_request wr cont =
 % start_request i passed true = proxy_mode, which is
 % then passed to async_request and finally to full_request
 
-<<[[Http.full_request()]] if proxy mode>>=
+<<[[Http.full_request()]] url value if proxy mode>>=
 if proxy_mode 
 then Url.string_of wwwr.www_url
 @
 % when it's not a proxy, we just send the path and search component!
-% (the host knows who it is already), but for a proxy
+%  (see distant_path function, the host knows who it is already), 
+% but for a proxy
 % we need to give the info to the proxy host of the actual
 % original host we wanted to reach, so we unparse the full url
 
@@ -11922,6 +11997,20 @@ end;
 %*)
 
 
+
+<<[[Html_disp.machine]] virtual fields signatures>>=
+(* For other languages) *)
+(* encode the internal i18n strings to corresponding encodings *)
+method virtual i18n_encoder : string -> string
+method virtual set_i18n_encoder : (string -> string) -> unit
+@
+<<[[Html_disp.display_machine]] i18n methods>>=
+val mutable i18n_encoder = (fun s -> s : string -> string)
+method i18n_encoder = i18n_encoder
+method set_i18n_encoder enc = i18n_encoder <- enc
+@
+
+
 \subsection{Special characters}
 
 <<[[latin1_normal]] elements>>=
@@ -12058,6 +12147,14 @@ document_referer: string option;
 
 \section{Security}
 
+<<[[Www.request]] other fields>>=
+mutable www_auth : (string * string) list;  (* basic auth *)
+@
+
+<<[[Messages.request_message]] other fields>>=
+request_auth : (string * string) option;
+         (* have we authentified the emitter (authtype, authuser) *)
+@
 
 <<Other menu elements>>=
 Menu.add_command othersm
@@ -12660,82 +12757,9 @@ let fake_cgi wwwr cont path =
 
 
 
-\section{Embedded objects}
-
-% advanced topic?
-
-<<type Embed.embobject>>=
-(* Embedded objects *)
-type embobject = {
-  embed_hlink : Hyper.link;               (* hyperlink to the object *)
-  embed_frame : Widget.widget;  
-     (* the frame where the viewers can do their stuff *)
-  embed_context : Viewers.context;
-  embed_map : Maps.t;                  (* associated map *)
-  embed_alt : string
- }
-@
-
-
-<<signature Embed.add>>=
-val add : embobject -> unit
-@
-
-<<signature Embed.update>>=
-val update : 
-    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
-    -> unit
-@
-
-
-
-<<signature Embed.add_viewer>>=
-val add_viewer : 
-  Http_headers.media_type -> 
-  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
-    Document.document -> unit) -> unit
-@
-
-<<signature Embed.rem_viewer>>=
-val rem_viewer :  Http_headers.media_type -> unit
-@
-
-
-<<constant Embed.embedded_viewers>>=
-(* Embedded viewers *)
-
-let embedded_viewers = Hashtbl.create 11
-@
-
-<<function Embed.embedded_viewer>>=
-let embedded_viewer frame ctx doc =
-  (* Destroy the alt window *)
-  List.iter Tk.destroy (Winfo.children frame);
-  try
-    let ctype = contenttype doc.document_info in
-    let (typ,subtyp),l = Lexheaders.media_type ctype in
-    try
-      let viewer = 
-    try Hashtbl.find embedded_viewers (typ,subtyp)
-        with Not_found -> Hashtbl.find embedded_viewers (typ,"*") in
-      viewer l frame ctx doc
-    with
-    Not_found ->
-      let t = 
-        s_ "Embed Error: no viewer for type %s/%s" typ subtyp in
-      let l = Label.create frame [Text t] in pack [l][]
-  with
-    Not_found ->
-      let t = s_ "Embed Error: no type for document %s" 
-                          (Url.string_of doc.document_address) in 
-      let l = Label.create frame [Text t] in pack [l][]
-  | Invalid_HTTP_header e ->
-      let t = 
-       s_ "Embed Error: malformed type %s (%s)"
-         (contenttype doc.document_info) e in
-      let l = Label.create frame [Text t] in pack [l][]
-@
-
+%\section{Embedded objects}
+% they are used for images and many things, can't be just
+% postponed to an advanced topic
 
 
 \section{Applets}

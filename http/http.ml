@@ -197,10 +197,10 @@ let std_request_headers() =
 (*s: function Http.full_request *)
 let full_request w proxy_mode wwwr = 
   let url = 
-    (*s: [[Http.full_request()]] if proxy mode *)
+    (*s: [[Http.full_request()]] url value if proxy mode *)
     if proxy_mode 
     then Url.string_of wwwr.www_url
-    (*e: [[Http.full_request()]] if proxy mode *)
+    (*e: [[Http.full_request()]] url value if proxy mode *)
     else distant_path wwwr.www_url 
   in
   (*s: [[Http.full_request()]] helper functions *)
@@ -495,8 +495,7 @@ and start_request09 proxy_mode wwwr cont cnx =
 
 
 (*s: function Http.proxy_request *)
-(* Process an HTTP request using the proxy.
-   We pass on the continuation *)
+(* Process an HTTP request using the proxy. We pass on the continuation *)
 and proxy_request wr cont =
   tcp_connect !proxy !proxy_port wr.www_logging
        (start_request true wr cont)

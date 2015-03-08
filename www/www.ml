@@ -12,11 +12,14 @@ type request =  {
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
 
-    mutable www_auth : (string * string) list;  (* basic auth *)
     mutable www_headers : string list;		  (* additional headers *)
 
     mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t;
+
+    (*s: [[Www.request]] other fields *)
+    mutable www_auth : (string * string) list;  (* basic auth *)
+    (*e: [[Www.request]] other fields *)
   }
 (*e: type Www.request *)
 

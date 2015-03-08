@@ -8,11 +8,14 @@ type internal = Unix.file_descr
 (*s: type Feed.t *)
 type t = {
   feed_read : string -> int -> int -> int;
+
   feed_schedule : (unit -> unit) -> unit;
   feed_unschedule : unit -> unit;
+
   feed_close : unit -> unit;
+
   feed_internal : internal  
-  }
+}
 (*e: type Feed.t *)
 
 (*s: signature Feed.of_fd *)
