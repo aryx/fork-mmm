@@ -287,9 +287,8 @@ let default_attributes = [
 let get_attribute tag attr =
   try
     List.assoc attr tag.attributes 
-  with
-    Not_found ->
-     List.assoc (tag.tag_name, attr) default_attributes
+  with Not_found ->
+    List.assoc (tag.tag_name, attr) default_attributes
 (*e: function Html.get_attribute *)
 
 (*s: function Html.has_attribute *)

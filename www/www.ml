@@ -68,8 +68,7 @@ let make hlink =
    Removing an active connexion must take place when we close the 
    dh.document_fd.
 *)
-module UrlSet =
-  Set.Make(struct type t = Url.t let compare = compare end)
+module UrlSet = Set.Make(struct type t = Url.t let compare = compare end)
 (*e: module Www.UrlSet *)
 
 (*s: constant Www.active_connexions *)

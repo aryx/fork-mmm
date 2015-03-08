@@ -78,8 +78,7 @@ let postmortem () =
              | FileData (f,false) -> "fake " ^f)
              );
     entry.cache_document.document_info
-    |> List.rev
-    |> List.iter (fun h -> Log.f (sprintf "%s" h));
+    |> List.rev |> List.iter (fun h -> Log.f (sprintf "%s" h));
 
     if entry.cache_pending 
     then Log.f "pending ";

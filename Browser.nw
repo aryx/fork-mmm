@@ -901,76 +901,6 @@ type header = string
 %  text/plain, text/html
 
 
-\section{Abstract syntax trees}
-
-% html
-% css
-% js
-
-\subsection{HTML}
-
-<<type Html.token>>=
-type token =
- | OpenTag of tag
- | CloseTag of string
-
- | PCData of string
- | CData of string
-
- | Comment of string
- | Doctype of string
-
- | EOF
-@
-%less: need doctype? diff PCData and CData?
-% where is the tree? the full AST?
-% token is really the main thing returned
-% by the lexer/parser. You have to rebuild the tree from it
-% but it is easy since the tokens contain Opentag, Closetag, etc
-%less: could do such a dumper, a la pfff
-
-
-%https://html.spec.whatwg.org/multipage/introduction.html#a-quick-introduction-to-html
-
-<<type Html.tag>>=
-type tag = {
-  tag_name : string;
-  attributes: attributes
-}
-@
-
-%concepts:
-% - tags
-% - attributes
-% - entities
-% - ???
-
-<<type Html.attributes>>=
-type attributes = (attribute_name * attribute_value) list
-@
-
-<<type Html.attribute_name>>=
-(* HTML tokens *)
-type attribute_name = string 
-@
-<<type Html.attribute_value>>=
-type attribute_value = string
-@
-
-
-
-\subsection{CSS}
-
-\subsection{Javascript}
-
-
-
-
-
-\section{DOM}
-
-%https://dom.spec.whatwg.org/
-
 \section{Viewers}
 
 \subsection{[[Viewers.context]]}
@@ -1053,7 +983,169 @@ method virtual di_widget : Widget.widget
 
 
 
-\section{Display}
+\section{Abstract syntax trees}
+
+% html
+% css
+% js
+
+\subsection{HTML}
+
+<<type Html.token>>=
+type token =
+ | OpenTag of tag
+ | CloseTag of string
+
+ | PCData of string
+ | CData of string
+
+ | Comment of string
+ | Doctype of string
+
+ | EOF
+@
+%less: need doctype? diff PCData and CData?
+% where is the tree? the full AST?
+% token is really the main thing returned
+% by the lexer/parser. You have to rebuild the tree from it
+% but it is easy since the tokens contain Opentag, Closetag, etc
+%less: could do such a dumper, a la pfff
+
+
+%https://html.spec.whatwg.org/multipage/introduction.html#a-quick-introduction-to-html
+
+<<type Html.tag>>=
+type tag = {
+  tag_name : string;
+  attributes: attributes
+}
+@
+
+%concepts:
+% - tags
+% - attributes
+% - entities
+% - ???
+
+<<type Html.attributes>>=
+type attributes = (attribute_name * attribute_value) list
+@
+
+<<type Html.attribute_name>>=
+(* HTML tokens *)
+type attribute_name = string 
+@
+<<type Html.attribute_value>>=
+type attribute_value = string
+@
+
+
+
+\subsection{CSS}
+
+\subsection{Javascript}
+
+
+
+
+
+\section{DOM}
+
+%https://dom.spec.whatwg.org/
+
+\section{HTML display}
+
+\subsection{Formatter}
+
+<<constant Html_disp.default_fo>>=
+(* This is the default formatter *)
+let default_fo = {
+  new_paragraph = (fun () -> ());
+  close_paragraph = (fun () -> ());
+  print_newline = (fun b -> ());
+  print_verbatim = (fun s -> ());
+  format_string = (fun s -> ());
+  hr = (fun l n b -> ());
+  bullet = (fun n -> ());
+  set_defaults = (fun s l -> ());
+  push_attr = (fun l -> ());
+  pop_attr = (fun l -> ());
+  isindex = (fun s s' -> ());
+  start_anchor = (fun () -> ());
+  end_anchor = (fun h -> ());
+  add_mark = (fun _ -> ());
+  create_embedded = (fun a w h -> assert false);
+  see_frag = (fun _ -> ());
+  flush = (fun () -> ());
+} 
+@
+
+
+\subsection{Display machine}
+%less: rename, machine is very vague
+
+<<signature class Html_disp.machine>>=
+class  virtual machine : (unit) -> object
+  <<[[Html_disp.machine]] virtual fields signatures>>
+end
+@
+%note: the <<[[...]] virtual fields signatures>> chunk above
+% is used both for the .mli and the .ml, so don't extract
+% anything from it otherwise it will not be copy pasted in the .mli and .ml
+%later: transform in a regular record
+
+%XXX
+<<[[Html_disp.machine]] virtual fields signatures>>=
+method virtual ctx : Viewers.context
+
+method virtual base : string
+method virtual set_base : string -> unit
+method virtual target : string option
+method virtual set_target : string -> unit
+
+method virtual formatter : Htmlfmt.formatter
+method virtual imgmanager : imgloader
+
+method virtual add_tag: 
+  string -> (Htmlfmt.formatter -> Html.tag -> unit) -> 
+  (Htmlfmt.formatter -> unit) -> 
+  unit
+method virtual get_tag : 
+  string -> 
+  (Htmlfmt.formatter -> Html.tag -> unit) * (Htmlfmt.formatter -> unit)
+method virtual remove_tag : string -> unit
+
+method virtual push_action : (string -> unit) -> unit
+method virtual pop_action : unit
+
+method virtual push_formatter : Htmlfmt.formatter -> unit
+method virtual pop_formatter : Htmlfmt.formatter
+
+method virtual create_formatter : 
+    Htmlfmt.formatterSpec -> Widget.widget -> 
+  Htmlfmt.formatter * Widget.widget
+method virtual send : Html.token -> unit
+method virtual look_for : Html.token -> unit
+
+method virtual add_embedded : Embed.embobject -> unit
+method virtual embedded : Embed.embobject list
+
+method virtual see_frag : string option -> unit
+  
+(* For other languages) *)
+(* encode the internal i18n strings to corresponding encodings *)
+method virtual i18n_encoder : string -> string
+method virtual set_i18n_encoder : (string -> string) -> unit
+@
+
+\ifallcode
+<<class Html_disp.machine>>=
+class  virtual machine (unit : unit) =
+ object
+   <<[[Html_disp.machine]] virtual fields signatures>>
+end
+@
+\fi
 
 \chapter{[[main()]]}
 
@@ -4968,8 +5060,7 @@ and f request retry cont =
    Removing an active connexion must take place when we close the 
    dh.document_fd.
 *)
-module UrlSet =
-  Set.Make(struct type t = Url.t let compare = compare end)
+module UrlSet = Set.Make(struct type t = Url.t let compare = compare end)
 @
 
 <<constant Www.active_connexions>>=
@@ -7060,11 +7151,402 @@ let rec interactive cont dh =
 
 
 
-\chapter{HTML}
-% html/
+\chapter{HTML Display}
+% display/, html layout engine
 
-\section{Attributes}
+\section{The viewer, [[Htmlw.display_html]]}
+% The display info
 
+% see previously display_html(), the viewer for text/html content type
+% which instantiates this class below that is a display_info
+
+<<class Htmlw.display_html>>=
+class display_html ((top : Widget.widget),
+                    (ctx : Viewers.context),
+                    (mediapars : (string * string) list),
+                    (imgmanager: Imgload.loader),
+                    (dh': Document.handle)) =
+ object (self)
+  inherit Viewers.display_info () as di  (* gives us basic features *)
+  inherit viewer_globs (ctx, dh')
+  inherit html_parse (dh')
+  inherit html_body () as body
+  inherit bored ()
+
+  (* val imgmanager = imgmanager *)
+
+  <<[[Htmlw.display_html]] private fields>>
+
+  (*less: can be changed? *)
+  val mutable title = Url.string_of ctx#base.document_url
+  method di_title = title
+
+  <<[[Htmlw.display_html]] frame widget methods>>
+  <<[[Htmlw.display_html]] init method>>
+
+  <<[[Htmlw.display_html]] fragment methods>>
+  <<[[Htmlw.display_html]] load images methods>>
+  <<[[Htmlw.display_html]] update embedded objects methods>>
+  <<[[Htmlw.display_html]] load frames methods>>
+
+  <<[[Htmlw.display_html]] error managment methods>>
+
+  <<[[Htmlw.display_html]] progress method>>
+  <<[[Htmlw.display_html]] abort methods>>
+  <<[[Htmlw.display_html]] redisplay methods>>
+  <<[[Htmlw.display_html]] destroy methods>>
+  <<[[Htmlw.display_html]] other methods or fields>>
+
+end
+@
+%no  <<[[Htmlw.display_html]] empty methods>>
+
+<<[[Htmlw.display_html]] frame widget methods>>=
+val frame = 
+  if not (Winfo.exists top) 
+  then failwith "too late"
+  else Frame.create_named top (Mstring.gensym "html") [Class "Html"]
+    (* this might as well fail if the window was destroyed before we
+     * finally could get the headers of the document.
+     *)
+method frame = frame
+
+method di_widget = frame
+@
+
+
+<<[[Htmlw.display_html]] private fields>>=
+val mutable init_mode = true
+val mutable pending = true
+@
+% why need that?
+
+<<[[Htmlw.display_html]] reset private fields>>=
+init_mode <- full;
+pending <- true;
+
+errors := []; 
+annotations := []; 
+terminated <- false; 
+set_progress <- Progress.no_meter;
+@
+
+<<[[Htmlw.display_html]] reset private fields>>=
+mach <- F.create (ctx, imgmanager);
+@
+% mach for machine, vague
+<<[[Htmlw.display_html]] private fields>>=
+val mutable mach = F.create (ctx, imgmanager)
+@
+<<[[Htmlw.display_html]] load images methods>>=
+method mach = mach
+@
+
+
+<<module Htmlw.F>>=
+module F = Html_disp.Make(Textw_fo)(Form)(Table)
+@
+<<signature functor Html_disp.Make>>=
+module Make 
+  (G: Htmlfmt.GfxHTML) 
+  (F: Htmlfmt.FormDisplay) 
+  (T: Htmlfmt.TableDisplay) 
+  : sig
+    (* Do we need to export FormLogic and TableLogic so that extensions
+     *  can access them ?
+     *)
+    val create : Viewers.context * imgloader -> machine
+end
+@
+% will see later
+
+
+
+
+<<[[Htmlw.display_html]] init method>>=
+(* since we may be called multiple times, we have to clear some of the
+   instance variables *)
+method init full =
+  <<[[Htmlw.display_html]] reset private fields>>
+
+  <<[[Htmlw.display_html]] set meta tag>>
+
+  <<[[Htmlw.display_html]] set progress report and head UI>>
+
+  self#body_init full;
+
+  <<[[Htmlw.display_html]] display frames>>
+
+  (* Asynchronous parsing and display, token by token *)
+  self#parse_init;
+
+  <<[[Htmlw.display_html]] i18 encoder for forms>>
+
+  dh.document_feed.feed_schedule (fun () ->
+    try 
+      let warnings, correct,   tokens, loc = 
+        lexer self#lexbuf 
+      in
+      <<[[Htmlw.display_html]] in feed, record possible errors after lexing>>
+
+      <<[[Htmlw.display_html]] in feed, annotate>>
+       tokens |> List.iter (fun token -> 
+         begin  
+           try mach#send token
+           with Invalid_Html s -> self#record_error loc s
+         end;
+         if token = EOF then begin
+           pending <- false;
+           imgmanager#flush_images;
+           raise End_of_file
+         end
+       )
+    with 
+    | End_of_file ->
+        <<[[Htmlw.display_html]] in feed, End_of_file exn handler>>
+    <<[[Htmlw.display_html]] in feed, other exceptions handler>>
+   )
+@
+
+
+
+<<[[Htmlw.display_html]] in feed, End_of_file exn handler>>=
+<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japan>>
+self#set_progress (Some red) red;
+self#finish false;
+mach#see_frag dh.document_fragment;
+<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset>>
+@
+
+
+<<[[Htmlw.display_html]] fragment methods>>=
+method di_fragment = 
+  mach#see_frag
+@
+
+
+
+
+
+<<[[Htmlw.display_html]] set progress report and head UI>>=
+(* We have full display, so put up progress report and head UI *)
+if full then begin 
+  let hgbas, progf = progress_report frame ctx in
+  set_progress <- progf;
+  self#bored_init hgbas;
+  pack [hgbas] [Side Side_Bottom; Fill Fill_X];
+
+  let headgroup, set_title, add_link, add_header, add_ext_header =
+    html_head_ui dh.document_headers (fun () -> self#redisplay)
+    self#current_scroll_mode frame ctx
+  in
+  add_extra_header <- add_ext_header;
+  pack [headgroup] [Side Side_Top; Fill Fill_X];
+  let set_title s = 
+    title <- s; 
+    set_title s 
+  in
+  head_hook (headgroup, set_title, add_link, add_header) self#mach
+end;
+@
+% head_hook!!
+
+
+
+\section{The display machine, [[Html_disp.machine]]}
+
+<<functor Html_disp.Make>>=
+module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
+  module FormLogic = Html_form.Make(F)
+  module TableLogic = Html_table.Make(T)
+
+  <<type Html_disp.Make.anchor_type>>
+
+  (* Tag machinery *)
+  <<type Html_disp.Make.html_behavior>>
+    
+  <<functions Html_disp.Make.ignore_xxx>>
+
+  <<class Html_disp.Make.display_machine>>
+
+  <<function Html_disp.Make.init>>
+
+  <<function Html_disp.Make.create>>
+end
+@
+%later: can remove functor and use directly the referred modules
+% as we don't instantiate more than once this functor I think
+
+<<function Html_disp.Make.create>>=
+let create (ctx, imgmanager) =
+  let mach = new display_machine (ctx, imgmanager) in
+  init mach;
+  <<[[Html_disp.Make.create()]] run user hooks>>
+  (mach :> machine)
+@
+
+
+\subsection{class [[Html_disp.display_machine]]}
+
+% rename html_machine?
+<<class Html_disp.Make.display_machine>>=
+class display_machine (ctx, imgmanager) =
+ object (self) 
+    inherit machine ()
+
+    (* Keep a copy of the arguments *) 
+    (* val ctx = (ctx : Viewers.context)  JPF: for ocaml2.00 *)
+    (* val imgmanager = imgmanager *)
+    method ctx = ctx
+    method imgmanager = imgmanager    
+
+    (* record all embedded objects in this machine *)
+    val mutable (*private*) embedded = []
+    method add_embedded x = 
+      Embed.add x;
+      embedded <- x :: embedded
+    method embedded = embedded
+
+    val mutable base = Url.string_of ctx#base.document_url
+    method base = base
+    method set_base s = base <- s
+
+    val mutable target = None
+    method target = target
+    method set_target t = target <- Some t
+
+    val (*private*) tags = (Hashtbl.create 101 : (string, html_behavior) Hashtbl.t)
+    val mutable (*private*) action = (fun s -> ())
+    val mutable (*private*) action_stack = []
+    val mutable (*private*) formatter_stack = []
+    
+    (* Accessing the variables *)
+    val mutable (*private*) formatter = default_fo
+    method formatter = formatter
+
+    (* Adding and removing tag behaviors *)
+    method add_tag t o c = 
+      Hashtbl.add tags t {tag_open = o; tag_close = c}
+    method get_tag t =
+      let {tag_open = o; tag_close = c} = Hashtbl.find tags t in 
+      o,c
+    method remove_tag = Hashtbl.remove tags
+
+    (* Changing the default mode for pcdata and cdata *)
+    method push_action f =
+      action_stack <-  f :: action_stack;
+      action <- f
+    method pop_action =
+      match action_stack with
+      | [] -> Log.f "Warning: empty action stack"
+      |	old::l ->
+      action_stack <- l;
+      action <- match l with [] -> (fun s ->()) | newa::_ -> newa
+
+    (* This is an intrusion of graphics, but I don't see any other way 
+     * The last formatter always tries see_frag...
+     *)
+    val mutable see_frag = (fun _ -> ())
+    method see_frag = see_frag
+
+    (* Nested formatters for table cells and other usage *)
+    method push_formatter fo =
+      formatter <- fo;
+      formatter_stack <- fo :: formatter_stack;
+      self#push_action fo.format_string;
+      see_frag <- fo.see_frag
+
+    method pop_formatter =
+      self#pop_action;
+      match formatter_stack with
+    [] -> 
+      Log.f "Warning: empty formatter stack";
+      default_fo
+      | old::l ->
+      old.flush();
+      see_frag <- old.see_frag;
+      formatter_stack <- l;
+      formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
+      old
+
+    (* This is only for robustness *)
+    method flush_formatters =
+      while List.length formatter_stack > 0 do
+    Log.f "WARNING: too many formatters in stack";
+    self#pop_formatter.flush()
+      done
+
+
+    (* Nested windows *)
+    val table_namer = Mstring.egensym "tablecell"
+    method create_formatter spec w = G.create table_namer spec w ctx
+
+    (* ignore everything up to some tag *)
+    val mutable look_for = None
+
+    method look_for e = 
+      look_for <- Some e
+
+    (* Dispatching a token *)
+    method private normal_send = function
+    EOF -> self#flush_formatters;
+      | CData s -> action s
+      | PCData s -> action s
+      | OpenTag t ->
+       begin try
+         let tag = Hashtbl.find tags t.tag_name in
+           tag.tag_open formatter t
+       with
+         Not_found ->
+           if !verbose then
+         Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
+       end
+      | CloseTag n ->
+       begin try
+         (Hashtbl.find tags n).tag_close formatter
+       with
+         Not_found ->
+           if !verbose then
+         Log.f (sprintf "Display machine: </%s> ignored" n)
+       end
+      | Comment _ -> ()
+      | Doctype _ -> ()
+
+   method send tok =
+     match look_for with
+       None -> self#normal_send tok
+     | Some it when it = tok -> 
+     self#normal_send tok;
+     look_for <- None
+     | _ -> ()
+     
+   val mutable i18n_encoder = (fun s -> s : string -> string)
+   method i18n_encoder = i18n_encoder
+   method set_i18n_encoder enc = i18n_encoder <- enc
+end
+@
+
+<<type Html_disp.Make.html_behavior>>=
+type html_behavior = {
+  tag_open  : formatter -> tag -> unit;
+  tag_close : formatter -> unit
+}
+@
+
+
+\subsection{[[Html_disp.Make.init()]]}
+
+<<function Html_disp.Make.init>>=
+(* Standard initialisation for HTML 2.0 (+bits of 3.2) *)
+let init mach =
+  <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>
+()
+@
+% big big big function, splitted in section below
+
+\section{The formatter}
+
+\section{HTML attributes}
 
 % specified where? RFC?
 <<constant Html.default_attributes>>=
@@ -7097,6 +7579,7 @@ let default_attributes = [
   ("frameset" , "cols"        ), "100%";
   ]
 @
+%TODO: distribute!
 
 
 <<signature Html.get_attribute>>=
@@ -7107,9 +7590,8 @@ val get_attribute : tag -> string -> string
 let get_attribute tag attr =
   try
     List.assoc attr tag.attributes 
-  with
-    Not_found ->
-     List.assoc (tag.tag_name, attr) default_attributes
+  with Not_found ->
+    List.assoc (tag.tag_name, attr) default_attributes
 @
 
 
@@ -7125,11 +7607,1036 @@ let has_attribute tag attr =
 
 
 
-\section{Tables}
+\section{HTML tags}
 
-\section{Forms}
+\subsection{Header}
 
-\section{Maps}
+\subsubsection{[[<html>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* 5.1 HTML *)
+mach#add_tag "html" ignore_open ignore_close;
+@
+
+<<functions Html_disp.Make.ignore_xxx>>=
+let ignore_open = fun _ _ -> ()
+let ignore_close = fun _ -> ()
+@
+
+\subsubsection{[[<head>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.2 Head: <HEAD>
+ * <!ENTITY % head.content "TITLE & ISINDEX? & BASE? %head.extra">
+ * <!ENTITY % head.extra "& NEXTID?">
+ * NOTE: this is now handled elsewhere
+ *)
+mach#add_tag "head" ignore_open ignore_close;
+@
+
+\subsubsection{[[<title>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.2.1 Title: <TITLE>
+ * assumes a unique Text token inside since
+ * <!ELEMENT TITLE - -  (#PCDATA)*>
+ * the title is not printed
+ * NOTE: this is now handled elsewhere
+ *)
+mach#add_tag "title" ignore_open ignore_close;
+@
+
+\subsubsection*{[[<base>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.2.2 Base Address: <BASE>
+ * TARGET is from PR-HTML4.0
+ *)
+mach#add_tag "base"
+    (fun fo tag ->
+      begin 
+        try mach#set_target (get_attribute tag "target")
+        with Not_found -> ()
+      end;
+      begin 
+        try mach#set_base (get_attribute tag "href")
+        with Not_found -> raise (Invalid_Html "HREF required in BASE")
+      end)
+    ignore_close
+;
+@
+
+\subsubsection*{[[<isindex>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.2.3 Keyword Index: <ISINDEX>
+ * HTML3.2: PROMPT attribute (default given)
+ * NOTE: ISINDEX in HEAD is handled elsewhere, but we must keep it
+ *       here because it may appear in BODY
+ *)
+mach#add_tag "isindex"
+   (fun fo t -> fo.isindex (get_attribute t "prompt") mach#base)
+   ignore_close
+;
+@
+%todo: aspectize isindex
+
+\subsubsection*{[[<link>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.2.4 Link: <LINK>
+ * 5.2.5 Associated Meta-information: <META>
+ * 5.2.6 Next Id: <NEXTID>
+ * NOTE: this is now handled elsewhere (only in HEAD)
+ *)
+["link"; "meta"; "nextid"] |> List.iter (fun t -> 
+  mach#add_tag t ignore_open ignore_close
+);
+@
+
+\subsection{Content, [[<body>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.3 Body: <BODY>
+ * <!ENTITY % html.content "HEAD, BODY">
+ * Note: with textw_fo, flush disables the text widget, so anything
+   beyond </BODY> will not be displayed. Some documents have multiple
+   bodies, or </BODY> before the end of the document. So we decide
+   to completely ignore this tag. A stricter interpretation would be
+   {tag_open = ...; tag_close = (fun fo -> fo.flush())};
+   Our simpled minded minimization rules also introduce multiple BODY.
+ *)
+mach#add_tag "body" ignore_open ignore_close;
+@
+
+\subsection{Headings, [[<h1>]], [[<h2>]], etc}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.4 Headings <H1> ... <H6>
+ * <!ELEMENT ( %heading )  - -  (%text;)*>
+ * Assume headings may contain typographic styles, anchors
+ * HTML3.2
+ * <!ATTLIST ( %heading )
+ *         align  (left|center|right) #IMPLIED
+ *         >
+ *)
+
+<<[[Html_disp.Make.init()]] headings private variables>>
+<<function Html_disp.Make.init.open_header>>
+<<function Html_disp.Make.init.close_header>>
+[1;2;3;4;5;6] |> List.iter (fun headnum ->
+  mach#add_tag (sprintf "h%d" headnum) (open_header headnum) close_header
+);
+         
+@
+
+
+<<[[Html_disp.Make.init()]] headings private variables>>=
+(* Private variables of header *)
+let header_size = ref 0 in
+let header_align = ref None in
+@
+
+<<function Html_disp.Make.init.open_header>>=
+let open_header size = 
+ fun fo tag ->
+  fo.new_paragraph() ;
+  header_size := size;
+  push_style fo (sprintf "header%d" size);
+  try
+    let align = Html.get_attribute tag "align" in 
+    fo.push_attr [Justification align];
+    header_align := Some align
+  with Not_found -> header_align := None
+in
+@
+
+<<function Html_disp.Make.init.close_header>>=
+let close_header fo =
+  pop_style fo (sprintf "header%d" !header_size);
+  fo.close_paragraph();
+  match !header_align with
+  | None -> ()
+  | Some a -> fo.pop_attr [Justification a]
+in
+@
+
+\subsection{Paragraphs, [[<p>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.5.1 Paragraph: <P>
+ *   a bit approximative in HTML 2.0
+ * HTML3.2
+ * <!ATTLIST P
+ *         align  (left|center|right) #IMPLIED
+ *         >
+ *)
+let paligns = ref [] in
+
+mach#add_tag "p" 
+  (fun fo tag -> 
+     fo.new_paragraph ();
+     try
+       let a = get_attribute tag "align" in
+       paligns := (Some a) :: !paligns;
+       fo.push_attr [Justification a]
+     with Not_found -> paligns := None :: !paligns)
+  (fun fo ->
+     fo.close_paragraph();
+     match !paligns with
+     | [] -> () (* that's an error actually *)
+     | (Some a)::l ->
+         fo.pop_attr [Justification a];
+         paligns := l
+     | None::l ->
+         paligns := l)
+;
+@
+
+\subsection{Text styles part 1}
+
+<<function Html_disp.push_style>>=
+(* Style abbreviation 
+ * TODO?: check stack.
+ *)
+let push_style fo s =
+  try fo.push_attr (Styles.get s)
+  with Not_found -> Log.f (sprintf "Missing style : %s" s)
+@
+<<function Html_disp.pop_style>>=
+let pop_style fo s =
+  try fo.pop_attr (Styles.get s)
+  with Not_found -> Log.f (sprintf "Missing style : %s" s)
+@
+
+\subsubsection{[[<pre>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* 
+ * 5.5.2 Preformatted Text : <PRE>
+ *    TODO: optional attribute WIDTH
+ *    should be fixed font, respecting newlines
+ *    local styles authorized however (i.e. markup is parsed)
+*)
+(* 5.5.2.1 Example and Listing: <XMP>, <LISTING>
+ *    deprecated anyway
+ *)
+
+["pre"; "listing"; "xmp"] |> List.iter (fun s -> 
+  mach#add_tag s 
+    (fun fo tag ->
+       fo.new_paragraph();
+       push_style fo "verbatim";
+       mach#push_action fo.print_verbatim)
+    (fun fo ->
+       pop_style fo "verbatim";
+       fo.close_paragraph();
+       mach#pop_action)
+);
+@
+%less: remove listing? xmp? still used?
+
+\subsubsection{[[<address>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.5.3 Address: <ADDRESS>
+ *)
+mach#add_tag "address" 
+   (fun fo tag -> fo.new_paragraph(); push_style fo "italic")
+   (fun fo -> pop_style fo "italic"; fo.close_paragraph())
+;
+@
+
+\subsubsection{[[<blockquote>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.5.4 Block Quote: <BLOCKQUOTE>
+ *)
+mach#add_tag "blockquote"
+   (fun fo tag ->
+      fo.new_paragraph();
+      push_style fo "italic";
+      fo.push_attr [Margin 10])
+   (fun fo ->
+      pop_style fo "italic";
+      fo.pop_attr [Margin 10];
+      fo.close_paragraph())
+;
+@
+
+\subsection{Text styles part 2}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.7.1.1 Citation: <CITE>
+ * 5.7.1.2 Code: <CODE>
+ * 5.7.1.3 Emphasis: <EM>
+ * 5.7.1.4 Keyboard: <KBD>
+ * 5.7.1.5 Sample: <SAMP>
+ * 5.7.1.6 Strong Emphasis: <STRONG>
+ * 5.7.1.7 Variable: <VAR>
+ *)
+
+(* Different typographic styles, shared *)
+let italic_style t = 
+  mach#add_tag t 
+     (fun fo tag -> push_style fo "italic")
+     (fun fo -> pop_style fo "italic")
+in
+let fixed_style t =
+  mach#add_tag t 
+    (fun fo tag -> push_style fo "fixed")
+    (fun fo -> pop_style fo "fixed")
+in
+let bold_style t =
+  mach#add_tag t 
+    (fun fo tag -> push_style fo "bold")
+    (fun fo -> pop_style fo "bold")
+in
+@
+
+\subsubsection*{Main styles, [[<b>]], [[<i>]], [[<tt>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.7.2.1 Bold: <B>
+ * 5.7.2.2 Italic: <I>
+ * 5.7.2.3 Teletype: <TT>
+ *)
+bold_style "b";
+italic_style "i";
+fixed_style "tt";
+@
+
+\subsubsection*{More Italics, [[<em>]], [[<cite>]], [[<var>]]}
+% could remove those dupes?
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+["cite"; "em"; "var"] |> List.iter italic_style;
+@
+
+\subsubsection*{More fixed, [[<code>]], [[<kbd>]], [[<samp>]]}
+% could remove those dupes?
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+["code"; "kbd"; "samp"] |> List.iter fixed_style;
+@
+
+\subsubsection*{More bold, [[<strong>]]}
+% could remove those dupes?
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+bold_style "strong";
+@
+
+\subsection{Text styles part 3}
+
+\subsubsection{Underline, [[<u>]]}
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 flashy features *)
+mach#add_tag "u"
+  (fun fo t -> fo.push_attr [Underlined])
+  (fun fo  -> fo.pop_attr [Underlined]);
+@
+\subsubsection{Strike, [[<strike>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+mach#add_tag "strike"
+  (fun fo t -> fo.push_attr [Striked])
+  (fun fo  -> fo.pop_attr [Striked]);
+@
+
+\subsubsection{Superscript, [[<sup>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+mach#add_tag "sup"
+  (fun fo t -> fo.push_attr [Superscript])
+  (fun fo  -> fo.pop_attr [Superscript]);
+@
+\subsubsection{Lowerscript, [[<sub>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+mach#add_tag "sub"
+  (fun fo t -> fo.push_attr [Lowerscript])
+  (fun fo  -> fo.pop_attr [Lowerscript]);
+@
+
+\subsection{Text styles part 4}
+
+\subsubsection{Center, [[<center>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 flashy features *)
+mach#add_tag "center"
+    (fun fo t -> fo.push_attr [Justification "center"])
+    (fun fo -> fo.pop_attr [Justification "center"]);
+@
+
+\subsubsection{Alignment, [[<div>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 flashy features *)
+  mach#add_tag "div"
+      (fun fo t -> fo.push_attr [Justification (get_attribute t "align")])
+      (fun fo -> fo.pop_attr [Justification "whocares"]);
+@
+
+\subsubsection{Lowerscript, [[<sub>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 flashy features *)
+  mach#add_tag "big"
+      (fun fo t -> fo.push_attr [Font (FontDelta 2)])
+      (fun fo  -> fo.pop_attr [Font (FontDelta 2)]);
+@
+
+\subsubsection{Lowerscript, [[<sub>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 flashy features *)
+  mach#add_tag "small"
+      (fun fo t -> fo.push_attr [Font (FontDelta (-2))])
+      (fun fo  -> fo.pop_attr [Font (FontDelta (-2))]);
+@
+
+\subsection{Lists}
+
+\subsubsection{[[<ul>]], [[<li>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.6.1 Unordered List: <UL>, <LI>
+ * HTML3.2 
+ * <!ENTITY % ULStyle "disc|square|circle">
+ * 
+ * <!ATTLIST UL -- unordered lists --
+ *         type    (%ULStyle)   #IMPLIED   -- bullet style --
+ *         compact (compact)    #IMPLIED   -- reduced interitem spacing --
+ *         >
+ *)
+let list_level = ref 0 in
+
+let open_list fo tag =
+  fo.push_attr [Margin 10];
+  incr list_level;
+  let bullet = 
+    try get_attribute tag "type" 
+    with Not_found ->
+       (match !list_level mod 3 with
+       | 1 -> "disc" 
+       | 2 -> "circle" 
+       | _ -> "square" 
+       )
+  in
+  let compact = has_attribute tag "compact" in
+  let first_line = ref true in
+  fo.new_paragraph();
+  mach#add_tag "li"
+     (fun fo tag -> 
+        if !first_line 
+        then first_line := false
+        else 
+          if compact 
+          then fo.print_newline false 
+          else fo.new_paragraph();
+        let bullet = try get_attribute tag "type" with Not_found -> bullet in
+     fo.bullet bullet)
+     (fun fo -> if not compact then fo.close_paragraph())
+in
+
+let close_list fo =
+  decr list_level;
+  fo.close_paragraph();
+  fo.pop_attr [Margin 10];
+  mach#remove_tag "li"
+in
+
+mach#add_tag "ul" open_list close_list;
+@
+
+\subsubsection{[[<ol>]], [[<li>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* 
+ * 5.6.2 Ordered List: <OL>, <LI>
+ * HTML3.2
+ * <!--
+ *        Numbering style
+ *     1   arablic numbers     1, 2, 3, ...
+ *     a   lower alpha         a, b, c, ...
+ *     A   upper alpha         A, B, C, ...
+ *     i   lower roman         i, ii, iii, ...
+ *     I   upper roman         I, II, III, ...
+ * 
+ *     The style is applied to the sequence number which by default
+ *     is reset to 1 for the first list item in an ordered list.
+ * -->
+ * 
+ * <!ENTITY % OLStyle "CDATA" -- "1|a|A|i|I" but SGML folds case -->
+ * 
+ * <!ATTLIST OL -- ordered lists --
+ *         type     (%OLStyle)  #IMPLIED   -- numbering style --
+ *         start     NUMBER     #IMPLIED   -- starting sequence number --
+ *         compact  (compact)   #IMPLIED   -- reduced interitem spacing --
+ *         >
+ *)
+
+let numbering_styles =
+  ["1", string_of_int;
+   "a", lowernumber;
+   "A", uppernumber;
+   "i", (function i -> String.lowercase (roman i));
+   "I", roman
+  ]
+in
+
+let nesting = ref [] in
+
+let open_nlist fo tag =
+  let li_counter = 
+    ref (try int_of_string (get_attribute tag "start")
+         with _ -> 1) 
+  in
+  fo.push_attr [Margin 10];
+  nesting := li_counter :: !nesting;
+  let thisnumbers = List.rev !nesting in
+  let numbering = 
+     try List.assoc (get_attribute tag "type") numbering_styles 
+     with Not_found -> string_of_int
+  in
+  let compact = has_attribute tag "compact" in
+  mach#add_tag "li"
+    (fun fo tag ->
+      fo.new_paragraph();
+      if compact 
+      then fo.push_attr [Spacing 0];
+      (* if value is given, use it as number *)
+      begin
+        try
+          let n = int_of_string (get_attribute tag "value") in
+          match !nesting with
+          | c::_ -> c := n
+          |	_ -> () (* assert false *)
+        with Not_found | Failure "int_of_string" -> ()
+      end;
+      thisnumbers |> List.iter (fun i ->
+        fo.format_string (numbering !i);
+        fo.format_string "."
+      ))
+    (fun fo ->
+      incr li_counter;
+      if compact 
+      then fo.pop_attr [Spacing 0];
+      fo.close_paragraph())
+in
+
+let close_nlist fo =
+  fo.pop_attr [Margin 10];
+  nesting := 
+    (match !nesting with
+    | [] -> [] 
+    | x::l -> l 
+    );
+  mach#remove_tag "li"
+in
+
+mach#add_tag "ol" open_nlist close_nlist;
+@
+%less use Stack.pop on nesting
+
+<<function Html_disp.lowernumber>>=
+(* SMOP Utilities for OL numbering *)
+let lowernumber n =
+  let rec f cur n = 
+    if n < 0 then cur
+    else  f (String.make 1 (Char.chr (97 + n mod 26)) ^ cur) (n / 26 - 1)
+  in 
+  if n <= 0 then "*" else f "" (n-1)
+@
+
+<<function Html_disp.uppernumber>>=
+let uppernumber n =
+  let rec f cur n = 
+    if n < 0 then cur
+    else  f (String.make 1 (Char.chr (64 + n mod 26)) ^ cur) (n / 26 - 1)
+  in
+  if n <= 0 then "*" else f "" (n-1)
+@
+
+<<constant Html_disp.romans>>=
+let romans = [|
+  [| ""; "I"; "II"; "III"; "IV"; "V"; "VI"; "VII"; "VIII"; "IX" |];
+  [| ""; "X"; "XX"; "XXX"; "XL"; "L"; "LX"; "LXX"; "LXXX"; "XC" |];
+  [| ""; "C"; "CC"; "CCC"; "CD"; "D"; "DC"; "DCC"; "DCCC"; "CM" |];
+  [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
+  |]
+@
+<<function Html_disp.roman>>=
+let roman n =
+  let rec r cur level n =
+    if n = 0 then cur
+    else if level > 3 then "*" ^ cur
+    else r (romans.(level).(n mod 10) ^ cur) (succ level)  (n / 10)
+  in if n <= 0 then "*" else r "" 0 n
+@
+
+\subsubsection*{[[<dir>]], [[<menu>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.6.3 Directory List: <DIR>
+ * 5.6.4 Menu List: <MENU>
+ *  do as <UL>, but we should work on presentation
+ *)
+mach#add_tag "dir" open_list close_list;
+mach#add_tag "menu" open_list close_list;
+@
+
+\subsubsection*{[[<dl>]], [[<dt>]], [[<dd>]]}
+% apparently it's also used for tables in degenerated mode
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.6.5 Definition List: <DL>, <DT>, <DD> 
+ *)
+let open_dl fo tag =
+  let compact = Html.has_attribute tag "compact" in
+  fo.new_paragraph();
+  fo.push_attr [Margin 10];
+
+  if not compact then begin
+    let prev_is_dt = ref false in
+
+    mach#add_tag "dt"
+      (fun fo tag -> 
+         if not !prev_is_dt then begin
+           fo.new_paragraph();
+           prev_is_dt := true
+         end else 
+           fo.print_newline false;
+         push_style fo "bold")
+      (fun fo -> pop_style fo "bold");
+
+    mach#add_tag "dd"
+      (fun fo tag ->
+         if !prev_is_dt then begin
+           fo.close_paragraph();
+           prev_is_dt := false
+         end;
+         fo.new_paragraph();
+         fo.push_attr [Margin 20])
+      (fun fo ->
+          fo.pop_attr [Margin 20];
+          fo.close_paragraph())
+
+    end else begin
+      (* if compact *)
+      let first_item = ref true in
+
+      mach#add_tag "dt"
+        (fun fo tag -> 
+           if not !first_item 
+           then fo.print_newline false
+           else first_item := false;
+           push_style fo "bold")
+        (fun fo -> pop_style fo "bold");
+
+      mach#add_tag "dd"
+        (fun fo tag ->
+           if not !first_item 
+           then fo.print_newline false
+           else first_item := false;
+           fo.push_attr [Margin 20])
+        (fun fo -> fo.pop_attr [Margin 20])
+    end
+in
+
+let close_dl fo =
+  fo.pop_attr [Margin 10];
+  fo.close_paragraph();
+  mach#remove_tag "dt";
+  mach#remove_tag "dd";
+in
+
+mach#add_tag "dl" open_dl close_dl;
+@
+
+\subsection{Anchors, [[<a>]]}
+
+<<type Html_disp.Make.anchor_type>>=
+type anchor_type = HREF | NAME
+@
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.7.3 Anchor: <A> 
+ * Assumes anchors are not nested
+ * Can be both HREF and NAME.
+ *)
+
+let anchor_type = ref None in
+let anchor_link = ref (Hyper.default_link "") in
+let in_anchor = ref false in
+
+let open_anchor fo tag =
+  anchor_type := None;
+  <<[[Html_disp.Make.init.open_anchor()]] look for NAME attribute>>
+  <<[[Html_disp.Make.init.open_anchor()]] look for HREF attribute>>
+in
+
+let close_anchor fo =
+  match !anchor_type with
+  <<[[Html_disp.Make.init.close_anchor()]] match anchor type cases>>
+  | None -> raise (Invalid_Html "Unmatched </A>")
+in
+mach#add_tag "a" open_anchor close_anchor;
+@
+
+\subsubsection{Anchor, [[<a name=...>]]}
+
+<<[[Html_disp.Make.init.open_anchor()]] look for NAME attribute>>=
+(* is there a NAME attribute ? *)
+begin
+  try 
+    fo.add_mark (Html.get_attribute tag "name");
+    anchor_type := Some NAME
+  with Not_found -> ()
+end;
+@
+%bug? forgot in_anchor := true?
+
+<<[[Html_disp.Make.init.close_anchor()]] match anchor type cases>>=
+| Some NAME ->
+    in_anchor := false;
+    anchor_type := None
+@
+
+\subsubsection{Anchor, [[<a href=...>]]}
+
+<<[[Html_disp.Make.init.open_anchor()]] look for HREF attribute>>=
+(* is there an HREF attribute ? (if both, anchor_type is set to HREF *)
+(* so that close_anchor does the right thing) *)
+begin
+  try
+    let href = Html.get_attribute tag "href" in
+    let h_params =
+      try ["target", Html.get_attribute tag "target"]
+      with Not_found ->
+        (match mach#target with
+        | Some s -> ["target", s]
+        | None -> []
+        )
+    in
+    anchor_link := { 
+      h_uri = href;
+      h_context = Some mach#base;
+      h_method = 
+        (try Hyper.parse_method (Html.get_attribute tag "methods")
+         with _ -> GET
+        );
+      h_params = h_params
+    };
+    in_anchor := true;
+    anchor_type := Some HREF;
+    fo.start_anchor ();
+    (* push_style fo "anchor" *)
+  with Not_found ->
+    (match !anchor_type with
+    | None -> raise (Invalid_Html "Missing NAME or HREF in <A>")
+    | _ -> ()
+    )
+end
+@
+
+<<[[Html_disp.Make.init.close_anchor()]] match anchor type cases>>=
+| Some HREF -> 
+    fo.end_anchor !anchor_link;
+    (* pop_style fo "anchor"; *)
+    in_anchor := false;
+    anchor_type := None
+@
+
+\subsection{Breaks}
+
+\subsubsection{Line breaks, [[<br>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.8 Line break: <BR> 
+ *)
+mach#add_tag "br" 
+  (fun fo tag -> fo.print_newline true)
+  ignore_close
+;
+@
+
+\subsubsection{Horizontal rules, [[<hr>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.9 Horizontal Rule: <HR>
+ *)
+mach#add_tag "hr"
+  (fun fo tag -> 
+     let width =
+       try length_of_string (Html.get_attribute tag "width")
+       with Not_found -> Nolength 
+     in
+     let height =
+       try int_of_string (Html.get_attribute tag "size")
+       with Not_found | Failure "int_of_string" -> 1
+     in
+     let solid = Html.has_attribute tag "noshade" in
+     fo.print_newline false;
+     fo.hr width height solid;
+     fo.print_newline false)
+  ignore_close
+;
+@
+
+\subsection{Images, [[<img>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.10 Image: <IMG>
+ *)
+mach#add_tag "img"
+  (fun fo tag -> 
+     try
+       let src = Html.get_attribute tag "src" in
+       let align = Html.get_attribute tag "align" in
+
+       let width = 
+         try Some (int_of_string (Html.get_attribute tag "width"))
+         with Not_found | Failure "int_of_string" -> None
+       in
+       let height = 
+         try Some (int_of_string (Html.get_attribute tag "height"))
+         with Not_found | Failure "int_of_string" -> None
+       in
+
+       <<[[Html_disp.Make.init()]] IMG case, let alt>>
+       let w = fo.create_embedded align width height in
+       let link = { 
+         h_uri = src; 
+         h_context = Some mach#base;
+         h_method = GET; 
+         h_params = []
+       } in
+       <<[[Html_disp.Make.init()]] IMG case, let map>>
+       mach#imgmanager#add_image  
+         { embed_hlink = link;
+           embed_frame = w;
+           embed_context = mach#ctx#for_embed tag.attributes [];
+           embed_map = map;
+           embed_alt = alt
+          }
+     with Not_found -> (* only on SRC *)
+       raise (Invalid_Html "missing SRC in IMG"))
+
+  ignore_close
+;
+@
+
+<<[[Html_disp.Make.init()]] IMG case, let map>>=
+(* some people use both ismap and usemap...
+ *  prefer usemap
+ *)
+let map =
+  try 
+    let mapname = get_attribute tag "usemap"  in
+    Maps.ClientSide { 
+      h_uri = mapname;
+      h_context = Some mach#base;
+      h_method = GET;
+      h_params = []
+    }
+  with Not_found -> 
+    if !in_anchor 
+    then
+      if has_attribute tag "ismap"
+      then Maps.ServerSide !anchor_link
+      else Maps.Direct !anchor_link
+    else NoMap
+in
+@
+
+
+<<[[Html_disp.Make.init()]] IMG case, let alt>>=
+let alt = 
+  try Html.get_attribute tag "alt"
+  with Not_found ->
+    let image_name = 
+      let pos = 
+        let cpos = ref (String.length src) in
+        try
+          while !cpos > 0 do
+            match src.[!cpos - 1] with
+            | '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
+            | _ -> decr cpos
+          done;
+          0
+       with Exit -> !cpos
+     in
+     if pos = String.length src 
+     then "IMAGE"
+     else String.sub src pos (String.length src - pos)
+  in
+  Printf.sprintf "[%s]" image_name	 
+in          
+@
+
+\subsection{Forms}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* FORMS: they are defined elsewhere (html_form) *)
+  FormLogic.init mach;
+(* standard basic HTML2.0 initialisation stops here *)
+@
+
+\subsection{Tables}
+
+<<signature Html_disp.attempt_tables>>=
+val attempt_tables : bool ref
+@
+<<constant Html_disp.attempt_tables>>=
+(* Preference settings *)
+let attempt_tables = ref false
+@
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* TABLE support *)
+if !attempt_tables 
+then TableLogic.init mach
+else begin
+  let behave_as oldtag newtag =
+     mach#add_tag newtag
+       (fun fo t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
+       (fun fo ->   mach#send (CloseTag oldtag))
+  in
+  (* use DL for tables *)
+  behave_as "dl" "table";
+  mach#add_tag "tr" ignore_open ignore_close;
+  behave_as "dt" "th";
+  behave_as "dd" "td"
+end;
+@
+
+\subsection{Embedded elements, [[<embed>]]}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* EMBED
+ *  The definition is a mix of what was done for earlier versions
+ *  of MMM and Netscape Navigator. The reason is to get compatible HTML for
+ *  Caml Applets in both browsers.
+ *)
+mach#add_tag "embed"
+  (fun fo tag -> 
+     try
+   let link = {
+     h_uri = get_attribute tag "src";
+     h_method = GET;
+     h_context = Some mach#base;
+     h_params = []} in
+   let width =
+     try Some (int_of_string (get_attribute tag "width"))
+     with Not_found -> None
+   and height =
+     try Some (int_of_string (get_attribute tag "height"))
+     with Not_found -> None
+   and alttxt = get_attribute tag "alt" in
+
+   let fr = fo.create_embedded "" width height in
+   mach#add_embedded {
+       embed_hlink = link;
+       embed_frame = fr;
+       embed_context = mach#ctx#for_embed tag.attributes [];
+       embed_map = NoMap; (* yet *)
+       embed_alt = alttxt
+      }
+     with
+   Not_found ->
+     raise (Invalid_Html ("SRC missing in EMBED")))
+  ignore_close;
+@
+
+
+\subsection{Maps}
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 good features *)
+let areas = ref [] in
+let mapname = ref "" in
+
+mach#add_tag "map"
+  (fun fo t ->
+       (* the name of the map *)
+       let absname = 
+         try 
+      let name = get_attribute t "name" in
+      (* we must get a normalized name here *)
+        Hyper.string_of {h_uri = "#"^name; h_context = Some mach#base;
+                h_method = GET; h_params = []}
+         with
+       Not_found -> 
+         Hyper.string_of (Hyper.default_link mach#base)
+       in
+       mapname := absname;
+       areas := [];
+       mach#add_tag "area" 
+      (fun fo tag -> 
+         let shape = String.lowercase (get_attribute tag "shape")
+         and href = 
+       try Some (get_attribute tag "href") with Not_found -> None
+             and coords =
+       try Maps.parse_coords (get_attribute tag "coords")
+       with _ -> [] 
+             and alttxt =
+               try get_attribute tag "alt" with Not_found -> ""
+             in
+         let h_params =
+       try ["target", get_attribute tag "target"]
+       with
+         Not_found ->
+           match mach#target with
+             Some s -> ["target", s]
+           |	None -> []
+         in
+             match href with
+       None -> () (* this creates a HOLE. not yet supported *)
+         | Some uri ->
+        let link = {h_uri = uri; h_context = Some mach#base;
+                h_method = GET; h_params = h_params} in
+                let area = 
+          match shape with
+           "default" -> {area_kind = Default; area_coords = [];
+                 area_link = link; area_alt = alttxt}
+         | "rect" -> {area_kind = Rect; area_coords = coords;
+              area_link = link; area_alt = alttxt}
+         | "circle" -> {area_kind = Circle; area_coords = coords;
+                area_link = link; area_alt = alttxt}
+         | "poly" -> {area_kind = Poly; area_coords = coords;
+              area_link = link; area_alt = alttxt} 
+         | _ -> {area_kind = Default; area_coords = [];
+              area_link = link; area_alt = alttxt} in
+                areas := area :: !areas)
+          ignore_close)
+
+  (fun fo -> 
+    mach#remove_tag "area";
+    Maps.add !mapname !areas)
+;
+@
 
 % important for imgs?
 
@@ -7250,192 +8757,168 @@ let get name =
 
 
 
+\subsection{Fonts}
 
+\subsubsection{[[<basefont>]]}
 
-\section{Frames}
-
-
-
-
-\chapter{HTML Display}
-% display/, html layout engine
-
-\section{[[Html.display_html]]}
-
-<<class Htmlw.display_html>>=
-class display_html ((top : Widget.widget),
-                    (ctx : Viewers.context),
-                    (mediapars : (string * string) list),
-                    (imgmanager: Imgload.loader),
-                    (dh': Document.handle)) =
- object (self)
-  inherit Viewers.display_info () as di  (* gives us basic features *)
-  inherit viewer_globs (ctx, dh')
-  inherit html_parse (dh')
-  inherit html_body () as body
-  inherit bored ()
-
-  (* val imgmanager = imgmanager *)
-
-  <<[[Htmlw.display_html]] private fields>>
-
-  (*less: can be changed? *)
-  val mutable title = Url.string_of ctx#base.document_url
-  method di_title = title
-
-  <<[[Htmlw.display_html]] frame widget methods>>
-  <<[[Htmlw.display_html]] init method>>
-
-  <<[[Htmlw.display_html]] fragment methods>>
-  <<[[Htmlw.display_html]] load images methods>>
-  <<[[Htmlw.display_html]] update embedded objects methods>>
-  <<[[Htmlw.display_html]] load frames methods>>
-
-  <<[[Htmlw.display_html]] error managment methods>>
-
-  <<[[Htmlw.display_html]] progress method>>
-  <<[[Htmlw.display_html]] abort methods>>
-  <<[[Htmlw.display_html]] redisplay methods>>
-  <<[[Htmlw.display_html]] destroy methods>>
-  <<[[Htmlw.display_html]] other methods or fields>>
-
-end
-@
-%  <<[[Htmlw.display_html]] empty methods>>
-
-<<[[Htmlw.display_html]] frame widget methods>>=
-val frame = 
-  if not (Winfo.exists top) 
-  then failwith "too late"
-  else Frame.create_named top (Mstring.gensym "html") [Class "Html"]
-    (* this might as well fail if the window was destroyed before we
-     * finally could get the headers of the document.
-     *)
-method frame = frame
-method di_widget = frame
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+mach#add_tag "basefont"
+  (fun fo t -> 
+     try
+       let n = int_of_string (get_attribute t "size") in
+       fo.set_defaults "font" [Font (FontIndex n)]
+     with Not_found | Failure "int_of_string" ->
+       raise (Invalid_Html "invalide SIZE"))
+  ignore_close;
 @
 
+\subsubsection{[[<font>]]}
 
-<<[[Htmlw.display_html]] private fields>>=
-val mutable init_mode = true
-val mutable pending = true
-@
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+let fontchanges = ref [] in
 
-<<[[Htmlw.display_html]] reset private fields>>=
-init_mode <- full;
-pending <- true;
+mach#add_tag "font"
+  (fun fo t ->
+     let attrs = [] in
+     let attrs =
+       try
+         let size = get_attribute t "size" in
+         let l = String.length size in
+         if l = 0 
+         then raise Not_found
+         else 
+           if size.[0] = '+' 
+           then
+             (Font (FontDelta (int_of_string (String.sub size 1 (pred l)))))
+                    :: attrs
+           else 
+             if size.[0] = '-' 
+             then (Font (FontDelta (int_of_string size)))::attrs
+             else (Font (FontIndex (int_of_string size)))::attrs
+       with Not_found | Failure _ -> attrs 
+     in
+     let attrs = 
+        try
+          let color = get_attribute t "color" in
+          (FgColor color)::attrs
+        with Not_found -> attrs 
+     in
+     (* attrs may well be the empty list *)
+     if attrs <> [] 
+     then fo.push_attr attrs;
+     fontchanges := attrs :: !fontchanges)
 
-errors := []; 
-annotations := []; 
-terminated <- false; 
-set_progress <- Progress.no_meter;
-
-mach <- F.create (ctx, imgmanager);
-@
-
-<<module Htmlw.F>>=
-module F = Html_disp.Make(Textw_fo)(Form)(Table)
-@
-
-% mach for machine, vague
-<<[[Htmlw.display_html]] private fields>>=
-val mutable mach = F.create (ctx, imgmanager)
-@
-<<[[Htmlw.display_html]] load images methods>>=
-method mach = mach
+  (fun fo -> 
+     match !fontchanges with
+     | [] -> raise (Invalid_Html "unmatched </font>")
+     | x::l -> 
+         fontchanges := l;
+         if x <> [] 
+         then fo.pop_attr x)
+;
 @
 
 
 
-<<[[Htmlw.display_html]] init method>>=
-(* since we may be called multiple times, we have to clear some of the
-   instance variables *)
-method init full =
-  <<[[Htmlw.display_html]] reset private fields>>
+\subsection{[[<style>]]}
 
-  <<[[Htmlw.display_html]] set meta tag>>
-
-  <<[[Htmlw.display_html]] set progress report and head UI>>
-
-  self#body_init full;
-
-  <<[[Htmlw.display_html]] display frames>>
-
-  (* Asynchronous parsing and display, token by token *)
-  self#parse_init;
-
-  <<[[Htmlw.display_html]] i18 encoder for forms>>
-
-  dh.document_feed.feed_schedule (fun () ->
-    try 
-      let warnings, correct,   tokens, loc = 
-        lexer self#lexbuf 
-      in
-      <<[[Htmlw.display_html]] in feed, record possible errors after lexing>>
-
-      <<[[Htmlw.display_html]] in feed, annotate>>
-       tokens |> List.iter (fun token -> 
-         begin  
-           try mach#send token
-           with Invalid_Html s -> self#record_error loc s
-         end;
-         if token = EOF then begin
-           pending <- false;
-           imgmanager#flush_images;
-           raise End_of_file
-         end
-       )
-    with 
-    | End_of_file ->
-        <<[[Htmlw.display_html]] in feed, End_of_file exn handler>>
-    <<[[Htmlw.display_html]] in feed, other exceptions handler>>
-   )
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 obnoxious features *)
+(* STYLE, SCRIPT in HEAD: not managed here
+   For some reason, script is also allowed in text by the DTD.
+   Make sure we just dump the contents...
+   We do the same for style, just in case people dont respect the DTD
+ *)
+mach#add_tag "style"
+  (fun fo t -> mach#push_action (fun s -> ()))
+  (fun fo -> mach#pop_action);
 @
 
+\subsection{[[<script>]]}
 
-
-<<[[Htmlw.display_html]] in feed, End_of_file exn handler>>=
-<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japan>>
-self#set_progress (Some red) red;
-self#finish false;
-mach#see_frag dh.document_fragment;
-<<[[Htmlw.display_html]] in feed, End_of_file exn handler, if japn and charset>>
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* Some HTML 3.2 obnoxious features *)
+mach#add_tag "script"
+  (fun fo t -> mach#push_action (fun s -> ()))
+  (fun fo -> mach#pop_action);
 @
 
+\subsection{Frames}
+% related to embed?
 
-<<[[Htmlw.display_html]] fragment methods>>=
-method di_fragment = 
-  mach#see_frag
+% no frame tag?
+
+<<constant Htmlw.frames_as_links>>=
+(* Prefs globals *)
+let frames_as_links = ref false
 @
 
+<<[[Htmlw.display_html]] display frames>>=
+if not !frames_as_links then
+  Htframe.add_frames (self#load_frames) (fun () ->
+    match body_frame with
+    | None -> ()
+    | Some f -> Tk.destroy f
+  ) frame mach;
+@
 
-
-
-
-<<[[Htmlw.display_html]] set progress report and head UI>>=
-(* We have full display, so put up progress report and head UI *)
-if full then begin 
-  let hgbas, progf = progress_report frame ctx in
-  set_progress <- progf;
-  self#bored_init hgbas;
-  pack [hgbas] [Side Side_Bottom; Fill Fill_X];
-  let headgroup, set_title, add_link, add_header, add_ext_header =
-    html_head_ui dh.document_headers (fun () -> self#redisplay)
-    self#current_scroll_mode frame ctx
+<<[[Htmlw.display_html]] load frames methods>>=
+method load_frames frames =
+  (* all targets defined in all framesets in this document *)
+  let targets = 
+    frames |> List.map (fun (frdesc, w) -> frdesc.frame_name, w) 
   in
-  add_extra_header <- add_ext_header;
-  pack [headgroup] [Side Side_Top; Fill Fill_X];
-  let set_title s = 
-    title <- s; 
-    set_title s 
-  in
-  head_hook (headgroup, set_title, add_link, add_header) self#mach
-end;
+  frames |> List.iter (fun (frdesc, w) ->
+    let thistargets =
+         ("_self", w) (* ourselves *)
+      :: ("_parent", Winfo.parent w) (* our direct parent *)
+      :: targets (* common targets *)
+    in
+    let ectx = ctx#for_embed frdesc.frame_params thistargets in
+    (* add frame parameters and targets to our ctx *)
+    (* NOTE: there is a redundancy between embed_frame and _self in ctx,
+       but frames are only an instance of embedded objects so we should
+       no rely on the existence of _self for embed display machinery *)
+     mach#add_embedded {
+       embed_hlink = { 
+         h_uri = frdesc.frame_src;
+         h_context = Some (Url.string_of ctx#base.document_url);
+         h_method = GET;
+         h_params = []
+       };
+       embed_frame = w;
+       embed_context = ectx;
+       embed_map = Maps.NoMap;
+       embed_alt = frdesc.frame_name
+     }
+  )
 @
 
+\section{Styles}
 
+% Styles.get
 
-\section{Meta tag}
+\section{Fonts}
+
+<<[[Plain.plain#init]] setup fonts>>=
+(* pick up the fixed font *)
+let attrs_fixed   = Styles.get_font "fixed" in
+let attrs_default = Styles.get_font "default" in
+let fd = 
+  Fonts.merge (Fonts.merge !Fonts.default attrs_default) attrs_fixed in
+let (_, opts) = Fonts.compute_tag fd in
+Text.configure text opts;
+@
+
+\section{Images and embedded elements}
+
+\section{Forms}
+
+\section{Tables}
+
+\section{XXX}
+
+\subsection{Meta tag}
 
 <<[[Htmlw.display_html]] set meta tag>>=
 let meta_charset = ref None in
@@ -7488,8 +8971,6 @@ if not !ignore_meta_charset then begin
   end;
 @
 
-
-\section{XXX}
 
 \subsection{Annotations}
 
@@ -7570,97 +9051,6 @@ warnings |> List.iter (fun (reason, pos) ->
     self#finish true
 @
 
-\section{[[Html_disp.machine]]}
-
-
-
-\section{Display primitives}
-
-\section{Fonts}
-
-<<[[Plain.plain#init]] setup fonts>>=
-(* pick up the fixed font *)
-let attrs_fixed   = Styles.get_font "fixed" in
-let attrs_default = Styles.get_font "default" in
-let fd = 
-  Fonts.merge (Fonts.merge !Fonts.default attrs_default) attrs_fixed in
-let (_, opts) = Fonts.compute_tag fd in
-Text.configure text opts;
-@
-
-\section{Attributes}
-
-\section{HTML compilation}
-% from html lexems to instructions to display engine
-
-\section{HTML elememts}
-
-\subsection{HR}
-
-\subsection{Images}
-
-\subsection{Forms}
-
-\subsection{Tables}
-
-<<signature Html_disp.attempt_tables>>=
-val attempt_tables : bool ref
-@
-<<constant Html_disp.attempt_tables>>=
-(* Preference settings *)
-let attempt_tables = ref false
-@
-
-\subsection{Frames}
-% related to embed?
-
-<<constant Htmlw.frames_as_links>>=
-(* Prefs globals *)
-let frames_as_links = ref false
-@
-
-<<[[Htmlw.display_html]] display frames>>=
-if not !frames_as_links then
-  Htframe.add_frames (self#load_frames) (fun () ->
-    match body_frame with
-    | None -> ()
-    | Some f -> Tk.destroy f
-  ) frame mach;
-@
-
-<<[[Htmlw.display_html]] load frames methods>>=
-method load_frames frames =
-  (* all targets defined in all framesets in this document *)
-  let targets = 
-    frames |> List.map (fun (frdesc, w) -> frdesc.frame_name, w) 
-  in
-  frames |> List.iter (fun (frdesc, w) ->
-    let thistargets =
-         ("_self", w) (* ourselves *)
-      :: ("_parent", Winfo.parent w) (* our direct parent *)
-      :: targets (* common targets *)
-    in
-    let ectx = ctx#for_embed frdesc.frame_params thistargets in
-    (* add frame parameters and targets to our ctx *)
-    (* NOTE: there is a redundancy between embed_frame and _self in ctx,
-       but frames are only an instance of embedded objects so we should
-       no rely on the existence of _self for embed display machinery *)
-     mach#add_embedded {
-       embed_hlink = { 
-         h_uri = frdesc.frame_src;
-         h_context = Some (Url.string_of ctx#base.document_url);
-         h_method = GET;
-         h_params = []
-       };
-       embed_frame = w;
-       embed_context = ectx;
-       embed_map = Maps.NoMap;
-       embed_alt = frdesc.frame_name
-     }
-  )
-@
-
-
 \chapter{Images}
 
 <<Document menu elements>>=
@@ -7707,6 +9097,28 @@ method di_load_images =
 
 \section{The image loader}
 
+<<signature class Html_disp.imgloader>>=
+class  virtual imgloader : (unit) -> object
+  <<[[Html_disp.imgloader]] virtual fields signatures>>
+end
+@
+
+<<[[Html_disp.imgloader]] virtual fields signatures>>=
+method virtual add_image : Embed.embobject -> unit	 (* add one image *)
+method virtual flush_images : unit	         (* flush when document is loaded *)
+method virtual load_images : unit		 (* manual flush *)
+method virtual update_images : unit
+@
+
+\ifallcode
+<<class Html_disp.imgloader>>=
+class  virtual imgloader (unit : unit) =
+ object
+  <<[[Html_disp.imgloader]] virtual fields signatures>>
+end
+@
+\fi
+
 % display_html -> <>
 <<signature Imgload.create>>=
 val create : unit -> loader
@@ -7742,8 +9154,6 @@ method di_update =
   )
 @
 
-\section{Animaged GIFs}
-% or put in Extra features?
 
 
 
@@ -8679,6 +10089,9 @@ let isdir path f =
   of WWW requests. *)
 @
 
+% this seems to work! there is a new window appearing
+
+
 \subsection{Proxied protocols}
 
 % proxy are not just for security or speed!
@@ -8863,10 +10276,11 @@ let _ =
 
 
 
-%\section{Animated GIFs}
-% now in Image section?
+\section{Animaged GIFs}
 
 \section{Audio}
+
+% there is an <audio> in html 5 no?
 
 <<function Audio.fake_embed>>=
 (* Defines embedded viewer for audio types as re-running the document *)
@@ -10534,6 +11948,25 @@ let add_user_menu entry f =
 @
 
 
+
+<<signature Html_disp.add_hook>>=
+val add_hook: (machine -> unit) -> unit
+@
+<<function Html_disp.add_hook>>=
+let add_hook f = 
+  user_hooks := f :: !user_hooks
+@
+% dead?
+
+<<constant Html_disp.user_hooks>>=
+(* Hooks for applets/modules. Control is made elsewhere *)
+let user_hooks = ref []
+@
+
+<<[[Html_disp.Make.create()]] run user hooks>>=
+!user_hooks |> List.iter (fun f -> f (mach :> machine));
+@
+
 \section{Signals}
 
 <<[[Main.main()]] signal handling>>=
@@ -10543,6 +11976,11 @@ Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 @
 
 \chapter{Conclusion}
+
+
+
+
+
 
 \appendix
 
@@ -10560,7 +11998,7 @@ let debug_mode = ref false
 <<signature Log.f>>=
 val f : string -> unit
 @
-% ??
+% ?? fatal?
 <<function Log.f>>=
 (* flushes ! *)
 let f s = 
@@ -10630,8 +12068,7 @@ let postmortem () =
              | FileData (f,false) -> "fake " ^f)
              );
     entry.cache_document.document_info
-    |> List.rev
-    |> List.iter (fun h -> Log.f (sprintf "%s" h));
+    |> List.rev |> List.iter (fun h -> Log.f (sprintf "%s" h));
 
     if entry.cache_pending 
     then Log.f "pending ";
@@ -10797,6 +12234,14 @@ let active_cb _ =
   flush stdout
 @
 
+\subsection{HTML display}
+
+<<signature Html_disp.verbose>>=
+val verbose : bool ref
+@
+<<constant Html_disp.verbose>>=
+let verbose = ref false
+@
 
 \section{Dumpers}
 

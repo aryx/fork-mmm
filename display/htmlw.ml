@@ -441,6 +441,7 @@ class display_html ((top : Widget.widget),
        * finally could get the headers of the document.
        *)
   method frame = frame
+
   method di_widget = frame
   (*e: [[Htmlw.display_html]] frame widget methods *)
   (*s: [[Htmlw.display_html]] init method *)
@@ -455,7 +456,7 @@ class display_html ((top : Widget.widget),
     annotations := []; 
     terminated <- false; 
     set_progress <- Progress.no_meter;
-
+    (*x: [[Htmlw.display_html]] reset private fields *)
     mach <- F.create (ctx, imgmanager);
     (*e: [[Htmlw.display_html]] reset private fields *)
 
@@ -517,6 +518,7 @@ class display_html ((top : Widget.widget),
       set_progress <- progf;
       self#bored_init hgbas;
       pack [hgbas] [Side Side_Bottom; Fill Fill_X];
+
       let headgroup, set_title, add_link, add_header, add_ext_header =
         html_head_ui dh.document_headers (fun () -> self#redisplay)
         self#current_scroll_mode frame ctx
