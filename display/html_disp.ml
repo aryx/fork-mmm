@@ -133,17 +133,23 @@ let default_fo = {
   print_newline = (fun b -> ());
   print_verbatim = (fun s -> ());
   format_string = (fun s -> ());
+
   hr = (fun l n b -> ());
   bullet = (fun n -> ());
+
   set_defaults = (fun s l -> ());
   push_attr = (fun l -> ());
   pop_attr = (fun l -> ());
+
   isindex = (fun s s' -> ());
   start_anchor = (fun () -> ());
   end_anchor = (fun h -> ());
   add_mark = (fun _ -> ());
+
   create_embedded = (fun a w h -> assert false);
+
   see_frag = (fun _ -> ());
+
   flush = (fun () -> ());
 } 
 (*e: constant Html_disp.default_fo *)

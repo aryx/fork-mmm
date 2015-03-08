@@ -7,16 +7,27 @@ open Embed
 
 (*s: type Htmlfmt.gattr *)
 type gattr =
-  |  Margin of int
-  |  Justification of string
-  |  Font of fontInfo		        (* mostly size and face *)
-  |  FgColor of string
-  |  BgColor of string
-  |  Underlined
-  |  Striked
-  |  Spacing of int
-  |  Superscript
-  |  Lowerscript
+(*s: [[Htmlfmt.gattr]] other cases *)
+| Justification of string
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Margin of int
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Underlined
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Striked
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Superscript
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Lowerscript
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Spacing of int
+(*x: [[Htmlfmt.gattr]] other cases *)
+| Font of fontInfo		        (* mostly size and face *)
+(*x: [[Htmlfmt.gattr]] other cases *)
+| FgColor of string
+(*x: [[Htmlfmt.gattr]] other cases *)
+  | BgColor of string
+(*e: [[Htmlfmt.gattr]] other cases *)
 (*e: type Htmlfmt.gattr *)
 
 (*s: type Htmlfmt.formatterSpec *)
@@ -28,36 +39,62 @@ type formatterSpec =
 
 (*s: type Htmlfmt.formatter *)
 type formatter = {
+
   (* Text primitives of the device *)
+  (*s: [[Htmlfmt.formatter]] primitives methods *)
   new_paragraph: unit -> unit;  	(* Open a new paragraph *)
     (* make sure the following text will start on a new line *)
   close_paragraph: unit -> unit;  	(* Close a paragraph *)
     (* make sure there is an eol after the current text *)
-  print_newline : bool -> unit;		(* Force a line break *)
+  (*x: [[Htmlfmt.formatter]] primitives methods *)
   print_verbatim : string -> unit;	(* Print as-is *)
+  (*x: [[Htmlfmt.formatter]] primitives methods *)
   format_string : string -> unit;	(* Line wrap, newlines don't count *)
-  flush : unit -> unit;			(* Flush the device *)
+  (*x: [[Htmlfmt.formatter]] primitives methods *)
+  print_newline : bool -> unit;		(* Force a line break *)
+  (*e: [[Htmlfmt.formatter]] primitives methods *)
+
   (* Predefined Images *)
-  hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
+  (*s: [[Htmlfmt.formatter]] predefined images methods *)
   bullet : string -> unit;
+  (*x: [[Htmlfmt.formatter]] predefined images methods *)
+  hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
+  (*e: [[Htmlfmt.formatter]] predefined images methods *)
+
   (* Graphical attributes *)
-  set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
+  (*s: [[Htmlfmt.formatter]] graphical attributes methods *)
   push_attr : gattr list -> unit;
   pop_attr : gattr list -> unit;
+  (*x: [[Htmlfmt.formatter]] graphical attributes methods *)
+  set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
+  (*e: [[Htmlfmt.formatter]] graphical attributes methods *)
+
   (* Structure primitives *)
+  (*s: [[Htmlfmt.formatter]] structure primitives methods *)
   isindex : string -> string -> unit;         (* <ISINDEX> *)
+  (*x: [[Htmlfmt.formatter]] structure primitives methods *)
+  add_mark : string -> unit;
+  (*x: [[Htmlfmt.formatter]] structure primitives methods *)
   start_anchor : unit -> unit;
   end_anchor : Hyper.link -> unit;
-  add_mark : string -> unit;
+  (*e: [[Htmlfmt.formatter]] structure primitives methods *)
+
   (* Embedding primitives *)
+  (*s: [[Htmlfmt.formatter]] embedding primitives methods *)
   create_embedded : 
      string -> int option -> int option -> Widget.widget;
        (* [create_embedded align w h ]: 
       returns a widget that we can pass as target to the embed manager.
       Should respect background color ?
     *)
+  (*e: [[Htmlfmt.formatter]] embedding primitives methods *)
+
   (* Re-centering on a fragment *)
+  (*s: [[Htmlfmt.formatter]] fragment method *)
   see_frag : string option -> unit;
+  (*e: [[Htmlfmt.formatter]] fragment method *)
+
+  flush : unit -> unit;			(* Flush the device *)
 }
 (*e: type Htmlfmt.formatter *)
 
