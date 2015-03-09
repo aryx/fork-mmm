@@ -986,6 +986,17 @@ method virtual di_widget : Widget.widget
 % that will be deleted in undisplay
 
 
+%old: was in document.ml, dead, but I should use that instead of classes:
+%type display_info = {
+%    di_abort : Www.aborter;
+%    di_destroy : unit -> unit;
+%    di_fragment : string option -> unit;
+%    di_redisplay: unit -> unit;
+%    di_title : unit -> string;	      (* some title for bookmarks *)
+%    di_source : unit -> unit;
+%    di_load_images : unit -> unit
+%}
+
 
 \section{Abstract syntax trees}
 
@@ -5566,18 +5577,6 @@ let destroy_log dh = dh.document_logger.logger_destroy
 let progress_log dh = dh.document_logger.logger_progress
 @
 
-<<type Document.display_info>>=
-type display_info = {
-    di_abort : Www.aborter;
-    di_destroy : unit -> unit;
-    di_fragment : string option -> unit;
-    di_redisplay: unit -> unit;
-    di_title : unit -> string;	      (* some title for bookmarks *)
-    di_source : unit -> unit;
-    di_load_images : unit -> unit
-}
-@
-% dead?
 
 \section{Images}
 

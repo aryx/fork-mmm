@@ -2277,9 +2277,6 @@ let add_log_backend = ref (fun _ _ _ -> failwith "no add_log defined")
 <<functions Document.xxx_log>>
 <<function Document.end_log>>
 
-
-<<type Document.display_info>>
-
 @
 
 
