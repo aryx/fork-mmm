@@ -7,7 +7,7 @@ TARGET=lib
 -include $(TOP)/Makefile.config
 
 # Miscellaneous additional libraries
-SRC= common.ml \
+SRC= common.ml simple_color.ml \
   fileevent_.ml \
   timer_.ml \
   low.ml mstring.ml mlist.ml msys.ml \
@@ -47,12 +47,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
-
-lexpath.ml : lexpath.mll
-	$(CAMLLEX) lexpath.mll
-clean::
-	rm -f lexpath.ml
-beforedepend:: lexpath.ml
 
 ##############################################################################
 # Literate Programming rules

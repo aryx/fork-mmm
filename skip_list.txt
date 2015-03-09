@@ -20,7 +20,8 @@ file: external/stdlib/4.01/condition.cmt
 # -------------------------------------------------------------------------
 # dupes
 # -------------------------------------------------------------------------
-file: external/core/condition.mli
+file: external/stdlib/condition.mli
+file: external/stdlib/condition.ml
 
 dir: external/ocamltk/examples
 dir: external/ocamltk/safe

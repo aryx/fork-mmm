@@ -13,7 +13,7 @@ open Htmlfmt
 
 (* Delayed and shared configuration of tags *)
 
-module TagSet = Common.StringSet
+module TagSet = Set.Make(struct type t = string let compare = compare end)
 
 class tags (thtml) =
  object

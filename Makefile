@@ -8,8 +8,15 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
+
 PROGS=mmm
 #PROGS+=htparse, surfboard
+
+TARGET=mmm2
+GRAPHICSDIR=$(shell ocamlfind query lablgtk2) $(shell ocamlfind query cairo)
+OTHERSYSLIBS=lablgtk.cma cairo.cma cairo_lablgtk.cma 
+GTKLOOP=gtkThread.cmo
+
 
 OPTPROGS= $(PROGS:=.opt)
 
@@ -27,13 +34,12 @@ MAINDIRS= \
 
 #  applets \
 #  sandbox \
-
 # dynamically loaded extensions
 #MOREDIRS= extensions demos/applets demos/sboard
 
 MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
 
-INCLUDEDIRS=$(MAINDIRS) 
+INCLUDEDIRS=$(MAINDIRS) $(GRAPHICSDIR)
 #sandbox/gen crcs
 LIBS=$(MAINDIRS:%=%/lib.cma)
 
@@ -105,6 +111,12 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 	  $(WITH_FRX_OPT) $(WITH_JPF_OPT) $(WITH_TKANIM_OPT) $(WITH_JTK_OPT) \
 	  $(WITH_TK80_OPT) \
 	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
+
+
+
+$(TARGET): $(LIBS) $(OBJS) main_gtk.cmo
+	$(OCAMLC) -cclib -L/opt/X11/lib  $(BYTECODE_STATIC) -o $@ $(OTHERSYSLIBS) $(SYSLIBS) threads.cma $(GTKLOOP) $^
+
 
 # The standalone HTML syntax checker
 HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo\
@@ -276,7 +288,6 @@ SRC_ORIG=Browser.nw Browser_extra.nw
 
 #ML sources
 SRC_VIEWS= \
-  commons/common.ml\
   commons/condition.mli\
   commons/condition.ml\
   commons/date.mli\
@@ -450,3 +461,4 @@ SRC_VIEWS= \
   extensions/tachy_test.ml\
 
 
+#  commons/common.ml\

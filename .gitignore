@@ -1,6 +1,7 @@
 # -*- sh -*-
 
 external/ocamltk
+external/stdlib/*
 
 .md5sum_*
 *.opti
