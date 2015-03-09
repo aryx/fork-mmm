@@ -96,3 +96,5 @@ extensions/sandbox/safetkanim.mli
 extensions/sandbox/gen/*.*
 /Browser.pdf
 /graph_code.marshall
+/extensions/crcs/crcs.ml.bak
+/extensions/crcs/crcsmmm.ml.bak
