@@ -13,6 +13,7 @@ class tags :
     method define : TagSet.elt -> Tk.options list -> unit
     method flush : unit
   end
+
 module LocMap :
   sig
     type key = Tk.index
@@ -22,6 +23,7 @@ module LocMap :
     val find : key -> 'a t -> 'a
     val find_interval : key -> 'a t -> key * key
   end
+
 class anchortags :
   Widget.widget ->
   object
@@ -45,6 +47,7 @@ class anchortags :
     method markused : Tk.eventInfo -> unit
     method widget : Widget.widget
   end
+
 class virtual ['a] nested :
   < add : string * Tk.textIndex * Tk.textIndex -> 'b;
     define : string -> Tk.options list -> 'c; .. > ->
@@ -57,6 +60,7 @@ class virtual ['a] nested :
     method virtual push_convert : 'a -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class align :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -69,6 +73,7 @@ class align :
     method push_convert : string -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class margin :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -82,6 +87,7 @@ class margin :
     method push_convert : int -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class font :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -98,12 +104,14 @@ class font :
     method put : Tk.textIndex -> string -> unit
     method set_base : Tk.textIndex -> int -> unit
   end
+
 (*s: signature Attrs.color_mappings *)
 val color_mappings : (string, string) Hashtbl.t
 (*e: signature Attrs.color_mappings *)
 (*s: signature Attrs.html_color *)
 val html_color : string -> string
 (*e: signature Attrs.html_color *)
+
 class fgcolor :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -116,6 +124,7 @@ class fgcolor :
     method push_convert : string -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class bgcolor :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -128,6 +137,7 @@ class bgcolor :
     method push_convert : string -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class offset :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -141,6 +151,7 @@ class offset :
     method push_convert : int -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class misc :
   < add : 'a * Tk.textIndex * Tk.textIndex -> unit; define : 'a -> 'b -> 'c;
     .. > *
@@ -151,6 +162,7 @@ class misc :
     method pop : Tk.textIndex -> unit
     method push : Tk.textIndex -> unit
   end
+
 class spacing :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->

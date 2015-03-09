@@ -10,10 +10,13 @@ This code *assumes* that minimisation rules are used for
 cells (td and th) and for rows.
  *)
 
-
+(*
 module Make (TableDisplay: TableDisplay) =
 struct
 open TableDisplay
+*)
+module TableDisplay = Table
+open Table
 
 let init mach =
 
@@ -124,5 +127,5 @@ let init mach =
 
   mach#add_tag "table" open_table close_table;
 
-end
+(* end *)
 (*e: ./display/html_table.ml *)

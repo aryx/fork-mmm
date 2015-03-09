@@ -15,18 +15,17 @@ let debug = ref false
  *)
 let set_initial_width wid =
   let ewidth = ref 0 in
-  List.iter (fun w -> ewidth := max (Winfo.reqwidth w) !ewidth) 
-            (Text.window_names wid);
+  Text.window_names wid |> List.iter (fun w -> 
+    ewidth := max (Winfo.reqwidth w) !ewidth
+  );
   if !ewidth > 10 then begin
     let w = !ewidth / 10 in
-    if !debug then
-      Log.f (sprintf "Setting initial width of %s to %d"
-                 (Widget.name wid) w);
+    if !debug 
+    then Log.f (sprintf "Setting initial width of %s to %d"(Widget.name wid) w);
     Text.configure wid [TextWidth w];
     Some w
   end
-  else
-    None
+  else None
 (*e: function Fit.set_initial_width *)
 
 (* initial height: we have to grow at least to the number of

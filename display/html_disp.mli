@@ -74,7 +74,7 @@ val add_hook: (machine -> unit) -> unit
 (*e: signature Html_disp.add_hook *)
 
 (*s: signature functor Html_disp.Make *)
-module Make 
+(*module Make 
   (G: Htmlfmt.GfxHTML) 
   (F: Htmlfmt.FormDisplay) 
   (T: Htmlfmt.TableDisplay) 
@@ -82,7 +82,8 @@ module Make
     (* Do we need to export FormLogic and TableLogic so that extensions
      *  can access them ?
      *)
-    val create : Viewers.context * imgloader -> machine
-end
+*)
+val create : Viewers.context * imgloader -> machine
+(*end*)
 (*e: signature functor Html_disp.Make *)
 (*e: ./display/html_disp.mli *)

@@ -6006,6 +6006,7 @@ class tags :
     method define : TagSet.elt -> Tk.options list -> unit
     method flush : unit
   end
+
 module LocMap :
   sig
     type key = Tk.index
@@ -6015,6 +6016,7 @@ module LocMap :
     val find : key -> 'a t -> 'a
     val find_interval : key -> 'a t -> key * key
   end
+
 class anchortags :
   Widget.widget ->
   object
@@ -6038,6 +6040,7 @@ class anchortags :
     method markused : Tk.eventInfo -> unit
     method widget : Widget.widget
   end
+
 class virtual ['a] nested :
   < add : string * Tk.textIndex * Tk.textIndex -> 'b;
     define : string -> Tk.options list -> 'c; .. > ->
@@ -6050,6 +6053,7 @@ class virtual ['a] nested :
     method virtual push_convert : 'a -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class align :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6062,6 +6066,7 @@ class align :
     method push_convert : string -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class margin :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6075,6 +6080,7 @@ class margin :
     method push_convert : int -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class font :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6091,8 +6097,10 @@ class font :
     method put : Tk.textIndex -> string -> unit
     method set_base : Tk.textIndex -> int -> unit
   end
+
 <<signature Attrs.color_mappings>>
 <<signature Attrs.html_color>>
+
 class fgcolor :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6105,6 +6113,7 @@ class fgcolor :
     method push_convert : string -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class bgcolor :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6117,6 +6126,7 @@ class bgcolor :
     method push_convert : string -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class offset :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6130,6 +6140,7 @@ class offset :
     method push_convert : int -> string * Tk.options list
     method put : Tk.textIndex -> string -> unit
   end
+
 class misc :
   < add : 'a * Tk.textIndex * Tk.textIndex -> unit; define : 'a -> 'b -> 'c;
     .. > *
@@ -6140,6 +6151,7 @@ class misc :
     method pop : Tk.textIndex -> unit
     method push : Tk.textIndex -> unit
   end
+
 class spacing :
   < add : string * Tk.textIndex * Tk.textIndex -> 'a;
     define : string -> Tk.options list -> 'b; .. > ->
@@ -6782,18 +6794,17 @@ let debug = ref false
  *)
 let set_initial_width wid =
   let ewidth = ref 0 in
-  List.iter (fun w -> ewidth := max (Winfo.reqwidth w) !ewidth) 
-            (Text.window_names wid);
+  Text.window_names wid |> List.iter (fun w -> 
+    ewidth := max (Winfo.reqwidth w) !ewidth
+  );
   if !ewidth > 10 then begin
     let w = !ewidth / 10 in
-    if !debug then
-      Log.f (sprintf "Setting initial width of %s to %d"
-                 (Widget.name wid) w);
+    if !debug 
+    then Log.f (sprintf "Setting initial width of %s to %d"(Widget.name wid) w);
     Text.configure wid [TextWidth w];
     Some w
   end
-  else
-    None
+  else None
 @
 
 <<function Fit.wheight>>=
@@ -8080,33 +8091,6 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 
 <<type Htmlfmt.formatter>>
 
-module type GfxHTML = sig
- val create : 
-    (unit -> string) ->
-    formatterSpec -> Widget.widget -> Viewers.context -> 
-      formatter * Widget.widget
- end
-
-(* Manager for in-lined images *)
-module type ImgDisplay = sig
-   (* Various configuration stuff *)
-   type mode =
-       DuringDoc
-     | AfterDocAuto
-     | AfterDocManual
-
-   val mode : mode ref
-   val no_images : bool ref
-
-   class loader : (unit) -> object
-     method add_image : Embed.embobject -> unit	 (* add one image *)
-     method flush_images : unit	         (* flush when document is loaded *)
-     method load_images : unit		 (* manual flush *)
-     method update_images : unit
-   end
-
-   val create : unit -> loader
- end
 
 <<type Htmlfmt.input_kind>>
     
@@ -8118,6 +8102,29 @@ class  virtual form_behaviour : (unit) -> object
     method virtual reset : unit
 end
 
+<<type Htmlfmt.width_constraint>>
+
+(*
+module type TableDisplay = sig
+    type cell_type = HeaderCell | DataCell
+    type t = {
+      table_master : Widget.widget;
+      add_col : Html.tag -> unit;
+      open_row : Html.tag -> unit;
+      close_row : unit -> unit;
+      close_table : unit -> unit;
+      new_cell : 
+      cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
+      bound : unit -> bool
+      }
+
+    val create : Widget.widget -> Html.tag -> width_constraint -> t
+
+    val topwidth : Widget.widget -> int
+ end
+*)
+
+(*
 module type FormDisplay = sig
    (* A form manager *)
    type t = {
@@ -8143,28 +8150,17 @@ module type FormDisplay = sig
       (* [create base behaviour ctx] *)
 
  end
+*)
 
-
-<<type Htmlfmt.width_constraint>>
-
-module type TableDisplay = sig
-    type cell_type = HeaderCell | DataCell
-    type t = {
-      table_master : Widget.widget;
-      add_col : Html.tag -> unit;
-      open_row : Html.tag -> unit;
-      close_row : unit -> unit;
-      close_table : unit -> unit;
-      new_cell : 
-      cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
-      bound : unit -> bool
-      }
-
-    val create : Widget.widget -> Html.tag -> width_constraint -> t
-
-    val topwidth : Widget.widget -> int
-
+(*
+module type GfxHTML = sig
+ val create : 
+    (unit -> string) ->
+    formatterSpec -> Widget.widget -> Viewers.context -> 
+      formatter * Widget.widget
  end
+*)
+
 @
 
 
@@ -8611,6 +8607,7 @@ class behaviour :
     method submit : (string * string) list -> Hyper.link
   end
 
+(*
 module Make :
   functor (FormDisplay : Htmlfmt.FormDisplay) ->
     sig
@@ -8625,6 +8622,18 @@ module Make :
           remove_tag : string -> unit; target : string option; .. > ->
         unit
     end
+*)
+val init: 
+        < add_tag : string ->
+                    (Htmlfmt.formatter -> Html.tag -> unit) ->
+                    (Htmlfmt.formatter -> unit) -> unit;
+          base : string; ctx : Viewers.context;
+          i18n_encoder : string -> string;
+          imgmanager : < add_image : Embed.embobject -> unit; .. >;
+          pop_action : unit; push_action : (string -> unit) -> unit;
+          remove_tag : string -> unit; target : string option; .. > ->
+        unit
+
 @
 
 
@@ -8639,7 +8648,6 @@ open Hyper
 open Www
 open Html
 open Htmlfmt
-
 
 (*
  * Level 2 stuff (forms)
@@ -8656,12 +8664,13 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
   (* val i18n_encoder = i18n_encoder *)
   val (*private*) action = try get_attribute formtag "action" with Not_found -> base
   (* val base = base *)
-  val (*private*) h_params = try ["target", get_attribute formtag "target"]
-    with
-      Not_found ->
-    match deftarget with
-      Some s -> ["target", s]
-    | None -> []
+  val (*private*) h_params = 
+    try ["target", get_attribute formtag "target"]
+    with Not_found ->
+      (match deftarget with
+      | Some s -> ["target", s]
+      | None -> []
+      )
 
   val mutable (*private*) entries = 0 (* number of text entries *)
 
@@ -8710,9 +8719,12 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
 
 end
 
+(*
 module Make(FormDisplay : FormDisplay) = 
  struct
   open FormDisplay
+*)
+module FormDisplay = Form
 (*
  * <!ELEMENT FORM - - %body.content -(FORM)>
  * <!ATTLIST FORM
@@ -8722,13 +8734,13 @@ module Make(FormDisplay : FormDisplay) =
  *         >
  *)
 
-
 let init mach =
 mach#add_tag "form"
  (fun fo tform ->
-  let behav = new behaviour (mach#base, tform, mach#target, mach#i18n_encoder)
-  in
-  let fm = FormDisplay.create mach#base behav mach#ctx in
+  let behav = 
+    new behaviour (mach#base, tform, mach#target, mach#i18n_encoder) in
+  let fm = 
+    FormDisplay.create mach#base behav mach#ctx in
 
   (* 8.1.2 Input Field : INPUT *)
   let open_input fo t =
@@ -8740,22 +8752,21 @@ mach#add_tag "form"
     begin try 
       let name = get_attribute t "name" in
       let v = get_attribute t "value" in
-            behav#add_get OtherInput (fun () -> [name, v])
-    with
-      Not_found -> 
-         raise (Invalid_Html "missing NAME or VALUE in input HIDDEN")
-        end
+      behav#add_get OtherInput (fun () -> [name, v])
+    with Not_found -> 
+      raise (Invalid_Html "missing NAME or VALUE in input HIDDEN")
+    end
     else (* Other cases *)
       let fr = fo.create_embedded (get_attribute t "align") None None in
        match inputtype with
-      "TEXT" | "PASSWORD" ->  fm.text_input fr t
-        | "CHECKBOX" -> fm.checkbox_input fr t
-        | "RADIO" -> fm.radio_input fr t
-        | "IMAGE" -> mach#imgmanager#add_image (fm.image_input fr t)
-        | "SUBMIT" -> fm.submit_input fr t
-        | "RESET" -> fm.reset_input fr t
-    (* TODO: file *)
-        | s -> raise (Invalid_Html ("Invalid INPUT TYPE="^s))
+       | "TEXT" | "PASSWORD" ->  fm.text_input fr t
+       | "CHECKBOX" -> fm.checkbox_input fr t
+       | "RADIO" -> fm.radio_input fr t
+       | "IMAGE" -> mach#imgmanager#add_image (fm.image_input fr t)
+       | "SUBMIT" -> fm.submit_input fr t
+       | "RESET" -> fm.reset_input fr t
+       (* TODO: file *)
+       | s -> raise (Invalid_Html ("Invalid INPUT TYPE="^s))
   in
   mach#add_tag "input" open_input (fun _ -> ());
 
@@ -8795,7 +8806,7 @@ mach#add_tag "form"
     mach#push_action (fun s -> Ebuffer.output_string textarea_initial s)
   and close_textarea fo =
     mach#pop_action;
-    let name = get_attribute !ttextarea "name" in
+    let _nameTODO = get_attribute !ttextarea "name" in
     let fr = 
       fo.create_embedded (get_attribute !ttextarea "align") None None in
         fm.textarea fr (Ebuffer.get textarea_initial) !ttextarea
@@ -8804,10 +8815,9 @@ mach#add_tag "form"
 
   mach#add_tag "textarea" open_textarea  close_textarea
   )
+  (fun fo -> ["input"; "select"; "textarea"] |> List.iter mach#remove_tag )
 
-(function fo -> List.iter mach#remove_tag ["input"; "select"; "textarea"])
-
-end
+(*end *)
 @
 
 
@@ -9800,6 +9810,7 @@ open Viewers
 %-------------------------------------------------------------
 
 <<./display/html_table.mli>>=
+(*
 module Make :
   functor (TableDisplay : Htmlfmt.TableDisplay) ->
     sig
@@ -9813,6 +9824,17 @@ module Make :
           remove_tag : string -> unit; .. > ->
         unit
     end
+*)
+val init: 
+        < add_tag : string ->
+                    (Htmlfmt.formatter -> Html.tag -> unit) ->
+                    (Htmlfmt.formatter -> unit) -> unit;
+          create_formatter : Htmlfmt.formatterSpec ->
+                             Widget.widget -> 'a * Widget.widget;
+          pop_formatter : 'b; push_formatter : 'a -> 'c;
+          remove_tag : string -> unit; .. > ->
+        unit
+
 @
 
 
@@ -9833,10 +9855,13 @@ This code *assumes* that minimisation rules are used for
 cells (td and th) and for rows.
  *)
 
-
+(*
 module Make (TableDisplay: TableDisplay) =
 struct
 open TableDisplay
+*)
+module TableDisplay = Table
+open Table
 
 let init mach =
 
@@ -9947,7 +9972,7 @@ let init mach =
 
   mach#add_tag "table" open_table close_table;
 
-end
+(* end *)
 @
 
 

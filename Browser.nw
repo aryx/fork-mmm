@@ -1074,7 +1074,7 @@ type attribute_value = string
 
 <<type Htmlfmt.gattr>>=
 type gattr =
-<<[[Htmlfmt.gattr]] other cases>>
+  <<[[Htmlfmt.gattr]] other cases>>
 @
 %e.g. Striked | Underlined | etc
 
@@ -7466,10 +7466,10 @@ method mach = mach
 
 
 <<module Htmlw.F>>=
-module F = Html_disp.Make(Textw_fo)(Form)(Table)
+module F = Html_disp (*Html_disp.Make(Textw_fo)(Form)(Table) *)
 @
 <<signature functor Html_disp.Make>>=
-module Make 
+(*module Make 
   (G: Htmlfmt.GfxHTML) 
   (F: Htmlfmt.FormDisplay) 
   (T: Htmlfmt.TableDisplay) 
@@ -7477,8 +7477,9 @@ module Make
     (* Do we need to export FormLogic and TableLogic so that extensions
      *  can access them ?
      *)
-    val create : Viewers.context * imgloader -> machine
-end
+*)
+val create : Viewers.context * imgloader -> machine
+(*end*)
 @
 % will see later
 
@@ -7574,9 +7575,13 @@ end;
 \section{The display machine, [[Html_disp.machine]]}
 
 <<functor Html_disp.Make>>=
-module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
+(*module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct 
   module FormLogic = Html_form.Make(F)
   module TableLogic = Html_table.Make(T)
+*)
+module G = Textw_fo
+module FormLogic = Html_form
+module TableLogic = Html_table
 
   <<type Html_disp.Make.anchor_type>>
 
@@ -7590,7 +7595,7 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
   <<function Html_disp.Make.init>>
 
   <<function Html_disp.Make.create>>
-end
+(* end *)
 @
 %later: can remove functor and use directly the referred modules
 % as we don't instantiate more than once this functor I think
@@ -9370,7 +9375,7 @@ in
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* FORMS: they are defined elsewhere (html_form) *)
-  FormLogic.init mach;
+FormLogic.init mach;
 (* standard basic HTML2.0 initialisation stops here *)
 @
 

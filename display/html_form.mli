@@ -19,6 +19,7 @@ class behaviour :
     method submit : (string * string) list -> Hyper.link
   end
 
+(*
 module Make :
   functor (FormDisplay : Htmlfmt.FormDisplay) ->
     sig
@@ -33,4 +34,16 @@ module Make :
           remove_tag : string -> unit; target : string option; .. > ->
         unit
     end
+*)
+val init: 
+        < add_tag : string ->
+                    (Htmlfmt.formatter -> Html.tag -> unit) ->
+                    (Htmlfmt.formatter -> unit) -> unit;
+          base : string; ctx : Viewers.context;
+          i18n_encoder : string -> string;
+          imgmanager : < add_image : Embed.embobject -> unit; .. >;
+          pop_action : unit; push_action : (string -> unit) -> unit;
+          remove_tag : string -> unit; target : string option; .. > ->
+        unit
+
 (*e: ./display/html_form.mli *)

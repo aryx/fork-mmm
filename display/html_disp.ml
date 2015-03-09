@@ -174,9 +174,13 @@ let pop_style fo s =
 (*e: function Html_disp.pop_style *)
 
 (*s: functor Html_disp.Make *)
-module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
+(*module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct 
   module FormLogic = Html_form.Make(F)
   module TableLogic = Html_table.Make(T)
+*)
+module G = Textw_fo
+module FormLogic = Html_form
+module TableLogic = Html_table
 
   (*s: type Html_disp.Make.anchor_type *)
   type anchor_type = HREF | NAME
@@ -1008,7 +1012,7 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
     ;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* FORMS: they are defined elsewhere (html_form) *)
-      FormLogic.init mach;
+    FormLogic.init mach;
     (* standard basic HTML2.0 initialisation stops here *)
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* TABLE support *)
@@ -1202,6 +1206,6 @@ module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct
     (*e: [[Html_disp.Make.create()]] run user hooks *)
     (mach :> machine)
   (*e: function Html_disp.Make.create *)
-end
+(* end *)
 (*e: functor Html_disp.Make *)
 (*e: ./display/html_disp.ml *)

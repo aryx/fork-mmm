@@ -148,17 +148,4 @@ let end_log dh msg =
     destroy_log dh true
 (*e: function Document.end_log *)
 
-
-(*s: type Document.display_info *)
-type display_info = {
-    di_abort : Www.aborter;
-    di_destroy : unit -> unit;
-    di_fragment : string option -> unit;
-    di_redisplay: unit -> unit;
-    di_title : unit -> string;	      (* some title for bookmarks *)
-    di_source : unit -> unit;
-    di_load_images : unit -> unit
-}
-(*e: type Document.display_info *)
-
 (*e: ./www/document.ml *)

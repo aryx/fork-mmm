@@ -3,27 +3,27 @@
 
 (*s: type Htmlfmt.gattr *)
 type gattr =
-(*s: [[Htmlfmt.gattr]] other cases *)
-| Justification of string
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Margin of int
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Underlined
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Striked
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Superscript
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Lowerscript
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Spacing of int
-(*x: [[Htmlfmt.gattr]] other cases *)
-| Font of Fonts.fontInfo		        (* mostly size and face *)
-(*x: [[Htmlfmt.gattr]] other cases *)
-| FgColor of string
-(*x: [[Htmlfmt.gattr]] other cases *)
-| BgColor of string
-(*e: [[Htmlfmt.gattr]] other cases *)
+  (*s: [[Htmlfmt.gattr]] other cases *)
+  | Justification of string
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Margin of int
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Underlined
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Striked
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Superscript
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Lowerscript
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Spacing of int
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | Font of Fonts.fontInfo		        (* mostly size and face *)
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | FgColor of string
+  (*x: [[Htmlfmt.gattr]] other cases *)
+  | BgColor of string
+  (*e: [[Htmlfmt.gattr]] other cases *)
 (*e: type Htmlfmt.gattr *)
 
 (*s: type Htmlfmt.formatterSpec *)
@@ -93,13 +93,6 @@ type formatter = {
 }
 (*e: type Htmlfmt.formatter *)
 
-module type GfxHTML = sig
- val create : 
-    (unit -> string) ->
-    formatterSpec -> Widget.widget -> Viewers.context -> 
-      formatter * Widget.widget
- end
-
 
 (*s: type Htmlfmt.input_kind *)
 (* Form manager *)
@@ -114,6 +107,35 @@ class  virtual form_behaviour : (unit) -> object
     method virtual reset : unit
 end
 
+(*s: type Htmlfmt.width_constraint *)
+(* Table manager *)
+type width_constraint =
+  | TopWidth				(* toplevel window size*)
+  | FixedWidth of int			(* width is given in pixels *)
+  | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
+(*e: type Htmlfmt.width_constraint *)
+
+(*
+module type TableDisplay = sig
+    type cell_type = HeaderCell | DataCell
+    type t = {
+      table_master : Widget.widget;
+      add_col : Html.tag -> unit;
+      open_row : Html.tag -> unit;
+      close_row : unit -> unit;
+      close_table : unit -> unit;
+      new_cell : 
+      cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
+      bound : unit -> bool
+      }
+
+    val create : Widget.widget -> Html.tag -> width_constraint -> t
+
+    val topwidth : Widget.widget -> int
+ end
+*)
+
+(*
 module type FormDisplay = sig
    (* A form manager *)
    type t = {
@@ -139,32 +161,15 @@ module type FormDisplay = sig
       (* [create base behaviour ctx] *)
 
  end
+*)
 
-
-(*s: type Htmlfmt.width_constraint *)
-(* Table manager *)
-type width_constraint =
-  | TopWidth				(* toplevel window size*)
-  | FixedWidth of int			(* width is given in pixels *)
-  | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
-(*e: type Htmlfmt.width_constraint *)
-
-module type TableDisplay = sig
-    type cell_type = HeaderCell | DataCell
-    type t = {
-      table_master : Widget.widget;
-      add_col : Html.tag -> unit;
-      open_row : Html.tag -> unit;
-      close_row : unit -> unit;
-      close_table : unit -> unit;
-      new_cell : 
-      cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
-      bound : unit -> bool
-      }
-
-    val create : Widget.widget -> Html.tag -> width_constraint -> t
-
-    val topwidth : Widget.widget -> int
-
+(*
+module type GfxHTML = sig
+ val create : 
+    (unit -> string) ->
+    formatterSpec -> Widget.widget -> Viewers.context -> 
+      formatter * Widget.widget
  end
+*)
+
 (*e: ./display/htmlfmt.mli *)

@@ -39,7 +39,7 @@ let scroll_image =
 (*e: constant Htmlw.scroll_image *)
 
 (*s: module Htmlw.F *)
-module F = Html_disp.Make(Textw_fo)(Form)(Table)
+module F = Html_disp (*Html_disp.Make(Textw_fo)(Form)(Table) *)
 (*e: module Htmlw.F *)
 
 

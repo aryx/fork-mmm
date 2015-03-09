@@ -5,7 +5,6 @@ open Www
 open Html
 open Htmlfmt
 
-
 (*
  * Level 2 stuff (forms)
  *)
@@ -21,12 +20,13 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
   (* val i18n_encoder = i18n_encoder *)
   val (*private*) action = try get_attribute formtag "action" with Not_found -> base
   (* val base = base *)
-  val (*private*) h_params = try ["target", get_attribute formtag "target"]
-    with
-      Not_found ->
-    match deftarget with
-      Some s -> ["target", s]
-    | None -> []
+  val (*private*) h_params = 
+    try ["target", get_attribute formtag "target"]
+    with Not_found ->
+      (match deftarget with
+      | Some s -> ["target", s]
+      | None -> []
+      )
 
   val mutable (*private*) entries = 0 (* number of text entries *)
 
@@ -75,9 +75,12 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
 
 end
 
+(*
 module Make(FormDisplay : FormDisplay) = 
  struct
   open FormDisplay
+*)
+module FormDisplay = Form
 (*
  * <!ELEMENT FORM - - %body.content -(FORM)>
  * <!ATTLIST FORM
@@ -87,13 +90,13 @@ module Make(FormDisplay : FormDisplay) =
  *         >
  *)
 
-
 let init mach =
 mach#add_tag "form"
  (fun fo tform ->
-  let behav = new behaviour (mach#base, tform, mach#target, mach#i18n_encoder)
-  in
-  let fm = FormDisplay.create mach#base behav mach#ctx in
+  let behav = 
+    new behaviour (mach#base, tform, mach#target, mach#i18n_encoder) in
+  let fm = 
+    FormDisplay.create mach#base behav mach#ctx in
 
   (* 8.1.2 Input Field : INPUT *)
   let open_input fo t =
@@ -105,22 +108,21 @@ mach#add_tag "form"
     begin try 
       let name = get_attribute t "name" in
       let v = get_attribute t "value" in
-            behav#add_get OtherInput (fun () -> [name, v])
-    with
-      Not_found -> 
-         raise (Invalid_Html "missing NAME or VALUE in input HIDDEN")
-        end
+      behav#add_get OtherInput (fun () -> [name, v])
+    with Not_found -> 
+      raise (Invalid_Html "missing NAME or VALUE in input HIDDEN")
+    end
     else (* Other cases *)
       let fr = fo.create_embedded (get_attribute t "align") None None in
        match inputtype with
-      "TEXT" | "PASSWORD" ->  fm.text_input fr t
-        | "CHECKBOX" -> fm.checkbox_input fr t
-        | "RADIO" -> fm.radio_input fr t
-        | "IMAGE" -> mach#imgmanager#add_image (fm.image_input fr t)
-        | "SUBMIT" -> fm.submit_input fr t
-        | "RESET" -> fm.reset_input fr t
-    (* TODO: file *)
-        | s -> raise (Invalid_Html ("Invalid INPUT TYPE="^s))
+       | "TEXT" | "PASSWORD" ->  fm.text_input fr t
+       | "CHECKBOX" -> fm.checkbox_input fr t
+       | "RADIO" -> fm.radio_input fr t
+       | "IMAGE" -> mach#imgmanager#add_image (fm.image_input fr t)
+       | "SUBMIT" -> fm.submit_input fr t
+       | "RESET" -> fm.reset_input fr t
+       (* TODO: file *)
+       | s -> raise (Invalid_Html ("Invalid INPUT TYPE="^s))
   in
   mach#add_tag "input" open_input (fun _ -> ());
 
@@ -160,7 +162,7 @@ mach#add_tag "form"
     mach#push_action (fun s -> Ebuffer.output_string textarea_initial s)
   and close_textarea fo =
     mach#pop_action;
-    let name = get_attribute !ttextarea "name" in
+    let _nameTODO = get_attribute !ttextarea "name" in
     let fr = 
       fo.create_embedded (get_attribute !ttextarea "align") None None in
         fm.textarea fr (Ebuffer.get textarea_initial) !ttextarea
@@ -169,8 +171,7 @@ mach#add_tag "form"
 
   mach#add_tag "textarea" open_textarea  close_textarea
   )
+  (fun fo -> ["input"; "select"; "textarea"] |> List.iter mach#remove_tag )
 
-(function fo -> List.iter mach#remove_tag ["input"; "select"; "textarea"])
-
-end
+(*end *)
 (*e: ./display/html_form.ml *)
