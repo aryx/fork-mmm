@@ -1,7 +1,4 @@
 (*s: ./viewers/viewers.mli *)
-open Www
-open Document
-open Http_headers
 
 (*s: type Viewers.vparams *)
 (* hyper functions are: "goto", "save", "gotonew" *)
@@ -37,22 +34,26 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
 
   method base : Document.document_id
 
-  (*s: [[Viewers.context]] other methods signatures *)
-  method goto : Hyper.link -> unit
+  (*s: [[Viewers.context]] hypertext methods signatures *)
+  method goto    : Hyper.link -> unit
   method gotonew : Hyper.link -> unit
-  method save : Hyper.link -> unit
-  method invoke : string -> Hyper.link -> unit    
-  (*x: [[Viewers.context]] other methods signatures *)
-  method add_nav : string * hyper_func -> unit
+  method save    : Hyper.link -> unit
+  method invoke  : string -> Hyper.link -> unit    
+  (*x: [[Viewers.context]] hypertext methods signatures *)
+  method add_nav    : string * hyper_func -> unit
   method hyper_funs : (string * hyper_func) list
-  (*x: [[Viewers.context]] other methods signatures *)
+  (*e: [[Viewers.context]] hypertext methods signatures *)
+  (*s: [[Viewers.context]] embedded methods signatures *)
   (*-*)
   method for_embed : vparams -> frame_targets -> 'a
   method in_embed : Document.document_id -> 'a
-  (*x: [[Viewers.context]] other methods signatures *)
-  method params : vparams
-  (*x: [[Viewers.context]] other methods signatures *)
+  (*e: [[Viewers.context]] embedded methods signatures *)
+
+  (*s: [[Viewers.context]] logging methods signatures *)
   method virtual log : string -> unit
+  (*e: [[Viewers.context]] logging methods signatures *)
+  (*s: [[Viewers.context]] other methods signatures *)
+  method params : vparams
   (*e: [[Viewers.context]] other methods signatures *)
 end
 (*e: signature class Viewers.context *)
@@ -60,26 +61,33 @@ end
 (*s: signature class Viewers.display_info *)
 class  virtual display_info : (unit) -> object ('a)
 
-  (*s: [[Viewers.display_info]] virtual fields signatures *)
+  (*s: [[Viewers.display_info]] virtual methods signatures *)
   method virtual di_title : string		(* some visible title *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
   (* the created widget containing the graphics *)
   method virtual di_widget : Widget.widget
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+
+  (*s: [[Viewers.display_info]] images virtual methods signatures *)
   method virtual di_load_images : unit (* load images *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*e: [[Viewers.display_info]] images virtual methods signatures *)
+  (*s: [[Viewers.display_info]] embedded virtual methods signatures *)
   method virtual di_update : unit      (* update embedded objects *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*e: [[Viewers.display_info]] embedded virtual methods signatures *)
+
+  (*s: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_abort : unit		 (* stop display *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_redisplay : unit		(* redisplay *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
-  method virtual di_source : unit 	        (* source viewer *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_destroy : unit	 (* die *)
-  (*e: [[Viewers.display_info]] virtual fields signatures *)
+  (*e: [[Viewers.display_info]] lifecycle virtual methods signatures *)
+  (*s: [[Viewers.display_info]] fragment virtual method signature *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+  (*e: [[Viewers.display_info]] fragment virtual method signature *)
+
+  (*s: [[Viewers.display_info]] other virtual methods signatures *)
+  method virtual di_source : unit 	        (* source viewer *)
+  (*e: [[Viewers.display_info]] other virtual methods signatures *)
+  (*e: [[Viewers.display_info]] virtual methods signatures *)
   (*s: [[Viewers.display_info]] cache methods *)
   method di_last_used : int
   method di_touch : unit
@@ -87,23 +95,6 @@ class  virtual display_info : (unit) -> object ('a)
 end
 (*e: signature class Viewers.display_info *)
 
-
-
-class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
-(* boilerplate class type *)
-object
-  method di_abort : unit
-  method di_destroy : unit
-  method di_fragment : string option -> unit
-  method di_last_used : int
-  method di_load_images : unit
-  method di_redisplay : unit
-  method di_source : unit
-  method di_title : string
-  method di_touch : unit
-  method di_widget : Widget.widget
-  method di_update : unit
-end
 
 (*s: signature Viewers.di_compare *)
 val di_compare : display_info -> display_info -> bool
@@ -113,24 +104,21 @@ val di_compare : display_info -> display_info -> bool
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
-    Widget.widget -> 
-    context -> 
-    Document.handle -> 
-    display_info option
+    (Widget.widget ->  context -> Document.handle -> display_info option)
 (*e: type Viewers.t *)
 
 (*s: signature Viewers.add_viewer *)
-val add_viewer : media_type -> t -> unit
+val add_viewer : Http_headers.media_type -> t -> unit
     (* [add_viewer type viewer] *)
 (*e: signature Viewers.add_viewer *)
 
 (*s: signature Viewers.add_builtin *)
-val add_builtin : media_type -> t -> unit
+val add_builtin : Http_headers.media_type -> t -> unit
     (* [add_builtin type viewer] makes viewer a builtin for type *)
 (*e: signature Viewers.add_builtin *)
 
 (*s: signature Viewers.rem_viewer *)
-val rem_viewer : media_type -> unit
+val rem_viewer : Http_headers.media_type -> unit
 (*e: signature Viewers.rem_viewer *)
 
 (*s: signature Viewers.view *)

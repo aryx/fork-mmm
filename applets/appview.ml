@@ -7,6 +7,43 @@ open Dload
 open Applets
 open Http_headers
 
+(* was in viewers.mli
+class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
+(* boilerplate class type *)
+object
+  method di_abort : unit
+  method di_destroy : unit
+  method di_fragment : string option -> unit
+  method di_last_used : int
+  method di_load_images : unit
+  method di_redisplay : unit
+  method di_source : unit
+  method di_title : string
+  method di_touch : unit
+  method di_widget : Widget.widget
+  method di_update : unit
+end
+*)
+
+class trivial_display (w, url) =
+ object
+  inherit display_info ()
+  (* val w = w *)
+  (* val url = url *)
+
+  method di_widget = w
+  method di_abort = ()
+  method di_destroy = if Winfo.exists w then Tk.destroy w
+  method di_fragment f = ()
+  method di_redisplay = ()
+  method di_title = Url.string_of url
+  method di_source = ()
+  method di_load_images = ()
+  method di_update = ()
+end
+
+
+
 (* Wrapping up
  * When EMBED is recognized by the HTML display machine, the "embedded object"
  * is passed to the embed manager/scheduler with some viewer as continuation.

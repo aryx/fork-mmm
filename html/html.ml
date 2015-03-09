@@ -313,16 +313,15 @@ let length_of_string s =
     let pos = String.index s '%' in
     try LengthRatio (float_of_string (String.sub s 0 pos) /. 100.)
     with Failure "int_of_string" -> Nolength
-  with
-    Not_found ->
-      try
-       let pos = String.index s '*' in
-    if pos = 0 then LengthRel 1
-    else
-      try LengthRel (int_of_string (String.sub s 0 pos))
-      with Failure "int_of_string" -> Nolength
-      with
-    Not_found ->
+  with Not_found ->
+    try
+      let pos = String.index s '*' in
+      if pos = 0 
+      then LengthRel 1
+      else
+        try LengthRel (int_of_string (String.sub s 0 pos))
+        with Failure "int_of_string" -> Nolength
+    with Not_found ->
       try LengthPixels (int_of_string s)
       with Failure "int_of_string" -> Nolength
 (*e: function Html.length_of_string *)

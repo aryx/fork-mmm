@@ -100,49 +100,39 @@ end
 class  virtual display_info () =
  object (_self : 'a)
   (* boilerplate class decl *)
-  (*s: [[Viewers.display_info]] virtual fields signatures *)
+  (*s: [[Viewers.display_info]] virtual methods signatures *)
   method virtual di_title : string		(* some visible title *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
   (* the created widget containing the graphics *)
   method virtual di_widget : Widget.widget
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+
+  (*s: [[Viewers.display_info]] images virtual methods signatures *)
   method virtual di_load_images : unit (* load images *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*e: [[Viewers.display_info]] images virtual methods signatures *)
+  (*s: [[Viewers.display_info]] embedded virtual methods signatures *)
   method virtual di_update : unit      (* update embedded objects *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*e: [[Viewers.display_info]] embedded virtual methods signatures *)
+
+  (*s: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_abort : unit		 (* stop display *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_redisplay : unit		(* redisplay *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
-  method virtual di_source : unit 	        (* source viewer *)
-  (*x: [[Viewers.display_info]] virtual fields signatures *)
+  (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_destroy : unit	 (* die *)
-  (*e: [[Viewers.display_info]] virtual fields signatures *)
+  (*e: [[Viewers.display_info]] lifecycle virtual methods signatures *)
+  (*s: [[Viewers.display_info]] fragment virtual method signature *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+  (*e: [[Viewers.display_info]] fragment virtual method signature *)
+
+  (*s: [[Viewers.display_info]] other virtual methods signatures *)
+  method virtual di_source : unit 	        (* source viewer *)
+  (*e: [[Viewers.display_info]] other virtual methods signatures *)
+  (*e: [[Viewers.display_info]] virtual methods signatures *)
 
   val mutable di_last_used = !Low.global_time
   method di_last_used = 
     di_last_used
   method di_touch = 
     di_last_used <- !Low.global_time
-end
-
-class trivial_display (w, url) =
- object
-  inherit display_info ()
-  (* val w = w *)
-  (* val url = url *)
-
-  method di_widget = w
-  method di_abort = ()
-  method di_destroy = if Winfo.exists w then Tk.destroy w
-  method di_fragment f = ()
-  method di_redisplay = ()
-  method di_title = Url.string_of url
-  method di_source = ()
-  method di_load_images = ()
-  method di_update = ()
 end
 
 (*s: function Viewers.di_compare *)
@@ -251,10 +241,7 @@ let extern dh ctype =
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
-    Widget.widget -> 
-    context -> 
-    Document.handle -> 
-    display_info option
+    (Widget.widget ->  context -> Document.handle -> display_info option)
 (*e: type Viewers.t *)
 
 (*s: type Viewers.spec *)

@@ -48,7 +48,7 @@ let dtd20 =
     contents = Hashtbl.create 53;
     open_omitted = Elements.empty;
     close_omitted = Elements.empty
-     } in
+  } in
 
   let omit_open el =
     dtd.open_omitted <- Elements.add el dtd.open_omitted

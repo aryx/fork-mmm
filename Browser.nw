@@ -928,6 +928,10 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
 
   method base : Document.document_id
 
+  <<[[Viewers.context]] hypertext methods signatures>>
+  <<[[Viewers.context]] embedded methods signatures>>
+
+  <<[[Viewers.context]] logging methods signatures>>
   <<[[Viewers.context]] other methods signatures>>
 end
 @
@@ -935,15 +939,15 @@ end
 
 
 %XXX
-<<[[Viewers.context]] other methods signatures>>=
-method goto : Hyper.link -> unit
+<<[[Viewers.context]] hypertext methods signatures>>=
+method goto    : Hyper.link -> unit
 method gotonew : Hyper.link -> unit
-method save : Hyper.link -> unit
-method invoke : string -> Hyper.link -> unit    
+method save    : Hyper.link -> unit
+method invoke  : string -> Hyper.link -> unit    
 @
 
-<<[[Viewers.context]] other methods signatures>>=
-method add_nav : string * hyper_func -> unit
+<<[[Viewers.context]] hypertext methods signatures>>=
+method add_nav    : string * hyper_func -> unit
 method hyper_funs : (string * hyper_func) list
 @
 
@@ -956,24 +960,29 @@ method hyper_funs : (string * hyper_func) list
 <<signature class Viewers.display_info>>=
 class  virtual display_info : (unit) -> object ('a)
 
-  <<[[Viewers.display_info]] virtual fields signatures>>
+  <<[[Viewers.display_info]] virtual methods signatures>>
   <<[[Viewers.display_info]] cache methods>>
 end
 @
-%note: the <<[[Viewers.display_info]] virtual fields signatures>> chunk
+%note: the <<[[Viewers.display_info]] virtual methods signatures>> chunk
 % is used both for the .mli and the .ml, so don't extract
 % anything from it otherwise it will not be copy pasted in the .mli and .ml
 %later: transform in a regular record
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] virtual methods signatures>>=
 method virtual di_title : string		(* some visible title *)
-@
-% di_title is used by the caller to modify the window's title
-
-<<[[Viewers.display_info]] virtual fields signatures>>=
 (* the created widget containing the graphics *)
 method virtual di_widget : Widget.widget
+
+<<[[Viewers.display_info]] images virtual methods signatures>>
+<<[[Viewers.display_info]] embedded virtual methods signatures>>
+
+<<[[Viewers.display_info]] lifecycle virtual methods signatures>>
+<<[[Viewers.display_info]] fragment virtual method signature>>
+
+<<[[Viewers.display_info]] other virtual methods signatures>>
 @
+% di_title is used by the caller to modify the window's title
 % the widget that is packed in the top passed in, and
 % that will be deleted in undisplay
 
@@ -3778,6 +3787,9 @@ type t = {
  } 
 @
 
+<<signature Dtd.dtd20>>=
+val dtd20 : t
+@
 <<signature Dtd.dtd32>>=
 val dtd32 : t
 @
@@ -3800,6 +3812,211 @@ let sol l =
 <<function Dtd.sos>>=
 let sos l =
   List.fold_right Elements.union l Elements.empty
+@
+
+
+<<constant Dtd.dtd20>>=
+(* #PCDATA and #CDATA are considered as elements, but they will never
+   be pushed on the stack during evaluation. Moreover, since they are
+   not in open_omitted/close_omitted, minimization algorithm will not
+   attempt to choose them
+ *)
+
+let dtd20 =
+  let dtd = {
+    dtd_name = "HTML 2.0";
+
+    contents = Hashtbl.create 53;
+    open_omitted = Elements.empty;
+    close_omitted = Elements.empty
+  } in
+
+  let omit_open el =
+    dtd.open_omitted <- Elements.add el dtd.open_omitted
+  and omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted
+  and add_elem = 
+    Hashtbl.add dtd.contents
+  in
+
+  (* Some entities *)
+  (* <!ENTITY % heading "H1|H2|H3|H4|H5|H6"> *)
+  let heading_E = sol ["h1"; "h2"; "h3"; "h4"; "h5"; "h6"]
+  (* <!ENTITY % list " UL | OL | DIR | MENU " > *)
+  and list_E = sol ["ul"; "ol"; "dir"; "menu"] in
+  (* <!ENTITY % font " TT | B | I "> *)
+  let font_E = sol ["tt"; "b"; "i"]
+  (* <!ENTITY % phrase "EM | STRONG | CODE | SAMP | KBD | VAR | CITE "> *)
+  and phrase_E = sol ["em"; "strong"; "code"; "samp"; "kbd"; "var"; "cite"] in
+  (* <!ENTITY % text "#PCDATA | A | IMG | BR | %phrase | %font"> *)
+  (* EMBED added *)
+  let text_E =
+    sos [sol ["#pcdata"; "a"; "img"; "br"; "embed"]; font_E; phrase_E] in
+
+  (* <!ELEMENT (%font;|%phrase) - - (%text)*> *)
+  Elements.iter (fun e -> add_elem e text_E) font_E;
+  Elements.iter (fun e -> add_elem e text_E) phrase_E;
+
+  (* <!ENTITY % pre.content "#PCDATA | A | HR | BR | %font | %phrase"> *)
+  let pre_content_E = 
+       sos [sol ["#pcdata"; "a"; "hr"; "br"]; font_E; phrase_E] in
+
+  (* <!ELEMENT BR    - O EMPTY> *)
+  add_elem "br" Elements.empty;
+  omit_close "br";
+
+  (* <!ENTITY % A.content   "(%heading|%text)*"> *)
+  let a_content_E = sos [heading_E; text_E] in
+
+  (* <!ELEMENT A     - - %A.content -(A)> *)
+  add_elem "a" (Elements.remove "a" a_content_E);
+
+  (* <!ELEMENT IMG    - O EMPTY> *)
+  add_elem "img" Elements.empty;
+  omit_close "img";
+
+  (* <!ELEMENT P     - O (%text)*> *)
+  add_elem "p" text_E;
+  omit_close "p";
+
+  (* <!ELEMENT HR    - O EMPTY> *)
+  add_elem "hr" Elements.empty;
+  omit_close "hr";
+
+  (* <!ELEMENT ( %heading )  - -  (%text;)*> *)
+  Elements.iter (fun e -> add_elem e text_E) heading_E;
+
+  (* <!ENTITY % block.forms "BLOCKQUOTE | FORM | ISINDEX"> *)
+  let block_forms_E = sol ["blockquote"; "form"; "isindex"] in
+
+  (* <!ENTITY % preformatted "PRE"> *)
+  let preformatted_E = sol ["pre"] in
+
+  (* <!ENTITY % block "P | %list | DL
+      | %preformatted
+      | %block.forms"> *)
+  let block_E = sos [sol ["p"; "dl"]; list_E; preformatted_E; block_forms_E] in
+
+  (* <!ENTITY % flow "(%text|%block)*"> *)
+  let flow_E = sos [text_E; block_E] in
+
+  (* <!ELEMENT PRE - - (%pre.content)*> *)
+  add_elem "pre" pre_content_E;
+
+
+  (* Deprecated but used <!ELEMENT (XMP|LISTING) - -  %literal> *)
+  List.iter (fun e -> add_elem e (sol ["#cdata"])) ["xmp"; "listing"];
+
+  (* <!ELEMENT DL    - -  (DT | DD)+> *)
+  add_elem "dl" (sol ["dt"; "dd"]);
+
+  (* <!ELEMENT DT    - O (%text)*> *)
+  add_elem "dt" text_E;
+  omit_close "dt";
+
+  (* <!ELEMENT DD    - O %flow> *)
+  add_elem "dd" flow_E;
+  omit_close "dd";
+
+  (* <!ELEMENT (OL|UL) - -  (LI)+> *)
+  List.iter (fun e -> add_elem e (sol ["li"])) ["ol"; "ul"];
+
+  (* <!ELEMENT (DIR|MENU) - -  (LI)+ -(%block)> *)
+  (* isn't that stupid ? *)
+  List.iter (fun e -> add_elem e (sol ["li"])) ["dir"; "menu"];
+
+  (* <!ELEMENT LI    - O %flow> *)
+  add_elem "li" flow_E;
+  omit_close "li";
+
+  (* <!ENTITY % body.content "(%heading | %text | %block |
+                 HR | ADDRESS)*"> *)
+  let body_content_E =
+     sos [heading_E; text_E; block_E; sol ["hr"; "address"]] in
+  
+  (* <!ELEMENT BODY O O  %body.content> *)
+  add_elem "body" body_content_E;
+  omit_open "body";
+  omit_close "body";
+
+  (* <!ELEMENT BLOCKQUOTE - - %body.content> *)
+  add_elem "blockquote" body_content_E;
+
+  (* <!ELEMENT ADDRESS - - (%text|P)*> *)
+  add_elem "address" (Elements.add "p" text_E);
+
+  (* <!ELEMENT FORM - - %body.content -(FORM) +(INPUT|SELECT|TEXTAREA)> *)
+  add_elem "form"
+    (sos [Elements.remove "form" body_content_E;
+      sol ["input";"select";"textarea"]]);
+
+  (* <!ELEMENT INPUT - O EMPTY> *)
+  add_elem "input" Elements.empty;
+  omit_close "input";
+
+  (* <!ELEMENT SELECT - - (OPTION+) -(INPUT|SELECT|TEXTAREA)> *)
+  add_elem "select" (sol ["option"]);
+
+  (* <!ELEMENT OPTION - O (#PCDATA)*> *)
+  add_elem "option" (sol ["#pcdata"]);
+  omit_close "option";
+
+  (* <!ELEMENT TEXTAREA - - (#PCDATA)* -(INPUT|SELECT|TEXTAREA)> *)
+  add_elem "textarea" (sol ["#pcdata"]);
+
+  (* <!ENTITY % head.extra "NEXTID? & META* & LINK*">
+
+     <!ENTITY % head.content "TITLE & ISINDEX? & BASE? &
+             (%head.extra)"> *)
+
+  let head_extra_E = sol ["nextid"; "meta"; "link"] in
+  let head_content_E = 
+    sos [sol ["title"; "isindex"; "base"]; head_extra_E] in
+  
+  (* <!ELEMENT HEAD O O  (%head.content)> *)
+  add_elem "head" head_content_E;
+  omit_open "head";
+  omit_close "head";
+
+  (* <!ELEMENT TITLE - -  (#PCDATA)*> *)
+  add_elem "title" (sol ["#pcdata"]);
+
+  (* <!ELEMENT LINK - O EMPTY> *)
+  add_elem "link" Elements.empty;
+  omit_close "link";
+
+  (* <!ELEMENT ISINDEX - O EMPTY> *)
+  add_elem "isindex" Elements.empty;
+  omit_close "isindex";
+
+  (* <!ELEMENT BASE - O EMPTY> *)
+  add_elem "base" Elements.empty;
+  omit_close "base";
+
+  (* <!ELEMENT NEXTID - O EMPTY> *)
+  add_elem "nextid" Elements.empty;
+  omit_close "nextid";
+
+  (* <!ELEMENT META - O EMPTY> *)
+  add_elem "meta" Elements.empty;
+  omit_close "meta";
+
+  (* <!ENTITY % html.content "HEAD, BODY"> *)
+  let html_content_E = sol ["head"; "body"] in
+
+  (* <!ELEMENT HTML O O  (%html.content)> *)
+  add_elem "html" html_content_E;
+  omit_open "html";
+  omit_close "html";
+
+  (* fake element PCDATA for minimisation rules *)
+  add_elem "#pcdata" Elements.empty;
+
+  (* EMBED is an extension *)
+  add_elem "embed" Elements.empty;
+  omit_close "embed";
+  
+  dtd
 @
 
 
@@ -4011,6 +4228,10 @@ let names () =
 
 
 
+<<signature Dtd.dtd32f>>=
+val dtd32f : t
+@
+% with frame?
 <<constant Dtd.dtd32f>>=
 (* Add frames somwhere to dtd32.
  * Luckily we chose sets, and they are functional
@@ -6294,15 +6515,12 @@ type spec =
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
-    Widget.widget -> 
-    context -> 
-    Document.handle -> 
-    display_info option
+    (Widget.widget ->  context -> Document.handle -> display_info option)
 @
 
 
 <<signature Viewers.add_viewer>>=
-val add_viewer : media_type -> t -> unit
+val add_viewer : Http_headers.media_type -> t -> unit
     (* [add_viewer type viewer] *)
 @
 <<function Viewers.add_viewer>>=
@@ -6312,7 +6530,7 @@ let add_viewer ctype viewer =
 @
 
 <<signature Viewers.rem_viewer>>=
-val rem_viewer : media_type -> unit
+val rem_viewer : Http_headers.media_type -> unit
 @
 % ?? -> <>
 <<function Viewers.rem_viewer>>=
@@ -6326,7 +6544,7 @@ let rem_viewer ctype =
 let builtin_viewers = ref []
 @
 <<signature Viewers.add_builtin>>=
-val add_builtin : media_type -> t -> unit
+val add_builtin : Http_headers.media_type -> t -> unit
     (* [add_builtin type viewer] makes viewer a builtin for type *)
 @
 <<function Viewers.add_builtin>>=
@@ -7566,6 +7784,13 @@ method flush_formatters =
   done
 @
 
+<<function Textfw_fo.create.flush>>=
+flush = (fun () -> 
+  fonts#pop_all (cur());	(* basefont lossage *)
+  internal_flush true
+);
+@
+
 
 <<[[Html_disp.machine]] virtual fields signatures>>=
 method virtual look_for : Html.token -> unit
@@ -7627,470 +7852,258 @@ let init mach =
 
 %module F = Html_disp.Make(Textw_fo)(Form)(Table)
 
+<<signature Textw_fo.create>>=
+val create :
+  (unit -> string) ->
+  Htmlfmt.formatterSpec -> 
+  Widget.widget -> 
+  Viewers.context ->  
+  Htmlfmt.formatter * Widget.widget
+@
+
 <<function Textw_fo.create>>=
 (* Build a formatter, as required by html_disp *)
 let create namer spec top ctx =
-  let other_bg = ref (fun _ -> ()) in
-  let fhtml, thtml =
-    match spec with
-      TopFormatter pscrolling ->
-    let f,t = 
-     if pscrolling then begin
-      let f,t = 
-        Ctext.create top [Wrap WrapWord; State Disabled] true in
-        Canvas.configure (Winfo.parent t)
-           [Background (NamedColor !html_bg)];
-         other_bg := Canvas.configure (Winfo.parent t);
-        f, t
-      end
-     else
-       new_scrollable_text top 
-          [Wrap WrapWord; State Disabled]
-          true 
-    in
-    (* Try to solve focus problem -- JPF *)
-    bind t [[],Enter] (BindSet ([], fun _ -> Focus.set t));
-    f, t
-    | NestedFormatter -> (* Embedded formatters (tables) *)
-       let t = Text.create_named top (namer())
-            [BorderWidth (Pixels 0); State Disabled; 
-              Relief Sunken; Wrap WrapNone;
-          TextWidth 1; TextHeight 1]
-    in
-        t, t
-    | FrameFormatter args -> 
-    let marginwidth = 
-      try [PadX (Pixels (int_of_string (List.assoc "marginwidth" args)))]
-      with Not_found | Failure "int_of_string" -> []
-    and marginheight = 
-      try [PadY (Pixels (int_of_string (List.assoc "marginheight" args)))]
-      with Not_found | Failure "int_of_string" -> []
-    in
-   let f,t = 
-     Ctext.create top (marginwidth @ marginheight @ 
-                [TextHeight 1; 
-                  Wrap WrapWord; State Disabled]) true in
-   Canvas.configure (Winfo.parent t)
-     [Background (NamedColor !html_bg)];
-         other_bg := Canvas.configure (Winfo.parent t);
-
-    f, t
-  in
-
-  (* Tk4.0pl3 fix, + avoid cb to scrollbar *)
-  (* Make the widget searchable *)
-  (* NOTE: search doesn't apply to nested windows *)
-  begin match spec with
-    TopFormatter _ | FrameFormatter _ -> 
-      Text.configure thtml [TakeFocus true; InsertOffTime 0];
-      Frx_text.addsearch thtml
-  | NestedFormatter -> 
-      Text.configure thtml [TakeFocus false; InsertOffTime 0]
-  end;
-
-  (* Set (other) defaults *)
-  let _, html_font = Fonts.compute_tag !Fonts.default in
-   Text.configure thtml html_font;
-
-  (* transparent GIF hack *)
-  Textvariable.set (Textvariable.coerce "TRANSPARENT_GIF_COLOR") !html_bg;
-
-  (* The formatter
-   *    to minimize calls to Tk, we write only one string for 
-   * each paragraph larger than some size. Because of this, it seems
-   * that we also have to set tags and marks at the end.
-   *)
-
-  (* Things queued *)
-  let marks = ref []
-  and embedded = ref []
-  and tagdefs = new Attrs.tags thtml
-  (* Hypertext Anchor support *)
-  and anchors = new Attrs.anchortags thtml
-
-  (* It's easier for us to keep character positions as offsets from the
-   * beginning, but it's very costly in Tk (conversion 0+nchars -> index),
-   * especially when the size gets large.
-   * Thus, we keep the base index of the current buffer, and positions
-   * as offsets from there.
-   * We must be careful not to leave position values relative to old
-   * buffer_base.
-   *)
-  and buffer_base = ref (LineChar(0,0))
-  and position = ref 0
-  and anchor_start = ref (TextIndex(LineChar(0,0),[]))
-
-  (* Paragraphs and space squeezing *)
-  and trailing_space = ref false
-  and prev_is_newline = ref false
-      (* if this is false, we are displaying text. if this is true, we
-         just issued a newline *)
-  in
-
-  (* Index for Tk *)
-  let get_index p = TextIndex (!buffer_base, [CharOffset p]) in
-  let cur () = get_index !position in
-
-  (* colors for *this* window, can be changed by set_defaults *)
-  let fg = ref !html_fg
-  and bg = ref !html_bg
-  in
-  (* inherited properties (set_defaults) : we apply them to embedded
-     formatters (table cells) *)
-  let inherited = ref [] in
-  anchors#init ctx;      (* install bindings *)
-  anchors#define "visited" [Foreground (NamedColor "MidnightBlue")];
-  anchors#define "anchor" [Foreground (NamedColor "#0000ff"); Underline true];
-
-
-  (* Size of buffer can impact performances *)
-  let refresh_threshold = 
-     if !internal_buffer < 1000 then 1000 else !internal_buffer in
-  let buffer = Ebuffer.create (2 * refresh_threshold)
-  and last_flush = ref !Low.global_time in
-
-  let internal_flush refresh = (* flush the buffer *)
-    last_flush := !Low.global_time;
-    Text.configure thtml [State Normal];
-    Text.insert thtml textEnd (Ebuffer.get buffer) [];
-    Ebuffer.reset buffer;
-    List.iter 
-      (function (opts,p) -> Text.window_create thtml (get_index p) opts)
-      (List.rev !embedded);
-    List.iter (function (m,p) -> Text.mark_set thtml m (get_index p)) !marks;
-    tagdefs#flush;
-    anchors#flush;
-    Text.configure thtml [State Disabled];
-    marks := [];
-    embedded := [];
-     (* reset the position *)
-    buffer_base := 
-       Text.index thtml (TextIndex(!buffer_base,[CharOffset !position]));
-    position := 0;
-     (* try to give a reasonable initial height for the text widget *)
-    if refresh then begin 
-     begin match spec with
-       TopFormatter true 
-     | NestedFormatter 
-     | FrameFormatter _ -> Fit.set_initial_height thtml
-     | _ -> ()
-     end;
-     Low.update_idletasks()
-    end
-     in
-
-  let put_text s =
-    match String.length s with
-      0 -> ()
-    | l ->
-        position := !position + Lexkanji.length s;
-        prev_is_newline := false;
-        Ebuffer.output_string buffer s;
-    trailing_space := s.[l-1] = ' ';
-    if  !Low.global_time > !last_flush + 4 (* it's been a while *)
-    then internal_flush true
-    else if  Ebuffer.used buffer > refresh_threshold 
-    then internal_flush false
-       in
-
-  (* Logic for tag manipulation *)
-  let margins = new Attrs.margin tagdefs
-  and aligns = new Attrs.align tagdefs
-  and fonts = new Attrs.font tagdefs
-  and fgcolors = new Attrs.fgcolor tagdefs
-  and bgcolors = new Attrs.bgcolor tagdefs
-  and spacing = new Attrs.spacing tagdefs
-  and offset = new Attrs.offset tagdefs
-  and underline = new Attrs.misc (tagdefs, "underline", [Underline true])
-  and strike = new Attrs.misc (tagdefs, "strike", [OverStrike true])
-
-  in
-  let put_embedded w align =
-    let opts = match String.lowercase align with
-      "top" -> [Align Align_Top]
-    | "middle" -> [Align Align_Center] (* not exactly *)
-    | "bottom" -> [Align Align_Baseline] 
-    |  _ -> [] in
-    embedded := ((Window w)::opts, !position) :: !embedded;
-    prev_is_newline := false;
-    incr position    (* an embedded window is one char wide *)    
-  in
-
-  let break () =
-     if not !prev_is_newline then begin
-       put_text "\n"; prev_is_newline := true
-       end
-  in
-
-  let paropen = ref (cur()) in
-
+  <<[[Textw_fo.create]] locals>>
   let formatter =           
-  { new_paragraph = 
-     (function () -> break(); spacing#push (cur()) 5; paropen := cur());
-    close_paragraph = 
-     (function () -> spacing#pop (cur()) 5; 
-       if (cur() = !paropen) then prev_is_newline := false;
-       break());
-    print_newline = (function force -> 
-      if force then begin
-        put_text "\n"; 
-    trailing_space := true
-       end
-      else break()
-      );
-    print_verbatim = (function s -> put_text s; prev_is_newline := false);
+  { 
+    <<function Textfw_fo.create.new_paragraph>>
+    <<function Textfw_fo.create.close_paragraph>>
+    <<function Textfw_fo.create.print_newline>>
+    <<function Textfw_fo.create.print_verbatim>>
+    <<function Textfw_fo.create.format_string>>
 
-    format_string = 
-      (function s -> 
-        if not !prev_is_newline then (* we are in text *)
-           put_text (Html.beautify !trailing_space s)
-     else (* decide if we should start a text *)
-         let bs = Html.beautify true s in
-        if bs = "" then () (* it was all spaces *)
-        else begin
-          put_text bs;
-          prev_is_newline := false
-        end);
+    <<function Textfw_fo.create.flush>>
 
-    flush = 
-      (function () -> 
-    fonts#pop_all (cur());	(* basefont lossage *)
-    internal_flush true);
+    <<function Textfw_fo.create.hr>>
+    <<function Textfw_fo.create.bullet>>
 
-    hr = 
-    begin
-      let hrsym = Mstring.egensym "hr" in
-      (fun width height solid ->
-      let fr = Hr.create_named thtml (hrsym()) width height solid in
-      Frame.configure fr [Background (NamedColor !fg)];
-      put_embedded fr "")
-    end;
-    (* TODO *)
-    bullet = 
-    begin
-     let bulletsym = Mstring.egensym "bullet" in
-     (function s -> 
-       try let img = Hashtbl.find Attrs.bullet_table s in
-         put_embedded (Label.create_named thtml (bulletsym())
-             [img; BorderWidth (Pixels 0);
-               Background (NamedColor !html_bg)]) ""
-       with Not_found  -> put_text "*")
-    end;
 
-    (* TODO : vlink *)
-    set_defaults = 
-      (fun name attrs -> 
-    inherited := (name, attrs) :: !inherited;
-    match name with
-      "background" ->
-        List.iter (function
-        BgColor s ->
-          if !usecolors then
-            let c = Attrs.html_color s in
-            if Frx_color.check c then begin
-              bg := c;
-              Resource.add 
-            (sprintf "Mmm%s*background" (Widget.name thtml))
-                     c Interactive;
-              Text.configure thtml [Background (NamedColor c)];
-              !other_bg [Background (NamedColor c)]
-                    end
-          | _ -> ())
-          attrs
-    | "foreground" ->
-        List.iter (function
-          | FgColor s ->
-          if !usecolors then
-            let c = Attrs.html_color s in
-            if Frx_color.check c then begin
-              fg := c;
-              Resource.add 
-            (sprintf "Mmm%s*foreground" (Widget.name thtml))
-                     c Interactive;
-              Text.configure thtml [Foreground (NamedColor c)]
-            end
-          | _ -> ())
-          attrs
-    | "link" ->
-        List.iter (function
-          | FgColor s ->
-          if !usecolors then
-            let c = Attrs.html_color s in
-            if Frx_color.check c then 
-              anchors#change "anchor" [Foreground (NamedColor c)]
-          | _ -> ())
-          attrs
-    | "alink" ->
-        List.iter (function
-          | FgColor s ->
-          if !usecolors then
-            let c = Attrs.html_color s in
-            if Frx_color.check c then 
-              anchors#change "visited" [Foreground (NamedColor c)]
-          | _ -> ())
-          attrs
-    | "font" ->
-        List.iter (function
-          |	Font (FontIndex x)  -> 
-          fonts#set_base (cur()) x
-          |	_ -> ())
-          attrs
-    | _ -> ());
+    <<function Textfw_fo.create.set_defaults>>
+
+    <<function Textfw_fo.create.push_attr>>
+    <<function Textfw_fo.create.pop_attr>>
+
+    <<function Textfw_fo.create.isindex>>
     
-    push_attr =
-      (function l ->
-        let fis = ref [] in
-      List.iter (function
-               Font fi -> fis := fi :: !fis
-             | Margin n -> margins#push (cur()) n
-             | Justification a -> aligns#push (cur()) a
-                     | FgColor s -> 
-             if !usecolors then fgcolors#push (cur()) s
-                     | BgColor s ->
-             if !usecolors then bgcolors#push (cur()) s
-                     | Spacing n -> spacing#push (cur()) n
-                     | Underlined -> underline#push (cur())
-                     | Striked -> strike#push (cur())
-                     | Superscript -> 
-                  fis := (FontDelta (-2)) :: !fis;
-                  offset#push (cur()) 5
-                     | Lowerscript ->
-                  fis := (FontDelta (-2)) :: !fis;
-                  offset#push (cur()) (-5)
-                     )
-            l;
-          if !fis <> [] then begin
-        fonts#push (cur()) !fis;
-      end);
-    
-    pop_attr =
-      (function l ->
-        let fis = ref [] in
-      List.iter (function
-               Font fi -> fis := fi :: !fis
-             | Margin n -> margins#pop (cur()) n
-             | Justification a -> aligns#pop (cur()) a
-                     | FgColor s -> 
-             if !usecolors then fgcolors#pop (cur()) s
-                     | BgColor s ->
-             if !usecolors then bgcolors#pop (cur()) s
-                     | Spacing n -> spacing#pop (cur()) n
-                     | Underlined -> underline#pop (cur())
-                     | Striked -> strike#pop (cur())
-                     | Superscript ->
-                  fis := (FontDelta (-2)) :: !fis;
-                  offset#pop (cur()) 5
-                     | Lowerscript ->
-                  fis := (FontDelta (-2)) :: !fis;
-                  offset#pop (cur()) (-5)
-            )
-            l;
-          if !fis <> [] then begin
-        fonts#pop (cur()) !fis;
-      end);
+    <<function Textfw_fo.create.start_anchor>>
+    <<function Textfw_fo.create.end_anchor>>
 
-     (* Compliance: text is not part of document ? *)
-    isindex =
-    (fun prompt base ->
-      let f,e = Frx_entry.new_label_entry thtml prompt
-          (function s -> 
-            ctx#goto { h_uri = "?" ^ Urlenc.encode s;
-                       h_context = Some base;
-                       h_method = GET;
-               h_params = []}) in
-      (* default size 0 ! *)
-      Entry.configure e [TextWidth 20];
-      put_embedded f "";
-      put_text "\n");
+    <<function Textfw_fo.create.add_mark>>
 
-    start_anchor =
-      (fun () -> anchor_start := (cur()));
-    end_anchor =
-     (* set the tag for the anchor *)
-      (fun link -> anchors#add_anchor !anchor_start (cur()) link);
+    <<function Textfw_fo.create.create_embedded>>
 
-    (* WARNING: if anchor name is a standard tk name, such as end,
-       we're f*cked, so we force # *)
-    add_mark = (fun s -> marks := ("#"^s, !position) :: !marks );
-
-    create_embedded =
-    (* avoid space leak in Tk hash table : reuse the same names *)
-    begin
-      let embsym = Mstring.egensym "emb" in
-      (fun a w h ->
-    let f = Frame.create_named thtml (embsym()) 
-        [Class "HtmlEmbedded"] in
-    if !usecolors then 
-      Frame.configure f [Background (NamedColor !bg)];
-     (* To solve the focus problem 
-     Tk.bindtags  f ((WidgetBindings thtml) :: Tk.bindtags_get f);
-     bind f [[],Enter] (BindSet ([], fun _ -> Focus.set thtml)); 
-      *)
-     (* -- end *)
-       (match w, h with
-         Some w, Some h ->
-           Frame.configure f [Width (Pixels w); Height (Pixels h);
-                  BorderWidth (Pixels 0)];
-           Pack.propagate_set f false
-             | _, _ -> ());
-        put_embedded f "";
-        f)
-    end;
-
-    (* we try to remember the last "reading" position, so you can easily
-     * switch back from a goto to some particular place in the document
-     *)
-    see_frag = begin
-      let prev_frag = ref false
-      and view_mem = ref 0.0 in
-      match spec with
-    TopFormatter true -> (* this is pscrolling mode *)
-      (function
-          None -> (* no place in particular *)
-       if !prev_frag then begin
-          try Canvas.yview (Winfo.parent thtml) (MoveTo !view_mem)
-          with Protocol.TkError _ -> ()
-       end;
-       prev_frag := false
-        | Some s ->
-       if not !prev_frag then begin
-          try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
-          with Protocol.TkError _ -> ()
-       end;
-       prev_frag := true;
-       if s <> "" then
-          try
-            let _,y,_,_,_  = Text.dlineinfo thtml
-            (TextIndex (Mark ("#"^s), [LineOffset (-2)]))
-            and _,ye,_,_,_ = Text.dlineinfo thtml 
-            (TextIndex (End, [CharOffset (-1)])) in
-            Canvas.yview (Winfo.parent thtml) 
-              (MoveTo (float y /. float ye))
-          with Protocol.TkError _ -> ())
-      |	_ ->
-      (function
-          None -> (* no place in particular *)
-          if !prev_frag then begin
-          (* we were at view_mem *)
-          try Text.yview thtml (MoveTo !view_mem)
-          with Protocol.TkError _ -> ()
-          end;
-          prev_frag := false
-        | Some s -> (* go to s *)
-          if not !prev_frag then begin
-          (* we were not in some special place, remember it *)
-          try view_mem := fst (Text.yview_get thtml)
-          with Protocol.TkError _ -> ()
-          end;
-          prev_frag := true;
-          if s <> "" then
-          try Text.yview_index thtml 
-              (TextIndex (Mark ("#"^s), [LineOffset (-1)]))
-          with Protocol.TkError _ -> ())
-    end
+    <<function Textfw_fo.create.see_frag>>
     } in
 
   formatter, fhtml
+@
+
+
+<<type Htmlfmt.formatterSpec>>=
+type formatterSpec = 
+  | TopFormatter of bool		(* flag is pixel-scrolling mode *)
+  | NestedFormatter
+  | FrameFormatter of (string * string) list (* decoration ... *)
+@
+%TODO lp split
+
+
+
+<<[[Textw_fo.create]] locals>>=
+let other_bg = ref (fun _ -> ()) in
+let fhtml, thtml =
+  match spec with
+    TopFormatter pscrolling ->
+  let f,t = 
+   if pscrolling then begin
+    let f,t = 
+      Ctext.create top [Wrap WrapWord; State Disabled] true in
+      Canvas.configure (Winfo.parent t)
+         [Background (NamedColor !html_bg)];
+       other_bg := Canvas.configure (Winfo.parent t);
+      f, t
+    end
+   else
+     new_scrollable_text top 
+        [Wrap WrapWord; State Disabled]
+        true 
+  in
+  (* Try to solve focus problem -- JPF *)
+  bind t [[],Enter] (BindSet ([], fun _ -> Focus.set t));
+  f, t
+  | NestedFormatter -> (* Embedded formatters (tables) *)
+     let t = Text.create_named top (namer())
+          [BorderWidth (Pixels 0); State Disabled; 
+            Relief Sunken; Wrap WrapNone;
+        TextWidth 1; TextHeight 1]
+  in
+      t, t
+  | FrameFormatter args -> 
+  let marginwidth = 
+    try [PadX (Pixels (int_of_string (List.assoc "marginwidth" args)))]
+    with Not_found | Failure "int_of_string" -> []
+  and marginheight = 
+    try [PadY (Pixels (int_of_string (List.assoc "marginheight" args)))]
+    with Not_found | Failure "int_of_string" -> []
+  in
+ let f,t = 
+   Ctext.create top (marginwidth @ marginheight @ 
+              [TextHeight 1; 
+                Wrap WrapWord; State Disabled]) true in
+ Canvas.configure (Winfo.parent t)
+   [Background (NamedColor !html_bg)];
+       other_bg := Canvas.configure (Winfo.parent t);
+
+  f, t
+in
+
+(* Tk4.0pl3 fix, + avoid cb to scrollbar *)
+(* Make the widget searchable *)
+(* NOTE: search doesn't apply to nested windows *)
+begin match spec with
+  TopFormatter _ | FrameFormatter _ -> 
+    Text.configure thtml [TakeFocus true; InsertOffTime 0];
+    Frx_text.addsearch thtml
+| NestedFormatter -> 
+    Text.configure thtml [TakeFocus false; InsertOffTime 0]
+end;
+
+(* Set (other) defaults *)
+let _, html_font = Fonts.compute_tag !Fonts.default in
+ Text.configure thtml html_font;
+
+(* transparent GIF hack *)
+Textvariable.set (Textvariable.coerce "TRANSPARENT_GIF_COLOR") !html_bg;
+
+(* The formatter
+ *    to minimize calls to Tk, we write only one string for 
+ * each paragraph larger than some size. Because of this, it seems
+ * that we also have to set tags and marks at the end.
+ *)
+
+(* Things queued *)
+let marks = ref []
+and embedded = ref []
+and tagdefs = new Attrs.tags thtml
+(* Hypertext Anchor support *)
+and anchors = new Attrs.anchortags thtml
+
+(* It's easier for us to keep character positions as offsets from the
+ * beginning, but it's very costly in Tk (conversion 0+nchars -> index),
+ * especially when the size gets large.
+ * Thus, we keep the base index of the current buffer, and positions
+ * as offsets from there.
+ * We must be careful not to leave position values relative to old
+ * buffer_base.
+ *)
+and buffer_base = ref (LineChar(0,0))
+and position = ref 0
+and anchor_start = ref (TextIndex(LineChar(0,0),[]))
+
+(* Paragraphs and space squeezing *)
+and trailing_space = ref false
+and prev_is_newline = ref false
+    (* if this is false, we are displaying text. if this is true, we
+       just issued a newline *)
+in
+
+(* Index for Tk *)
+let get_index p = TextIndex (!buffer_base, [CharOffset p]) in
+let cur () = get_index !position in
+
+(* colors for *this* window, can be changed by set_defaults *)
+let fg = ref !html_fg
+and bg = ref !html_bg
+in
+(* inherited properties (set_defaults) : we apply them to embedded
+   formatters (table cells) *)
+let inherited = ref [] in
+anchors#init ctx;      (* install bindings *)
+anchors#define "visited" [Foreground (NamedColor "MidnightBlue")];
+anchors#define "anchor" [Foreground (NamedColor "#0000ff"); Underline true];
+
+
+(* Size of buffer can impact performances *)
+let refresh_threshold = 
+   if !internal_buffer < 1000 then 1000 else !internal_buffer in
+let buffer = Ebuffer.create (2 * refresh_threshold)
+and last_flush = ref !Low.global_time in
+
+let internal_flush refresh = (* flush the buffer *)
+  last_flush := !Low.global_time;
+  Text.configure thtml [State Normal];
+  Text.insert thtml textEnd (Ebuffer.get buffer) [];
+  Ebuffer.reset buffer;
+  List.iter 
+    (function (opts,p) -> Text.window_create thtml (get_index p) opts)
+    (List.rev !embedded);
+  List.iter (function (m,p) -> Text.mark_set thtml m (get_index p)) !marks;
+  tagdefs#flush;
+  anchors#flush;
+  Text.configure thtml [State Disabled];
+  marks := [];
+  embedded := [];
+   (* reset the position *)
+  buffer_base := 
+     Text.index thtml (TextIndex(!buffer_base,[CharOffset !position]));
+  position := 0;
+   (* try to give a reasonable initial height for the text widget *)
+  if refresh then begin 
+   begin match spec with
+     TopFormatter true 
+   | NestedFormatter 
+   | FrameFormatter _ -> Fit.set_initial_height thtml
+   | _ -> ()
+   end;
+   Low.update_idletasks()
+  end
+   in
+
+let put_text s =
+  match String.length s with
+    0 -> ()
+  | l ->
+      position := !position + Lexkanji.length s;
+      prev_is_newline := false;
+      Ebuffer.output_string buffer s;
+  trailing_space := s.[l-1] = ' ';
+  if  !Low.global_time > !last_flush + 4 (* it's been a while *)
+  then internal_flush true
+  else if  Ebuffer.used buffer > refresh_threshold 
+  then internal_flush false
+     in
+
+(* Logic for tag manipulation *)
+let margins = new Attrs.margin tagdefs
+and aligns = new Attrs.align tagdefs
+and fonts = new Attrs.font tagdefs
+and fgcolors = new Attrs.fgcolor tagdefs
+and bgcolors = new Attrs.bgcolor tagdefs
+and spacing = new Attrs.spacing tagdefs
+and offset = new Attrs.offset tagdefs
+and underline = new Attrs.misc (tagdefs, "underline", [Underline true])
+and strike = new Attrs.misc (tagdefs, "strike", [OverStrike true])
+
+in
+let put_embedded w align =
+  let opts = match String.lowercase align with
+    "top" -> [Align Align_Top]
+  | "middle" -> [Align Align_Center] (* not exactly *)
+  | "bottom" -> [Align Align_Baseline] 
+  |  _ -> [] in
+  embedded := ((Window w)::opts, !position) :: !embedded;
+  prev_is_newline := false;
+  incr position    (* an embedded window is one char wide *)    
+in
+
+let break () =
+   if not !prev_is_newline then begin
+     put_text "\n"; prev_is_newline := true
+     end
+in
+
+let paropen = ref (cur()) in
 @
 
 
@@ -8237,6 +8250,22 @@ mach#add_tag "isindex"
 <<[[Htmlfmt.formatter]] structure primitives methods>>=
 isindex : string -> string -> unit;         (* <ISINDEX> *)
 @
+<<function Textfw_fo.create.isindex>>=
+(* Compliance: text is not part of document ? *)
+isindex = (fun prompt base ->
+  let f,e = Frx_entry.new_label_entry thtml prompt
+      (function s -> 
+        ctx#goto { h_uri = "?" ^ Urlenc.encode s;
+                   h_context = Some base;
+                   h_method = GET;
+                   h_params = []}
+  ) in
+  (* default size 0 ! *)
+  Entry.configure e [TextWidth 20];
+  put_embedded f "";
+  put_text "\n"
+);
+@
 
 \subsubsection*{[[<link>]]}
 
@@ -8323,6 +8352,23 @@ close_paragraph: unit -> unit;  	(* Close a paragraph *)
   (* make sure there is an eol after the current text *)
 @
 
+<<function Textfw_fo.create.new_paragraph>>=
+new_paragraph = (fun () -> 
+  break(); 
+  spacing#push (cur()) 5; 
+  paropen := cur()
+);
+@
+
+<<function Textfw_fo.create.close_paragraph>>=
+close_paragraph = (fun () -> 
+  spacing#pop (cur()) 5; 
+  if (cur() = !paropen) 
+  then prev_is_newline := false;
+  break()
+);
+@
+
 
 <<function Html_disp.Make.init.close_header>>=
 let close_header fo =
@@ -8388,6 +8434,68 @@ push_attr : gattr list -> unit;
 pop_attr : gattr list -> unit;
 @
 
+
+<<function Textfw_fo.create.push_attr>>=
+push_attr = (fun l ->
+  let fis = ref [] in
+  l |> List.iter (function
+    | Font fi -> 
+        fis := fi :: !fis
+    | Margin n -> 
+        margins#push (cur()) n
+    | Justification a -> 
+        aligns#push (cur()) a
+    | FgColor s -> 
+        if !usecolors 
+        then fgcolors#push (cur()) s
+    | BgColor s ->
+        if !usecolors 
+        then bgcolors#push (cur()) s
+    | Spacing n -> 
+        spacing#push (cur()) n
+    | Underlined -> 
+        underline#push (cur())
+    | Striked -> 
+        strike#push (cur())
+    | Superscript -> 
+        fis := (FontDelta (-2)) :: !fis;
+        offset#push (cur()) 5
+    | Lowerscript ->
+        fis := (FontDelta (-2)) :: !fis;
+        offset#push (cur()) (-5)
+    );
+  if !fis <> [] 
+  then fonts#push (cur()) !fis;
+);
+@
+
+<<function Textfw_fo.create.pop_attr>>=
+pop_attr = (fun l ->
+  let fis = ref [] in
+  l |> List.iter (function
+    | Font fi -> fis := fi :: !fis
+    | Margin n -> margins#pop (cur()) n
+    | Justification a -> aligns#pop (cur()) a
+    | FgColor s -> 
+         if !usecolors then fgcolors#pop (cur()) s
+    | BgColor s ->
+         if !usecolors then bgcolors#pop (cur()) s
+    | Spacing n -> spacing#pop (cur()) n
+    | Underlined -> underline#pop (cur())
+    | Striked -> strike#pop (cur())
+    | Superscript ->
+              fis := (FontDelta (-2)) :: !fis;
+              offset#pop (cur()) 5
+    | Lowerscript ->
+              fis := (FontDelta (-2)) :: !fis;
+              offset#pop (cur()) (-5)
+  );
+  if !fis <> [] 
+  then fonts#pop (cur()) !fis;
+);
+@
+
+
 \subsubsection{[[<pre>]]}
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
@@ -8417,6 +8525,12 @@ pop_attr : gattr list -> unit;
 
 <<[[Htmlfmt.formatter]] primitives methods>>=
 print_verbatim : string -> unit;	(* Print as-is *)
+@
+<<function Textfw_fo.create.print_verbatim>>=
+print_verbatim = (fun s -> 
+  put_text s; 
+  prev_is_newline := false
+);
 @
 
 \subsubsection{[[<address>]]}
@@ -8663,6 +8777,21 @@ mach#add_tag "ul" open_list close_list;
 bullet : string -> unit;
 @
 
+<<function Textfw_fo.create.bullet>>=
+(* TODO *)
+bullet = begin
+ let bulletsym = Mstring.egensym "bullet" in
+ (fun s -> 
+   try 
+     let img = Hashtbl.find Attrs.bullet_table s in
+     put_embedded (Label.create_named thtml (bulletsym())
+                  [img; BorderWidth (Pixels 0);
+                   Background (NamedColor !html_bg)]) ""
+   with Not_found  -> put_text "*"
+  )
+end;
+@
+
 \subsubsection{[[<ol>]], [[<li>]]}
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
@@ -8755,6 +8884,21 @@ mach#add_tag "ol" open_nlist close_nlist;
 
 <<[[Htmlfmt.formatter]] primitives methods>>=
 format_string : string -> unit;	(* Line wrap, newlines don't count *)
+@
+<<function Textfw_fo.create.format_string>>=
+format_string = (fun s -> 
+  if not !prev_is_newline 
+  then (* we are in text *)
+    put_text (Html.beautify !trailing_space s)
+  else (* decide if we should start a text *)
+    let bs = Html.beautify true s in
+    if bs = "" 
+    then () (* it was all spaces *)
+    else begin
+      put_text bs;
+      prev_is_newline := false
+    end
+);
 @
 
 
@@ -8932,6 +9076,11 @@ end;
 <<[[Htmlfmt.formatter]] structure primitives methods>>=
 add_mark : string -> unit;
 @
+<<function Textfw_fo.create.add_mark>>=
+(* WARNING: if anchor name is a standard tk name, such as end,
+   we're f*cked, so we force # *)
+add_mark = (fun s -> marks := ("#"^s, !position) :: !marks );
+@
 
 \subsubsection{Anchor, [[<a href=...>]]}
 
@@ -8983,6 +9132,14 @@ start_anchor : unit -> unit;
 end_anchor : Hyper.link -> unit;
 @
 
+<<function Textfw_fo.create.start_anchor>>=
+start_anchor = (fun () -> anchor_start := (cur()));
+@
+<<function Textfw_fo.create.end_anchor>>=
+(* set the tag for the anchor *)
+end_anchor = (fun link -> anchors#add_anchor !anchor_start (cur()) link);
+@
+
 \subsection{Breaks}
 
 \subsubsection{Line breaks, [[<br>]]}
@@ -9001,7 +9158,27 @@ mach#add_tag "br"
 print_newline : bool -> unit;		(* Force a line break *)
 @
 
+<<function Textfw_fo.create.print_newline>>=
+print_newline = (fun force -> 
+ if force then begin
+   put_text "\n"; 
+   trailing_space := true
+ end
+ else break()
+);
+@
+
 \subsubsection{Horizontal rules, [[<hr>]]}
+
+<<type Html.length>>=
+(* HTML length *)
+type length = 
+    Nolength
+  | LengthPixels of int
+  | LengthRatio of float
+  | LengthRel of int
+@
+
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (*
@@ -9027,6 +9204,41 @@ mach#add_tag "hr"
 
 <<[[Htmlfmt.formatter]] predefined images methods>>=
 hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
+@
+
+<<function Textfw_fo.create.hr>>=
+hr = begin
+  let hrsym = Mstring.egensym "hr" in
+  (fun width height solid ->
+    let fr = Hr.create_named thtml (hrsym()) width height solid in
+    Frame.configure fr [Background (NamedColor !fg)];
+    put_embedded fr ""
+  )
+end;
+@
+
+
+<<signature Html.length_of_string>>=
+val length_of_string : string -> length
+@
+<<function Html.length_of_string>>=
+(* Either size in pixels or ration in percent *)
+let length_of_string s =
+  try
+    let pos = String.index s '%' in
+    try LengthRatio (float_of_string (String.sub s 0 pos) /. 100.)
+    with Failure "int_of_string" -> Nolength
+  with Not_found ->
+    try
+      let pos = String.index s '*' in
+      if pos = 0 
+      then LengthRel 1
+      else
+        try LengthRel (int_of_string (String.sub s 0 pos))
+        with Failure "int_of_string" -> Nolength
+    with Not_found ->
+      try LengthPixels (int_of_string s)
+      with Failure "int_of_string" -> Nolength
 @
 
 \subsection{Images, [[<img>]]}
@@ -9082,6 +9294,34 @@ create_embedded :
     Should respect background color ?
   *)
 @
+<<function Textfw_fo.create.create_embedded>>=
+create_embedded = begin
+  (* avoid space leak in Tk hash table : reuse the same names *)
+  let embsym = Mstring.egensym "emb" in
+
+  (fun a w h ->
+     let f = Frame.create_named thtml (embsym()) [Class "HtmlEmbedded"] in
+     if !usecolors 
+     then Frame.configure f [Background (NamedColor !bg)];
+
+     (* To solve the focus problem 
+     Tk.bindtags  f ((WidgetBindings thtml) :: Tk.bindtags_get f);
+     bind f [[],Enter] (BindSet ([], fun _ -> Focus.set thtml)); 
+      *)
+     (* -- end *)
+     (match w, h with
+      | Some w, Some h ->
+          Frame.configure f [Width (Pixels w); Height (Pixels h);
+          BorderWidth (Pixels 0)];
+           Pack.propagate_set f false
+      | _, _ -> ()
+     );
+     put_embedded f "";
+     f
+  )
+end;
+@
+
 
 <<[[Html_disp.Make.init()]] IMG case, let map>>=
 (* some people use both ismap and usemap...
@@ -9416,6 +9656,68 @@ mach#add_tag "basefont"
 set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
 @
 
+<<function Textfw_fo.create.set_defaults>>=
+(* TODO : vlink *)
+set_defaults = (fun name attrs -> 
+  inherited := (name, attrs) :: !inherited;
+  match name with
+  | "background" ->
+      attrs |> List.iter (function
+      | BgColor s ->
+          if !usecolors then
+            let c = Attrs.html_color s in
+            if Frx_color.check c then begin
+              bg := c;
+              Resource.add 
+                 (sprintf "Mmm%s*background" (Widget.name thtml))
+                   c Interactive;
+              Text.configure thtml [Background (NamedColor c)];
+              !other_bg [Background (NamedColor c)]
+            end
+      | _ -> ())
+
+  | "foreground" ->
+      attrs |> List.iter (function
+        | FgColor s ->
+           if !usecolors then
+             let c = Attrs.html_color s in
+             if Frx_color.check c then begin
+               fg := c;
+               Resource.add 
+                 (sprintf "Mmm%s*foreground" (Widget.name thtml))
+                   c Interactive;
+               Text.configure thtml [Foreground (NamedColor c)]
+           end
+        | _ -> ())
+
+  | "link" ->
+      attrs |> List.iter (function
+        | FgColor s ->
+            if !usecolors then
+              let c = Attrs.html_color s in
+              if Frx_color.check c then 
+                anchors#change "anchor" [Foreground (NamedColor c)]
+        | _ -> ())
+
+  | "alink" ->
+      attrs |> List.iter (function
+        | FgColor s ->
+            if !usecolors then
+              let c = Attrs.html_color s in
+              if Frx_color.check c then 
+                anchors#change "visited" [Foreground (NamedColor c)]
+        | _ -> ())
+
+  | "font" ->
+      attrs |> List.iter (function
+        | Font (FontIndex x)  -> 
+            fonts#set_base (cur()) x
+        |	_ -> ())
+
+  | _ -> ()
+);
+@
+
 \subsubsection{[[<font>]]}
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
@@ -9726,7 +10028,7 @@ method embedded = embedded
 
 
 
-<<[[Viewers.context]] other methods signatures>>=
+<<[[Viewers.context]] embedded methods signatures>>=
 (*-*)
 method for_embed : vparams -> frame_targets -> 'a
 method in_embed : Document.document_id -> 'a
@@ -9847,7 +10149,7 @@ let load_images () =
 in
 @
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] images virtual methods signatures>>=
 method virtual di_load_images : unit (* load images *)
 @
 
@@ -9914,7 +10216,7 @@ end
 
 \section{Embedded objects}
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] embedded virtual methods signatures>>=
 method virtual di_update : unit      (* update embedded objects *)
 @
 
@@ -10130,7 +10432,7 @@ document_fragment : string option;
 di#di_fragment frag;
 @
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] fragment virtual method signature>>=
 method virtual di_fragment : string option -> unit	(* for # URIs *)
 @
 % di_fragment is used by the caller to go to a fragment, in show_current_di()
@@ -10172,6 +10474,61 @@ method see_frag = see_frag
 see_frag : string option -> unit;
 @
 
+<<function Textfw_fo.create.see_frag>>=
+(* we try to remember the last "reading" position, so you can easily
+ * switch back from a goto to some particular place in the document
+ *)
+see_frag = begin
+  let prev_frag = ref false
+  and view_mem = ref 0.0 in
+  match spec with
+  | TopFormatter true -> (* this is pscrolling mode *)
+    (function
+     | None -> (* no place in particular *)
+         if !prev_frag then begin
+           try Canvas.yview (Winfo.parent thtml) (MoveTo !view_mem)
+           with Protocol.TkError _ -> ()
+         end;
+         prev_frag := false
+    | Some s ->
+        if not !prev_frag then begin
+          try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
+          with Protocol.TkError _ -> ()
+        end;
+        prev_frag := true;
+        if s <> "" then
+          try
+            let _,y,_,_,_  = Text.dlineinfo thtml
+                 (TextIndex (Mark ("#"^s), [LineOffset (-2)]))
+            and _,ye,_,_,_ = Text.dlineinfo thtml 
+                 (TextIndex (End, [CharOffset (-1)])) in
+           Canvas.yview (Winfo.parent thtml) 
+                (MoveTo (float y /. float ye))
+          with Protocol.TkError _ -> ()
+  )
+  |	_ ->
+    (function
+    | None -> (* no place in particular *)
+        if !prev_frag then begin
+          (* we were at view_mem *)
+          try Text.yview thtml (MoveTo !view_mem)
+          with Protocol.TkError _ -> ()
+        end;
+        prev_frag := false
+    | Some s -> (* go to s *)
+        if not !prev_frag then begin
+          (* we were not in some special place, remember it *)
+          try view_mem := fst (Text.yview_get thtml)
+          with Protocol.TkError _ -> ()
+        end;
+        prev_frag := true;
+        if s <> "" then
+          try Text.yview_index thtml 
+             (TextIndex (Mark ("#"^s), [LineOffset (-1)]))
+          with Protocol.TkError _ -> ()
+    )
+end
+@
 
 \section{Abort}
 % advanced topic?
@@ -10218,7 +10575,7 @@ nav_rem_active = (fun url -> Hashtbl.remove actives url);
 @
 
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] lifecycle virtual methods signatures>>=
 method virtual di_abort : unit		 (* stop display *)
 @
 
@@ -10305,7 +10662,7 @@ in
 [Label (s_ "Redisplay")      ; Command redisplay];
 @
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] lifecycle virtual methods signatures>>=
 method virtual di_redisplay : unit		(* redisplay *)
 @
 
@@ -11323,7 +11680,7 @@ let view_source () =
 in
 @
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] other virtual methods signatures>>=
 method virtual di_source : unit 	        (* source viewer *)
 @
 
@@ -12629,7 +12986,7 @@ let remove hkey did =
      Not_found -> Log.debug "Gcache.remove failed !"
 @
 
-<<[[Viewers.display_info]] virtual fields signatures>>=
+<<[[Viewers.display_info]] lifecycle virtual methods signatures>>=
 method virtual di_destroy : unit	 (* die *)
 @
 
@@ -13075,7 +13432,7 @@ let debug = ref false
 
 \subsection{Viewer}
 
-<<[[Viewers.context]] other methods signatures>>=
+<<[[Viewers.context]] logging methods signatures>>=
 method virtual log : string -> unit
 @
 

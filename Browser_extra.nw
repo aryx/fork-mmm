@@ -2337,17 +2337,6 @@ let add_log_backend = ref (fun _ _ _ -> failwith "no add_log defined")
 
 \subsection*{[[./html/dtd.mli]]}
 
-<<signature Dtd.dtd20>>=
-val dtd20 : t
-@
-
-<<signature Dtd.dtd32f>>=
-val dtd32f : t
-@
-% with frame?
-
-
-
 %-------------------------------------------------------------
 
 <<./html/dtd.mli>>=
@@ -2372,212 +2361,6 @@ module Elements : Set.S with type elt = string
 
 
 \subsection*{[[./html/dtd.ml]]}
-
-
-<<constant Dtd.dtd20>>=
-(* #PCDATA and #CDATA are considered as elements, but they will never
-   be pushed on the stack during evaluation. Moreover, since they are
-   not in open_omitted/close_omitted, minimization algorithm will not
-   attempt to choose them
- *)
-
-let dtd20 =
-  let dtd = {
-    dtd_name = "HTML 2.0";
-
-    contents = Hashtbl.create 53;
-    open_omitted = Elements.empty;
-    close_omitted = Elements.empty
-     } in
-
-  let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = 
-    Hashtbl.add dtd.contents
-  in
-
-  (* Some entities *)
-  (* <!ENTITY % heading "H1|H2|H3|H4|H5|H6"> *)
-  let heading_E = sol ["h1"; "h2"; "h3"; "h4"; "h5"; "h6"]
-  (* <!ENTITY % list " UL | OL | DIR | MENU " > *)
-  and list_E = sol ["ul"; "ol"; "dir"; "menu"] in
-  (* <!ENTITY % font " TT | B | I "> *)
-  let font_E = sol ["tt"; "b"; "i"]
-  (* <!ENTITY % phrase "EM | STRONG | CODE | SAMP | KBD | VAR | CITE "> *)
-  and phrase_E = sol ["em"; "strong"; "code"; "samp"; "kbd"; "var"; "cite"] in
-  (* <!ENTITY % text "#PCDATA | A | IMG | BR | %phrase | %font"> *)
-  (* EMBED added *)
-  let text_E =
-    sos [sol ["#pcdata"; "a"; "img"; "br"; "embed"]; font_E; phrase_E] in
-
-  (* <!ELEMENT (%font;|%phrase) - - (%text)*> *)
-  Elements.iter (fun e -> add_elem e text_E) font_E;
-  Elements.iter (fun e -> add_elem e text_E) phrase_E;
-
-  (* <!ENTITY % pre.content "#PCDATA | A | HR | BR | %font | %phrase"> *)
-  let pre_content_E = 
-       sos [sol ["#pcdata"; "a"; "hr"; "br"]; font_E; phrase_E] in
-
-  (* <!ELEMENT BR    - O EMPTY> *)
-  add_elem "br" Elements.empty;
-  omit_close "br";
-
-  (* <!ENTITY % A.content   "(%heading|%text)*"> *)
-  let a_content_E = sos [heading_E; text_E] in
-
-  (* <!ELEMENT A     - - %A.content -(A)> *)
-  add_elem "a" (Elements.remove "a" a_content_E);
-
-  (* <!ELEMENT IMG    - O EMPTY> *)
-  add_elem "img" Elements.empty;
-  omit_close "img";
-
-  (* <!ELEMENT P     - O (%text)*> *)
-  add_elem "p" text_E;
-  omit_close "p";
-
-  (* <!ELEMENT HR    - O EMPTY> *)
-  add_elem "hr" Elements.empty;
-  omit_close "hr";
-
-  (* <!ELEMENT ( %heading )  - -  (%text;)*> *)
-  Elements.iter (fun e -> add_elem e text_E) heading_E;
-
-  (* <!ENTITY % block.forms "BLOCKQUOTE | FORM | ISINDEX"> *)
-  let block_forms_E = sol ["blockquote"; "form"; "isindex"] in
-
-  (* <!ENTITY % preformatted "PRE"> *)
-  let preformatted_E = sol ["pre"] in
-
-  (* <!ENTITY % block "P | %list | DL
-      | %preformatted
-      | %block.forms"> *)
-  let block_E = sos [sol ["p"; "dl"]; list_E; preformatted_E; block_forms_E] in
-
-  (* <!ENTITY % flow "(%text|%block)*"> *)
-  let flow_E = sos [text_E; block_E] in
-
-  (* <!ELEMENT PRE - - (%pre.content)*> *)
-  add_elem "pre" pre_content_E;
-
-
-  (* Deprecated but used <!ELEMENT (XMP|LISTING) - -  %literal> *)
-  List.iter (fun e -> add_elem e (sol ["#cdata"])) ["xmp"; "listing"];
-
-  (* <!ELEMENT DL    - -  (DT | DD)+> *)
-  add_elem "dl" (sol ["dt"; "dd"]);
-
-  (* <!ELEMENT DT    - O (%text)*> *)
-  add_elem "dt" text_E;
-  omit_close "dt";
-
-  (* <!ELEMENT DD    - O %flow> *)
-  add_elem "dd" flow_E;
-  omit_close "dd";
-
-  (* <!ELEMENT (OL|UL) - -  (LI)+> *)
-  List.iter (fun e -> add_elem e (sol ["li"])) ["ol"; "ul"];
-
-  (* <!ELEMENT (DIR|MENU) - -  (LI)+ -(%block)> *)
-  (* isn't that stupid ? *)
-  List.iter (fun e -> add_elem e (sol ["li"])) ["dir"; "menu"];
-
-  (* <!ELEMENT LI    - O %flow> *)
-  add_elem "li" flow_E;
-  omit_close "li";
-
-  (* <!ENTITY % body.content "(%heading | %text | %block |
-                 HR | ADDRESS)*"> *)
-  let body_content_E =
-     sos [heading_E; text_E; block_E; sol ["hr"; "address"]] in
-  
-  (* <!ELEMENT BODY O O  %body.content> *)
-  add_elem "body" body_content_E;
-  omit_open "body";
-  omit_close "body";
-
-  (* <!ELEMENT BLOCKQUOTE - - %body.content> *)
-  add_elem "blockquote" body_content_E;
-
-  (* <!ELEMENT ADDRESS - - (%text|P)*> *)
-  add_elem "address" (Elements.add "p" text_E);
-
-  (* <!ELEMENT FORM - - %body.content -(FORM) +(INPUT|SELECT|TEXTAREA)> *)
-  add_elem "form"
-    (sos [Elements.remove "form" body_content_E;
-      sol ["input";"select";"textarea"]]);
-
-  (* <!ELEMENT INPUT - O EMPTY> *)
-  add_elem "input" Elements.empty;
-  omit_close "input";
-
-  (* <!ELEMENT SELECT - - (OPTION+) -(INPUT|SELECT|TEXTAREA)> *)
-  add_elem "select" (sol ["option"]);
-
-  (* <!ELEMENT OPTION - O (#PCDATA)*> *)
-  add_elem "option" (sol ["#pcdata"]);
-  omit_close "option";
-
-  (* <!ELEMENT TEXTAREA - - (#PCDATA)* -(INPUT|SELECT|TEXTAREA)> *)
-  add_elem "textarea" (sol ["#pcdata"]);
-
-  (* <!ENTITY % head.extra "NEXTID? & META* & LINK*">
-
-     <!ENTITY % head.content "TITLE & ISINDEX? & BASE? &
-             (%head.extra)"> *)
-
-  let head_extra_E = sol ["nextid"; "meta"; "link"] in
-  let head_content_E = 
-    sos [sol ["title"; "isindex"; "base"]; head_extra_E] in
-  
-  (* <!ELEMENT HEAD O O  (%head.content)> *)
-  add_elem "head" head_content_E;
-  omit_open "head";
-  omit_close "head";
-
-  (* <!ELEMENT TITLE - -  (#PCDATA)*> *)
-  add_elem "title" (sol ["#pcdata"]);
-
-  (* <!ELEMENT LINK - O EMPTY> *)
-  add_elem "link" Elements.empty;
-  omit_close "link";
-
-  (* <!ELEMENT ISINDEX - O EMPTY> *)
-  add_elem "isindex" Elements.empty;
-  omit_close "isindex";
-
-  (* <!ELEMENT BASE - O EMPTY> *)
-  add_elem "base" Elements.empty;
-  omit_close "base";
-
-  (* <!ELEMENT NEXTID - O EMPTY> *)
-  add_elem "nextid" Elements.empty;
-  omit_close "nextid";
-
-  (* <!ELEMENT META - O EMPTY> *)
-  add_elem "meta" Elements.empty;
-  omit_close "meta";
-
-  (* <!ENTITY % html.content "HEAD, BODY"> *)
-  let html_content_E = sol ["head"; "body"] in
-
-  (* <!ELEMENT HTML O O  (%html.content)> *)
-  add_elem "html" html_content_E;
-  omit_open "html";
-  omit_close "html";
-
-  (* fake element PCDATA for minimisation rules *)
-  add_elem "#pcdata" Elements.empty;
-
-  (* EMBED is an extension *)
-  add_elem "embed" Elements.empty;
-  omit_close "embed";
-  
-  dtd
-@
-
 
 %-------------------------------------------------------------
 
@@ -2622,10 +2405,6 @@ open Printf
 
 \subsection*{[[./html/html.mli]]}
 
-
-
-
-
 <<signature Html.beautify2>>=
 val beautify2 : string -> string
   (* [beautify2 s] removes leading/trailing space and sequences of SP *)
@@ -2634,20 +2413,6 @@ val beautify2 : string -> string
 <<signature Html.issp>>=
 val issp : string -> bool
   (* [issp s] is true if s is formed only of SP *)
-@
-
-
-<<type Html.length>>=
-(* HTML length *)
-type length = 
-    Nolength
-  | LengthPixels of int
-  | LengthRatio of float
-  | LengthRel of int
-@
-
-<<signature Html.length_of_string>>=
-val length_of_string : string -> length
 @
 
 
@@ -2720,30 +2485,6 @@ let issp s =
     true
   with
     Failure "subliminal" -> false
-@
-
-
-
-
-<<function Html.length_of_string>>=
-(* Either size in pixels or ration in percent *)
-let length_of_string s =
-  try
-    let pos = String.index s '%' in
-    try LengthRatio (float_of_string (String.sub s 0 pos) /. 100.)
-    with Failure "int_of_string" -> Nolength
-  with
-    Not_found ->
-      try
-       let pos = String.index s '*' in
-    if pos = 0 then LengthRel 1
-    else
-      try LengthRel (int_of_string (String.sub s 0 pos))
-      with Failure "int_of_string" -> Nolength
-      with
-    Not_found ->
-      try LengthPixels (int_of_string s)
-      with Failure "int_of_string" -> Nolength
 @
 
 
@@ -6114,9 +5855,6 @@ val di_compare : display_info -> display_info -> bool
 %-------------------------------------------------------------
 
 <<./viewers/viewers.mli>>=
-open Www
-open Document
-open Http_headers
 
 <<type Viewers.vparams>>
 <<type Viewers.frame_targets>>
@@ -6133,23 +5871,6 @@ open Http_headers
 
 <<signature class Viewers.display_info>>
 
-
-
-class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
-(* boilerplate class type *)
-object
-  method di_abort : unit
-  method di_destroy : unit
-  method di_fragment : string option -> unit
-  method di_last_used : int
-  method di_load_images : unit
-  method di_redisplay : unit
-  method di_source : unit
-  method di_title : string
-  method di_touch : unit
-  method di_widget : Widget.widget
-  method di_update : unit
-end
 
 <<signature Viewers.di_compare>>
 
@@ -6255,30 +5976,13 @@ open Hyper
 class  virtual display_info () =
  object (_self : 'a)
   (* boilerplate class decl *)
-  <<[[Viewers.display_info]] virtual fields signatures>>
+  <<[[Viewers.display_info]] virtual methods signatures>>
 
   val mutable di_last_used = !Low.global_time
   method di_last_used = 
     di_last_used
   method di_touch = 
     di_last_used <- !Low.global_time
-end
-
-class trivial_display (w, url) =
- object
-  inherit display_info ()
-  (* val w = w *)
-  (* val url = url *)
-
-  method di_widget = w
-  method di_abort = ()
-  method di_destroy = if Winfo.exists w then Tk.destroy w
-  method di_fragment f = ()
-  method di_redisplay = ()
-  method di_title = Url.string_of url
-  method di_source = ()
-  method di_load_images = ()
-  method di_update = ()
 end
 
 <<function Viewers.di_compare>>
@@ -11426,12 +11130,6 @@ val usecolors : bool ref
 val internal_buffer : int ref
 @
 
-<<signature Textw_fo.create>>=
-val create :
-  (unit -> string) ->
-  Htmlfmt.formatterSpec -> Widget.widget -> Viewers.context ->  
-    Htmlfmt.formatter * Widget.widget
-@
 
 
 %-------------------------------------------------------------
@@ -11468,12 +11166,6 @@ let usecolors = ref true     (* use colors (fg/bg) specified in document *)
 let internal_buffer = ref 4000
 @
 
-<<type Htmlfmt.formatterSpec>>=
-type formatterSpec = 
-  | TopFormatter of bool		(* flag is pixel-scrolling mode *)
-  | NestedFormatter
-  | FrameFormatter of (string * string) list (* decoration ... *)
-@
 
 
 %-------------------------------------------------------------
