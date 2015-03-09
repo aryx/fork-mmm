@@ -8,21 +8,13 @@ type vparams = (string * string) list
 type frame_targets = (string * Widget.widget) list
 (*e: type Viewers.frame_targets *)
 
-(*s: signature Viewers.frame_adopt *)
-val frame_adopt : Widget.widget -> frame_targets -> frame_targets
-    (* remap _self and _parent *)
-(*e: signature Viewers.frame_adopt *)
-(*s: signature Viewers.frame_fugue *)
-val frame_fugue : frame_targets -> frame_targets
-    (* forget about _self and _parents *)
-(*e: signature Viewers.frame_fugue *)
-
 (*s: type Viewers.hyper_func *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
+
   hyper_func : frame_targets -> Hyper.link -> unit
-  }
+}
 (*e: type Viewers.hyper_func *)
 
 (* list of additionnal parameters for the viewer, according to its
@@ -63,6 +55,7 @@ class  virtual display_info : (unit) -> object ('a)
 
   (*s: [[Viewers.display_info]] virtual methods signatures *)
   method virtual di_title : string		(* some visible title *)
+
   (* the created widget containing the graphics *)
   method virtual di_widget : Widget.widget
 
@@ -88,10 +81,10 @@ class  virtual display_info : (unit) -> object ('a)
   method virtual di_source : unit 	        (* source viewer *)
   (*e: [[Viewers.display_info]] other virtual methods signatures *)
   (*e: [[Viewers.display_info]] virtual methods signatures *)
-  (*s: [[Viewers.display_info]] cache methods *)
+  (*s: [[Viewers.display_info]] cache methods signatures *)
   method di_last_used : int
   method di_touch : unit
-  (*e: [[Viewers.display_info]] cache methods *)
+  (*e: [[Viewers.display_info]] cache methods signatures *)
 end
 (*e: signature class Viewers.display_info *)
 
@@ -111,21 +104,30 @@ type t =
 val add_viewer : Http_headers.media_type -> t -> unit
     (* [add_viewer type viewer] *)
 (*e: signature Viewers.add_viewer *)
-
+(*s: signature Viewers.rem_viewer *)
+val rem_viewer : Http_headers.media_type -> unit
+(*e: signature Viewers.rem_viewer *)
 (*s: signature Viewers.add_builtin *)
 val add_builtin : Http_headers.media_type -> t -> unit
     (* [add_builtin type viewer] makes viewer a builtin for type *)
 (*e: signature Viewers.add_builtin *)
+(*s: signature Viewers.reset *)
+val reset : unit -> unit
+(*e: signature Viewers.reset *)
 
-(*s: signature Viewers.rem_viewer *)
-val rem_viewer : Http_headers.media_type -> unit
-(*e: signature Viewers.rem_viewer *)
-
+(* main entry point! *)
 (*s: signature Viewers.view *)
 val view : Widget.widget -> context -> Document.handle -> display_info option
 (*e: signature Viewers.view *)
 
-(*s: signature Viewers.reset *)
-val reset : unit -> unit
-(*e: signature Viewers.reset *)
+
+(*s: signature Viewers.frame_adopt *)
+val frame_adopt : Widget.widget -> frame_targets -> frame_targets
+    (* remap _self and _parent *)
+(*e: signature Viewers.frame_adopt *)
+(*s: signature Viewers.frame_fugue *)
+val frame_fugue : frame_targets -> frame_targets
+    (* forget about _self and _parents *)
+(*e: signature Viewers.frame_fugue *)
+
 (*e: ./viewers/viewers.mli *)

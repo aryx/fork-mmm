@@ -961,7 +961,7 @@ method hyper_funs : (string * hyper_func) list
 class  virtual display_info : (unit) -> object ('a)
 
   <<[[Viewers.display_info]] virtual methods signatures>>
-  <<[[Viewers.display_info]] cache methods>>
+  <<[[Viewers.display_info]] cache methods signatures>>
 end
 @
 %note: the <<[[Viewers.display_info]] virtual methods signatures>> chunk
@@ -971,6 +971,7 @@ end
 
 <<[[Viewers.display_info]] virtual methods signatures>>=
 method virtual di_title : string		(* some visible title *)
+
 (* the created widget containing the graphics *)
 method virtual di_widget : Widget.widget
 
@@ -9793,8 +9794,7 @@ mach#add_tag "script"
 
 \subsection{Frames}
 % related to embed?
-
-% no frame tag?
+% no frame tag? yes, but it's done in head_hook
 
 <<constant Htmlw.frames_as_links>>=
 (* Prefs globals *)
@@ -9842,6 +9842,42 @@ method load_frames frames =
   )
 @
 
+
+<<type Viewers.frame_targets>>=
+type frame_targets = (string * Widget.widget) list
+@
+
+<<signature Viewers.frame_adopt>>=
+val frame_adopt : Widget.widget -> frame_targets -> frame_targets
+    (* remap _self and _parent *)
+@
+<<signature Viewers.frame_fugue>>=
+val frame_fugue : frame_targets -> frame_targets
+    (* forget about _self and _parents *)
+@
+
+
+<<function Viewers.frame_adopt>>=
+let frame_adopt w targets = 
+  targets |> List.map (function 
+    | "_self",_ -> "_self", w
+    | "_parent", _ -> "_parent", Winfo.parent w
+    | s, f -> s, f
+  )
+    
+@
+
+<<function Viewers.frame_fugue>>=
+let frame_fugue targets =
+  let rec ff accu = function
+    | [] -> accu
+    | ("_self", _) :: l -> ff accu l
+    | ("_parent", _) :: l -> ff accu l
+    | p :: l -> ff (p::accu) l
+  in
+  ff [] targets
+@
+
 \section{Styles}
 
 % Styles.get
@@ -9874,6 +9910,8 @@ type width_constraint =
   | FixedWidth of int			(* width is given in pixels *)
   | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
 @
+
+\section{Frames}
 
 \section{XXX}
 
@@ -12951,11 +12989,23 @@ let dont_check_cache wwwr =
 di#di_touch;
 @
 
-<<[[Viewers.display_info]] cache methods>>=
+<<[[Viewers.display_info]] cache methods signatures>>=
 method di_last_used : int
 method di_touch : unit
 @
 
+<<[[Viewers.display_info]] cache methods>>=
+val mutable di_last_used = !Low.global_time
+method di_last_used = 
+  di_last_used
+method di_touch = 
+  di_last_used <- !Low.global_time
+@
+% default methods, but overriden sometimes?
+
+<<signature Viewers.di_compare>>=
+val di_compare : display_info -> display_info -> bool
+@
 <<function Viewers.di_compare>>=
 let di_compare di di' = 
   di#di_last_used > di'#di_last_used

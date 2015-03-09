@@ -5824,31 +5824,13 @@ open Feed
 
 \subsection*{[[./viewers/viewers.mli]]}
 
-
-
-<<type Viewers.frame_targets>>=
-type frame_targets = (string * Widget.widget) list
-@
-
-<<signature Viewers.frame_adopt>>=
-val frame_adopt : Widget.widget -> frame_targets -> frame_targets
-    (* remap _self and _parent *)
-@
-<<signature Viewers.frame_fugue>>=
-val frame_fugue : frame_targets -> frame_targets
-    (* forget about _self and _parents *)
-@
-
 <<type Viewers.hyper_func>>=
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
-  hyper_func : frame_targets -> Hyper.link -> unit
-  }
-@
 
-<<signature Viewers.di_compare>>=
-val di_compare : display_info -> display_info -> bool
+  hyper_func : frame_targets -> Hyper.link -> unit
+}
 @
 
 
@@ -5858,9 +5840,6 @@ val di_compare : display_info -> display_info -> bool
 
 <<type Viewers.vparams>>
 <<type Viewers.frame_targets>>
-
-<<signature Viewers.frame_adopt>>
-<<signature Viewers.frame_fugue>>
 
 <<type Viewers.hyper_func>>
 
@@ -5877,40 +5856,21 @@ val di_compare : display_info -> display_info -> bool
 <<type Viewers.t>>
 
 <<signature Viewers.add_viewer>>
-
-<<signature Viewers.add_builtin>>
-
 <<signature Viewers.rem_viewer>>
+<<signature Viewers.add_builtin>>
+<<signature Viewers.reset>>
 
+(* main entry point! *)
 <<signature Viewers.view>>
 
-<<signature Viewers.reset>>
+
+<<signature Viewers.frame_adopt>>
+<<signature Viewers.frame_fugue>>
+
 @
 
 
 \subsection*{[[./viewers/viewers.ml]]}
-
-
-<<function Viewers.frame_adopt>>=
-let frame_adopt w targets = 
-  List.map (function 
-    | "_self",_ -> "_self", w
-    | "_parent", _ -> "_parent", Winfo.parent w
-    | s, f -> s, f)
-    targets
-@
-
-<<function Viewers.frame_fugue>>=
-let frame_fugue targets =
-  let rec ff accu = function
-      [] -> accu
-    | ("_self", _) :: l -> ff accu l
-    | ("_parent", _) :: l -> ff accu l
-    | p :: l -> ff (p::accu) l
-  in
-  ff [] targets
-@
-
 
 <<function Viewers.metamail>>=
 (* Metamail options
@@ -5934,10 +5894,6 @@ let extern_batch dh ctype =
     s_ "Running metamail with MIME media-type: %s" ctype in
     Save.tofile (metamail ctype) (Decoders.insert dh) outfile endmsg
 @
-
-
-
-
 
 
 
@@ -5970,19 +5926,12 @@ open Hyper
 
 <<class Viewers.context>>
 
-
-
 (* The object created/returned by a viewer *)
 class  virtual display_info () =
  object (_self : 'a)
   (* boilerplate class decl *)
   <<[[Viewers.display_info]] virtual methods signatures>>
-
-  val mutable di_last_used = !Low.global_time
-  method di_last_used = 
-    di_last_used
-  method di_touch = 
-    di_last_used <- !Low.global_time
+  <<[[Viewers.display_info]] cache methods>>
 end
 
 <<function Viewers.di_compare>>

@@ -24,17 +24,18 @@ type frame_targets = (string * Widget.widget) list
 
 (*s: function Viewers.frame_adopt *)
 let frame_adopt w targets = 
-  List.map (function 
+  targets |> List.map (function 
     | "_self",_ -> "_self", w
     | "_parent", _ -> "_parent", Winfo.parent w
-    | s, f -> s, f)
-    targets
+    | s, f -> s, f
+  )
+    
 (*e: function Viewers.frame_adopt *)
 
 (*s: function Viewers.frame_fugue *)
 let frame_fugue targets =
   let rec ff accu = function
-      [] -> accu
+    | [] -> accu
     | ("_self", _) :: l -> ff accu l
     | ("_parent", _) :: l -> ff accu l
     | p :: l -> ff (p::accu) l
@@ -46,8 +47,9 @@ let frame_fugue targets =
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
+
   hyper_func : frame_targets -> Hyper.link -> unit
-  }
+}
 (*e: type Viewers.hyper_func *)
 
 (*s: class Viewers.context *)
@@ -94,14 +96,13 @@ class virtual context ((did : Document.document_id),
 end
 (*e: class Viewers.context *)
 
-
-
 (* The object created/returned by a viewer *)
 class  virtual display_info () =
  object (_self : 'a)
   (* boilerplate class decl *)
   (*s: [[Viewers.display_info]] virtual methods signatures *)
   method virtual di_title : string		(* some visible title *)
+
   (* the created widget containing the graphics *)
   method virtual di_widget : Widget.widget
 
@@ -127,12 +128,13 @@ class  virtual display_info () =
   method virtual di_source : unit 	        (* source viewer *)
   (*e: [[Viewers.display_info]] other virtual methods signatures *)
   (*e: [[Viewers.display_info]] virtual methods signatures *)
-
+  (*s: [[Viewers.display_info]] cache methods *)
   val mutable di_last_used = !Low.global_time
   method di_last_used = 
     di_last_used
   method di_touch = 
     di_last_used <- !Low.global_time
+  (*e: [[Viewers.display_info]] cache methods *)
 end
 
 (*s: function Viewers.di_compare *)
