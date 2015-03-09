@@ -9,8 +9,8 @@ include Makefile.config
 TOP=$(shell pwd)
 
 
-PROGS=mmm
-#PROGS+=htparse, surfboard
+PROGS=mmm mmm2 htparse
+#, surfboard
 
 TARGET=mmm2
 GRAPHICSDIR=$(shell ocamlfind query lablgtk2) $(shell ocamlfind query cairo)
@@ -114,7 +114,7 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 
 
-$(TARGET): $(LIBS) $(OBJS) main_gtk.cmo
+$(TARGET): $(LIBS) $(OBJS) gui.cmo main_gtk.cmo
 	$(OCAMLC) -cclib -L/opt/X11/lib  $(BYTECODE_STATIC) -o $@ $(OTHERSYSLIBS) $(SYSLIBS) threads.cma $(GTKLOOP) $^
 
 

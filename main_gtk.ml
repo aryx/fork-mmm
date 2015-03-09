@@ -14,6 +14,7 @@
  *)
 open Common
 
+module G = Gui
 module Color = Simple_color
 
 (*****************************************************************************)
@@ -196,7 +197,7 @@ let paint w =
 (* The main UI *)
 (*****************************************************************************)
 
-let init2 location =
+let init () =
   let _locale = GtkMain.Main.init () in
 
   let width = 800 in
@@ -207,8 +208,33 @@ let init2 location =
   }
   in
 
+  let statusbar = GMisc.statusbar () in
+  let ctx = statusbar#new_context "main" in
+
+(*
+  Controller._set_title := (fun s -> win#set_title s);
+  Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
+*)
+
   let win = GWindow.window ~title:"MMM" () in
   let quit () = GMain.Main.quit (); in
+
+
+  (*-------------------------------------------------------------------*)
+  (* Creation of graphic view *)
+  (*-------------------------------------------------------------------*)
+
+    let px = GDraw.pixmap ~width ~height ~window:win () in 
+      px#set_foreground `WHITE;
+      px#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
+
+      let cr = Cairo_lablgtk.create px#pixmap in
+      Cairo.scale cr 1.0 1.0;
+      Cairo.select_font_face cr "fixed"
+        Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+      Cairo.set_font_size cr 20.0;
+      
+      paint w;
 
   (*-------------------------------------------------------------------*)
   (* Creation of core DS *)
@@ -218,19 +244,58 @@ let init2 location =
   (* Layout *)
   (*-------------------------------------------------------------------*)
 
-  let px = GDraw.pixmap ~width ~height ~window:win () in
-  px#set_foreground `WHITE;
-  px#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
+  (* if use my G.mk style for that, then get some pbs when trying
+   * to draw stuff :(
+   *)
+  let vbox = GPack.vbox ~packing:win#add () in
 
-  let cr = Cairo_lablgtk.create px#pixmap in
-  Cairo.scale cr 1.0 1.0;
-  Cairo.select_font_face cr "fixed"
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  Cairo.set_font_size cr 20.0;
+    (*-------------------------------------------------------------------*)
+    (* Menu *)
+    (*-------------------------------------------------------------------*)
+    vbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
 
-  paint w;
+      let factory = new GMenu.factory m in
 
-  (GMisc.pixmap px ~packing:win#add ()) |> ignore;
+      factory#add_submenu "_File" +> (fun menu -> 
+        GToolbox.build_menu menu ~entries:[
+          `S;
+        ];
+      ) |> ignore;
+      factory#add_submenu "_Help" +> (fun menu -> 
+        ()
+      );
+    ));
+
+
+    (*-------------------------------------------------------------------*)
+    (* toolbar *)
+    (*-------------------------------------------------------------------*)
+
+    vbox#pack (G.mk (GButton.toolbar) (fun tb ->
+      tb#insert_widget (G.mk (GMisc.label ~text:"URL: ") (fun _lbl ->
+        ()
+      ));
+      tb#insert_widget (G.mk (GEdit.entry ~width:200) (fun entry ->
+
+        entry#connect#changed (fun () -> 
+          let s = entry#text in
+          pr2 s;
+        ) |> ignore;
+      ));
+
+
+    ));
+
+    (*-------------------------------------------------------------------*)
+    (* main view *)
+    (*-------------------------------------------------------------------*)
+
+    (GMisc.pixmap px ~packing:vbox#pack ()) |> ignore;
+
+    (*-------------------------------------------------------------------*)
+    (* status bar *)
+    (*-------------------------------------------------------------------*)
+    vbox#pack (*~from: `END*) statusbar#coerce;
 
   (*-------------------------------------------------------------------*)
   (* End *)
@@ -245,5 +310,7 @@ let init2 location =
 (*****************************************************************************)
 
 let _ =
-  test_cairo ()
+  (* test_cairo () *)
+  init ()
+  
   
