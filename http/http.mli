@@ -1,15 +1,15 @@
 (*s: ./http/http.mli *)
 
 (*s: exception Http.End_of_headers *)
+exception End_of_headers
+(*e: exception Http.End_of_headers *)
+
+(*s: signature Http.read_headers *)
 (* [read_headers fd]
  *  reads HTTP headers from a fd
  *    raises End_of_file
  *    raises Invalid_HTTP_header
  *)
-exception End_of_headers
-(*e: exception Http.End_of_headers *)
-
-(*s: signature Http.read_headers *)
 val read_headers: 
   Unix.file_descr -> string list -> string list
 (*e: signature Http.read_headers *)

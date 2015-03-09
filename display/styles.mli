@@ -1,21 +1,19 @@
 (*s: ./display/styles.mli *)
-open Fonts
-
-(*s: signature Styles.init *)
 (*
  * Definition of attributes of symbolic fonts (font-modifiers)
  *)
 
+(*s: signature Styles.init *)
 val init : string -> string -> unit
     (* [init family slant] *)
 (*e: signature Styles.init *)
 
 (*s: signature Styles.set_font *)
-val set_font : string -> fontAttrs -> unit
+val set_font : string -> Fonts.fontAttrs -> unit
     (* [set_font symbolic_name attrs] *)
 (*e: signature Styles.set_font *)
 (*s: signature Styles.get_font *)
-val get_font : string -> fontAttrs
+val get_font : string -> Fonts.fontAttrs
     (* [get_font symbolic_name] *)
 (*e: signature Styles.get_font *)
 

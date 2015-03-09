@@ -43,19 +43,15 @@ class  virtual tachymeter : object
           from [total] and [sample] in last [tick_duration] *)
   method virtual quit : unit
 end
-
 (*s: signature Low.cur_tachy *)
 val cur_tachy : tachymeter ref
 (*e: signature Low.cur_tachy *)
-
 
 (*s: signature Low.init *)
 val init : unit -> unit
 (*e: signature Low.init *)
 
-
 val update_idletasks_backend: (unit -> unit) ref
-
 (*s: signature Low.update_idletasks *)
 val update_idletasks : unit -> unit
 (*e: signature Low.update_idletasks *)

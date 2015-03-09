@@ -330,11 +330,6 @@ let failed_request wr finish =
  *)
 
 (*s: exception Http.End_of_headers *)
-(* [read_headers fd]
- *  reads HTTP headers from a fd
- *    raises End_of_file
- *    raises Invalid_HTTP_header
- *)
 exception End_of_headers
 (*e: exception Http.End_of_headers *)
 

@@ -948,53 +948,6 @@ end
 @
 
 
-\subsection*{[[./commons/lexpath.mli]]}
-
-
-%\subsection{Paths}
-% need that? mv?
-% I think it's dead! subsumed by lexurl.mll
-
-<<signature Lexpath.path_components>>=
-(* Path lexer
-   Deals with "./" and "../"
- *)
-
-val path_components : Lexing.lexbuf -> string list
-  (* in normal order: /a/b/c/ -> [a;b;c] *)
-@
-
-<<signature Lexpath.rev_path_components>>=
-val rev_path_components : Lexing.lexbuf -> string list
-  (* in reverse order: /a/b/c/ -> [c;b;a] *)
-@
-
-<<signature Lexpath.build>>=
-val build : string -> string list -> string
-  (* [build root [a;b;d]] returns path/a/b/c *)
-@
-
-<<signature Lexpath.remove_dots>>=
-val remove_dots : string -> string
-  (* takes path and removes . and .. *)
-@
-
-
-
-%-------------------------------------------------------------
-
-<<./commons/lexpath.mli>>=
-<<copyright header v6>>
-
-<<signature Lexpath.path_components>>
-
-<<signature Lexpath.rev_path_components>>
-
-<<signature Lexpath.build>>
-
-<<signature Lexpath.remove_dots>>
-@
-
 
 \subsection*{[[./commons/log.mli]]}
 
@@ -1089,15 +1042,11 @@ class  virtual tachymeter : object
           from [total] and [sample] in last [tick_duration] *)
   method virtual quit : unit
 end
-
 <<signature Low.cur_tachy>>
-
 
 <<signature Low.init>>
 
-
 val update_idletasks_backend: (unit -> unit) ref
-
 <<signature Low.update_idletasks>>
 @
 
@@ -1433,6 +1382,7 @@ open Unix
 <<signature I18n.language>>
 
 <<signature I18n.sprintf>>
+(* pad's compact alias *)
 val s_: ('a, unit, string) format -> 'a
 
 <<signature I18n.menu_option>>
@@ -1828,9 +1778,11 @@ open I18n
 <<signature Version.number>>
 <<signature Version.http>>
 <<signature Version.about>>
+
 <<signature Version.initurl>>
-<<signature Version.helpurl>>
 <<signature Version.html>>
+
+<<signature Version.helpurl>>
 <<signature Version.home>>
 <<signature Version.applet_init>>
 @
@@ -2080,8 +2032,6 @@ open Url
 
 <<signature Hyper.resolve>>
 <<signature Hyper.string_of>>
-  
-
 @
 
 
@@ -2839,17 +2789,17 @@ open Date
 
 
 <<signature Http_headers.location>>=
-val location : header list -> string
+val location : Messages.header list -> string
   (* Location *)
 @
 
 
 <<signature Http_headers.rem_contentencoding>>=
-val rem_contentencoding : header list -> header list
+val rem_contentencoding : Messages.header list -> Messages.header list
 @
 
 <<signature Http_headers.status_msg>>=
-val status_msg : header list -> string
+val status_msg : Messages.header list -> string
 @
 
 
@@ -2861,14 +2811,13 @@ val status_message : int -> string
 
 
 <<signature Http_headers.hints>>=
-val hints : string -> header list
+val hints : string -> Messages.header list
 @
 
 
 %-------------------------------------------------------------
 
 <<./http/http_headers.mli>>=
-open Messages
 
 <<exception Http_headers.Invalid_HTTP_header>>
 
@@ -3053,7 +3002,6 @@ let expires hs =
 %-------------------------------------------------------------
 
 <<./http/auth.mli>>=
-open Http_headers
 
 <<type Auth.authSpace>>
 
@@ -3147,7 +3095,6 @@ let edit_backend = ref (fun _ -> failwith "no Auth.edit defined")
 %-------------------------------------------------------------
 
 <<./http/lexheaders.mli>>=
-open Http_headers
 
 <<signature Lexheaders.media_type>>
 <<signature Lexheaders.challenge>>
@@ -3453,12 +3400,12 @@ exception DontCache
 @
 
 <<signature Cache.tofile>>=
-val tofile : handle -> document_data * cache_fill
+val tofile : Document.handle -> Document.document_data * cache_fill
 @
 
 
 <<signature Cache.dummy>>=
-val dummy : handle  -> document_data * cache_fill
+val dummy : Document.handle  -> Document.document_data * cache_fill
 @
 
 <<signature Cache.discard>>=
@@ -3466,27 +3413,27 @@ val discard: cache_fill
 @
 
 <<signature Cache.wrap>>=
-val wrap: cache_fill -> handle -> handle
+val wrap: cache_fill -> Document.handle -> Document.handle
 @
 
 <<signature Cache.patch>>=
-val patch : document_id -> string list -> unit
+val patch : Document.document_id -> string list -> unit
 @
 
 <<signature Cache.cutlinks>>=
-val cutlinks : (document_id -> unit) list ref
+val cutlinks : (Document.document_id -> unit) list ref
 @
 
 <<signature Cache.make_handle>>=
-val make_handle : Www.request -> document -> handle
+val make_handle : Www.request -> Document.document -> Document.handle
 @
 
 <<signature Cache.renew_handle>>=
-val renew_handle : handle -> handle
+val renew_handle : Document.handle -> Document.handle
 @
 
 <<signature Cache.make_embed_handle>>=
-val make_embed_handle : document -> handle
+val make_embed_handle : Document.document -> Document.handle
 @
 
 
@@ -3494,7 +3441,6 @@ val make_embed_handle : document -> handle
 
 <<./protocols/cache.mli>>=
 (* Document and image cache *)
-open Document
 
 <<signature Cache.debug>>
 <<signature Cache.history_mode>>
@@ -4107,7 +4053,6 @@ open Url
 
 <<./retrieve/retrieve.mli>>=
 (* Document retrieval *)
-open Document
 
 <<type Retrieve.retrievalStatus>>
 
@@ -4644,6 +4589,17 @@ module ImageScheduler = Scheduler.Make(ImageData)
 %-------------------------------------------------------------
 
 <<./retrieve/scheduler.mli>>=
+(*
+ * Certain kind of documents need to be shared, such as in-lined images.
+ * In this case, instead of working with Retrieve.f and the normal
+ * document continuation, we queue the request to a scheduler, with a
+ * continuation to be applied to an object representing the shared 
+ * information for that document.
+ * E.G: for in-lined images, the shared information is the Tk-handle to
+ * the image.
+ *)
+
+
 <<signature Scheduler.debug>>
 
 <<type Scheduler.progress_func>>
@@ -4654,10 +4610,9 @@ module type Data =
         (* Type of shared objects
          * The table of objects in managed in this module
          *)
-   val load : 
-     Document.handle -> Document.document_id list -> string -> t
+   val load : Document.handle -> Document.document_id list -> string -> t
         (* [load dh referers file]
-     *   is responsible for creating the shared handle
+         *   is responsible for creating the shared handle
          *)
    val cache_access : Url.t -> Document.document_id -> t
         (* [cache_access url referer]
@@ -5144,7 +5099,6 @@ end
 
 <<./viewers/decoders.mli>>=
 (* Decoders *)
-open Document
 
 <<signature Decoders.insert>>
 <<signature Decoders.add>>
@@ -8122,10 +8076,6 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 
 <<./display/htmlfmt.mli>>=
 (* HTML  "display device" *)
-open Html
-open Www
-open Fonts
-open Embed
 
 <<type Htmlfmt.gattr>>
 
@@ -8152,7 +8102,7 @@ module type ImgDisplay = sig
    val no_images : bool ref
 
    class loader : (unit) -> object
-     method add_image : embobject -> unit	 (* add one image *)
+     method add_image : Embed.embobject -> unit	 (* add one image *)
      method flush_images : unit	         (* flush when document is loaded *)
      method load_images : unit		 (* manual flush *)
      method update_images : unit
@@ -8174,21 +8124,21 @@ end
 module type FormDisplay = sig
    (* A form manager *)
    type t = {
-     text_input : Widget.widget -> tag -> unit;
+     text_input : Widget.widget -> Html.tag -> unit;
      (* [text_input top tag] *)
-     checkbox_input : Widget.widget ->  tag -> unit;
+     checkbox_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     radio_input : Widget.widget ->  tag -> unit;
+     radio_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     image_input : Widget.widget ->  tag -> embobject;
+     image_input : Widget.widget ->  Html.tag -> Embed.embobject;
      (* [input top tag] *)
-     submit_input : Widget.widget ->  tag -> unit;
+     submit_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     reset_input : Widget.widget ->  tag -> unit;
+     reset_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     select : Widget.widget -> (string * string * bool) list -> tag -> unit;
+     select : Widget.widget -> (string * string * bool) list -> Html.tag -> unit;
      (* [select top elements tag] *)
-     textarea:  Widget.widget -> string -> tag -> unit
+     textarea:  Widget.widget -> string -> Html.tag -> unit
      (* [textarea top initial attrs] *)
      }
 
@@ -8901,10 +8851,7 @@ val html_head_ui :
    hgroup, set_title, add_link, add_header, add_extra_header
 *)
 
-val display_html :
-  Http_headers.media_parameter list ->
-  Widget.widget ->
-  Viewers.context -> Document.handle -> Viewers.display_info option
+val display_html : Viewers.t
 @
 
 
@@ -8924,6 +8871,7 @@ class  virtual viewer_globs : (Viewers.context * Document.handle) -> object
   method dh : Document.handle
   method did : Document.document_id
 end
+(*pad: seems mostly boilerplate getters of params *)
 
 <<signature Htmlw.progress_report>>
 
@@ -9348,7 +9296,7 @@ end
 @
 
 <<[[Htmlfmt.gattr]] other cases>>=
-  | BgColor of string
+| BgColor of string
 @
 
 
@@ -10009,21 +9957,17 @@ end
 \subsection*{[[./display/styles.mli]]}
 
 <<signature Styles.init>>=
-(*
- * Definition of attributes of symbolic fonts (font-modifiers)
- *)
-
 val init : string -> string -> unit
     (* [init family slant] *)
 @
 
 <<signature Styles.set_font>>=
-val set_font : string -> fontAttrs -> unit
+val set_font : string -> Fonts.fontAttrs -> unit
     (* [set_font symbolic_name attrs] *)
 @
 
 <<signature Styles.get_font>>=
-val get_font : string -> fontAttrs
+val get_font : string -> Fonts.fontAttrs
     (* [get_font symbolic_name] *)
 @
 
@@ -10039,7 +9983,9 @@ val get : string -> Htmlfmt.gattr list
 %-------------------------------------------------------------
 
 <<./display/styles.mli>>=
-open Fonts
+(*
+ * Definition of attributes of symbolic fonts (font-modifiers)
+ *)
 
 <<signature Styles.init>>
 
@@ -11719,10 +11665,6 @@ open Fonts
 \subsection*{[[./gui/gcache.mli]]}
 
 <<signature Gcache.debug>>=
-(* Cache by "widget unmapping"
- *  For each navigator, we keep the list of displayed documents
- *)
-
 val debug : bool ref
 @
 
@@ -11762,6 +11704,10 @@ val postmortem : unit -> unit
 %-------------------------------------------------------------
 
 <<./gui/gcache.mli>>=
+(* Cache by "widget unmapping"
+ * For each navigator, we keep the list of displayed documents
+ *)
+
 <<signature Gcache.debug>>
 
 <<signature Gcache.max_keep>>
@@ -12055,13 +12001,13 @@ open Hyper
 <<type Prefs.pref_type>>=
 (* Exported so that we can plug applet preferences *)
 type pref_type =
-   Bool of bool ref
+ | Bool of bool ref
  | String of string ref
  | Int of int ref
  | Float of float ref
  | AbstractType of (Textvariable.textVariable -> unit) * 
-                (Textvariable.textVariable -> unit)
-                 (* init, set *)
+                   (Textvariable.textVariable -> unit)
+                   (* init, set *)
 @
 
 <<type Prefs.pref>>=

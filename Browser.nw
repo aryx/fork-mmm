@@ -435,7 +435,6 @@ type protocol =
 
 <<type Uri.abs_uri>>=
 (* URI utilities. RFC 1630 *)
-
 type abs_uri = {
    uri_url : string;
    uri_fragment : string option
@@ -601,7 +600,6 @@ type document = {
  * that is clients not directly on the chain of processes dealing with
  * the handle
  *)
-
 type document_data =
  | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
@@ -665,24 +663,24 @@ module DocumentIDSet =
 \subsection{Document cache}
 
 <<signature Cache.add>>=
-val add : document_id -> document -> unit
+val add : Document.document_id -> Document.document -> unit
 @
 <<signature Cache.find>>=
-val find : document_id -> document
+val find : Document.document_id -> Document.document
 @
 % see below
 <<signature Cache.finished>>=
-val finished : document_id -> unit
+val finished : Document.document_id -> unit
 @
 % will see add and finished later in optimisation section.
 <<signature Cache.touch>>=
-val touch : document_id -> unit
+val touch : Document.document_id -> unit
 @
 % refresh for cache
 
 
 <<signature Cache.kill>>=
-val kill : document_id -> unit
+val kill : Document.document_id -> unit
 @
 %less: diff with finished?
 
@@ -4960,7 +4958,7 @@ let parse_status s =
 
 <<signature Http_headers.http_status>>=
 (* Common headers *)
-val http_status : int -> status
+val http_status : int -> Messages.status
   (* [http_status n] returns Status-Line for code [n] *)
 @
 <<function Http_headers.http_status>>=
@@ -5021,7 +5019,7 @@ let _ =
 
 % generic function
 <<signature Http_headers.get_header>>=
-val get_header : string -> header list -> string
+val get_header : string -> Messages.header list -> string
   (* [get_header field_name hs] returns the field_value, if any, of
      the headers, or raises [Not_found].
      [field_name] is the token is lowercase (e.g. "content-type") *)
@@ -5048,7 +5046,7 @@ let get_header field_name =
 
 
 <<signature Http_headers.get_multi_header>>=
-val get_multi_header : string -> header list -> string list
+val get_multi_header : string -> Messages.header list -> string list
   (* [get_multi_header field_name hs] returns the list of field_value
      of the headers.
      [field_name] is the token is lowercase (e.g. "content-type") *)
@@ -5077,7 +5075,7 @@ let get_multi_header field_name =
 
 <<signature Http_headers.contenttype>>=
 (* Predefined access functions *)
-val contenttype : header list -> string
+val contenttype : Messages.header list -> string
   (* Content-Type *)
 @
 <<functions Http_headers.xxx get_header applications>>=
@@ -5174,7 +5172,7 @@ and value = parse
 \subsubsection{Content length}
 
 <<signature Http_headers.contentlength>>=
-val contentlength : header list -> int
+val contentlength : Messages.header list -> int
   (* Content-Length *)
 @
 % Plain.display_plain#init -> <>
@@ -5191,7 +5189,7 @@ let contentlength l =
 \subsubsection{Content encoding}
 
 <<signature Http_headers.contentencoding>>=
-val contentencoding : header list -> string
+val contentencoding : Messages.header list -> string
   (* Content-Encoding *)
 @
 <<functions Http_headers.xxx get_header applications>>=
@@ -5306,7 +5304,6 @@ let rem_active_cnx url =
 
 <<type Feed.internal>>=
 (* An abstract notion of connection *)
-
 type internal = Unix.file_descr
 @
 %less: why not put as abstract type for real then?
@@ -5445,12 +5442,12 @@ let internal feed =
  * less mapped to http, we deal with them at the retrieval level.
  *)
 type behaviour =
-   Ok 			              (* process the document *)
+ | Ok 			              (* process the document *)
  | Stop of string             (* stop (no document) and display message *)
  | Retry of Hyper.link        (* restart with a new link *)
  | Error of string            (* same as stop, but it's an error *)
- | Restart of (handle -> handle) (* restart the same request, but apply
-                     transformation on the continuation *)
+ | Restart of (Document.handle -> Document.handle) 
+   (* restart the same request, but apply transformation on the continuation *)
 @
 
 <<signature Retrieve.add_http_processor>>=
@@ -6154,15 +6151,15 @@ with
 @
 
 <<exception Http.End_of_headers>>=
+exception End_of_headers
+@
+
+<<signature Http.read_headers>>=
 (* [read_headers fd]
  *  reads HTTP headers from a fd
  *    raises End_of_file
  *    raises Invalid_HTTP_header
  *)
-exception End_of_headers
-@
-
-<<signature Http.read_headers>>=
 val read_headers: 
   Unix.file_descr -> string list -> string list
 @
@@ -6270,7 +6267,7 @@ timout();
 
 % Retype.f | ... -> <>
 <<signature Http_headers.merge_headers>>=
-val merge_headers : header list -> header list -> header list
+val merge_headers : Messages.header list -> Messages.header list -> Messages.header list
   (* [merge_headers oldhs newhs] merges headers, overriding headers in
      [oldhs] by headers in [newhs] *)
 @
@@ -6309,7 +6306,7 @@ let header_type s =
 
 
 <<signature Http_headers.remove_headers>>=
-val remove_headers : header list -> string list -> header list
+val remove_headers : Messages.header list -> string list -> Messages.header list
   (* [remove_headers hs field_names] returns [hs] without the headers
      with field_name present in [field_names] *)
 @
@@ -6815,8 +6812,8 @@ let display_html mediapars top ctx dh =
 <<type Http_headers.hint>>=
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
-  | ContentType     of header
-  | ContentEncoding of header
+  | ContentType     of Messages.header
+  | ContentEncoding of Messages.header
 @
 
 <<constant Http_headers.default_hints>>=
@@ -7857,9 +7854,7 @@ let init mach =
 val create :
   (unit -> string) ->
   Htmlfmt.formatterSpec -> 
-  Widget.widget -> 
-  Viewers.context ->  
-  Htmlfmt.formatter * Widget.widget
+  Widget.widget -> Viewers.context ->  Htmlfmt.formatter * Widget.widget
 @
 
 <<function Textw_fo.create>>=
@@ -9204,7 +9199,7 @@ mach#add_tag "hr"
 @
 
 <<[[Htmlfmt.formatter]] predefined images methods>>=
-hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
+hr : Html.length -> int -> bool -> unit;  (* [hr width height solid] *)
 @
 
 <<function Textfw_fo.create.hr>>=
@@ -9636,7 +9631,7 @@ let get name =
 \subsection{Fonts}
 
 <<[[Htmlfmt.gattr]] other cases>>=
-| Font of fontInfo		        (* mostly size and face *)
+| Font of Fonts.fontInfo		        (* mostly size and face *)
 @
 
 \subsubsection{[[<basefont>]]}
@@ -9883,6 +9878,8 @@ let frame_fugue targets =
 % Styles.get
 
 \section{Fonts}
+
+%todo? http://www.google.com/fonts
 
 <<[[Plain.plain#init]] setup fonts>>=
 (* pick up the fixed font *)
@@ -12601,7 +12598,7 @@ in
 \subsection{Parsing}
 
 <<signature Lexheaders.challenge>>=
-val challenge : Lexing.lexbuf -> authChallenge
+val challenge : Lexing.lexbuf -> Http_headers.authChallenge
 @
 
 \subsection{Security challenge}
@@ -12610,17 +12607,17 @@ val challenge : Lexing.lexbuf -> authChallenge
 
 
 <<signature Http_headers.challenge>>=
-val challenge : header list -> string
+val challenge : Messages.header list -> string
   (* WWW-Authenticate *)
 @
 
 <<signature Http_headers.proxy_challenge>>=
-val proxy_challenge : header list -> string
+val proxy_challenge : Messages.header list -> string
   (* Proxy-Authenticate *)
 @
 
 <<signature Http_headers.expires>>=
-val expires : header list -> Http_date.http_time option
+val expires : Messages.header list -> Http_date.http_time option
   (* Expires *)
 @
 
@@ -12687,7 +12684,7 @@ val get : authSpace -> string
 
 
 <<signature Auth.check>>=
-val check : Www.request -> authChallenge -> authSpace ->
+val check : Www.request -> Http_headers.authChallenge -> authSpace ->
                   (string * bool * authSpace) option
 @
 
@@ -13490,16 +13487,6 @@ method virtual log : string -> unit
 \subsection{Scheduler}
 
 <<signature Scheduler.debug>>=
-(*
- * Certain kind of documents need to be shared, such as in-lined images.
- * In this case, instead of working with Retrieve.f and the normal
- * document continuation, we queue the request to a scheduler, with a
- * continuation to be applied to an object representing the shared 
- * information for that document.
- * E.G: for in-lined images, the shared information is the Tk-handle to
- * the image.
- *)
-
 val debug : bool ref
 @
 <<constant Scheduler.debug>>=

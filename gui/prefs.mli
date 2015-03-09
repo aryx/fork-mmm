@@ -2,13 +2,13 @@
 (*s: type Prefs.pref_type *)
 (* Exported so that we can plug applet preferences *)
 type pref_type =
-   Bool of bool ref
+ | Bool of bool ref
  | String of string ref
  | Int of int ref
  | Float of float ref
  | AbstractType of (Textvariable.textVariable -> unit) * 
-                (Textvariable.textVariable -> unit)
-                 (* init, set *)
+                   (Textvariable.textVariable -> unit)
+                   (* init, set *)
 (*e: type Prefs.pref_type *)
 
 (*s: type Prefs.pref *)

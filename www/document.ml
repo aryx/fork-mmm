@@ -72,7 +72,6 @@ type document_continuation = {
  * that is clients not directly on the chain of processes dealing with
  * the handle
  *)
-
 type document_data =
  | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)

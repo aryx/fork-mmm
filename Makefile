@@ -291,7 +291,6 @@ SRC_VIEWS= \
   commons/ibtree.ml\
   commons/lang.mli\
   commons/lang.ml\
-  commons/lexpath.mli\
   commons/log.mli\
   commons/log.ml\
   commons/low.mli\

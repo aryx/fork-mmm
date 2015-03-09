@@ -1,7 +1,6 @@
 (*s: ./commons/feed.mli *)
 (*s: type Feed.internal *)
 (* An abstract notion of connection *)
-
 type internal = Unix.file_descr
 (*e: type Feed.internal *)
 

@@ -18,6 +18,7 @@ class  virtual viewer_globs : (Viewers.context * Document.handle) -> object
   method dh : Document.handle
   method did : Document.document_id
 end
+(*pad: seems mostly boilerplate getters of params *)
 
 (*s: signature Htmlw.progress_report *)
 val progress_report : 
@@ -41,9 +42,6 @@ val html_head_ui :
    hgroup, set_title, add_link, add_header, add_extra_header
 *)
 
-val display_html :
-  Http_headers.media_parameter list ->
-  Widget.widget ->
-  Viewers.context -> Document.handle -> Viewers.display_info option
+val display_html : Viewers.t
 (*e: signature Htmlw.display_html *)
 (*e: ./display/htmlw.mli *)

@@ -9,6 +9,7 @@ val language : string ref
 (*s: signature I18n.sprintf *)
 val sprintf: ('a, unit, string) format -> 'a
 (*e: signature I18n.sprintf *)
+(* pad's compact alias *)
 val s_: ('a, unit, string) format -> 'a
 
 (*s: signature I18n.menu_option *)

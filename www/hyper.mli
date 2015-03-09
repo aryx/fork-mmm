@@ -56,6 +56,4 @@ val string_of : link -> string
   (* make an absolute URI (including fragment) from link 
      raises Invalid_link(msg) *)
 (*e: signature Hyper.string_of *)
-  
-
 (*e: ./www/hyper.mli *)

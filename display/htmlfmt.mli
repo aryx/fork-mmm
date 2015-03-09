@@ -1,9 +1,5 @@
 (*s: ./display/htmlfmt.mli *)
 (* HTML  "display device" *)
-open Html
-open Www
-open Fonts
-open Embed
 
 (*s: type Htmlfmt.gattr *)
 type gattr =
@@ -22,11 +18,11 @@ type gattr =
 (*x: [[Htmlfmt.gattr]] other cases *)
 | Spacing of int
 (*x: [[Htmlfmt.gattr]] other cases *)
-| Font of fontInfo		        (* mostly size and face *)
+| Font of Fonts.fontInfo		        (* mostly size and face *)
 (*x: [[Htmlfmt.gattr]] other cases *)
 | FgColor of string
 (*x: [[Htmlfmt.gattr]] other cases *)
-  | BgColor of string
+| BgColor of string
 (*e: [[Htmlfmt.gattr]] other cases *)
 (*e: type Htmlfmt.gattr *)
 
@@ -67,7 +63,7 @@ type formatter = {
   (*s: [[Htmlfmt.formatter]] predefined images methods *)
   bullet : string -> unit;
   (*x: [[Htmlfmt.formatter]] predefined images methods *)
-  hr : length -> int -> bool -> unit;  (* [hr width height solid] *)
+  hr : Html.length -> int -> bool -> unit;  (* [hr width height solid] *)
   (*e: [[Htmlfmt.formatter]] predefined images methods *)
   (* Structure primitives *)
   (*s: [[Htmlfmt.formatter]] structure primitives methods *)
@@ -116,7 +112,7 @@ module type ImgDisplay = sig
    val no_images : bool ref
 
    class loader : (unit) -> object
-     method add_image : embobject -> unit	 (* add one image *)
+     method add_image : Embed.embobject -> unit	 (* add one image *)
      method flush_images : unit	         (* flush when document is loaded *)
      method load_images : unit		 (* manual flush *)
      method update_images : unit
@@ -141,21 +137,21 @@ end
 module type FormDisplay = sig
    (* A form manager *)
    type t = {
-     text_input : Widget.widget -> tag -> unit;
+     text_input : Widget.widget -> Html.tag -> unit;
      (* [text_input top tag] *)
-     checkbox_input : Widget.widget ->  tag -> unit;
+     checkbox_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     radio_input : Widget.widget ->  tag -> unit;
+     radio_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     image_input : Widget.widget ->  tag -> embobject;
+     image_input : Widget.widget ->  Html.tag -> Embed.embobject;
      (* [input top tag] *)
-     submit_input : Widget.widget ->  tag -> unit;
+     submit_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     reset_input : Widget.widget ->  tag -> unit;
+     reset_input : Widget.widget ->  Html.tag -> unit;
      (* [input top tag] *)
-     select : Widget.widget -> (string * string * bool) list -> tag -> unit;
+     select : Widget.widget -> (string * string * bool) list -> Html.tag -> unit;
      (* [select top elements tag] *)
-     textarea:  Widget.widget -> string -> tag -> unit
+     textarea:  Widget.widget -> string -> Html.tag -> unit
      (* [textarea top initial attrs] *)
      }
 

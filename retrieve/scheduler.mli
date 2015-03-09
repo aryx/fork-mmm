@@ -1,5 +1,4 @@
 (*s: ./retrieve/scheduler.mli *)
-(*s: signature Scheduler.debug *)
 (*
  * Certain kind of documents need to be shared, such as in-lined images.
  * In this case, instead of working with Retrieve.f and the normal
@@ -10,6 +9,8 @@
  * the image.
  *)
 
+
+(*s: signature Scheduler.debug *)
 val debug : bool ref
 (*e: signature Scheduler.debug *)
 
@@ -23,10 +24,9 @@ module type Data =
         (* Type of shared objects
          * The table of objects in managed in this module
          *)
-   val load : 
-     Document.handle -> Document.document_id list -> string -> t
+   val load : Document.handle -> Document.document_id list -> string -> t
         (* [load dh referers file]
-     *   is responsible for creating the shared handle
+         *   is responsible for creating the shared handle
          *)
    val cache_access : Url.t -> Document.document_id -> t
         (* [cache_access url referer]

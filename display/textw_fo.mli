@@ -18,8 +18,6 @@ val internal_buffer : int ref
 val create :
   (unit -> string) ->
   Htmlfmt.formatterSpec -> 
-  Widget.widget -> 
-  Viewers.context ->  
-  Htmlfmt.formatter * Widget.widget
+  Widget.widget -> Viewers.context ->  Htmlfmt.formatter * Widget.widget
 (*e: signature Textw_fo.create *)
 (*e: ./display/textw_fo.mli *)

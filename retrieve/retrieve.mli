@@ -1,6 +1,5 @@
 (*s: ./retrieve/retrieve.mli *)
 (* Document retrieval *)
-open Document
 
 (*s: type Retrieve.retrievalStatus *)
 type retrievalStatus =
@@ -23,12 +22,12 @@ val f : Www.request ->  (* the request *)
  * less mapped to http, we deal with them at the retrieval level.
  *)
 type behaviour =
-   Ok 			              (* process the document *)
+ | Ok 			              (* process the document *)
  | Stop of string             (* stop (no document) and display message *)
  | Retry of Hyper.link        (* restart with a new link *)
  | Error of string            (* same as stop, but it's an error *)
- | Restart of (handle -> handle) (* restart the same request, but apply
-                     transformation on the continuation *)
+ | Restart of (Document.handle -> Document.handle) 
+   (* restart the same request, but apply transformation on the continuation *)
 (*e: type Retrieve.behaviour *)
 
 (*s: signature Retrieve.add_http_processor *)

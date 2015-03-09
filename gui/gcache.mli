@@ -1,9 +1,9 @@
 (*s: ./gui/gcache.mli *)
-(*s: signature Gcache.debug *)
 (* Cache by "widget unmapping"
- *  For each navigator, we keep the list of displayed documents
+ * For each navigator, we keep the list of displayed documents
  *)
 
+(*s: signature Gcache.debug *)
 val debug : bool ref
 (*e: signature Gcache.debug *)
 

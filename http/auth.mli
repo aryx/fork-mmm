@@ -1,5 +1,4 @@
 (*s: ./http/auth.mli *)
-open Http_headers
 
 (*s: type Auth.authSpace *)
 (* Authorizations are remembered on the base of the directory url and realm
@@ -55,7 +54,7 @@ val init : unit -> unit
 val open_passwd_ref: (string -> string * string) ref
 
 (*s: signature Auth.check *)
-val check : Www.request -> authChallenge -> authSpace ->
+val check : Www.request -> Http_headers.authChallenge -> authSpace ->
                   (string * bool * authSpace) option
 (*e: signature Auth.check *)
 (*e: ./http/auth.mli *)

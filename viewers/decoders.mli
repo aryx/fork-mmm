@@ -1,6 +1,5 @@
 (*s: ./viewers/decoders.mli *)
 (* Decoders *)
-open Document
 
 (*s: signature Decoders.insert *)
 val insert  : Document.handle -> Document.handle

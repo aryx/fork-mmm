@@ -1,6 +1,5 @@
 (*s: ./protocols/cache.mli *)
 (* Document and image cache *)
-open Document
 
 (*s: signature Cache.debug *)
 (* Configurable settings *)
@@ -21,19 +20,19 @@ val init : unit -> unit
 (*e: signature Cache.init *)
 
 (*s: signature Cache.add *)
-val add : document_id -> document -> unit
+val add : Document.document_id -> Document.document -> unit
 (*e: signature Cache.add *)
 (*s: signature Cache.find *)
-val find : document_id -> document
+val find : Document.document_id -> Document.document
 (*e: signature Cache.find *)
 (*s: signature Cache.finished *)
-val finished : document_id -> unit
+val finished : Document.document_id -> unit
 (*e: signature Cache.finished *)
 (*s: signature Cache.touch *)
-val touch : document_id -> unit
+val touch : Document.document_id -> unit
 (*e: signature Cache.touch *)
 (*s: signature Cache.kill *)
-val kill : document_id -> unit
+val kill : Document.document_id -> unit
 (*e: signature Cache.kill *)
 
 (*s: signature Cache.postmortem *)
@@ -52,37 +51,37 @@ exception DontCache
 (*e: exception Cache.DontCache *)
 
 (*s: signature Cache.tofile *)
-val tofile : handle -> document_data * cache_fill
+val tofile : Document.handle -> Document.document_data * cache_fill
 (*e: signature Cache.tofile *)
 (*s: signature Cache.tobuffer *)
 val tobuffer: Document.handle -> Document.document_data * cache_fill
 (*e: signature Cache.tobuffer *)
 (*s: signature Cache.dummy *)
-val dummy : handle  -> document_data * cache_fill
+val dummy : Document.handle  -> Document.document_data * cache_fill
 (*e: signature Cache.dummy *)
 
 (*s: signature Cache.discard *)
 val discard: cache_fill
 (*e: signature Cache.discard *)
 (*s: signature Cache.wrap *)
-val wrap: cache_fill -> handle -> handle
+val wrap: cache_fill -> Document.handle -> Document.handle
 (*e: signature Cache.wrap *)
 
 (*s: signature Cache.patch *)
-val patch : document_id -> string list -> unit
+val patch : Document.document_id -> string list -> unit
 (*e: signature Cache.patch *)
 
 (*s: signature Cache.cutlinks *)
-val cutlinks : (document_id -> unit) list ref
+val cutlinks : (Document.document_id -> unit) list ref
 (*e: signature Cache.cutlinks *)
 
 (*s: signature Cache.make_handle *)
-val make_handle : Www.request -> document -> handle
+val make_handle : Www.request -> Document.document -> Document.handle
 (*e: signature Cache.make_handle *)
 (*s: signature Cache.renew_handle *)
-val renew_handle : handle -> handle
+val renew_handle : Document.handle -> Document.handle
 (*e: signature Cache.renew_handle *)
 (*s: signature Cache.make_embed_handle *)
-val make_embed_handle : document -> handle
+val make_embed_handle : Document.document -> Document.handle
 (*e: signature Cache.make_embed_handle *)
 (*e: ./protocols/cache.mli *)

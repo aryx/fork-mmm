@@ -14,7 +14,6 @@ SRC= common.ml \
   ebuffer.ml munix.ml date.ml \
   log.ml \
   condition.ml feed.ml \
-  lexpath.ml \
   ibtree.ml \
   i18nprintf.ml lang.ml i18n.ml \
   error.ml hotlist.ml \

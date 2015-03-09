@@ -4,7 +4,6 @@ open Mstring
 
 (*s: type Uri.abs_uri *)
 (* URI utilities. RFC 1630 *)
-
 type abs_uri = {
    uri_url : string;
    uri_fragment : string option
