@@ -99,3 +99,7 @@ extensions/sandbox/gen/*.*
 /graph_code.marshall
 /extensions/crcs/crcs.ml.bak
 /extensions/crcs/crcsmmm.ml.bak
+/mmm2
+/.#Browser.nw
+/TAGS
+/diff
