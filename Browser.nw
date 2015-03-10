@@ -338,9 +338,10 @@ let version_number =
 % www/: uri, url, request
 % html/: html parsing
 % http/: http protocol
-% protocols/: more protocols
+% protocols/: protocol dispatcher, more protocols (file, mailto), and
+%  document cache
 % retrieve/: networking stuff, connexions
-% viewers/: viewing stuff
+% viewers/: viewer dispatcher, and text/plain simpler viewer
 % display/: rendering engine
 % gui/: chrome
 
