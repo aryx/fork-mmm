@@ -115,8 +115,45 @@ let draw_rectangle_xywh ?alpha ~cr ~x ~y ~w ~h ~color () =
   ()
 
 (*****************************************************************************)
-(* Draw Efuns API *)
+(* MMM *)
 (*****************************************************************************)
+
+let nav_error s = failwith s
+let s_ = Printf.sprintf
+exception Duplicate of Url.t
+
+let absolutegoto url =
+  let link = Hyper.default_link url in
+  try
+    let wr = Www.make link in
+    let cont = 
+      { Document.
+        document_process = (fun dh ->
+          (* process nav wr dh; *)
+          pr2 "doc_process";
+          pr2_gen dh;
+        );
+        document_finish = (fun _ -> 
+          pr2 "doc_finish"
+        );
+      }
+    in
+    (match Retrieve.f wr (fun _ -> failwith "retry") cont with
+    | Retrieve.Started _aborter -> 
+        pr2 "active!"
+    | Retrieve.InUse -> 
+        raise (Duplicate wr.www_url)
+    )
+  with
+  | Hyper.Invalid_link msg ->
+      nav_error (s_ "Invalid link")
+  | Www.Invalid_request (wr, msg) ->
+      nav_error (s_ "Invalid request %s\n%s"
+                            (Url.string_of wr.www_url) msg)
+
+  | Duplicate url ->
+      nav_error (s_ "The document %s\nis currently being retrieved"
+                   (Url.string_of url))
 
 (*****************************************************************************)
 (* Test cairo/gtk *)
@@ -277,9 +314,16 @@ let init () =
       ));
       tb#insert_widget (G.mk (GEdit.entry ~width:200) (fun entry ->
 
+(*
         entry#connect#changed (fun () -> 
           let s = entry#text in
           pr2 s;
+        ) |> ignore;
+*)
+
+        entry#connect#activate (fun () -> 
+          let s = entry#text in
+          absolutegoto s
         ) |> ignore;
       ));
 

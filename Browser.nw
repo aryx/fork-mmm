@@ -1696,9 +1696,9 @@ and handle_link h =
     wr.www_error <- nav.nav_error;
     wr |> wrapwr |> handle_wr
   with
-  | Invalid_link msg ->
+  | Hyper.Invalid_link msg ->
       nav.nav_error#f (s_ "Invalid link")
-  | Invalid_request (wr, msg) ->
+  | Www.Invalid_request (wr, msg) ->
       nav.nav_error#f (s_ "Invalid request %s\n%s"
                             (Url.string_of wr.www_url) msg)
 in
@@ -1710,7 +1710,7 @@ in
 and handle_wr wr =
   try
     match wr.www_url.protocol with
-    <<[[Nav.request.handle_wr()]] match protocol cases>>
+    <<[[Nav.request.handle_wr()]] match protocol special cases>>
     | _ ->
        if (not usecache) || dont_check_cache wr 
        then retrieve_and_handle wr
@@ -11033,7 +11033,7 @@ nav_new = (fun link ->
    try
      let wwwr = Plink.make link in
      navigator false wwwr.www_url |> ignore
-   with Invalid_link msg -> 
+   with Hyper.Invalid_link msg -> 
      error#f (s_ "Invalid link")
 );
 @
@@ -11324,7 +11324,7 @@ let isdir path f =
 
 % see extra
 
-<<[[Nav.request.handle_wr()]] match protocol cases>>=
+<<[[Nav.request.handle_wr()]] match protocol special cases>>=
 | MAILTO -> Mailto.f wr
  (* mailto: is really a pain. It doesn't fit the retrieval semantics
   of WWW requests. *)

@@ -70,7 +70,7 @@ opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
 
-allbyte: mmm mmm_remote htparse
+allbyte: $(PROGS)
 
 all.opt: opt
 top: $(TARGET).top
