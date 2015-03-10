@@ -400,14 +400,15 @@ let historygoto nav did frag usecache =
   Log.debug "historygoto";
   if did.document_stamp = no_stamp then begin
     (* we can safely consider this as normal navigation *)
-    let uri = match frag with
-           None -> Url.string_of did.document_url
-         | Some f ->
-            sprintf "%s#%s" (Url.string_of did.document_url) f 
+    let uri = 
+      match frag with
+      | None -> Url.string_of did.document_url
+      | Some f -> sprintf "%s#%s" (Url.string_of did.document_url) f 
     in
     (* modify wr *)
-    let follow_link =
-      request nav  (process_viewer false make_ctx) (* don't add to history *)
+    let follow_link lk =
+      lk |> request nav  
+        (process_viewer false make_ctx) (* don't add to history *)
         (usecache,
          (fun wr ->
             if not usecache 
@@ -419,18 +420,16 @@ let historygoto nav did frag usecache =
     true
   end else begin
     (* the url is a "non-unique" document, that is, its url is not
-       enough to retrieve the document. We should not attempt to
-       reload or retrieve if flushed from the cache
-    *)
+     * enough to retrieve the document. We should not attempt to
+     * reload or retrieve if flushed from the cache
+     *)
     try
       let di = Gcache.find nav.nav_id did in
-     nav.nav_show_current di frag;
-     true
-    with
-      Not_found ->
-        nav.nav_error#f 
-     (s_ "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
-        false
+      nav.nav_show_current di frag;
+      true
+    with Not_found ->
+      nav.nav_error#f (s_ "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
+      false
    end
 (*e: function Nav.historygoto *)
 

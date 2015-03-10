@@ -9,7 +9,8 @@ include Makefile.config
 TOP=$(shell pwd)
 
 
-PROGS=mmm mmm2 htparse
+PROGS=mmm htparse
+# mmm2
 #, surfboard
 
 TARGET=mmm2
@@ -441,6 +442,7 @@ SRC_VIEWS= \
   gui/prefs.mli\
   gui/prefs.ml\
   gui/debug.ml\
+  gui/history.mli\
   gui/history.ml\
   gui/nav.mli\
   gui/nav.ml\

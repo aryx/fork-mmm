@@ -3,10 +3,12 @@ open Tk
 
 (*s: function About.f *)
 let f () =
-  ignore (
-    Frx_dialog.f Widget.default_toplevel (Mstring.gensym "about")
-    "About MMM" (Version.about (Lang.lang ()))
-    (Tk.Predefined "info") 0 ["Thanks"])
+  Frx_dialog.f Widget.default_toplevel 
+    (Mstring.gensym "about") "About MMM" 
+    (Version.about (Lang.lang ()))
+    (Tk.Predefined "info") 
+    0 
+    ["Thanks"] |> ignore
 (*e: function About.f *)
 
 

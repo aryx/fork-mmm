@@ -40,7 +40,7 @@ http://pauillac.inria.fr/~rouaix/
 (*e: function Version.about *)
 
 (*s: function Version.home *)
-let home = function 
+let home_mmm = function 
   | "iso8859" -> "http://pauillac.inria.fr/mmm/"
   | _ -> assert false
 (*e: function Version.home *)

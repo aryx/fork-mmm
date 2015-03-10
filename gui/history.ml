@@ -7,11 +7,10 @@ open Document
    Linear history: we keep going adding to the end of the list,
    EXCEPT when you go back and then on a new link.
 *)
-
-
 type history_entry = {
   h_did : document_id;
   h_fragment : string option;
+
   h_prev : history_entry option;
   mutable h_next : history_entry option
   }
@@ -19,9 +18,10 @@ type history_entry = {
 
 (*s: type History.t *)
 type t = {
-  h_key : int;
   mutable h_start : history_entry;
   mutable h_current: history_entry;
+
+  h_key : int;
   mutable h_first : bool
   }
 (*e: type History.t *)
@@ -100,11 +100,12 @@ let add h did frag =
 let create =
   let keycnter = ref 0 in
   (fun did ->
+    incr keycnter;
     let e = { h_did = did;
-             h_fragment = None;
-             h_prev = None;
-          h_next = None} in
-    { h_key = (incr keycnter; !keycnter);
+              h_fragment = None;
+              h_prev = None;
+              h_next = None } in
+    { h_key = !keycnter;
       h_start = e;
       h_current = e;
       h_first = true
@@ -113,16 +114,16 @@ let create =
 
 (*s: function History.back *)
 let back h =
-    match h.h_current.h_prev with
-       None -> None
-      | Some e -> h.h_current <- e; Some (e.h_did, e.h_fragment)
+  match h.h_current.h_prev with
+  | None -> None
+  | Some e -> h.h_current <- e; Some (e.h_did, e.h_fragment)
 (*e: function History.back *)
 
 (*s: function History.forward *)
 let forward h =
-    match h.h_current.h_next with
-       None -> None
-      | Some e -> h.h_current <-e ; Some (e.h_did, e.h_fragment)
+  match h.h_current.h_next with
+  | None -> None
+  | Some e -> h.h_current <-e ; Some (e.h_did, e.h_fragment)
 (*e: function History.forward *)
 
 (*s: function History.set_current *)

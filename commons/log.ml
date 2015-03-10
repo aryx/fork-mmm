@@ -2,13 +2,14 @@
 open Printf
 
 (*s: constant Log.debug_mode *)
-let debug_mode = ref false
+let debug_mode = ref true
 (*e: constant Log.debug_mode *)
 
 (*s: function Log.f *)
 (* flushes ! *)
 let f s = 
-  try prerr_endline s with _ -> ()
+  try prerr_endline s 
+  with _ -> ()
 (*e: function Log.f *)
 
 (*s: function Log.debug *)

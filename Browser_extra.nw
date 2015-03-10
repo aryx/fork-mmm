@@ -9177,8 +9177,9 @@ class  virtual html_parse (dh) =
  object (self)
   (* red tape for progress report *)
   val mutable red = 0
-  val mutable size = try Some (Http_headers.contentlength dh.document_headers)
-    with Not_found -> None (* duh *);
+  val mutable size = 
+    try Some (Http_headers.contentlength dh.dh_headers)
+    with Not_found -> None (* duh *)
   val mutable feed_read = new Japan.read_i18n (fun s o n -> 0)
 
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
@@ -11180,9 +11181,6 @@ open Fonts
 val create_tachy : Widget.widget -> Low.tachymeter
 @
 
-<<signature About.f>>=
-val f : unit -> unit
-@
 
 
 %-------------------------------------------------------------
@@ -11196,13 +11194,6 @@ val f : unit -> unit
 
 \subsection*{[[./gui/about.ml]]}
 
-<<function About.f>>=
-let f () =
-  ignore (
-    Frx_dialog.f Widget.default_toplevel (Mstring.gensym "about")
-    "About MMM" (Version.about (Lang.lang ()))
-    (Tk.Predefined "info") 0 ["Thanks"])
-@
 
 <<constant About.tachy_data>>=
 (* inside bitmap, circle is in +16+7 +66+57, radius 25 *)
@@ -12802,31 +12793,23 @@ open Protocol
 @
 
 
+\subsection*{[[./gui/history.mli]]}
+
+%-------------------------------------------------------------
+
+<<./gui/history.mli>>=
+
+<<type History.history_entry>>
+
+<<type History.t>>
+
+val create: Document.document_id -> t
+
+
+@
+
 \subsection*{[[./gui/history.ml]]}
 
-<<type History.history_entry>>=
-(* 
-   Linear history: we keep going adding to the end of the list,
-   EXCEPT when you go back and then on a new link.
-*)
-
-
-type history_entry = {
-  h_did : document_id;
-  h_fragment : string option;
-  h_prev : history_entry option;
-  mutable h_next : history_entry option
-  }
-@
-
-<<type History.t>>=
-type t = {
-  h_key : int;
-  mutable h_start : history_entry;
-  mutable h_current: history_entry;
-  mutable h_first : bool
-  }
-@
 
 <<function History.contents>>=
 let contents h =
@@ -12897,34 +12880,7 @@ let add h did frag =
     DocumentIDSet.iter (Gcache.remove h.h_key) dropped
 @
 
-<<constant History.create>>=
-let create =
-  let keycnter = ref 0 in
-  (fun did ->
-    let e = { h_did = did;
-             h_fragment = None;
-             h_prev = None;
-          h_next = None} in
-    { h_key = (incr keycnter; !keycnter);
-      h_start = e;
-      h_current = e;
-      h_first = true
-    })
-@
 
-<<function History.back>>=
-let back h =
-    match h.h_current.h_prev with
-       None -> None
-      | Some e -> h.h_current <- e; Some (e.h_did, e.h_fragment)
-@
-
-<<function History.forward>>=
-let forward h =
-    match h.h_current.h_next with
-       None -> None
-      | Some e -> h.h_current <-e ; Some (e.h_did, e.h_fragment)
-@
 
 <<function History.set_current>>=
 let set_current h e =
@@ -12982,9 +12938,6 @@ val add_user_navigation : string -> Viewers.hyper_func -> unit
 
 
 
-<<signature Nav.historygoto>>=
-val historygoto : t -> Document.document_id -> string option -> bool -> bool
-@
 
 <<signature Nav.update>>=
 val update : t -> Document.document_id -> bool -> unit
@@ -13051,7 +13004,7 @@ let process_save dest = fun nav wr dh ->
   | n ->
     if wr.www_error#choose 
         (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
-              (Url.string_of wr.www_url) n (status_msg dh.document_headers))
+              (Url.string_of wr.www_url) n (status_msg dh.dh_headers))
     then Save.transfer wr dh dest
     else dclose true dh
 @
@@ -13061,15 +13014,15 @@ let process_save dest = fun nav wr dh ->
 
 let display_headers dh =
   let mytop = Toplevel.create Widget.default_toplevel [] in
-    Wm.title_set mytop 
-       (sprintf "HEAD %s" (Url.string_of dh.document_id.document_url));
-    let hs =
-      List.map (function h -> Label.create mytop [Text h; Anchor W])
-               dh.document_headers in
-     pack (List.rev hs) [Fill Fill_X];
+  Wm.title_set mytop 
+      (sprintf "HEAD %s" (Url.string_of dh.document_id.document_url));
+  let hs =
+    dh.dh_headers |> List.map (fun h -> Label.create mytop [Text h; Anchor W])
+  in
+  pack (List.rev hs) [Fill Fill_X];
   let b = Button.create mytop
-             [Command (fun _ -> destroy mytop); Text "Dismiss"] in
-     pack [b] [Anchor Center]
+            [Command (fun _ -> destroy mytop); Text "Dismiss"] in
+  pack [b] [Anchor Center]
 @
 
 <<constant Nav.process_head>>=
@@ -13112,45 +13065,6 @@ let save_link nav whereto =
 
 
 
-<<function Nav.historygoto>>=
-(* Used by navigators for back/forward/reload *)
-let historygoto nav did frag usecache =
-  Log.debug "historygoto";
-  if did.document_stamp = no_stamp then begin
-    (* we can safely consider this as normal navigation *)
-    let uri = match frag with
-           None -> Url.string_of did.document_url
-         | Some f ->
-            sprintf "%s#%s" (Url.string_of did.document_url) f 
-    in
-    (* modify wr *)
-    let follow_link =
-      request nav  (process_viewer false make_ctx) (* don't add to history *)
-        (usecache,
-         (fun wr ->
-            if not usecache 
-            then wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
-            wr),
-         specific_viewer false)
-    in
-    follow_link (Hyper.default_link uri);
-    true
-  end else begin
-    (* the url is a "non-unique" document, that is, its url is not
-       enough to retrieve the document. We should not attempt to
-       reload or retrieve if flushed from the cache
-    *)
-    try
-      let di = Gcache.find nav.nav_id did in
-     nav.nav_show_current di frag;
-     true
-    with
-      Not_found ->
-        nav.nav_error#f 
-     (s_ "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
-        false
-   end
-@
 
 <<function Nav.update>>=
 let update nav did nocache =
@@ -13158,7 +13072,7 @@ let update nav did nocache =
   let process_update nav wr dh =
     match dh.document_status with
       304 -> 
-    Cache.patch dh.document_id dh.document_headers;
+    Cache.patch dh.document_id dh.dh_headers;
     dclose true dh;
     begin try
       let di = Gcache.find nav.nav_id did in
@@ -13659,6 +13573,7 @@ open Tk
 open History
 open Document
 open Nav
+open Www
 
 (* The navigation window *)
 

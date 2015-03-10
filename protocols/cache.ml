@@ -82,6 +82,7 @@ let postmortem () =
 
     if entry.cache_pending 
     then Log.f "pending ";
+
     Log.f (sprintf "Last used: %f" entry.cache_lastused);
     Log.f ""
   )

@@ -287,6 +287,7 @@ let number = 418
 <<signature Version.about>>=
 val about : string -> string   (* dialog *)
 @
+% Mmm/About menu -> <>
 <<function Version.about>>=
 (* dialog uses an gigantic font ! *)
 let about = function
@@ -1652,6 +1653,7 @@ let rec navigator is_main_window initial_url =
     }
     in
     <<[[Mmm.navigator()]] nested functions>>
+    <<[[Mmm.navigator()]] keyboard shortcuts setting>>
     <<[[Mmm.navigator()]] widgets setting>>
 
     absolutegoto nav (Url.string_of initial_url);
@@ -1765,7 +1767,9 @@ let follow_link nav lk =
   lk |> request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
     <<[[Nav.follow_link]] extra arguments to Nav.request>>
 @
-
+% true is to add in history, but when we don't want to history?
+% when we actually go back and do a historygoto!
+%less: when process_viewer is passed another make_ctx? could inline then?
 
 \subsection{[[Nav.request()]]}
 
@@ -1895,6 +1899,7 @@ let process_viewer addhist make_ctx =
 (true, id_wr, specific_viewer true)
 @
 % all those true booleans ... hard to read
+% specific_viewer is passed false when from historygoto
 
 <<function Nav.id_wr>>=
 let id_wr wr = wr
@@ -1932,10 +1937,19 @@ let rec safe_loop() =
 
 \section{Layout}
 
+% have seen before 
+%  - top, Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
+%  - viewer_frame, Frame.create_named top "viewer" []
+
+% top
+%  hgroup
+%   vgroup
+%    menubar
+%    entry
+%    buttons
+%  viewer_frame
 
 <<[[Mmm.navigator()]] widgets setting>>=
-(* Short cuts *)
-<<[[Mmm.navigator()]] short cuts>>
 
 (* Invariable part (the rest being the di stuff)
    hgroup: blah and tachymeter
@@ -1949,14 +1963,14 @@ let mbar = Frame.create_named vgroup "menubar" [] in
 <<[[Mmm.navigator()]] setup open url entry>>
 
 (* Navigation buttons *)
-let fb = Frame.create_named vgroup "buttons" [] in
+let buttons = Frame.create_named vgroup "buttons" [] in
 <<[[Mmm.navigator()]] navigation buttons>>
 
 <<[[Mmm.navigator()]] packing part one>>
 (* Initial window only *)
-if has_tachy then begin
+if is_main_window then begin
   <<[[Mmm.navigator()]] set geometry if specified>>
-  <<[[Mmm.navigator()]] set tachy>>
+  <<[[Mmm.navigator()]] set tachymeter>>
 end;
 <<[[Mmm.navigator()]] packing part two>>
 
@@ -1964,7 +1978,7 @@ end;
 Tkwait.visibility hgroup;
 
 <<[[Mmm.navigator()]] call update_vhistory>>
-<<[[Mmm.navigator()]] touch current>>
+<<[[Mmm.navigator()]] call touch_current to not swap displayed documents>>
 @
 %less: put call to update_vhistory close to absolutegoto? can
 % exchange with touch_current? in both case they initialize things
@@ -1982,10 +1996,9 @@ Pack.propagate_set top false;
 pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
 pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
        [Side Side_Left; Fill Fill_X];
-pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
-pack [fb][Fill Fill_X];
+pack [entry][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
+pack [buttons][Fill Fill_X];
 @
-
 
 <<[[Mmm.navigator()]] packing part two>>=
 (* Pack last to avoid lossage when resizing *)
@@ -1995,41 +2008,20 @@ pack [viewer_frame][Fill Fill_Both; Expand true];
 @
 
 
-\subsection{Destroy event}
+%\subsection{Destroy event}
 
 <<[[Mmm.navigator()]] handling destroy event>>=
 (* We receive this event for each children destroyed because we are
    a toplevel *)
 bind top [[], Destroy] (BindSet ([Ev_Widget], (fun ei -> 
   if ei.ev_Widget = top then begin
-    decr navigators;
-    Gcache.kill hist.h_key;
-
+    <<[[Mmm.navigator()]] destroy navigator hook>>
     (* we were destroyed by wm *)
     if !navigators = 0 && Winfo.exists Widget.default_toplevel
     then Tk.destroy Widget.default_toplevel
   end
 )));
 @
-% Gcache.kill
-% G??
-
-\subsection{Timer}
-
-<<[[Mmm.navigator()]] touch current>>=
-(* Yet another timer to avoid flushing displayed documents *)
-let rec touch_current () =
-  if Winfo.exists top then begin
-    Cache.touch hist.h_current.h_did;
-    Timer.set 10000 touch_current
-  end 
-in
-touch_current();
-@
-
-% Gcache.touch
-
-
 
 
 \section{Address bar}
@@ -2040,58 +2032,35 @@ let entryv = Textvariable.create_temporary top in
 
 <<[[Mmm.navigator()]] setup open url entry>>=
 (* URL display and edit *)
-let f,e = Frx_entry.new_label_entry vgroup (s_ "Open URL:")
-                   (fun url -> Nav.absolutegoto nav url)
+let entry,e = 
+  Frx_entry.new_label_entry vgroup (s_ "Open URL:") 
+    (fun url -> Nav.absolutegoto nav url)
 in
 Entry.configure e [TextVariable entryv; TextWidth 40];
 @
 % absolutegoto()!
-% f is the widget that will be packed
 
 
 \section{Display}
 
-% Nav.absolutegoto -> request -> process_viewer -> <>
+% Nav.absolutegoto -> request -async-> process_viewer -> <>
 % second argument is fragment
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_show_current = show_current;
 @
-
 % Nav.absolutegoto -> request -> process_viewer -> <> (as Nav.nav_show_current)
 <<local function Mmm.navigator.show_current>>=
-(* Change view, independantly of history manip *)
+(* Change view, independently of history manip *)
 let show_current di frag =
   <<[[Mmm.navigator.show_current()]] start hook>>
-  (match !current_di with
-  | None -> 
-      display di
-  | Some olddi -> 
-      if olddi == di 
-      then () 
-      else begin
-        undisplay olddi;
-        display di
-      end
-  );
-  current_di := Some di;
+  <<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>
+  display di;
   <<[[Mmm.navigator.show_current()]] goto fragment>>
-  (* Bof *)
-  Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+  <<[[Mmm.navigator.show_current()]] end hook>>
 in
 @
 %less: need to set entryv? should be good already no?
 % or is it if we switch?
-
-
-<<[[Mmm.navigator()]] locals>>=
-let current_di = ref None in
-@
-
-<<function Mmm.undisplay>>=
-let undisplay di = 
-  if Winfo.exists di#di_widget 
-  then Pack.forget [di#di_widget]
-@
 
 <<function Mmm.display>>=
 let display di = 
@@ -2109,22 +2078,41 @@ let display di =
 @
 
 
-\section{History}
 
-<<local Mmm.navigator.hist>>=
-let initial_did = 
-  { document_url = initial_url; 
-    document_stamp = Document.no_stamp
-  } 
-in
-let hist = History.create initial_did in
+
+<<[[Mmm.navigator()]] locals>>=
+let current_di = ref None in
 @
 
+<<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>=
+(match !current_di with
+| Some olddi when olddi != di -> undisplay olddi
+| _ -> ()
+);
+current_di := Some di;
+@
+
+<<function Mmm.undisplay>>=
+let undisplay di = 
+  if Winfo.exists di#di_widget 
+  then Pack.forget [di#di_widget]
+@
+
+<<[[Mmm.navigator.show_current()]] end hook>>=
+(* Bof *)
+Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+@
+
+
+\section{History}
 
 <<[[Nav.process_viewer()]] add in cache and history the document>>=
 if addhist 
 then nav.nav_add_hist dh.document_id dh.document_fragment;
 @
+% we add to hist when process_viewer is pass true to addhist,
+% when we go forward. But when we explore history, we don't
+% want to consider it as part of history
 
 <<[[Nav.t]] manage history methods>>=
 nav_add_hist : Document.document_id -> string option -> unit;
@@ -2132,8 +2120,7 @@ nav_add_hist : Document.document_id -> string option -> unit;
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_add_hist = add_hist;
 @
-
-% Nav.process_viewer -> <> (as nav.nav_add_hist)
+% Nav.process_viewer -> <> (as nav.nav_add_hist <- Mmm.navigator)
 <<local function Mmm.navigator.add_hist>>=
 let add_hist did frag =
   History.add hist did frag;
@@ -2141,18 +2128,19 @@ let add_hist did frag =
 in
 @
 
-%XXX
-<<[[Nav.t]] cache related methods>>=
-nav_id : int;  (* key for the gfx cache *)
-@
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_id = hist.h_key;
+% this is a local because each navigator will have its own
+% history
+<<local Mmm.navigator.hist>>=
+let hist = History.create 
+  { document_url = initial_url; document_stamp = Document.no_stamp } in
 @
 
-\subsection{Back and forward buttons}
+
+
+\subsection{Back button}
 
 <<[[Mmm.navigator()]] navigation buttons>>=
-let backb = Button.create_named fb 
+let backb = Button.create_named buttons 
   "back" [Text (s_ "Back"); Command back ] in
 @
 
@@ -2170,8 +2158,10 @@ let back () =
 in
 @
 
+\subsection{Forward button}
+
 <<[[Mmm.navigator()]] navigation buttons>>=
-let forwardb = Button.create_named fb 
+let forwardb = Button.create_named buttons 
   "forward" [Text (s_ "Forward"); Command forward] in
 @
 
@@ -2185,58 +2175,14 @@ let forward () =
 in
 @
 
+% will see the code for history later
 
-
-\subsection{History menu}
-
-<<[[Mmm.navigator()]] locals>>=
-let update_vhistory = ref (fun () -> ()) (* duh *) in
-@
-% because of mutual deps, needed for nav
-<<[[Mmm.navigator()]] History menu>>=
-(* The history menu is destroyed and rebuild each time. 
- * Deleting all entries will cause a callback leak since
- *  entries are associated to the menu itself 
- *)
-let history_mindex = Pattern (s_ "History") in
-let hmenu = ref (Menu.create_named navm "history" []) in 
-Menu.add_cascade navm [Label (s_ "History")];
-update_vhistory := (fun () ->
-  Tk.destroy !hmenu;
-  hmenu := Menu.create_named navm "history" [];
-  History.contents hist |> List.iter (fun e ->
-    let label = ref (Url.string_of e.h_did.document_url) in
-    (match e.h_fragment with
-    | None -> ()
-    | Some f -> label := !label^"#"^f
-    );
-    (match e.h_did.document_stamp with
-    | 0 -> ()
-    | n -> label := !label^"("^string_of_int n^")"
-    );
-    Menu.add_command !hmenu 
-       [Label !label;
-        Command (fun () ->
-          let cure = hist.h_current in
-          History.set_current hist e;
-          if not (historygoto nav e.h_did e.h_fragment true)
-          then History.set_current hist cure)
-        ]
-    );
-    Menu.configure_cascade navm history_mindex [Menu !hmenu]
-);
-
-@
-
-<<[[Mmm.navigator()]] call update_vhistory>>=
-!update_vhistory();
-@
-
+% see the history menu also later
 
 \section{Home}
 
 <<[[Mmm.navigator()]] navigation buttons>>=
-let homeb = Button.create_named fb "home"
+let homeb = Button.create_named buttons "home"
   [ Text (s_ "Home"); Command gohome] in
 @
 
@@ -2255,14 +2201,12 @@ val home : string ref
 let home = ref ""
 @
 
-
-
-
-
+ 
 \section{Menus}
 
 <<[[Mmm.navigator()]] setup menu>>=
 <<function Mmm.navigator.configure_menu_elements>>
+
 <<[[Mmm.navigator()]] MMM menu>>
 <<[[Mmm.navigator()]] Navigation menu>>
 <<[[Mmm.navigator()]] History menu>>
@@ -2276,36 +2220,6 @@ pack [helpb; userb] [Side Side_Right];
 @
 
 
-<<function Mmm.navigator.configure_menu_elements>>=
-let configure_menu_elements menu xs =
-  let rec list_assoc_address k = function
-    | (k',v)::_ when k == k' -> v
-    | _::xs -> list_assoc_address k xs
-    |	[] -> raise Not_found
-  in
-  xs |> List.iter (fun l ->
-    let opts = 
-     List.fold_right (fun opt st ->
-       (match opt with
-       | Command f -> 
-           begin
-            Command f :: 
-              try
-                [ Accelerator (Tkresource.short_event_sequence
-                               (list_assoc_address f my_short_cuts))]
-              with Not_found -> []
-           end
-       | _ -> [opt])
-       @ st
-     ) l []
-    in
-    match opts with
-    | [] -> Menu.add_separator menu
-    | _  -> Menu.add_command menu opts
- )
-in
-@
-
 \subsection{MMM menu}
 
 <<[[Mmm.navigator()]] MMM menu>>=
@@ -2313,6 +2227,7 @@ in
 let mmm = Menubutton.create_named mbar "mmm" [Text (s_ "MMM")] in
 let mmmm = Menu.create_named mmm "menu" [] in
 Menubutton.configure mmm [Menu mmmm];
+
 configure_menu_elements mmmm [
   [Label (s_ "About")            ; Command About.f];
   [];
@@ -2327,6 +2242,19 @@ configure_menu_elements mmmm [
   [];
   [Label (s_ "Quit")             ; Command really_quit]
 ];
+@
+
+<<signature About.f>>=
+val f : unit -> unit
+@
+<<function About.f>>=
+let f () =
+  Frx_dialog.f Widget.default_toplevel 
+    (Mstring.gensym "about") "About MMM" 
+    (Version.about (Lang.lang ()))
+    (Tk.Predefined "info") 
+    0 
+    ["Thanks"] |> ignore
 @
 
 <<function Mmm.navigator.open_sel>>=
@@ -2359,11 +2287,9 @@ let save () =
   Save.document hist.h_current.h_did None 
 in
 @
-
 <<function Mmm.navigator.print>>=
 let print () = 
-  Save.document hist.h_current.h_did 
-     (Some (sprintf "|%s" !Save.print_command))
+  Save.document hist.h_current.h_did (Some (sprintf "|%s" !Save.print_command))
 in
 @
 
@@ -2381,11 +2307,11 @@ let really_quit () =
 in
 @
 
-
 <<function Mmm.quit>>=
 let quit confirm =
   if confirm then
-    match Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
+    match 
+     Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
       (s_ "Confirm") 
       (s_ "Do you really want to quit ?")
       (Predefined "question") 
@@ -2404,6 +2330,7 @@ let quit confirm =
 let navb = Menubutton.create_named mbar "navigate" [Text (s_ "Navigate")] in
 let navm = Menu.create_named navb "menu" [] in
 Menubutton.configure navb [Menu navm];
+
 configure_menu_elements navm [ 
   [Label (s_ "Home");    Command gohome];
   [Label (s_ "Back");    Command back];
@@ -2411,38 +2338,55 @@ configure_menu_elements navm [
   []
 ];
 @
-
 % we've seen those functions before
 
-\subsection{Document menu}
+%\subsection{History submenu}
 
-<<[[Mmm.navigator()]] Document menu>>=
-let docb = Menubutton.create_named mbar "document" [Text (s_ "Document")] in
-let docm = Menu.create_named docb "menu" [] in
-Menubutton.configure docb [Menu docm];
-configure_menu_elements docm [	    
-  [Label (s_ "Abort")          ; Command abort];
-  [Label (s_ "Reload")         ; Command reload];
-  [Label (s_ "Update")         ; Command update_true];
-  <<Document menu elements>>
-];
+% because of mutual deps, needed for nav
+<<[[Mmm.navigator()]] History menu>>=
+(* The history menu is destroyed and rebuild each time. 
+ * Deleting all entries will cause a callback leak since
+ * entries are associated to the menu itself 
+ *)
+Menu.add_cascade navm [Label (s_ "History")];
+
+let hmenu = ref (Menu.create_named navm "history" []) in 
+update_vhistory := (fun () ->
+  Tk.destroy !hmenu;
+  hmenu := Menu.create_named navm "history" [];
+  History.contents hist |> List.iter (fun e ->
+    let label = 
+       Url.string_of e.h_did.document_url ^
+       (match e.h_fragment with None -> "" | Some f -> "#"^f) ^
+       (match e.h_did.document_stamp with 0 -> "" | n ->"("^string_of_int n^")")
+    in
+    Menu.add_command !hmenu 
+       [Label label;
+        Command (fun () ->
+          let current = hist.h_current in
+          History.set_current hist e;
+          if not (historygoto nav e.h_did e.h_fragment true)
+          then History.set_current hist current
+         )
+        ]
+    );
+    Menu.configure_cascade navm (Pattern (s_ "History")) [Menu !hmenu]
+);
 @
-% diff between update and redisplay?
 
-
-
-
-
-\subsection{Other menu}
-
-<<[[Mmm.navigator()]] Other menu>>=
-(* Other stuff *)
-let othersb = Menubutton.create_named mbar "others" [Text (s_ "Others")] in
-let othersm = Menu.create_named othersb "menu" [] in
-Menubutton.configure othersb [Menu othersm];
-<<Other menu elements>>
+% use forward ref because this will be called later
+% navigator | ... -> <>
+<<[[Mmm.navigator()]] locals>>=
+let update_vhistory = ref (fun () -> ()) (* duh *) in
 @
 
+<<[[Mmm.navigator()]] call update_vhistory>>=
+!update_vhistory();
+@
+
+
+%\subsection{Applet user menu}
+% see later
 
 % (*      Menu.add_command othersm
 %     [Label (s_ "Caml Modules"); 
@@ -2461,6 +2405,39 @@ Menubutton.configure othersb [Menu othersm];
 %      ];
 % *)
 
+
+\subsection{Document menu}
+
+<<[[Mmm.navigator()]] Document menu>>=
+let docb = Menubutton.create_named mbar "document" [Text (s_ "Document")] in
+let docm = Menu.create_named docb "menu" [] in
+Menubutton.configure docb [Menu docm];
+
+configure_menu_elements docm [	    
+  [Label (s_ "Abort")          ; Command abort];
+  [Label (s_ "Reload")         ; Command reload];
+  [Label (s_ "Update")         ; Command update_true];
+  <<Document menu elements>>
+];
+@
+% diff between update and reload?
+% use update_true instead of a closure because of trick in 'shortcuts', see
+%  below
+
+% will see those features in Extra features chapter
+
+\subsection{Other menu}
+
+<<[[Mmm.navigator()]] Other menu>>=
+(* Other stuff *)
+let othersb = Menubutton.create_named mbar "others" [Text (s_ "Others")] in
+let othersm = Menu.create_named othersb "menu" [] in
+Menubutton.configure othersb [Menu othersm];
+
+<<Other menu elements>>
+@
+% ???
+
 \subsection{Help menu}
 
 <<[[Mmm.navigator()]] Help menu>>=
@@ -2468,6 +2445,7 @@ Menubutton.configure othersb [Menu othersm];
 let helpb = Menubutton.create_named mbar "help" [Text (s_ "Help")] in
 let helpm = Menu.create_named helpb "menu" [] in
 Menubutton.configure helpb [Menu helpm];
+
 <<Help menu elements>>
 @
 
@@ -2479,21 +2457,17 @@ Menu.add_command helpm
 Menu.add_command helpm
   [Label (s_ "Home Page of MMM");
    Command (fun () -> 
-     navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
+     navigator false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
 @
 
-% less: rename homemmm
 <<signature Version.home>>=
-val home : string -> string    (* MMM home page *)
+val home_mmm : string -> string    (* MMM home page *)
 @
 <<function Version.home>>=
-let home = function 
+let home_mmm = function 
   | "iso8859" -> "http://pauillac.inria.fr/mmm/"
   | _ -> assert false
 @
-
-%\subsection{Applet user menu}
-% see later
 
 
 \section{Status bar}
@@ -2504,7 +2478,7 @@ let home = function
 % not just progress bar but also what is done
 
 <<[[Mmm.navigator()]] navigation buttons>>=
-let loggingb = Label.create_named fb "logging"
+let loggingb = Label.create_named buttons "logging"
   [TextWidth 40; TextVariable loggingv; Anchor W] in
 @
 
@@ -2536,9 +2510,11 @@ nav_error = error;
 @
 %Tk_error is really Mmm_tk_error.ml
 
-\section{Shortcuts}
+\section{Keyboard shortcuts}
 
-<<[[Mmm.navigator()]] short cuts>>=
+<<[[Mmm.navigator()]] keyboard shortcuts setting>>=
+(* Short cuts *)
+
 (* All the available shortcuts functions and their short cut keys. *)
 (* If you put a new function with its short cut key here, then *)
 (* Short cut string will be displayed automatically, when these *)
@@ -2550,7 +2526,7 @@ let update_true = fun () -> update true in
 (* The shortcuts and the default settings *)
 let all_short_cuts = [
   (* function    resource name      default key sequence *)
-  About.f,     "About",           [[], KeyPressDetail "F1"]; 
+  About.f,       "About",           [[], KeyPressDetail "F1"]; 
   new_window,    "NewWindow",       [[Alt], KeyPressDetail "n"];
   open_sel,      "OpenSelection",   [[Alt], KeyPressDetail "y"];
   open_file,     "OpenFile",        [[Alt], KeyPressDetail "o"];
@@ -2575,8 +2551,10 @@ let all_short_cuts = [
 in
 
 (* Real shortcuts information actually used *)
-let my_short_cuts = List.map (fun (f,r,d) ->
-  f, Tkresource.event_sequence ("shortcut" ^ r) d) all_short_cuts
+let my_short_cuts = 
+ all_short_cuts |> List.map (fun (f,r,d) ->
+  f, Tkresource.event_sequence ("shortcut" ^ r) d
+ )
 in
 
 (* we break after each event so that All bindings, such as menu traversal,
@@ -2588,6 +2566,39 @@ my_short_cuts |> List.iter (fun (f, eventl) ->
   then bind top eventl (BindSetBreakable ([], fun _ -> f(); break()))
 );
 @
+
+
+<<function Mmm.navigator.configure_menu_elements>>=
+let configure_menu_elements menu xs =
+  let rec list_assoc_address k = function
+    | [] -> raise Not_found
+    | (k',v)::_ when k == k' -> v
+    | _::xs -> list_assoc_address k xs
+  in
+  xs |> List.iter (fun l ->
+    let opts = 
+     List.fold_right (fun opt st ->
+       (match opt with
+       | Command f -> 
+            Command f :: 
+              (try
+                [Accelerator (Tkresource.short_event_sequence
+                               (list_assoc_address f my_short_cuts))]
+              with Not_found -> []
+              )
+       | _ -> [opt])
+       @ st
+     ) l []
+    in
+    match opts with
+    | [] -> Menu.add_separator menu
+    | _  -> Menu.add_command menu opts
+ )
+in
+@
+% it's to associate shortcuts?
+
+
 
 
 \chapter{Parsing}
@@ -7711,7 +7722,7 @@ if full then begin
   pack [hgbas] [Side Side_Bottom; Fill Fill_X];
 
   let headgroup, set_title, add_link, add_header, add_ext_header =
-    html_head_ui dh.document_headers (fun () -> self#redisplay)
+    html_head_ui dh.dh_headers (fun () -> self#redisplay)
     self#current_scroll_mode frame ctx
   in
   add_extra_header <- add_ext_header;
@@ -10514,7 +10525,7 @@ val cur_tachy : tachymeter ref
 else Toplevel.create Widget.default_toplevel [Class "MMM"]
 @
 
-<<[[Mmm.navigator()]] set tachy>>=
+<<[[Mmm.navigator()]] set tachymeter>>=
 (* put this as a function so we can restart it if needed *)
 let rec restart_tachy () =
    (* We must not pass hgroup to tachymeter applets *)
@@ -10714,12 +10725,128 @@ see_frag = begin
 end
 @
 
+\section{History}
+
+% see in Interface chapter code that call History API
+% and historygoto!
+
+
+<<type History.t>>=
+type t = {
+  mutable h_start : history_entry;
+  mutable h_current: history_entry;
+
+  h_key : int;
+  mutable h_first : bool
+  }
+@
+% h_key is a counter to differentiate different history
+% created in different windows (used by Gcache)
+
+<<type History.history_entry>>=
+(* 
+   Linear history: we keep going adding to the end of the list,
+   EXCEPT when you go back and then on a new link.
+*)
+type history_entry = {
+  h_did : document_id;
+  h_fragment : string option;
+
+  h_prev : history_entry option;
+  mutable h_next : history_entry option
+  }
+@
+% why not use list? 
+
+<<constant History.create>>=
+let create =
+  let keycnter = ref 0 in
+  (fun did ->
+    incr keycnter;
+    let e = { h_did = did;
+              h_fragment = None;
+              h_prev = None;
+              h_next = None } in
+    { h_key = !keycnter;
+      h_start = e;
+      h_current = e;
+      h_first = true
+    })
+@
+% h_first is for?
+
+% goback -> <>
+<<function History.back>>=
+let back h =
+  match h.h_current.h_prev with
+  | None -> None
+  | Some e -> h.h_current <- e; Some (e.h_did, e.h_fragment)
+@
+% adjust h_current
+
+% goforward -> <>
+<<function History.forward>>=
+let forward h =
+  match h.h_current.h_next with
+  | None -> None
+  | Some e -> h.h_current <-e ; Some (e.h_did, e.h_fragment)
+@
+% adjust h_current
+
+
+% goback | goforward | reload -> <> (false when from reload, don't use cache)
+<<signature Nav.historygoto>>=
+val historygoto : t -> Document.document_id -> string option -> bool -> bool
+@
+% bool parameter is to usecache or not.
+% bool returned is everything when fine.
+% todo: typeify! use Ok | Error
+
+<<function Nav.historygoto>>=
+(* Used by navigators for back/forward/reload *)
+let historygoto nav did frag usecache =
+  Log.debug "historygoto";
+  if did.document_stamp = no_stamp then begin
+    (* we can safely consider this as normal navigation *)
+    let uri = 
+      match frag with
+      | None -> Url.string_of did.document_url
+      | Some f -> sprintf "%s#%s" (Url.string_of did.document_url) f 
+    in
+    (* modify wr *)
+    let follow_link lk =
+      lk |> request nav  
+        (process_viewer false make_ctx) (* don't add to history *)
+        (usecache,
+         (fun wr ->
+            if not usecache 
+            then wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
+            wr),
+         specific_viewer false)
+    in
+    follow_link (Hyper.default_link uri);
+    true
+  end else begin
+    (* the url is a "non-unique" document, that is, its url is not
+     * enough to retrieve the document. We should not attempt to
+     * reload or retrieve if flushed from the cache
+     *)
+    try
+      let di = Gcache.find nav.nav_id did in
+      nav.nav_show_current di frag;
+      true
+    with Not_found ->
+      nav.nav_error#f (s_ "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
+      false
+   end
+@
+
 \section{Abort}
 % advanced topic?
 % important! you want the user to control things
 
 <<[[Mmm.navigator()]] navigation buttons>>=
-let abortb = Button.create_named fb 
+let abortb = Button.create_named buttons 
   "abort" [Text (s_ "Abort"); Command abort] in
 @
 
@@ -10808,7 +10935,7 @@ method finish abort =
 \section{Refresh}
 
 <<[[Mmm.navigator()]] navigation buttons>>=
-let reloadb = Button.create_named fb
+let reloadb = Button.create_named buttons
   "reload" [Text (s_ "Reload"); Command reload] in
 @
 
@@ -11160,6 +11287,10 @@ let navigators = ref 0
 
 <<[[Mmm.navigator()]] new navigator hook>>=
 incr navigators;
+@
+
+<<[[Mmm.navigator()]] destroy navigator hook>>=
+decr navigators;
 @
 
 <<[[Mmm.navigator()]] exn handler, when multiple navigators>>=
@@ -13127,6 +13258,20 @@ let dont_check_cache wwwr =
 @
 
 
+
+<<[[Mmm.navigator()]] call touch_current to not swap displayed documents>>=
+(* Yet another timer to avoid flushing displayed documents *)
+let rec touch_current () =
+  if Winfo.exists top then begin
+    Cache.touch hist.h_current.h_did;
+    Timer.set 10000 touch_current;
+  end 
+in
+touch_current();
+@
+
+% Gcache.touch
+
 \subsection{Graphic cache, [[Gcache]]}
 % Graphic cache
 
@@ -13163,6 +13308,11 @@ Gcache.add nav.nav_id dh.document_id di;
 
 
 
+<<[[Mmm.navigator()]] destroy navigator hook>>=
+Gcache.kill hist.h_key;
+@
+
+
 
 <<function Gcache.remove>>=
 (* Removes a given dinfo for a cached document
@@ -13196,6 +13346,15 @@ method di_destroy =
 method di_destroy = 
   if Winfo.exists frame 
   then Tk.destroy frame;
+@
+
+
+
+<<[[Nav.t]] cache related methods>>=
+nav_id : int;  (* key for the gfx cache *)
+@
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_id = hist.h_key;
 @
 
 \section{Fake CGI}
@@ -13428,11 +13587,12 @@ Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 
 %less: split debugging and logging?
 
+% for Log.debug, and postmortem
 <<signature Log.debug_mode>>=
 val debug_mode : bool ref
 @
 <<constant Log.debug_mode>>=
-let debug_mode = ref false
+let debug_mode = ref true
 @
 
 \section{Logging}
@@ -13446,7 +13606,8 @@ val f : string -> unit
 <<function Log.f>>=
 (* flushes ! *)
 let f s = 
-  try prerr_endline s with _ -> ()
+  try prerr_endline s 
+  with _ -> ()
 @
 
 
@@ -13463,7 +13624,6 @@ let debug s =
 
 
 \section{Postmortem}
-
 
 <<[[Main.main()]] after event loop, if debug mode>>=
 if !Log.debug_mode then begin
@@ -13497,7 +13657,6 @@ let postmortem () =
 <<signature Cache.postmortem>>=
 val postmortem : unit -> unit
 @
-
 <<function Cache.postmortem>>=
 (* Debugging *)
 let postmortem () =
@@ -13516,6 +13675,7 @@ let postmortem () =
 
     if entry.cache_pending 
     then Log.f "pending ";
+
     Log.f (sprintf "Last used: %f" entry.cache_lastused);
     Log.f ""
   )

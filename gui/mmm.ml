@@ -105,7 +105,8 @@ let display di =
 (*s: function Mmm.quit *)
 let quit confirm =
   if confirm then
-    match Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
+    match 
+     Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
       (s_ "Confirm") 
       (s_ "Do you really want to quit ?")
       (Predefined "question") 
@@ -172,37 +173,31 @@ let rec navigator is_main_window initial_url =
     
     (*s: [[Mmm.navigator()]] locals before nav setting *)
     (*s: local Mmm.navigator.hist *)
-    let initial_did = 
-      { document_url = initial_url; 
-        document_stamp = Document.no_stamp
-      } 
-    in
-    let hist = History.create initial_did in
+    let hist = History.create 
+      { document_url = initial_url; document_stamp = Document.no_stamp } in
     (*e: local Mmm.navigator.hist *)
     (*s: local function Mmm.navigator.show_current *)
-    (* Change view, independantly of history manip *)
+    (* Change view, independently of history manip *)
     let show_current di frag =
       (*s: [[Mmm.navigator.show_current()]] start hook *)
       di#di_touch;
       (*e: [[Mmm.navigator.show_current()]] start hook *)
+      (*s: [[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo *)
       (match !current_di with
-      | None -> 
-          display di
-      | Some olddi -> 
-          if olddi == di 
-          then () 
-          else begin
-            undisplay olddi;
-            display di
-          end
+      | Some olddi when olddi != di -> undisplay olddi
+      | _ -> ()
       );
       current_di := Some di;
+      (*e: [[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo *)
+      display di;
       (*s: [[Mmm.navigator.show_current()]] goto fragment *)
       (* bogus if two views with fragment on the same pending document *)
       di#di_fragment frag;
       (*e: [[Mmm.navigator.show_current()]] goto fragment *)
+      (*s: [[Mmm.navigator.show_current()]] end hook *)
       (* Bof *)
       Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+      (*e: [[Mmm.navigator.show_current()]] end hook *)
     in
     (*e: local function Mmm.navigator.show_current *)
     (*s: local function Mmm.navigator.add_hist *)
@@ -229,8 +224,6 @@ let rec navigator is_main_window initial_url =
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_add_hist = add_hist;
       (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_id = hist.h_key;
-      (*x: [[Mmm.navigator()]] set nav fields *)
       nav_log = (fun s -> 
         pr2 s;
         Textvariable.set loggingv s
@@ -248,6 +241,8 @@ let rec navigator is_main_window initial_url =
          with Hyper.Invalid_link msg -> 
            error#f (s_ "Invalid link")
       );
+      (*x: [[Mmm.navigator()]] set nav fields *)
+      nav_id = hist.h_key;
       (*e: [[Mmm.navigator()]] set nav fields *)
     }
     in
@@ -343,8 +338,7 @@ let rec navigator is_main_window initial_url =
     (*e: function Mmm.navigator.save *)
     (*s: function Mmm.navigator.print *)
     let print () = 
-      Save.document hist.h_current.h_did 
-         (Some (sprintf "|%s" !Save.print_command))
+      Save.document hist.h_current.h_did (Some (sprintf "|%s" !Save.print_command))
     in
     (*e: function Mmm.navigator.print *)
     (*s: function Mmm.navigator.close *)
@@ -407,9 +401,9 @@ let rec navigator is_main_window initial_url =
       with _ -> navigator false initial_url |> ignore
     in
     (*e: [[Mmm.navigator()]] nested functions *)
-    (*s: [[Mmm.navigator()]] widgets setting *)
+    (*s: [[Mmm.navigator()]] keyboard shortcuts setting *)
     (* Short cuts *)
-    (*s: [[Mmm.navigator()]] short cuts *)
+
     (* All the available shortcuts functions and their short cut keys. *)
     (* If you put a new function with its short cut key here, then *)
     (* Short cut string will be displayed automatically, when these *)
@@ -421,7 +415,7 @@ let rec navigator is_main_window initial_url =
     (* The shortcuts and the default settings *)
     let all_short_cuts = [
       (* function    resource name      default key sequence *)
-      About.f,     "About",           [[], KeyPressDetail "F1"]; 
+      About.f,       "About",           [[], KeyPressDetail "F1"]; 
       new_window,    "NewWindow",       [[Alt], KeyPressDetail "n"];
       open_sel,      "OpenSelection",   [[Alt], KeyPressDetail "y"];
       open_file,     "OpenFile",        [[Alt], KeyPressDetail "o"];
@@ -446,8 +440,10 @@ let rec navigator is_main_window initial_url =
     in
 
     (* Real shortcuts information actually used *)
-    let my_short_cuts = List.map (fun (f,r,d) ->
-      f, Tkresource.event_sequence ("shortcut" ^ r) d) all_short_cuts
+    let my_short_cuts = 
+     all_short_cuts |> List.map (fun (f,r,d) ->
+      f, Tkresource.event_sequence ("shortcut" ^ r) d
+     )
     in
 
     (* we break after each event so that All bindings, such as menu traversal,
@@ -458,7 +454,8 @@ let rec navigator is_main_window initial_url =
       if eventl <> [] 
       then bind top eventl (BindSetBreakable ([], fun _ -> f(); break()))
     );
-    (*e: [[Mmm.navigator()]] short cuts *)
+    (*e: [[Mmm.navigator()]] keyboard shortcuts setting *)
+    (*s: [[Mmm.navigator()]] widgets setting *)
 
     (* Invariable part (the rest being the di stuff)
        hgroup: blah and tachymeter
@@ -472,22 +469,21 @@ let rec navigator is_main_window initial_url =
     (*s: function Mmm.navigator.configure_menu_elements *)
     let configure_menu_elements menu xs =
       let rec list_assoc_address k = function
+        | [] -> raise Not_found
         | (k',v)::_ when k == k' -> v
         | _::xs -> list_assoc_address k xs
-        |	[] -> raise Not_found
       in
       xs |> List.iter (fun l ->
         let opts = 
          List.fold_right (fun opt st ->
            (match opt with
            | Command f -> 
-               begin
                 Command f :: 
-                  try
-                    [ Accelerator (Tkresource.short_event_sequence
+                  (try
+                    [Accelerator (Tkresource.short_event_sequence
                                    (list_assoc_address f my_short_cuts))]
                   with Not_found -> []
-               end
+                  )
            | _ -> [opt])
            @ st
          ) l []
@@ -498,11 +494,13 @@ let rec navigator is_main_window initial_url =
      )
     in
     (*e: function Mmm.navigator.configure_menu_elements *)
+
     (*s: [[Mmm.navigator()]] MMM menu *)
     (* MMM menu *)
     let mmm = Menubutton.create_named mbar "mmm" [Text (s_ "MMM")] in
     let mmmm = Menu.create_named mmm "menu" [] in
     Menubutton.configure mmm [Menu mmmm];
+
     configure_menu_elements mmmm [
       [Label (s_ "About")            ; Command About.f];
       [];
@@ -523,6 +521,7 @@ let rec navigator is_main_window initial_url =
     let navb = Menubutton.create_named mbar "navigate" [Text (s_ "Navigate")] in
     let navm = Menu.create_named navb "menu" [] in
     Menubutton.configure navb [Menu navm];
+
     configure_menu_elements navm [ 
       [Label (s_ "Home");    Command gohome];
       [Label (s_ "Back");    Command back];
@@ -533,41 +532,38 @@ let rec navigator is_main_window initial_url =
     (*s: [[Mmm.navigator()]] History menu *)
     (* The history menu is destroyed and rebuild each time. 
      * Deleting all entries will cause a callback leak since
-     *  entries are associated to the menu itself 
+     * entries are associated to the menu itself 
      *)
-    let history_mindex = Pattern (s_ "History") in
-    let hmenu = ref (Menu.create_named navm "history" []) in 
     Menu.add_cascade navm [Label (s_ "History")];
+
+    let hmenu = ref (Menu.create_named navm "history" []) in 
     update_vhistory := (fun () ->
       Tk.destroy !hmenu;
       hmenu := Menu.create_named navm "history" [];
       History.contents hist |> List.iter (fun e ->
-        let label = ref (Url.string_of e.h_did.document_url) in
-        (match e.h_fragment with
-        | None -> ()
-        | Some f -> label := !label^"#"^f
-        );
-        (match e.h_did.document_stamp with
-        | 0 -> ()
-        | n -> label := !label^"("^string_of_int n^")"
-        );
+        let label = 
+           Url.string_of e.h_did.document_url ^
+           (match e.h_fragment with None -> "" | Some f -> "#"^f) ^
+           (match e.h_did.document_stamp with 0 -> "" | n ->"("^string_of_int n^")")
+        in
         Menu.add_command !hmenu 
-           [Label !label;
+           [Label label;
             Command (fun () ->
-              let cure = hist.h_current in
+              let current = hist.h_current in
               History.set_current hist e;
               if not (historygoto nav e.h_did e.h_fragment true)
-              then History.set_current hist cure)
+              then History.set_current hist current
+             )
             ]
         );
-        Menu.configure_cascade navm history_mindex [Menu !hmenu]
+        Menu.configure_cascade navm (Pattern (s_ "History")) [Menu !hmenu]
     );
-
     (*e: [[Mmm.navigator()]] History menu *)
     (*s: [[Mmm.navigator()]] Document menu *)
     let docb = Menubutton.create_named mbar "document" [Text (s_ "Document")] in
     let docm = Menu.create_named docb "menu" [] in
     Menubutton.configure docb [Menu docm];
+
     configure_menu_elements docm [	    
       [Label (s_ "Abort")          ; Command abort];
       [Label (s_ "Reload")         ; Command reload];
@@ -588,6 +584,7 @@ let rec navigator is_main_window initial_url =
     let othersb = Menubutton.create_named mbar "others" [Text (s_ "Others")] in
     let othersm = Menu.create_named othersb "menu" [] in
     Menubutton.configure othersb [Menu othersm];
+
     (*s: Other menu elements *)
     Menu.add_command othersm
       [Label (s_ "Load Authorizations..."); Command Auth.load];
@@ -602,6 +599,7 @@ let rec navigator is_main_window initial_url =
     let helpb = Menubutton.create_named mbar "help" [Text (s_ "Help")] in
     let helpm = Menu.create_named helpb "menu" [] in
     Menubutton.configure helpb [Menu helpm];
+
     (*s: Help menu elements *)
     Menu.add_command helpm
       [Label (s_ "Version information");
@@ -609,7 +607,7 @@ let rec navigator is_main_window initial_url =
     Menu.add_command helpm
       [Label (s_ "Home Page of MMM");
        Command (fun () -> 
-         navigator false (Lexurl.make (Version.home (Lang.lang ()))) |> ignore)];
+         navigator false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
     (*x: Help menu elements *)
     Menu.add_command helpm
       [Label (s_ "Help on MMM"); 
@@ -639,31 +637,32 @@ let rec navigator is_main_window initial_url =
     (*e: [[Mmm.navigator()]] setup menu *)
     (*s: [[Mmm.navigator()]] setup open url entry *)
     (* URL display and edit *)
-    let f,e = Frx_entry.new_label_entry vgroup (s_ "Open URL:")
-                       (fun url -> Nav.absolutegoto nav url)
+    let entry,e = 
+      Frx_entry.new_label_entry vgroup (s_ "Open URL:") 
+        (fun url -> Nav.absolutegoto nav url)
     in
     Entry.configure e [TextVariable entryv; TextWidth 40];
     (*e: [[Mmm.navigator()]] setup open url entry *)
 
     (* Navigation buttons *)
-    let fb = Frame.create_named vgroup "buttons" [] in
+    let buttons = Frame.create_named vgroup "buttons" [] in
     (*s: [[Mmm.navigator()]] navigation buttons *)
-    let backb = Button.create_named fb 
+    let backb = Button.create_named buttons 
       "back" [Text (s_ "Back"); Command back ] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
-    let forwardb = Button.create_named fb 
+    let forwardb = Button.create_named buttons 
       "forward" [Text (s_ "Forward"); Command forward] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
-    let homeb = Button.create_named fb "home"
+    let homeb = Button.create_named buttons "home"
       [ Text (s_ "Home"); Command gohome] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
-    let loggingb = Label.create_named fb "logging"
+    let loggingb = Label.create_named buttons "logging"
       [TextWidth 40; TextVariable loggingv; Anchor W] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
-    let abortb = Button.create_named fb 
+    let abortb = Button.create_named buttons 
       "abort" [Text (s_ "Abort"); Command abort] in
     (*x: [[Mmm.navigator()]] navigation buttons *)
-    let reloadb = Button.create_named fb
+    let reloadb = Button.create_named buttons
       "reload" [Text (s_ "Reload"); Command reload] in
     (*e: [[Mmm.navigator()]] navigation buttons *)
 
@@ -671,8 +670,8 @@ let rec navigator is_main_window initial_url =
     pack [mbar][Anchor NW; Side Side_Top; Fill Fill_X];
     pack [backb;homeb;forwardb;reloadb;abortb; loggingb]
            [Side Side_Left; Fill Fill_X];
-    pack [f][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
-    pack [fb][Fill Fill_X];
+    pack [entry][Fill Fill_X; Expand true; Side Side_Bottom; Anchor SW];
+    pack [buttons][Fill Fill_X];
     (*e: [[Mmm.navigator()]] packing part one *)
     (* Initial window only *)
     if is_main_window then begin
@@ -683,7 +682,7 @@ let rec navigator is_main_window initial_url =
           Wm.geometry_set top g
        );
       (*e: [[Mmm.navigator()]] set geometry if specified *)
-      (*s: [[Mmm.navigator()]] set tachy *)
+      (*s: [[Mmm.navigator()]] set tachymeter *)
       (* put this as a function so we can restart it if needed *)
       let rec restart_tachy () =
          (* We must not pass hgroup to tachymeter applets *)
@@ -718,7 +717,7 @@ let rec navigator is_main_window initial_url =
       restart_tachy(); (* first initialisation *)
       (* good size for keeping only the tachy *)
       Wm.minsize_set top 80 80;
-      (*e: [[Mmm.navigator()]] set tachy *)
+      (*e: [[Mmm.navigator()]] set tachymeter *)
     end;
     (*s: [[Mmm.navigator()]] packing part two *)
     (* Pack last to avoid lossage when resizing *)
@@ -732,9 +731,11 @@ let rec navigator is_main_window initial_url =
        a toplevel *)
     bind top [[], Destroy] (BindSet ([Ev_Widget], (fun ei -> 
       if ei.ev_Widget = top then begin
+        (*s: [[Mmm.navigator()]] destroy navigator hook *)
         decr navigators;
+        (*x: [[Mmm.navigator()]] destroy navigator hook *)
         Gcache.kill hist.h_key;
-
+        (*e: [[Mmm.navigator()]] destroy navigator hook *)
         (* we were destroyed by wm *)
         if !navigators = 0 && Winfo.exists Widget.default_toplevel
         then Tk.destroy Widget.default_toplevel
@@ -746,16 +747,16 @@ let rec navigator is_main_window initial_url =
     (*s: [[Mmm.navigator()]] call update_vhistory *)
     !update_vhistory();
     (*e: [[Mmm.navigator()]] call update_vhistory *)
-    (*s: [[Mmm.navigator()]] touch current *)
+    (*s: [[Mmm.navigator()]] call touch_current to not swap displayed documents *)
     (* Yet another timer to avoid flushing displayed documents *)
     let rec touch_current () =
       if Winfo.exists top then begin
         Cache.touch hist.h_current.h_did;
-        Timer.set 10000 touch_current
+        Timer.set 10000 touch_current;
       end 
     in
     touch_current();
-    (*e: [[Mmm.navigator()]] touch current *)
+    (*e: [[Mmm.navigator()]] call touch_current to not swap displayed documents *)
     (*e: [[Mmm.navigator()]] widgets setting *)
 
     absolutegoto nav (Url.string_of initial_url);
