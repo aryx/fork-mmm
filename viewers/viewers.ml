@@ -198,7 +198,7 @@ let extern dh ctype =
 
       let red = ref 0 in
       let size =   
-        try Http_headers.contentlength dh.document_headers
+        try Http_headers.contentlength dh.dh_headers
         with Not_found -> 40000 (* duh *)
       in
       let buffer = String.create 4096 in
@@ -287,8 +287,7 @@ let rec unknown frame ctx dh =
     Textvariable.set v "text/html";
     if Frx_req.open_simple_synchronous (s_ "MIME type") v then
        let ctype = Textvariable.get v in
-       dh.document_headers <- 
-           ("Content-Type: " ^ ctype) :: dh.document_headers;
+       dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
        view frame ctx dh
     else begin
        Save.interactive (fun _ -> ()) dh;
@@ -320,8 +319,7 @@ and interactive frame ctx dh ctype =
       if Frx_req.open_simple_synchronous (s_ "MIME type") v then
         let ctype = Textvariable.get v 
         in
-        dh.document_headers <- 
-          ("Content-Type: " ^ ctype) :: dh.document_headers;
+        dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
         view frame ctx dh
       else begin
         Save.interactive (fun _ -> ()) dh;
@@ -337,7 +335,7 @@ and interactive frame ctx dh ctype =
 (* the meat *)
 and view frame ctx dh =
   try 
-    let ctype = Http_headers.contenttype dh.document_headers in
+    let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
       let viewer =

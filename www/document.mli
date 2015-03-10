@@ -37,7 +37,7 @@ type handle = {
   document_id : document_id;
 
   (* this should help to know what to do even if have not the data yet *)
-  mutable document_headers : string list;
+  mutable dh_headers : string list;
     (* HTTP headers of document, or faked ones *)
 
   document_feed : Feed.t;
@@ -63,6 +63,7 @@ type handle = {
 type document_continuation = {
   document_process : handle -> unit;
     (* What to do one we have a dh on the real document *)
+
   document_finish :  bool -> unit
     (* What to do if a request does not yield a document *)
 }
@@ -81,10 +82,10 @@ type document_data =
 
 (*s: type Document.document *)
 type document = {
+  document_headers : string list; (* e.g. Content-type: text/html *)
   mutable document_data : document_data;
 
   document_address : Url.t; (* origin? *)
-  document_info : string list
 }
 (*e: type Document.document *)
 

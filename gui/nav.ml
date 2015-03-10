@@ -17,20 +17,29 @@ open Embed
 (*s: type Nav.t *)
 type t = {
   nav_viewer_frame : Widget.widget;
-  (*s: [[Nav.t]] other fields *)
+
+  (* Nav.absolutegoto -> request -> process_viewer -> <> *)
   nav_show_current: Viewers.display_info -> string option -> unit;
-  (*x: [[Nav.t]] other fields *)
+
+  (*s: [[Nav.t]] manage history methods *)
   nav_add_hist : Document.document_id -> string option -> unit;
-  (*x: [[Nav.t]] other fields *)
-  nav_id : int;  (* key for the gfx cache *)
-  (*x: [[Nav.t]] other fields *)
-  nav_log : string -> unit;
-  (*x: [[Nav.t]] other fields *)
-  nav_error : Error.t;			(* popping error dialogs *)
-  (*x: [[Nav.t]] other fields *)
+  (*e: [[Nav.t]] manage history methods *)
+  (*s: [[Nav.t]] manage active connections methods *)
   nav_add_active : Url.t -> Www.aborter -> unit;
   nav_rem_active : Url.t -> unit;
-  (*x: [[Nav.t]] other fields *)
+  (*e: [[Nav.t]] manage active connections methods *)
+
+  (*s: [[Nav.t]] cache related methods *)
+  nav_id : int;  (* key for the gfx cache *)
+  (*e: [[Nav.t]] cache related methods *)
+  (*s: [[Nav.t]] error methods *)
+  nav_error : Error.t;			(* popping error dialogs *)
+  (*e: [[Nav.t]] error methods *)
+  (*s: [[Nav.t]] logging method *)
+  nav_log : string -> unit;
+  (*e: [[Nav.t]] logging method *)
+
+  (*s: [[Nav.t]] other fields *)
   nav_new : Hyper.link -> unit;
   (*e: [[Nav.t]] other fields *)
  }
@@ -73,9 +82,11 @@ let request nav process (usecache, wrapwr, specific) lk =
     let cont = 
       { document_process = (fun dh ->
           process nav wr dh;
-          nav.nav_rem_active wr.www_url);
+          nav.nav_rem_active wr.www_url
+        );
         document_finish = (fun _ -> 
-          nav.nav_rem_active wr.www_url);
+          nav.nav_rem_active wr.www_url
+        );
       }
     in
     match Retrieve.f wr handle_link cont with
@@ -89,11 +100,11 @@ let request nav process (usecache, wrapwr, specific) lk =
   and handle_wr wr =
     try
       match wr.www_url.protocol with
-      (*s: [[Nav.request.handle_wr()]] match protocol cases *)
+      (*s: [[Nav.request.handle_wr()]] match protocol special cases *)
       | MAILTO -> Mailto.f wr
        (* mailto: is really a pain. It doesn't fit the retrieval semantics
         of WWW requests. *)
-      (*e: [[Nav.request.handle_wr()]] match protocol cases *)
+      (*e: [[Nav.request.handle_wr()]] match protocol special cases *)
       | _ ->
          if (not usecache) || dont_check_cache wr 
          then retrieve_and_handle wr
@@ -133,11 +144,10 @@ let request nav process (usecache, wrapwr, specific) lk =
       wr.www_error <- nav.nav_error;
       wr |> wrapwr |> handle_wr
     with
-    | Invalid_link msg ->
+    | Hyper.Invalid_link msg ->
         nav.nav_error#f (s_ "Invalid link")
-    | Invalid_request (wr, msg) ->
-        nav.nav_error#f (s_ "Invalid request %s\n%s"
-                              (Url.string_of wr.www_url) msg)
+    | Www.Invalid_request (wr, msg) ->
+        nav.nav_error#f (s_ "Invalid request %s\n%s"(Url.string_of wr.www_url)msg)
   in
   (*e: function Nav.request.handle_link *)
   handle_link lk
@@ -153,7 +163,7 @@ let nothing_specific nav did wr = raise Not_found
 (*s: function Nav.process_viewer *)
 (* Specific handling of "view" requests *)
 let process_viewer addhist make_ctx = 
- fun nav wr dh ->
+ fun nav _wr dh ->
   let ctx = make_ctx nav dh.document_id in
   match Viewers.view nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
@@ -185,7 +195,7 @@ let process_save dest = fun nav wr dh ->
   | n ->
     if wr.www_error#choose 
         (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
-              (Url.string_of wr.www_url) n (status_msg dh.document_headers))
+              (Url.string_of wr.www_url) n (status_msg dh.dh_headers))
     then Save.transfer wr dh dest
     else dclose true dh
 (*e: function Nav.process_save *)
@@ -195,15 +205,15 @@ let process_save dest = fun nav wr dh ->
 
 let display_headers dh =
   let mytop = Toplevel.create Widget.default_toplevel [] in
-    Wm.title_set mytop 
-       (sprintf "HEAD %s" (Url.string_of dh.document_id.document_url));
-    let hs =
-      List.map (function h -> Label.create mytop [Text h; Anchor W])
-               dh.document_headers in
-     pack (List.rev hs) [Fill Fill_X];
+  Wm.title_set mytop 
+      (sprintf "HEAD %s" (Url.string_of dh.document_id.document_url));
+  let hs =
+    dh.dh_headers |> List.map (fun h -> Label.create mytop [Text h; Anchor W])
+  in
+  pack (List.rev hs) [Fill Fill_X];
   let b = Button.create mytop
-             [Command (fun _ -> destroy mytop); Text "Dismiss"] in
-     pack [b] [Anchor Center]
+            [Command (fun _ -> destroy mytop); Text "Dismiss"] in
+  pack [b] [Anchor Center]
 (*e: function Nav.display_headers *)
  
 (*s: constant Nav.process_head *)
@@ -368,9 +378,10 @@ let save_link nav whereto =
 (*e: function Nav.save_link *)
 (*s: function Nav.follow_link *)
 let follow_link nav lk =
-  request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+  lk |> request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+    (*s: [[Nav.follow_link]] extra arguments to Nav.request *)
     (true, id_wr, specific_viewer true)
-   lk
+    (*e: [[Nav.follow_link]] extra arguments to Nav.request *)
 (*e: function Nav.follow_link *)
     
 (*
@@ -430,7 +441,7 @@ let update nav did nocache =
   let process_update nav wr dh =
     match dh.document_status with
       304 -> 
-    Cache.patch dh.document_id dh.document_headers;
+    Cache.patch dh.document_id dh.dh_headers;
     dclose true dh;
     begin try
       let di = Gcache.find nav.nav_id did in
@@ -456,7 +467,7 @@ let update nav did nocache =
     let doc = Cache.find did in
     try
       (* find the date of previous download, (or last-modified ?) *)
-      let date_received = get_header "date" doc.document_info in
+      let date_received = get_header "date" doc.document_headers in
       let follow_link =
         request nav process_update
         (false, (* we don't want to use cache here *)

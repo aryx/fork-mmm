@@ -28,7 +28,6 @@ type t =
     mutable port : int option;
 
     mutable path : string option;
-
     mutable search: string option
   }
 (*e: type Url.t *)

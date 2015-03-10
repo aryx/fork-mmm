@@ -3,27 +3,31 @@
 
 (*s: type Htmlfmt.gattr *)
 type gattr =
-  (*s: [[Htmlfmt.gattr]] other cases *)
-  | Justification of string
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Margin of int
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Underlined
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Striked
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Superscript
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Lowerscript
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Spacing of int
-  (*x: [[Htmlfmt.gattr]] other cases *)
-  | Font of Fonts.fontInfo		        (* mostly size and face *)
-  (*x: [[Htmlfmt.gattr]] other cases *)
+  (*s: [[Htmlfmt.gattr]] color cases *)
   | FgColor of string
-  (*x: [[Htmlfmt.gattr]] other cases *)
+  (*x: [[Htmlfmt.gattr]] color cases *)
   | BgColor of string
-  (*e: [[Htmlfmt.gattr]] other cases *)
+  (*e: [[Htmlfmt.gattr]] color cases *)
+  (*s: [[Htmlfmt.gattr]] font cases *)
+  | Font of Fonts.fontInfo		        (* mostly size and face *)
+  (*e: [[Htmlfmt.gattr]] font cases *)
+  (*s: [[Htmlfmt.gattr]] spacing cases *)
+  | Margin of int
+  (*x: [[Htmlfmt.gattr]] spacing cases *)
+  | Spacing of int
+  (*e: [[Htmlfmt.gattr]] spacing cases *)
+  (*s: [[Htmlfmt.gattr]] alignment cases *)
+  | Justification of string
+  (*e: [[Htmlfmt.gattr]] alignment cases *)
+  (*s: [[Htmlfmt.gattr]] style cases *)
+  | Underlined
+  (*x: [[Htmlfmt.gattr]] style cases *)
+  | Striked
+  (*x: [[Htmlfmt.gattr]] style cases *)
+  | Superscript
+  (*x: [[Htmlfmt.gattr]] style cases *)
+  | Lowerscript
+  (*e: [[Htmlfmt.gattr]] style cases *)
 (*e: type Htmlfmt.gattr *)
 
 (*s: type Htmlfmt.formatterSpec *)

@@ -77,7 +77,7 @@ let postmortem () =
              | FileData (f,true) -> f
              | FileData (f,false) -> "fake " ^f)
              );
-    entry.cache_document.document_info
+    entry.cache_document.document_headers
     |> List.rev |> List.iter (fun h -> Log.f (sprintf "%s" h));
 
     if entry.cache_pending 
@@ -239,7 +239,8 @@ let patch did headers =
     let newd = {
       document_address = entry.cache_document.document_address;
       document_data = entry.cache_document.document_data;
-      document_info = merge_headers entry.cache_document.document_info headers
+      document_headers = 
+        merge_headers entry.cache_document.document_headers headers
       } in
      entry.cache_document <- newd;
     entry.cache_lastused <- max (Unix.time()) entry.cache_lastused
@@ -254,14 +255,11 @@ let init () =
   let b = Ebuffer.create 128 in
   Ebuffer.output_string b (Version.inithtml (Lang.lang ()));
 
-  let docid = { 
-    document_url = initurl;
-    document_stamp = Document.no_stamp
-  } in
+  let docid = { document_url = initurl; document_stamp = Document.no_stamp; } in
   let doc = { 
-    document_address = initurl;
+    document_headers = ["Content-Type: text/html"];
     document_data = MemoryData b;
-    document_info = ["Content-Type: text/html"]
+    document_address = initurl;
   } in
   let docentry = { 
     cache_document = doc;
@@ -348,14 +346,7 @@ let wrap c dh =
     feed_internal = dh.document_feed.feed_internal
     }
   in
-  {document_id = dh.document_id;
-   document_referer = dh.document_referer;
-   document_status = dh.document_status;
-   document_headers = dh.document_headers;
-   document_feed = wfeed;
-   document_fragment = dh.document_fragment;
-   document_logger = dh.document_logger
-  }
+  { dh with document_feed = wfeed }
 (*e: function Cache.wrap *)
 
 (* Obtain a dh from a cache entry *)
@@ -382,7 +373,7 @@ let make_handle wwwr doc =
   { document_id = { document_url = wwwr.www_url; document_stamp = no_stamp};
     document_referer = wwwr.www_link.h_context;
     document_status = 200;
-    document_headers = doc.document_info;
+    dh_headers = doc.document_headers;
     document_feed = Feed.of_fd (fd_of_doc doc);
     document_fragment = wwwr.www_fragment;
     document_logger = tty_logger}
@@ -396,7 +387,7 @@ let renew_handle dh =
   { document_id = dh.document_id;
     document_referer = dh.document_referer;
     document_status = dh.document_status;
-    document_headers = doc.document_info;
+    dh_headers = doc.document_headers;
     document_feed = Feed.of_fd (fd_of_doc doc);
     document_fragment = dh.document_fragment;
     document_logger = dh.document_logger}
@@ -422,7 +413,7 @@ let make_embed_handle doc =
     { document_url = doc.document_address; document_stamp = no_stamp};
      document_referer = None;
      document_status = 200;
-     document_headers = doc.document_info;
+     dh_headers = doc.document_headers;
      document_feed = Feed.of_fd fd;
      document_fragment = None;
      document_logger = tty_logger}

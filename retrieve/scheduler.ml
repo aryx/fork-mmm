@@ -227,7 +227,7 @@ module Make(J: Data) = struct
         (* JPF HACK -- for Image retrieval progress meter *)
         begin try 
           job.contentlength <-
-            Some (Http_headers.contentlength dh.document_headers)
+            Some (Http_headers.contentlength dh.dh_headers)
         with
           Not_found -> ()
         end;

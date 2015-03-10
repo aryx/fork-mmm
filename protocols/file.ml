@@ -93,8 +93,8 @@ let dir path =
             print_endline (Printexc.to_string e)
         end;
         flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
-        exit 0;
-        cin (*duh*)
+        exit 0
+        (*cin (*duh*) *)
      | n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
@@ -143,7 +143,7 @@ let fake_cgi wwwr cont path =
       let dh = {document_id = document_id wwwr;
                 document_referer = wwwr.www_link.h_context;
                 document_status = 0;
-                document_headers = [];
+                dh_headers = [];
                 document_feed = Feed.of_fd cmd_in;
                 document_fragment = wwwr.www_fragment;
                 document_logger = Document.tty_logger} 
@@ -151,15 +151,15 @@ let fake_cgi wwwr cont path =
       dh.document_feed.feed_schedule
         (fun () ->
            try
-            if dh.document_headers = [] then begin
+            if dh.dh_headers = [] then begin
             (* it should be the HTTP Status-Line *)
             let l = Munix.read_line cmd_in in
               dh.document_status <- (parse_status l).status_code;
-              dh.document_headers <- [l] (* keep it there *)
+              dh.dh_headers <- [l] (* keep it there *)
             end
           else 
-            dh.document_headers <- 
-              read_headers cmd_in dh.document_headers
+            dh.dh_headers <- 
+              read_headers cmd_in dh.dh_headers
           with
            | End_of_headers ->
                dh.document_feed.feed_unschedule();
@@ -167,7 +167,7 @@ let fake_cgi wwwr cont path =
            | Not_found -> (* No HTTP/ header *)
                dh.document_feed.feed_unschedule();
                dh.document_status <- 200;
-               dh.document_headers <- ["Content-Type: text/plain"];
+               dh.dh_headers <- ["Content-Type: text/plain"];
                cont.document_process dh
            | Unix_error(_,_,_) ->
                dclose true dh;
@@ -251,7 +251,7 @@ let request wr cont =
               document_id = document_id wr;
               document_referer = wr.www_link.h_context;
               document_status = 304;
-              document_headers = [ sprintf "Date: %s" (Date.asc_now())];
+              dh_headers = [ sprintf "Date: %s" (Date.asc_now())];
               document_feed = 
                 Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
               document_fragment = wr.www_fragment;
@@ -275,7 +275,7 @@ let request wr cont =
             { document_id = document_id wr;
               document_referer = wr.www_link.h_context;
               document_status = 200;
-              document_headers = 
+              dh_headers = 
                 [sprintf "Content-Length: %d" st.st_size;
                  sprintf "Date: %s" (Date.asc_now());
                  sprintf "Last-modified: %s" (Date.asc st.st_mtime)
@@ -294,7 +294,7 @@ let request wr cont =
           { document_id = document_id wr;
             document_referer = wr.www_link.h_context;
             document_status = 200;
-            document_headers = ["Content-Type: text/html"];
+            dh_headers = ["Content-Type: text/html"];
             document_feed = Feed.of_fd s;
             document_fragment = wr.www_fragment;
             document_logger = Document.tty_logger

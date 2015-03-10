@@ -5,18 +5,22 @@
  *)
 type request =  { 
     www_link : Hyper.link;        (* the link that produced this request *)
+    mutable www_headers : string list;		  (* additional headers *)
+    (*s: [[Www.request]] security field *)
+    mutable www_auth : (string * string) list;  (* basic auth *)
+    (*e: [[Www.request]] security field *)
 
+    (*s: [[Www.request]] parsed link fields *)
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
+    (*e: [[Www.request]] parsed link fields *)
 
-    mutable www_headers : string list;		  (* additional headers *)
-
+    (*s: [[Www.request]] logging method *)
     mutable www_logging : string -> unit;	  (* logging *)
+    (*e: [[Www.request]] logging method *)
+    (*s: [[Www.request]] error managment method *)
     mutable www_error : Error.t;
-
-    (*s: [[Www.request]] other fields *)
-    mutable www_auth : (string * string) list;  (* basic auth *)
-    (*e: [[Www.request]] other fields *)
+    (*e: [[Www.request]] error managment method *)
   }
 (*e: type Www.request *)
 

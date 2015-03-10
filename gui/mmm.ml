@@ -1,17 +1,14 @@
 (*s: ./gui/mmm.ml *)
-(* The navigation window *)
+open Common
 open I18n
-open Printf
-open Unix
+
 open Tk
-open Mstring
-open Url
-open Hyper
-open Www
 open History
 open Document
-open Viewers
 open Nav
+open Www
+
+(* The navigation window *)
 
 (*s: constant Mmm.hotlist *)
 (* Preference settings *)
@@ -108,7 +105,7 @@ let display di =
 (*s: function Mmm.quit *)
 let quit confirm =
   if confirm then
-    match Frx_dialog.f Widget.default_toplevel (gensym "quit")
+    match Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
       (s_ "Confirm") 
       (s_ "Do you really want to quit ?")
       (Predefined "question") 
@@ -138,16 +135,16 @@ let navigators = ref 0
 (*e: constant Mmm.navigators *)
 
 (*s: function Mmm.navigator *)
-let rec navigator has_tachy initial_url =
+let rec navigator is_main_window initial_url =
   (*s: [[Mmm.navigator()]] new navigator hook *)
   incr navigators;
   (*e: [[Mmm.navigator()]] new navigator hook *)
 
   (* The first navigator is named, so we can put special information in
-   * window manager configurations, such as sticky 
+   * window manager configurations, such as sticky (??)
    *)
   let top = 
-    if has_tachy 
+    if is_main_window
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
     (*s: [[Mmm.navigator()]] if not main window, create default toplevel *)
     else Toplevel.create Widget.default_toplevel [Class "MMM"]
@@ -234,7 +231,10 @@ let rec navigator has_tachy initial_url =
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_id = hist.h_key;
       (*x: [[Mmm.navigator()]] set nav fields *)
-      nav_log = (fun s -> Textvariable.set loggingv s);
+      nav_log = (fun s -> 
+        pr2 s;
+        Textvariable.set loggingv s
+      );
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_error = error;
       (*x: [[Mmm.navigator()]] set nav fields *)
@@ -245,7 +245,7 @@ let rec navigator has_tachy initial_url =
          try
            let wwwr = Plink.make link in
            navigator false wwwr.www_url |> ignore
-         with Invalid_link msg -> 
+         with Hyper.Invalid_link msg -> 
            error#f (s_ "Invalid link")
       );
       (*e: [[Mmm.navigator()]] set nav fields *)
@@ -675,7 +675,7 @@ let rec navigator has_tachy initial_url =
     pack [fb][Fill Fill_X];
     (*e: [[Mmm.navigator()]] packing part one *)
     (* Initial window only *)
-    if has_tachy then begin
+    if is_main_window then begin
       (*s: [[Mmm.navigator()]] set geometry if specified *)
       (match !initial_geom with 
        | None -> ()
@@ -769,12 +769,12 @@ let rec navigator has_tachy initial_url =
       Tk.destroy Widget.default_toplevel;
       raise e
     end 
-    (*s: [[Mmm.navigator()]] exn handler, else if multiple navigators *)
+    (*s: [[Mmm.navigator()]] exn handler, when multiple navigators *)
     else begin 
       Tk.destroy top;
       None
     end
-    (*e: [[Mmm.navigator()]] exn handler, else if multiple navigators *)
+    (*e: [[Mmm.navigator()]] exn handler, when multiple navigators *)
 (*e: function Mmm.navigator *)
 
 
@@ -808,18 +808,17 @@ let initial_navigator preffile init_url =
      match init_url with
      | None -> Lexurl.make !Mmmprefs.home
      | Some x -> 
-         begin
-           try Lexurl.make x 
-         with _ -> (* If fails, try to use file: *)
-          (*s: [[Mmm.initial_navigator()]] if cannot parse init_url *)
-          let path = 
-            if x.[0] = '/' 
-            then x
-            else Filename.concat (Unix.getcwd ()) x
-          in
-          Lexurl.make ("file://localhost" ^ path)
-          (*e: [[Mmm.initial_navigator()]] if cannot parse init_url *)
-         end
+         (try Lexurl.make x 
+          with _ -> (* If fails, try to use file: *)
+           (*s: [[Mmm.initial_navigator()]] if cannot parse init_url *)
+           let path = 
+             if x.[0] = '/' 
+             then x
+             else Filename.concat (Unix.getcwd ()) x
+           in
+           Lexurl.make ("file://localhost" ^ path)
+           (*e: [[Mmm.initial_navigator()]] if cannot parse init_url *)
+         )
   );
   (*e: [[Mmm.initial_navigator()]] set initial page based on init_url *)
   main_navigator :=

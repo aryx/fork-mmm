@@ -2,20 +2,29 @@
 (*s: type Nav.t *)
 type t = {
   nav_viewer_frame : Widget.widget;
-  (*s: [[Nav.t]] other fields *)
+
+  (* Nav.absolutegoto -> request -> process_viewer -> <> *)
   nav_show_current: Viewers.display_info -> string option -> unit;
-  (*x: [[Nav.t]] other fields *)
+
+  (*s: [[Nav.t]] manage history methods *)
   nav_add_hist : Document.document_id -> string option -> unit;
-  (*x: [[Nav.t]] other fields *)
-  nav_id : int;  (* key for the gfx cache *)
-  (*x: [[Nav.t]] other fields *)
-  nav_log : string -> unit;
-  (*x: [[Nav.t]] other fields *)
-  nav_error : Error.t;			(* popping error dialogs *)
-  (*x: [[Nav.t]] other fields *)
+  (*e: [[Nav.t]] manage history methods *)
+  (*s: [[Nav.t]] manage active connections methods *)
   nav_add_active : Url.t -> Www.aborter -> unit;
   nav_rem_active : Url.t -> unit;
-  (*x: [[Nav.t]] other fields *)
+  (*e: [[Nav.t]] manage active connections methods *)
+
+  (*s: [[Nav.t]] cache related methods *)
+  nav_id : int;  (* key for the gfx cache *)
+  (*e: [[Nav.t]] cache related methods *)
+  (*s: [[Nav.t]] error methods *)
+  nav_error : Error.t;			(* popping error dialogs *)
+  (*e: [[Nav.t]] error methods *)
+  (*s: [[Nav.t]] logging method *)
+  nav_log : string -> unit;
+  (*e: [[Nav.t]] logging method *)
+
+  (*s: [[Nav.t]] other fields *)
   nav_new : Hyper.link -> unit;
   (*e: [[Nav.t]] other fields *)
  }
@@ -24,10 +33,12 @@ type t = {
 (*s: signature Nav.request *)
 val request :
   t -> (t -> Www.request -> Document.handle -> unit) ->
+  (*s: [[Nav.request]] signature, extra arguments *)
   ( bool * 
     (Www.request -> Www.request) * 
     (t -> Document.document_id -> Www.request -> unit)
   ) ->
+  (*e: [[Nav.request]] signature, extra arguments *)
   Hyper.link -> 
   unit
 (*e: signature Nav.request *)

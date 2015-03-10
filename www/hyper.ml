@@ -13,14 +13,16 @@ open Url
 type link_method =
    GET 
  | POST of string
+ (*s: [[Hyper.link_method]] other cases *)
  | HEAD
+ (*e: [[Hyper.link_method]] other cases *)
 (*e: type Hyper.link_method *)
 
 (*s: function Hyper.parse_method *)
 let parse_method = function
-   "GET" -> GET
- | "HEAD" -> HEAD
+ | "GET" -> GET
  | "POST" -> POST ""
+ | "HEAD" -> HEAD
  | _ -> raise Not_found (* other cases should be caught by caller ! *)
 (*e: function Hyper.parse_method *)
 

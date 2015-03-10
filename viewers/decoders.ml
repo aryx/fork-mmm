@@ -30,19 +30,16 @@ let gzip dh =
   match Low.fork() with
     0 ->  
       dup2 gread stdin; dup2 gwrite stdout;
-      Munix.execvp "gunzip" [| "gunzip"; "-c" |];
-      dh (* fake *)
+      Munix.execvp "gunzip" [| "gunzip"; "-c" |]
+      (* dh (* fake *) *)
   | n ->  
       close gread; close gwrite;
      (* it is safe to close feed because the son has a copy *)
       let newdh =
-       { document_id = dh.document_id;
-      document_referer = dh.document_referer;
-          document_status = dh.document_status;
-      document_headers = rem_contentencoding dh.document_headers;
-      document_feed = Feed.of_fd mread;
-      document_fragment = dh.document_fragment;
-      document_logger = dh.document_logger }
+       { dh with 
+         dh_headers = rem_contentencoding dh.dh_headers;
+         document_feed = Feed.of_fd mread;
+       }
       in
       let buffer = String.create 4096 in
       let rec copy () =
@@ -83,8 +80,7 @@ let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
   if dh.document_status >= 400 then dh else
   try
-    Hashtbl.find decoders
-       (String.uppercase (contentencoding dh.document_headers)) dh
+    Hashtbl.find decoders (String.uppercase (contentencoding dh.dh_headers)) dh
   with
     Not_found -> dh
   | Unix_error(_,_,_) -> dh

@@ -3305,7 +3305,7 @@ and process_response09  wwwr cont cnx =
        { document_id = document_id wwwr;
          document_referer = wwwr.www_link.h_context;
          document_status = 200;
-         document_headers = ["Content-Type: text/html"];
+         dh_headers = ["Content-Type: text/html"];
          document_feed = Feed.of_fd cnx#fd;
          document_fragment = wwwr.www_fragment;
          document_logger = tty_logger} 
@@ -3613,7 +3613,8 @@ let patch did headers =
     let newd = {
       document_address = entry.cache_document.document_address;
       document_data = entry.cache_document.document_data;
-      document_info = merge_headers entry.cache_document.document_info headers
+      document_headers = 
+        merge_headers entry.cache_document.document_headers headers
       } in
      entry.cache_document <- newd;
     entry.cache_lastused <- max (Unix.time()) entry.cache_lastused
@@ -3688,14 +3689,7 @@ let wrap c dh =
     feed_internal = dh.document_feed.feed_internal
     }
   in
-  {document_id = dh.document_id;
-   document_referer = dh.document_referer;
-   document_status = dh.document_status;
-   document_headers = dh.document_headers;
-   document_feed = wfeed;
-   document_fragment = dh.document_fragment;
-   document_logger = dh.document_logger
-  }
+  { dh with document_feed = wfeed }
 @
 
 <<function Cache.fd_of_doc>>=
@@ -3721,7 +3715,7 @@ let make_handle wwwr doc =
   { document_id = { document_url = wwwr.www_url; document_stamp = no_stamp};
     document_referer = wwwr.www_link.h_context;
     document_status = 200;
-    document_headers = doc.document_info;
+    dh_headers = doc.document_headers;
     document_feed = Feed.of_fd (fd_of_doc doc);
     document_fragment = wwwr.www_fragment;
     document_logger = tty_logger}
@@ -3735,7 +3729,7 @@ let renew_handle dh =
   { document_id = dh.document_id;
     document_referer = dh.document_referer;
     document_status = dh.document_status;
-    document_headers = doc.document_info;
+    dh_headers = doc.document_headers;
     document_feed = Feed.of_fd (fd_of_doc doc);
     document_fragment = dh.document_fragment;
     document_logger = dh.document_logger}
@@ -3760,7 +3754,7 @@ let make_embed_handle doc =
     { document_url = doc.document_address; document_stamp = no_stamp};
      document_referer = None;
      document_status = 200;
-     document_headers = doc.document_info;
+     dh_headers = doc.document_headers;
      document_feed = Feed.of_fd fd;
      document_fragment = None;
      document_logger = tty_logger}
@@ -4072,7 +4066,7 @@ let wrap_cache cache dh =
              dh.document_id.document_stamp);
   Retype.f dh;
   try
-    match Lexheaders.media_type (contenttype dh.document_headers) with
+    match Lexheaders.media_type (contenttype dh.dh_headers) with
     | ("text","html"),_ 
     | ("text","plain"),_ ->
         begin 
@@ -4080,7 +4074,7 @@ let wrap_cache cache dh =
         let doc, c = cache dh in
           Cache.add dh.document_id
                  {document_address = dh.document_id.document_url;
-                  document_data = doc; document_info = dh.document_headers};
+                  document_data = doc; document_headers = dh.dh_headers};
           Cache.wrap c dh
           with
             Cache.DontCache -> dh
@@ -4094,14 +4088,14 @@ let wrap_cache cache dh =
 <<function Retrieve.code204>>=
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.document_headers))
+  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
 @
 
 <<function Retrieve.forward>>=
 (* 302 Moved temporarily *)
 let forward wr dh =
   try 
-   let newurl = Http_headers.location dh.document_headers in
+   let newurl = Http_headers.location dh.dh_headers in
      if (* do we forward automatically ?*)
     match wr.www_link.h_method with
       GET -> true
@@ -4129,7 +4123,7 @@ let forward wr dh =
 (* 301 Moved permanently *)
 let forward_permanent wr dh =
   try
-    let newurl = Http_headers.location dh.document_headers in
+    let newurl = Http_headers.location dh.dh_headers in
     wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
     forward wr dh
   with Not_found -> 
@@ -4141,7 +4135,7 @@ let forward_permanent wr dh =
 (* 401 Unauthorized *)
 let ask_auth wr dh =
   wr.www_logging (s_ "Checking authentication");
-  let rawchallenge = challenge dh.document_headers in
+  let rawchallenge = challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   let host = match wr.www_url.host with
@@ -4177,10 +4171,8 @@ let unauthorized wr dh =
           Auth.add space cookie;
         (* Put the challenge header again *)
         begin try
-          newdh.document_headers <- 
-             ("WWW-Authenticate: "^ 
-                   (challenge dh.document_headers))
-             :: newdh.document_headers
+          newdh.dh_headers <- ("WWW-Authenticate: "^ (challenge dh.dh_headers))
+                              :: newdh.dh_headers
          with
           Not_found -> ()
         end;
@@ -4192,7 +4184,7 @@ let unauthorized wr dh =
 (* We dump the realm altogether, because it has no meaning for proxies *)
 let ask_proxy_auth wr dh =
   wr.www_logging (s_ "Checking proxy authentication");
-  let rawchallenge = proxy_challenge dh.document_headers in
+  let rawchallenge = proxy_challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   Auth.check wr challenge
@@ -4219,10 +4211,9 @@ let proxy_unauthorized wr dh =
            Auth.add space cookie;
          (* Put the challenge header again *)
          begin try
-           newdh.document_headers <- 
-              ("Proxy-Authenticate: "^ 
-                                    (proxy_challenge dh.document_headers))
-              :: newdh.document_headers
+           newdh.dh_headers <- 
+              ("Proxy-Authenticate: "^ (proxy_challenge dh.dh_headers))
+              :: newdh.dh_headers
           with
            Not_found -> ()
          end;
@@ -4313,7 +4304,7 @@ let rec http_check cache retry cont wwwr dh =
 
 (* 304 : Response to a conditional GET, the document is not modified
 let update wr dh =
-   Cache.patch dh.document_id dh.document_headers;
+   Cache.patch dh.document_id dh.dh_headers;
    Stop (s_ "Document %s has not changed.\n" (Url.string_of wr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
@@ -4525,7 +4516,7 @@ module ImageData =
       let url = dh.document_id.document_url in
       let img = 
         try
-          let ctype = contenttype dh.document_headers in
+          let ctype = contenttype dh.dh_headers in
           match Lexheaders.media_type ctype with
            ("image","jpeg"), _ -> Low.busy tk_load_jpeg file
           | ("image","gif"), _ -> Low.busy tk_load_gif file
@@ -4537,7 +4528,7 @@ module ImageData =
       if !verbose then
         Log.f (sprintf "Loaded %s as %s" file (Url.string_of url));
       Msys.rm file;
-      add url img referers dh.document_headers;
+      add url img referers dh.dh_headers;
       img
       |	304 -> (* we did an update an a document, and it induced a 
           recursive update. The document didn't change *)
@@ -4890,7 +4881,7 @@ module Make(J: Data) = struct
         (* JPF HACK -- for Image retrieval progress meter *)
         begin try 
           job.contentlength <-
-            Some (Http_headers.contentlength dh.document_headers)
+            Some (Http_headers.contentlength dh.dh_headers)
         with
           Not_found -> ()
         end;
@@ -5123,19 +5114,16 @@ let gzip dh =
   match Low.fork() with
     0 ->  
       dup2 gread stdin; dup2 gwrite stdout;
-      Munix.execvp "gunzip" [| "gunzip"; "-c" |];
-      dh (* fake *)
+      Munix.execvp "gunzip" [| "gunzip"; "-c" |]
+      (* dh (* fake *) *)
   | n ->  
       close gread; close gwrite;
      (* it is safe to close feed because the son has a copy *)
       let newdh =
-       { document_id = dh.document_id;
-      document_referer = dh.document_referer;
-          document_status = dh.document_status;
-      document_headers = rem_contentencoding dh.document_headers;
-      document_feed = Feed.of_fd mread;
-      document_fragment = dh.document_fragment;
-      document_logger = dh.document_logger }
+       { dh with 
+         dh_headers = rem_contentencoding dh.dh_headers;
+         document_feed = Feed.of_fd mread;
+       }
       in
       let buffer = String.create 4096 in
       let rec copy () =
@@ -5167,8 +5155,7 @@ let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
   if dh.document_status >= 400 then dh else
   try
-    Hashtbl.find decoders
-       (String.uppercase (contentencoding dh.document_headers)) dh
+    Hashtbl.find decoders (String.uppercase (contentencoding dh.dh_headers)) dh
   with
     Not_found -> dh
   | Unix_error(_,_,_) -> dh
@@ -5274,7 +5261,7 @@ let add ({ embed_hlink = link;
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
-       document_info = Http_headers.merge_headers doc.document_info
+       document_headers = Http_headers.merge_headers doc.document_headers
                         ["Content-Type: " ^ given_type]
        }  in
          (* Destroy the alt window *)
@@ -5317,7 +5304,7 @@ let add ({ embed_hlink = link;
 let update frame embed_ctx doc notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
-    let date_received = get_header "date" doc.document_info in
+    let date_received = get_header "date" doc.document_headers in
     let rewrite_wr wr =
       wr.www_headers <- 
      ("If-Modified-Since: "^date_received) :: wr.www_headers;
@@ -5328,7 +5315,7 @@ let update frame embed_ctx doc notchanged =
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx newdoc =
       let newdate = 
-    try get_header "date"  newdoc.document_info with Not_found -> "foo"
+    try get_header "date"  newdoc.document_headers with Not_found -> "foo"
       in if newdate <> date_received then begin
     List.iter Tk.destroy (Winfo.children frame);
     stdviewer frame embed_ctx newdoc
@@ -5351,7 +5338,7 @@ let update frame embed_ctx doc notchanged =
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
-       document_info = Http_headers.merge_headers doc.document_info
+       document_headers = Http_headers.merge_headers doc.document_headers
                         ["Content-Type: " ^ given_type]
        }  in
      smart_viewer (viewer parms) frame embed_ctx doc)
@@ -5429,15 +5416,15 @@ module EmbeddedData =
     200 ->
       begin try 
         let doc = Cache.find dh.document_id in
-        let this_date = get_header "date" dh.document_headers
-        and cache_date = get_header "date" doc.document_info in
+        let this_date = get_header "date" dh.dh_headers in
+        let cache_date = get_header "date" doc.document_headers in
         if this_date <> cache_date then raise Not_found
         else doc
       with
         Not_found ->
           let doc = { document_address = dh.document_id.document_url;
                  document_data = FileData (file, true);
-                 document_info = dh.document_headers} in
+                 document_headers = dh.dh_headers} in
           Cache.add dh.document_id doc;
           Cache.finished dh.document_id;
           doc
@@ -5526,10 +5513,10 @@ val print_command : string ref
 (* unprotected against Sys_error *)
 let f cont dh fname endmsg =
   let oc = open_out_bin fname in
-  let buffer = String.create 1024
-  and red = ref 0 
-  and size =   
-    try Http_headers.contentlength dh.document_headers
+  let buffer = String.create 1024 in
+  let red = ref 0 in
+  let size =   
+    try Http_headers.contentlength dh.dh_headers
     with Not_found -> 40000 (* duh *)
   in
   dh.document_feed.feed_schedule
@@ -5578,9 +5565,9 @@ let transfer wr dh dest =
   | Some (fd, flag) ->
       (* if flag we should output the headers as well *)
       if flag then begin
-    List.iter (fun h -> 
-      Munix.write_string fd h; Munix.write_string fd "\n")
-      (List.rev dh.document_headers);
+    dh.dh_headers |> List.rev |> List.iter (fun h -> 
+      Munix.write_string fd h; Munix.write_string fd "\n"
+    );
     Munix.write_string fd "\n";
       end;
       let buffer = String.create 1024 in
@@ -5811,7 +5798,7 @@ type hyper_func = {
 <<signature Viewers.add_builtin>>
 <<signature Viewers.reset>>
 
-(* main entry point! *)
+(* !!! main entry point!!!! *)
 <<signature Viewers.view>>
 
 
@@ -6262,7 +6249,7 @@ open Htmlfmt
 
 (* Delayed and shared configuration of tags *)
 
-module TagSet = Common.StringSet
+module TagSet = Set.Make(struct type t = string let compare = compare end)
 
 class tags (thtml) =
  object
@@ -9302,7 +9289,7 @@ end
 
 @
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] color cases>>=
 | BgColor of string
 @
 
@@ -13197,7 +13184,7 @@ let update nav did nocache =
     let doc = Cache.find did in
     try
       (* find the date of previous download, (or last-modified ?) *)
-      let date_received = get_header "date" doc.document_info in
+      let date_received = get_header "date" doc.document_headers in
       let follow_link =
         request nav process_update
         (false, (* we don't want to use cache here *)
@@ -13665,19 +13652,15 @@ and dtd_p = Dtd.names()
 %-------------------------------------------------------------
 
 <<./gui/mmm.ml>>=
-(* The navigation window *)
+open Common
 open I18n
-open Printf
-open Unix
+
 open Tk
-open Mstring
-open Url
-open Hyper
-open Www
 open History
 open Document
-open Viewers
 open Nav
+
+(* The navigation window *)
 
 <<constant Mmm.hotlist>>
 <<constant Mmm.helpurl>>

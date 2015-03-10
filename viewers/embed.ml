@@ -35,15 +35,15 @@ module EmbeddedData =
     200 ->
       begin try 
         let doc = Cache.find dh.document_id in
-        let this_date = get_header "date" dh.document_headers
-        and cache_date = get_header "date" doc.document_info in
+        let this_date = get_header "date" dh.dh_headers in
+        let cache_date = get_header "date" doc.document_headers in
         if this_date <> cache_date then raise Not_found
         else doc
       with
         Not_found ->
           let doc = { document_address = dh.document_id.document_url;
                  document_data = FileData (file, true);
-                 document_info = dh.document_headers} in
+                 document_headers = dh.dh_headers} in
           Cache.add dh.document_id doc;
           Cache.finished dh.document_id;
           doc
@@ -83,7 +83,7 @@ let embedded_viewer frame ctx doc =
   (* Destroy the alt window *)
   List.iter Tk.destroy (Winfo.children frame);
   try
-    let ctype = contenttype doc.document_info in
+    let ctype = contenttype doc.document_headers in
     let (typ,subtyp),l = Lexheaders.media_type ctype in
     try
       let viewer = 
@@ -103,7 +103,7 @@ let embedded_viewer frame ctx doc =
   | Invalid_HTTP_header e ->
       let t = 
        s_ "Embed Error: malformed type %s (%s)"
-         (contenttype doc.document_info) e in
+         (contenttype doc.document_headers) e in
       let l = Label.create frame [Text t] in pack [l][]
 (*e: function Embed.embedded_viewer *)
 
@@ -169,7 +169,7 @@ let add ({ embed_hlink = link;
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
-       document_info = Http_headers.merge_headers doc.document_info
+       document_headers = Http_headers.merge_headers doc.document_headers
                         ["Content-Type: " ^ given_type]
        }  in
          (* Destroy the alt window *)
@@ -213,7 +213,7 @@ let add ({ embed_hlink = link;
 let update frame embed_ctx doc notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
-    let date_received = get_header "date" doc.document_info in
+    let date_received = get_header "date" doc.document_headers in
     let rewrite_wr wr =
       wr.www_headers <- 
      ("If-Modified-Since: "^date_received) :: wr.www_headers;
@@ -224,7 +224,7 @@ let update frame embed_ctx doc notchanged =
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx newdoc =
       let newdate = 
-    try get_header "date"  newdoc.document_info with Not_found -> "foo"
+    try get_header "date"  newdoc.document_headers with Not_found -> "foo"
       in if newdate <> date_received then begin
     List.iter Tk.destroy (Winfo.children frame);
     stdviewer frame embed_ctx newdoc
@@ -247,7 +247,7 @@ let update frame embed_ctx doc notchanged =
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
-       document_info = Http_headers.merge_headers doc.document_info
+       document_headers = Http_headers.merge_headers doc.document_headers
                         ["Content-Type: " ^ given_type]
        }  in
      smart_viewer (viewer parms) frame embed_ctx doc)

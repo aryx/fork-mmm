@@ -12,10 +12,10 @@ open Feed
 (* unprotected against Sys_error *)
 let f cont dh fname endmsg =
   let oc = open_out_bin fname in
-  let buffer = String.create 1024
-  and red = ref 0 
-  and size =   
-    try Http_headers.contentlength dh.document_headers
+  let buffer = String.create 1024 in
+  let red = ref 0 in
+  let size =   
+    try Http_headers.contentlength dh.dh_headers
     with Not_found -> 40000 (* duh *)
   in
   dh.document_feed.feed_schedule
@@ -94,9 +94,9 @@ let transfer wr dh dest =
   | Some (fd, flag) ->
       (* if flag we should output the headers as well *)
       if flag then begin
-    List.iter (fun h -> 
-      Munix.write_string fd h; Munix.write_string fd "\n")
-      (List.rev dh.document_headers);
+    dh.dh_headers |> List.rev |> List.iter (fun h -> 
+      Munix.write_string fd h; Munix.write_string fd "\n"
+    );
     Munix.write_string fd "\n";
       end;
       let buffer = String.create 1024 in

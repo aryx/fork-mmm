@@ -27,7 +27,7 @@
 
 %thx to this manual, better understand web browsers?:
 % - TODO encodings, accents, base64, iso8559, etc
-% - TODO better understand html
+% - SEMI better understand html
 % - TODO better understand css
 % - TODO better understand js
 
@@ -387,11 +387,11 @@ let version_number =
 
 % url -> uri -> link -> request, bigger and bigger structure
 
-% URLs are URIs? who is more general?
-% URL is uniform, URIs is universal, so URI is more general
+% URLs are URIs, who is more general?
+% URL is uniform, URIs is universal, so URI is more general!
 
-\subsection{URLs and protocols, [[Url.t]]}
-% =~ protocol://user:pass@host:port/paths?search
+\subsection{URLs and protocols}
+% =~ protocol://user:pass@host:port/path?search
 % (not too bad syntax)
 
 <<type Url.t>>=
@@ -408,13 +408,12 @@ type t =
     mutable port : int option;
 
     mutable path : string option;
-
     mutable search: string option
   }
 @
 % search?
 % "Relative adressing in anchors, fragments are NOT URLs, but URI" ???
-% to say that there is no fragment here, anchor = #xxx
+%   to say that there is no fragment here, anchor = #xxx
 %less: need to be mutable? really?
 
 <<type Url.protocol>>=
@@ -427,10 +426,12 @@ type protocol =
  | OtherProtocol of string
 @
 
-% will see later parsing function for url
-% Lexurl.make()
+% will see later parsing function for URL: Lexurl.make()
 
-\subsection{URIs, [[Uri.abs_uri]]}
+% web browser not just for http, but it's true it's mainly
+% for http
+
+\subsection{URIs and fragments}
 % =~ http://..../path/elements/foo.html#fragment
 % =~ URL + fragment
 
@@ -470,8 +471,9 @@ let is_absolute uri =
 % ?? examples? 
 % unit tests!
 
-\subsection{Hypertext Links, [[Hyper.link]]}
+\subsection{Hypertext Links}
 %=~ <a href="..."> with implicit METHOD=GET
+%=~ URI + context + method + args
 
 <<type Hyper.link>>=
 (* An hypertext(media) link on the Web *)
@@ -484,8 +486,8 @@ type link = {
 }
 @
 % context? useful for relative uri, seems to be a URL too.
-%  usually the referring site
-% Why not parse h_uri? and make it a Uri.t?
+%  (usually the referring site)
+%less: Why not parse h_uri? and make it a Uri.t?
 
 <<type Hyper.link_method>>=
 (* This is currently for HTTP and derived, but ... *)
@@ -493,9 +495,8 @@ type link = {
 type link_method =
    GET 
  | POST of string
- | HEAD
+ <<[[Hyper.link_method]] other cases>>
 @
-% HEAD?
 
 % the web server is like a set of functions! can call those
 % functions! see my pfff/www/ endpoints, a bit like my -actions.
@@ -511,10 +512,12 @@ let default_link uri = {
  h_params = [];
 }
 @
-% rename default to mk ?
+%less: rename default to mk ?
+%pad: I added this function to factorize boilerplate code
 
-\subsection{Web requests, [[Www.request]]}
-% =~ url + some state info in the browser (e.g. authentification, cookie?)
+\subsection{Web requests}
+% =~ link + some state info in the browser (e.g. authentification, cookie?)
+%  in a header
 
 <<type Www.request>>=
 (*
@@ -522,27 +525,33 @@ let default_link uri = {
  *)
 type request =  { 
     www_link : Hyper.link;        (* the link that produced this request *)
-
-    www_url : Url.t;	          (* parsed version *)
-    www_fragment : string option; (* because viewer is passed down *)
-
     mutable www_headers : string list;		  (* additional headers *)
+    <<[[Www.request]] security field>>
 
-    mutable www_logging : string -> unit;	  (* logging *)
-    mutable www_error : Error.t;
+    <<[[Www.request]] parsed link fields>>
 
-    <<[[Www.request]] other fields>>
+    <<[[Www.request]] logging method>>
+    <<[[Www.request]] error managment method>>
   }
 @
-% fragment is for the URI, the #xxx
-%less: merge www_url in link?
-%less: LP split fields
+
 %todo: why need pass the logger? can't just use a global
 % logger always? which flexibility it brings?
 % www_logging, document_logger, Log.f, too many no?
 %it's ok though probably to have a www_error, because
 % we may want to print the error message of the request at different
 % places (e.x. if use different tabs)
+
+<<[[Www.request]] parsed link fields>>=
+www_url : Url.t;	          (* parsed version *)
+www_fragment : string option; (* because viewer is passed down *)
+@
+%fragment is for the URI, the #xxx
+%less: merge www_url in link?
+
+% we start to have methods here! a request is somethinf alive!
+% it can have errors, and we need to log what is happening.
+% will see in appendix those aspects though.
 
 <<signature Www.make>>=
 val make : Hyper.link -> request
@@ -580,19 +589,25 @@ let sp = Str.regexp "[ \t\n]"
 
 % will see later Hyper.resolve and Lexurl.make
 
+%less: could put Plink.make here too
 
 \section{Documents}
 
+% seen the request, this is now what we get back!
+
 <<type Document.document>>=
 type document = {
+  document_headers : string list; (* e.g. Content-type: text/html *)
   mutable document_data : document_data;
 
   document_address : Url.t; (* origin? *)
-  document_info : string list
 }
 @
-%less: LP split document_info?
 %note that it's a mutable field!
+%old: was document_info but it's really document_headers
+
+% www_headers is for the request, document_headers is for the response!
+
 
 % used by Protos.get
 <<type Document.document_data>>=
@@ -731,6 +746,10 @@ let find did =
 
 \section{Protocols and document flow}
 
+% seen (generic) request, and (generic) data response,
+% how connect(generically)? two steps, first retrieve, then view.
+% below is the retriever.
+
 % Nav.request -> Retrieve.f -> <>
 <<signature Protos.get>>=
 val get: Url.protocol ->
@@ -756,13 +775,18 @@ let get = Hashtbl.find protos
 %let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 %@
 
+% Protos.get return a "retriever" and a "cacher"
+
 \subsection{Document continuation}
+
+% this will be the viewer
 
 % used by Protos.get
 <<type Document.document_continuation>>=
 type document_continuation = {
   document_process : handle -> unit;
     (* What to do one we have a dh on the real document *)
+
   document_finish :  bool -> unit
     (* What to do if a request does not yield a document *)
 }
@@ -771,8 +795,8 @@ type document_continuation = {
 % transform the bool in abort option, then could also transform
 % the aborter type as abort -> unit
 
-% to pass to the protocol handler, callback to called
-% when he got the data.
+% this is passed to the retriever, a callback to called
+% when he got the data. Usually it's a viewer.
 % bool is true when things were aborted
 
 % note than the handle is built by the protocol! it's data filled
@@ -790,6 +814,8 @@ type document_continuation = {
 
 \subsection{Document handle}
 
+% the retriever asynchronous result, passed to the viewer
+
 % used by Protos.get
 <<type Document.handle>>=
 (* This is passed around by request continuations. It represents a handle
@@ -798,7 +824,7 @@ type handle = {
   document_id : document_id;
 
   (* this should help to know what to do even if have not the data yet *)
-  mutable document_headers : string list;
+  mutable dh_headers : string list;
     (* HTTP headers of document, or faked ones *)
 
   document_feed : Feed.t;
@@ -807,10 +833,17 @@ type handle = {
   <<[[Document.handle]] other fields>>
 }
 @
+% the retriever does not actually completely retrieve the data,
+% it opens a connextion and give a handler to the caller (usually
+% a viewer) that can then fetch the data and process it)
+
+%why not take Www.request and put it here? so less need to
+% have document_headers? well this is the response header! not
+% the request headers.
+
 %less: typedef for document_status int?
-%todo: LP split!
-%less: why not take Www.request and put it here? so less need to
-% have document_headers, fragment
+%less: have xx_response_headers and xx_request_headers?
+
 %note: this will be produced by the http_req, and then
 % passed to the document_continuation.document_process,
 % which then will pass it down to the Cache.tobuffer
@@ -820,6 +853,9 @@ type handle = {
 
 
 \section{HTTP}
+
+% previous section were generic request/response,
+% here are the specifics for the http protocol
 
 % apparently mmm handles http 1.0 and 0.9
 % there is also 1.1.
@@ -843,7 +879,6 @@ type request_message = {
   <<[[Messages.request_message]] other fields>>
 }
 @
-%less: aspectize security
 % diff with Www.request? it also has _headers and _auth.
 % but Www.request is the general case for any request (file://, mailto://)
 % here request_message is the Www.request specialized for http:/
@@ -892,18 +927,16 @@ type status =  {
 % and in headers have lots of info,
 % e.g. content type, encoding, etc.
 
+% have seen also Www.request have some headers, and document
+% also has some. They are all connected.
+
 <<type Messages.header>>=
 (* Other headers *)
 type header = string
 @
 
-%less: put here media_type and media_type_parameters?
-% with concrete ex of value?
-%  text/plain, text/html
-
 
 % http://en.wikipedia.org/wiki/Internet_media_type
-%less: mv in core DS?
 % ex: "text/html", "text/plain"
 <<type Http_headers.media_type>>=
 type media_type = string * string
@@ -919,7 +952,22 @@ type media_parameter = string * string
 
 \section{Viewers}
 
+% have seen retriever, now see (generic) viewer, which
+% are usually the code is the document continuation
+% that will get the document handle and do stuff
+
+% to operate it will be passed a context to do its job
+% (in addition to the document handle), and will return
+% a display_info
+
 \subsection{[[Viewers.context]]}
+
+% again because want to be generic, define DS that will
+% be used by different viewers and expose interface
+% that will be needed by the viewer (and hide specifics).
+
+% this context will usually be a subset of the navigator interface,
+% hooks to the navigator.
 
 <<signature class Viewers.context>>=
 (* The context given to a viewer *)
@@ -1021,12 +1069,14 @@ type token =
  | EOF
 @
 %less: need doctype? diff PCData and CData?
-% where is the tree? the full AST?
-% token is really the main thing returned
-% by the lexer/parser. You have to rebuild the tree from it
-% but it is easy since the tokens contain Opentag, Closetag, etc
-%less: could do such a dumper, a la pfff
 
+%where is the tree? the full AST? token is really the main thing returned
+% by the lexer/parser. You have to rebuild the tree from it
+% but it is easy since the tokens contain Opentag, Closetag, etc.
+% I think they don't return a tree because things are processed
+% incrementally, we fecth data and start to visualize it as soon
+% as possible, which is important in a (often slow) network context.
+%less: could do such a dumper, a la pfff
 
 %https://html.spec.whatwg.org/multipage/introduction.html#a-quick-introduction-to-html
 
@@ -1071,11 +1121,22 @@ type attribute_value = string
 
 \section{HTML display}
 
+% we've seen the viewer interface, now we see the specifics,
+% the html viewer machinery, which is splitted
+% in different parts:
+%  - the formatter
+%  - the interpreter/machine parsing the stream of html tokens
+%    and calling the appropriate formatter methods
+
 \subsection{Formatter}
 
 <<type Htmlfmt.gattr>>=
 type gattr =
-  <<[[Htmlfmt.gattr]] other cases>>
+  <<[[Htmlfmt.gattr]] color cases>>
+  <<[[Htmlfmt.gattr]] font cases>>
+  <<[[Htmlfmt.gattr]] spacing cases>>
+  <<[[Htmlfmt.gattr]] alignment cases>>
+  <<[[Htmlfmt.gattr]] style cases>>
 @
 %e.g. Striked | Underlined | etc
 
@@ -1112,18 +1173,23 @@ type formatter = {
 <<constant Html_disp.default_fo>>=
 (* This is the default formatter *)
 let default_fo = {
+  (* Text primitives of the device *)
   new_paragraph   = (fun () -> ());
   close_paragraph = (fun () -> ());
   print_newline   = (fun b -> ());
   print_verbatim  = (fun s -> ());
   format_string   = (fun s -> ());
 
+  (* Graphical attributes *)
+  push_attr       = (fun l -> ());
+  pop_attr        = (fun l -> ());
+  set_defaults    = (fun s l -> ());
+
+  (* misc *)
+
   hr              = (fun l n b -> ());
   bullet          = (fun n -> ());
 
-  set_defaults    = (fun s l -> ());
-  push_attr       = (fun l -> ());
-  pop_attr        = (fun l -> ());
 
   isindex         = (fun s s' -> ());
   start_anchor    = (fun () -> ());
@@ -1139,7 +1205,7 @@ let default_fo = {
 @
 
 
-\subsection{Display machine}
+\subsection{Interpreter}
 %less: rename, machine is very vague
 
 <<signature class Html_disp.machine>>=
@@ -1151,12 +1217,45 @@ end
 % is used both for the .mli and the .ml, so don't extract
 % anything from it otherwise it will not be copy pasted in the .mli and .ml
 %later: transform in a regular record
+%less: why need this extra generic type where it looks really
+% html specific anyway? anyway if I transform in a record
+% I'll have to define first the interface of the methods.
 
 <<[[Html_disp.machine]] virtual fields signatures>>=
+(* context *)
 method virtual ctx : Viewers.context
+
+(* input *)
+method virtual send : Html.token -> unit
+<<[[Html_disp.machine]] html input other methods>>
+
+(* semantic *)
+method virtual add_tag: 
+  string -> 
+  (* open handler *)  (Htmlfmt.formatter -> Html.tag -> unit) -> 
+  (* close handler *) (Htmlfmt.formatter -> unit) -> 
+  unit
+method virtual remove_tag : string -> unit
+<<[[Html_disp.machine]] tags methods>>
+<<[[Html_disp.machine]] action stack methods>>
+
+(* backend *)
+method virtual formatter : Htmlfmt.formatter
+<<[[Html_disp.machine]] formatter stack methods>>
+<<[[Html_disp.machine]] formatter misc methods>>
+
+(* special tags *)
+<<[[Html_disp.machine]] embedded fields>>
+<<[[Html_disp.machine]] image methods>>
+<<[[Html_disp.machine]] fragment method>>
+
+(* misc *)
+<<[[Html_disp.machine]] i18 methods>>
+<<[[Html_disp.machine]] other fields>>
 @
-%todo: structure more, virtual formatter methods, 
-%  virtual action stack methods, etc
+%todo: 
+% base and target? why need that? ctx already have the base document
+% anyway
 
 
 \ifallcode
@@ -1167,6 +1266,17 @@ class  virtual machine (unit : unit) =
 end
 @
 \fi
+
+
+
+\section{Summary}
+
+%type (async) retriever?
+%type viewer?
+ %type formatter?
+ %type interpreter?
+
+%type cacher
 
 
 
@@ -1198,7 +1308,7 @@ let main () =
   let url_opt = 
     match !init_urls with 
     | []     -> None 
-    | x :: l -> Some x
+    | x::_l -> Some x
   in
   let user_preferences_file =
     <<[[Main.main()]] user preferences file>>
@@ -1258,6 +1368,9 @@ let top = Tk.openTkDisplayClass !display "mmm" in
 Wm.withdraw top;
 @
 % withdraw??
+% class? for preference file later?
+% actually top is not passed around, the navigator will
+% create the toplevel widget
 
 %(*
 %(* Just after the init. of Tk, we have to detect the Tk is under
@@ -1294,7 +1407,7 @@ Balloon.init ();
 (* Initialisations in jpf's GIF ANIMATION library *)
 Tkaniminit.f ();
 @
-
+% Frx = francois rouaix extensions
 
 \subsection{Resources initialisation}
 % and localization
@@ -1341,7 +1454,9 @@ Debug.init();                       (* debugging RPC *)
 
 \subsection{Initial fake URL and HTML document}
 
-% could maybe be moved earlier
+% could maybe be moved earlier, but make connections with
+% different structures we've seen in the core DS chapter.
+
 <<signature Cache.init>>=
 val init : unit -> unit
 @
@@ -1353,14 +1468,11 @@ let init () =
   let b = Ebuffer.create 128 in
   Ebuffer.output_string b (Version.inithtml (Lang.lang ()));
 
-  let docid = { 
-    document_url = initurl;
-    document_stamp = Document.no_stamp
-  } in
+  let docid = { document_url = initurl; document_stamp = Document.no_stamp; } in
   let doc = { 
-    document_address = initurl;
+    document_headers = ["Content-Type: text/html"];
     document_data = MemoryData b;
-    document_info = ["Content-Type: text/html"]
+    document_address = initurl;
   } in
   let docentry = { 
     cache_document = doc;
@@ -1378,7 +1490,7 @@ let init () =
 <<signature Version.initurl>>=
 val initurl : string -> string (* fake initial url *)
 @
-% Help menu -> <>
+% Help menu | Cache.init -> <>
 <<function Version.initurl>>=
 (* MUST BE NORMALIZED *)
 let initurl = function
@@ -1398,7 +1510,8 @@ val inithtml : string -> string    (* fake initial document *)
 <<function Version.html>>=
 let inithtml = function
   | "iso8859" ->
-"<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
+"<HTML>
+  <HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
 <BODY>
 <H1> The MMM navigator Version 0." ^ version_number ^ "</H1>
 <H2 ALIGN=CENTER> Written by Fran\231ois Rouaix </H2>
@@ -1419,14 +1532,14 @@ possible direct or indirect damage.
 </BLOCKQUOTE>
 <P>
 The MMM home page is 
-<A HREF=\"http://pauillac.inria.fr/mmm/\">here</A>,
+<A HREF='http://pauillac.inria.fr/mmm/'>here</A>,
 and there is also some
-<A HREF=\"http://pauillac.inria.fr/mmm/doc.html\">documentation</A>
+<A HREF='http://pauillac.inria.fr/mmm/doc.html'>documentation</A>
 and
-<A HREF=\"http://pauillac.inria.fr/mmm/releases.html\">release notes</A>.
+<A HREF='http://pauillac.inria.fr/mmm/releases.html'>release notes</A>.
 <BR>
 Join the author by clicking
-<A HREF=\"mailto:Francois.Rouaix@inria.fr\">here.</A>
+<A HREF='mailto:Francois.Rouaix@inria.fr'>here.</A>
 <P>
 <BLOCKQUOTE>
 This document is included in your browser. Click on <TT>Reload</TT> to
@@ -1440,14 +1553,6 @@ get an updated copy.
 %$
 
 
-\subsection{Misc initialisation}
-
-<<[[Main.main()]] misc initialisation>>=
-(* Various stuff for the HTML viewer, needing Tk *)
-Ctext.init();
-Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
-@
-% ???
 
 
 \section{[[Mmm.initial_navigator()]]}
@@ -1490,11 +1595,10 @@ initial_page := Some (
    match init_url with
    | None -> Lexurl.make !Mmmprefs.home
    | Some x -> 
-       begin
-         try Lexurl.make x 
-       with _ -> (* If fails, try to use file: *)
-        <<[[Mmm.initial_navigator()]] if cannot parse init_url>>
-       end
+       (try Lexurl.make x 
+        with _ -> (* If fails, try to use file: *)
+         <<[[Mmm.initial_navigator()]] if cannot parse init_url>>
+       )
 );
 @
 % why need to store that? can't just be a let?
@@ -1517,18 +1621,18 @@ Lexurl.make ("file://localhost" ^ path)
 <<signature Mmm.navigator>>=
 val navigator : bool -> Url.t -> Nav.t option
 @
-% has_tachy means also main window
+% bool is for main_window (was called has_tachy)
 
 % main -> Mmm.initial_navigator -> <>(, true, )
 <<function Mmm.navigator>>=
-let rec navigator has_tachy initial_url =
+let rec navigator is_main_window initial_url =
   <<[[Mmm.navigator()]] new navigator hook>>
 
   (* The first navigator is named, so we can put special information in
-   * window manager configurations, such as sticky 
+   * window manager configurations, such as sticky (??)
    *)
   let top = 
-    if has_tachy 
+    if is_main_window
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
     <<[[Mmm.navigator()]] if not main window, create default toplevel>>
   in
@@ -1561,11 +1665,11 @@ let rec navigator has_tachy initial_url =
       Tk.destroy Widget.default_toplevel;
       raise e
     end 
-    <<[[Mmm.navigator()]] exn handler, else if multiple navigators>>
+    <<[[Mmm.navigator()]] exn handler, when multiple navigators>>
 @
 % => top widget
 
-
+% will see s_ later in i18 chapter.
 
 % absolutegoto!! initiate the whole thing!
 
@@ -1608,15 +1712,28 @@ let rec navigator has_tachy initial_url =
 
 %\subsection{[[Nav.t]]}
 
+% this will be passed down to the viewer, so that the viewer callbacks
+% can call callbacks/methods from the navigator
 <<type Nav.t>>=
 type t = {
   nav_viewer_frame : Widget.widget;
+
+  (* Nav.absolutegoto -> request -> process_viewer -> <> *)
+  nav_show_current: Viewers.display_info -> string option -> unit;
+
+  <<[[Nav.t]] manage history methods>>
+  <<[[Nav.t]] manage active connections methods>>
+
+  <<[[Nav.t]] cache related methods>>
+  <<[[Nav.t]] error methods>>
+  <<[[Nav.t]] logging method>>
+
   <<[[Nav.t]] other fields>>
  }
 @
-% this will be full of hooks
-%todo: could classify other fields, like active hooks, error hook,
-% etc
+% this will be full of hooks. It's a form of context, but
+% general context. There will be also a viewer_context which
+% will be a subset of Nav.t
 
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_viewer_frame = viewer_frame;
@@ -1645,30 +1762,28 @@ val follow_link : t -> Hyper.link -> unit
 @
 <<function Nav.follow_link>>=
 let follow_link nav lk =
-  request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
-    (true, id_wr, specific_viewer true)
-   lk
+  lk |> request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+    <<[[Nav.follow_link]] extra arguments to Nav.request>>
 @
-% all those true booleans ... hard to read
 
-<<function Nav.id_wr>>=
-let id_wr wr = wr
-@
-%todo: when want to pass something else? and want to transform the wr?
 
 \subsection{[[Nav.request()]]}
 
 <<signature Nav.request>>=
 val request :
   t -> (t -> Www.request -> Document.handle -> unit) ->
-  ( bool * 
-    (Www.request -> Www.request) * 
-    (t -> Document.document_id -> Www.request -> unit)
-  ) ->
+  <<[[Nav.request]] signature, extra arguments>>
   Hyper.link -> 
   unit
 @
-%todo: wow, complicated type, change order and LP aspectize the hooks!
+%old: wow, complicated type, so I changed order and LP aspectize the hooks!
+
+% so take a callback taking 
+%  - a context (Nav.t), 
+%  - question (Www.request), 
+%  - and answer (Document.handle)
+% but to be able to call this callback, we need some glue around,
+%  because we have retrievers, and viewers, but here we connect them.
 
 <<function Nav.request>>=
 (* [request nav usecache wrapwr process specific] produces a function that
@@ -1689,6 +1804,7 @@ let request nav process (usecache, wrapwr, specific) lk =
 @
 %old: I eta expanded with lk, again
 
+
 % link -> wr -> ...
 <<function Nav.request.handle_link>>=
 and handle_link h =
@@ -1700,8 +1816,7 @@ and handle_link h =
   | Hyper.Invalid_link msg ->
       nav.nav_error#f (s_ "Invalid link")
   | Www.Invalid_request (wr, msg) ->
-      nav.nav_error#f (s_ "Invalid request %s\n%s"
-                            (Url.string_of wr.www_url) msg)
+      nav.nav_error#f (s_ "Invalid request %s\n%s"(Url.string_of wr.www_url)msg)
 in
 @
 
@@ -1728,9 +1843,11 @@ let rec retrieve_and_handle wr =
   let cont = 
     { document_process = (fun dh ->
         process nav wr dh;
-        nav.nav_rem_active wr.www_url);
+        nav.nav_rem_active wr.www_url
+      );
       document_finish = (fun _ -> 
-        nav.nav_rem_active wr.www_url);
+        nav.nav_rem_active wr.www_url
+      );
     }
   in
   match Retrieve.f wr handle_link cont with
@@ -1739,7 +1856,11 @@ let rec retrieve_and_handle wr =
   | Retrieve.InUse -> 
       raise (Duplicate wr.www_url)
 @
-% will se Retrieve.f later      
+% will see Retrieve.f later      
+% will see the nave_rem_active later? or put it here maybe?
+
+%todo: why pass process to Nav.request? it changes? It's not
+% always process_viewer?
 
 \subsubsection{[[Nav.process_viewer()]]}
 
@@ -1748,7 +1869,7 @@ let rec retrieve_and_handle wr =
 <<function Nav.process_viewer>>=
 (* Specific handling of "view" requests *)
 let process_viewer addhist make_ctx = 
- fun nav wr dh ->
+ fun nav _wr dh ->
   let ctx = make_ctx nav dh.document_id in
   match Viewers.view nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
@@ -1756,15 +1877,36 @@ let process_viewer addhist make_ctx =
       <<[[Nav.process_viewer()]] add in cache and history the document>>
       nav.nav_show_current di dh.document_fragment
 @
-% compute the graphic, and then show it in the nav at the right
-% anchor! Finally made the link from user url request -> graphic display
+% using dh.document_headers, we can dispatch to the appropriate
+% viewer and get the graphic! Then we can show it in the nav at the right
+% place. 
+% We Finally made the link from a user URL request -> graphic display!
 
-% so request -> retrieve -> view -> display
+% so request -> retriever -> viewer -> display_info
 
 % will see viewer later, Viewers.view, and make_ctx
 % will see nav.nav_show_current later
 
+%less: _wr is not used, anyway info is in dh no?
 
+\subsubsection{XXX}
+
+<<[[Nav.follow_link]] extra arguments to Nav.request>>=
+(true, id_wr, specific_viewer true)
+@
+% all those true booleans ... hard to read
+
+<<function Nav.id_wr>>=
+let id_wr wr = wr
+@
+%todo: when want to pass something else? and want to transform the wr?
+
+<<[[Nav.request]] signature, extra arguments>>=
+( bool * 
+  (Www.request -> Www.request) * 
+  (t -> Document.document_id -> Www.request -> unit)
+) ->
+@
 
 
 
@@ -1910,9 +2052,6 @@ Entry.configure e [TextVariable entryv; TextWidth 40];
 \section{Display}
 
 % Nav.absolutegoto -> request -> process_viewer -> <>
-<<[[Nav.t]] other fields>>=
-nav_show_current: Viewers.display_info -> string option -> unit;
-@
 % second argument is fragment
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_show_current = show_current;
@@ -1987,7 +2126,7 @@ if addhist
 then nav.nav_add_hist dh.document_id dh.document_fragment;
 @
 
-<<[[Nav.t]] other fields>>=
+<<[[Nav.t]] manage history methods>>=
 nav_add_hist : Document.document_id -> string option -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
@@ -2003,7 +2142,7 @@ in
 @
 
 %XXX
-<<[[Nav.t]] other fields>>=
+<<[[Nav.t]] cache related methods>>=
 nav_id : int;  (* key for the gfx cache *)
 @
 <<[[Mmm.navigator()]] set nav fields>>=
@@ -2246,7 +2385,7 @@ in
 <<function Mmm.quit>>=
 let quit confirm =
   if confirm then
-    match Frx_dialog.f Widget.default_toplevel (gensym "quit")
+    match Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
       (s_ "Confirm") 
       (s_ "Do you really want to quit ?")
       (Predefined "question") 
@@ -2358,8 +2497,11 @@ let home = function
 
 
 \section{Status bar}
-% it's actually on the right of the buttons for now,
+%less: it's actually on the right of the buttons for now,
 % but should be in status bar I think
+
+% important to give feedback to the user!
+% not just progress bar but also what is done
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let loggingb = Label.create_named fb "logging"
@@ -2371,17 +2513,19 @@ let loggingv = Textvariable.create_temporary top in
 @
 
 
-<<[[Nav.t]] other fields>>=
+<<[[Nav.t]] logging method>>=
 nav_log : string -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
-nav_log = (fun s -> Textvariable.set loggingv s);
+nav_log = (fun s -> 
+  pr2 s;
+  Textvariable.set loggingv s
+);
 @
 
 
 
-
-<<[[Nav.t]] other fields>>=
+<<[[Nav.t]] error methods>>=
 nav_error : Error.t;			(* popping error dialogs *)
 @
 <<local object Mmm.navigator.error>>=
@@ -2390,7 +2534,7 @@ let error = new Tk_error.t top in
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_error = error;
 @
-
+%Tk_error is really Mmm_tk_error.ml
 
 \section{Shortcuts}
 
@@ -2988,9 +3132,9 @@ val parse_method : string -> link_method
 @
 <<function Hyper.parse_method>>=
 let parse_method = function
-   "GET" -> GET
- | "HEAD" -> HEAD
+ | "GET" -> GET
  | "POST" -> POST ""
+ | "HEAD" -> HEAD
  | _ -> raise Not_found (* other cases should be caught by caller ! *)
 @
 
@@ -6059,6 +6203,10 @@ in
 
 \subsubsection{[[HEAD]]}
 
+<<[[Hyper.link_method]] other cases>>=
+| HEAD
+@
+
 <<[[Http.full_request()]] method cases>>=
 | HEAD ->
     w ("HEAD "^url^" HTTP/1.0\r\n");
@@ -6104,7 +6252,7 @@ let rec process_response wwwr cont =
       document_fragment = wwwr.www_fragment;
 
       document_status = 0;
-      document_headers = [];
+      dh_headers = [];
       document_feed = Feed.of_fd cnx#fd;
 
       document_logger = Document.tty_logger;
@@ -6138,13 +6286,13 @@ mutable document_status : int;
 
 <<[[Http.process_response()]] reading headers>>=
 try
-  if dh.document_headers = [] then begin
+  if dh.dh_headers = [] then begin
     (* it should be the HTTP Status-Line *)
     let l = Munix.read_line cnx#fd in
     dh.document_status <- (Http_headers.parse_status l).status_code;
-    dh.document_headers <- [l] (* keep it there *)
+    dh.dh_headers <- [l] (* keep it there *)
   end else 
-     dh.document_headers <- read_headers cnx#fd dh.document_headers
+     dh.dh_headers <- read_headers cnx#fd dh.dh_headers
 with
 (* each branch must unschedule *)
 <<[[Http.process_response()]] feed schedule callback failure cases>>
@@ -6479,7 +6627,7 @@ val view : Widget.widget -> context -> Document.handle -> display_info option
 (* the meat *)
 and view frame ctx dh =
   try 
-    let ctype = Http_headers.contenttype dh.document_headers in
+    let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
       let viewer =
@@ -6615,8 +6763,7 @@ let rec unknown frame ctx dh =
     Textvariable.set v "text/html";
     if Frx_req.open_simple_synchronous (s_ "MIME type") v then
        let ctype = Textvariable.get v in
-       dh.document_headers <- 
-           ("Content-Type: " ^ ctype) :: dh.document_headers;
+       dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
        view frame ctx dh
     else begin
        Save.interactive (fun _ -> ()) dh;
@@ -6960,13 +7107,13 @@ val f : Document.handle -> unit
 let f dh =
   let url = Url.string_of dh.document_id.document_url in
   try
-    let ctype = Http_headers.contenttype dh.document_headers in 
+    let ctype = Http_headers.contenttype dh.dh_headers in 
     let mtyp,_pars = Lexheaders.media_type ctype in
     if mtyp = ("application","octet-stream") 
-    then dh.document_headers <- merge_headers dh.document_headers (hints url)
+    then dh.dh_headers <- merge_headers dh.dh_headers (hints url)
   with Not_found ->
     let hints = Http_headers.hints url in
-    dh.document_headers <- merge_headers dh.document_headers hints
+    dh.dh_headers <- merge_headers dh.dh_headers hints
 @
 %less: LP split octet-stream stuff
 
@@ -7231,7 +7378,7 @@ let extern dh ctype =
 
       let red = ref 0 in
       let size =   
-        try Http_headers.contentlength dh.document_headers
+        try Http_headers.contentlength dh.dh_headers
         with Not_found -> 40000 (* duh *)
       in
       let buffer = String.create 4096 in
@@ -7301,8 +7448,7 @@ and interactive frame ctx dh ctype =
       if Frx_req.open_simple_synchronous (s_ "MIME type") v then
         let ctype = Textvariable.get v 
         in
-        dh.document_headers <- 
-          ("Content-Type: " ^ ctype) :: dh.document_headers;
+        dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
         view frame ctx dh
       else begin
         Save.interactive (fun _ -> ()) dh;
@@ -7376,6 +7522,14 @@ let rec interactive cont dh =
 
 \chapter{HTML Display}
 % display/, html layout engine
+
+
+<<[[Main.main()]] misc initialisation>>=
+(* Various stuff for the HTML viewer, needing Tk *)
+Ctext.init();
+Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
+@
+% ???
 
 \section{The viewer, [[Htmlw.display_html]]}
 % The display info
@@ -7647,7 +7801,7 @@ end
 
 
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] other fields>>=
 method virtual base : string
 method virtual set_base : string -> unit
 @
@@ -7657,7 +7811,7 @@ method base = base
 method set_base s = base <- s
 @
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] other fields>>=
 method virtual target : string option
 method virtual set_target : string -> unit
 @
@@ -7682,17 +7836,11 @@ type html_behavior = {
 val (*private*) tags = (Hashtbl.create 101 : (string, html_behavior) Hashtbl.t)
 @
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
-method virtual add_tag: 
-  string -> 
-  (* open handler *)  (Htmlfmt.formatter -> Html.tag -> unit) -> 
-  (* close handler *) (Htmlfmt.formatter -> unit) -> 
-  unit
+<<[[Html_disp.machine]] tags methods>>=
 method virtual get_tag : 
   string -> 
   (Htmlfmt.formatter -> Html.tag -> unit) * 
   (Htmlfmt.formatter -> unit)
-method virtual remove_tag : string -> unit
 @
 <<[[Html_disp.display_machine]] tag machinery methods>>=
 (* Adding and removing tag behaviors *)
@@ -7709,7 +7857,7 @@ method remove_tag = Hashtbl.remove tags
 val mutable (*private*) action = (fun s -> ())
 val mutable (*private*) action_stack = []
 @
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] action stack methods>>=
 method virtual push_action : (string -> unit) -> unit
 method virtual pop_action : unit
 @
@@ -7727,9 +7875,6 @@ method pop_action =
 @
 
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
-method virtual formatter : Htmlfmt.formatter
-@
 <<[[Html_disp.display_machine]] formatter methods>>=
 (* Accessing the variables *)
 val mutable (*private*) formatter = default_fo
@@ -7739,7 +7884,7 @@ method formatter = formatter
 <<[[Html_disp.display_machine]] private fields>>=
 val mutable (*private*) formatter_stack = []
 @
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] formatter stack methods>>=
 method virtual push_formatter : Htmlfmt.formatter -> unit
 method virtual pop_formatter : Htmlfmt.formatter
 @
@@ -7766,7 +7911,7 @@ method pop_formatter =
 @
 
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] formatter misc methods>>=
 method virtual create_formatter : 
   Htmlfmt.formatterSpec -> Widget.widget -> Htmlfmt.formatter * Widget.widget
 @
@@ -7795,9 +7940,8 @@ flush = (fun () ->
 @
 
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] html input other methods>>=
 method virtual look_for : Html.token -> unit
-method virtual send : Html.token -> unit
 @
 
 <<[[Html_disp.display_machine]] html token input methods>>=
@@ -8341,10 +8485,10 @@ let open_header size =
 in
 @
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] alignment cases>>=
 | Justification of string
 @
-
+% alignment?
 
 <<[[Htmlfmt.formatter]] primitives methods>>=
 new_paragraph: unit -> unit;  	(* Open a new paragraph *)
@@ -8564,7 +8708,7 @@ mach#add_tag "blockquote"
 ;
 @
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] spacing cases>>=
 | Margin of int
 @
 
@@ -8635,7 +8779,7 @@ bold_style "strong";
 
 \subsection{Text styles part 3}
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] style cases>>=
 | Underlined
 @
 
@@ -8648,7 +8792,7 @@ mach#add_tag "u"
 @
 \subsubsection{Strike, [[<strike>]]}
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] style cases>>=
 | Striked
 @
 
@@ -8660,7 +8804,7 @@ mach#add_tag "strike"
 
 \subsubsection{Superscript, [[<sup>]]}
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] style cases>>=
 | Superscript
 @
 
@@ -8671,7 +8815,7 @@ mach#add_tag "sup"
 @
 \subsubsection{Lowerscript, [[<sub>]]}
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] style cases>>=
 | Lowerscript
 @
 
@@ -8903,7 +9047,7 @@ format_string = (fun s ->
 @
 
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] spacing cases>>=
 | Spacing of int
 @
 
@@ -9635,7 +9779,7 @@ let get name =
 
 \subsection{Fonts}
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] font cases>>=
 | Font of Fonts.fontInfo		        (* mostly size and face *)
 @
 
@@ -9765,7 +9909,7 @@ mach#add_tag "font"
 ;
 @
 
-<<[[Htmlfmt.gattr]] other cases>>=
+<<[[Htmlfmt.gattr]] color cases>>=
 | FgColor of string
 @
 
@@ -10052,7 +10196,7 @@ warnings |> List.iter (fun (reason, pos) ->
 
 \chapter{Embedded Elements}
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] embedded fields>>=
 method virtual add_embedded : Embed.embobject -> unit
 method virtual embedded : Embed.embobject list
 @
@@ -10136,7 +10280,7 @@ let embedded_viewer frame ctx doc =
   (* Destroy the alt window *)
   List.iter Tk.destroy (Winfo.children frame);
   try
-    let ctype = contenttype doc.document_info in
+    let ctype = contenttype doc.document_headers in
     let (typ,subtyp),l = Lexheaders.media_type ctype in
     try
       let viewer = 
@@ -10156,7 +10300,7 @@ let embedded_viewer frame ctx doc =
   | Invalid_HTTP_header e ->
       let t = 
        s_ "Embed Error: malformed type %s (%s)"
-         (contenttype doc.document_info) e in
+         (contenttype doc.document_headers) e in
       let l = Label.create frame [Text t] in pack [l][]
 @
 
@@ -10164,7 +10308,7 @@ let embedded_viewer frame ctx doc =
 
 \chapter{Images}
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] image methods>>=
 method virtual imgmanager : imgloader
 @
 
@@ -10499,7 +10643,7 @@ mach#see_frag dh.document_fragment;
 val mutable see_frag = (fun _ -> ())
 @
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] fragment method>>=
 method virtual see_frag : string option -> unit
 @
 <<[[Html_disp.display_machine]] fragment methods>>=
@@ -10605,7 +10749,7 @@ let actives = (Hashtbl.create 37: (Url.t, Www.aborter) Hashtbl.t) in
 
 
 % Nav.request -> <>
-<<[[Nav.t]] other fields>>=
+<<[[Nav.t]] manage active connections methods>>=
 nav_add_active : Url.t -> Www.aborter -> unit;
 nav_rem_active : Url.t -> unit;
 @
@@ -11018,7 +11162,7 @@ let navigators = ref 0
 incr navigators;
 @
 
-<<[[Mmm.navigator()]] exn handler, else if multiple navigators>>=
+<<[[Mmm.navigator()]] exn handler, when multiple navigators>>=
 else begin 
   Tk.destroy top;
   None
@@ -11162,7 +11306,7 @@ let request wr cont =
               document_id = document_id wr;
               document_referer = wr.www_link.h_context;
               document_status = 304;
-              document_headers = [ sprintf "Date: %s" (Date.asc_now())];
+              dh_headers = [ sprintf "Date: %s" (Date.asc_now())];
               document_feed = 
                 Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
               document_fragment = wr.www_fragment;
@@ -11186,7 +11330,7 @@ let request wr cont =
             { document_id = document_id wr;
               document_referer = wr.www_link.h_context;
               document_status = 200;
-              document_headers = 
+              dh_headers = 
                 [sprintf "Content-Length: %d" st.st_size;
                  sprintf "Date: %s" (Date.asc_now());
                  sprintf "Last-modified: %s" (Date.asc st.st_mtime)
@@ -11205,7 +11349,7 @@ let request wr cont =
           { document_id = document_id wr;
             document_referer = wr.www_link.h_context;
             document_status = 200;
-            document_headers = ["Content-Type: text/html"];
+            dh_headers = ["Content-Type: text/html"];
             document_feed = Feed.of_fd s;
             document_fragment = wr.www_fragment;
             document_logger = Document.tty_logger
@@ -11237,8 +11381,8 @@ let dir path =
             print_endline (Printexc.to_string e)
         end;
         flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
-        exit 0;
-        cin (*duh*)
+        exit 0
+        (*cin (*duh*) *)
      | n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
@@ -12395,7 +12539,7 @@ end;
 
 
 
-<<[[Html_disp.machine]] virtual fields signatures>>=
+<<[[Html_disp.machine]] i18 methods>>=
 (* For other languages) *)
 (* encode the internal i18n strings to corresponding encodings *)
 method virtual i18n_encoder : string -> string
@@ -12544,7 +12688,7 @@ document_referer: string option;
 
 \section{Security}
 
-<<[[Www.request]] other fields>>=
+<<[[Www.request]] security field>>=
 mutable www_auth : (string * string) list;  (* basic auth *)
 @
 
@@ -13121,7 +13265,7 @@ let fake_cgi wwwr cont path =
       let dh = {document_id = document_id wwwr;
                 document_referer = wwwr.www_link.h_context;
                 document_status = 0;
-                document_headers = [];
+                dh_headers = [];
                 document_feed = Feed.of_fd cmd_in;
                 document_fragment = wwwr.www_fragment;
                 document_logger = Document.tty_logger} 
@@ -13129,15 +13273,15 @@ let fake_cgi wwwr cont path =
       dh.document_feed.feed_schedule
         (fun () ->
            try
-            if dh.document_headers = [] then begin
+            if dh.dh_headers = [] then begin
             (* it should be the HTTP Status-Line *)
             let l = Munix.read_line cmd_in in
               dh.document_status <- (parse_status l).status_code;
-              dh.document_headers <- [l] (* keep it there *)
+              dh.dh_headers <- [l] (* keep it there *)
             end
           else 
-            dh.document_headers <- 
-              read_headers cmd_in dh.document_headers
+            dh.dh_headers <- 
+              read_headers cmd_in dh.dh_headers
           with
            | End_of_headers ->
                dh.document_feed.feed_unschedule();
@@ -13145,7 +13289,7 @@ let fake_cgi wwwr cont path =
            | Not_found -> (* No HTTP/ header *)
                dh.document_feed.feed_unschedule();
                dh.document_status <- 200;
-               dh.document_headers <- ["Content-Type: text/plain"];
+               dh.dh_headers <- ["Content-Type: text/plain"];
                cont.document_process dh
            | Unix_error(_,_,_) ->
                dclose true dh;
@@ -13282,6 +13426,8 @@ Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 
 \chapter{Debugging}
 
+%less: split debugging and logging?
+
 <<signature Log.debug_mode>>=
 val debug_mode : bool ref
 @
@@ -13290,6 +13436,8 @@ let debug_mode = ref false
 @
 
 \section{Logging}
+% this is not only for the developer here, it's also useful
+% for the user
 
 <<signature Log.f>>=
 val f : string -> unit
@@ -13363,7 +13511,7 @@ let postmortem () =
              | FileData (f,true) -> f
              | FileData (f,false) -> "fake " ^f)
              );
-    entry.cache_document.document_info
+    entry.cache_document.document_headers
     |> List.rev |> List.iter (fun h -> Log.f (sprintf "%s" h));
 
     if entry.cache_pending 
@@ -13375,6 +13523,19 @@ let postmortem () =
 
 
 \section{Subsystems}
+
+% flow of logging?
+
+% Nav.nav_log (=~ loggingv label update) -> Viewer_context.log -> ???
+
+\subsection{Requests}
+
+% request is first alive entity!
+
+<<[[Www.request]] logging method>>=
+mutable www_logging : string -> unit;	  (* logging *)
+@
+% who sets it? nobody apparently ...
 
 \subsection{Documents}
 
@@ -13487,7 +13648,7 @@ let debug = ref false
 <<[[Viewers.context]] logging methods signatures>>=
 method virtual log : string -> unit
 @
-
+% usually nav.nav_log
 
 \subsection{Scheduler}
 
@@ -13757,7 +13918,23 @@ let ari msg =
 <<class Error.t>>=
 @
 
-\section{URL}
+\section{Subsystems}
+
+% flow of error?
+
+% Nav.nav_error (=~ Tk_error) -> Www.www_error -> ???
+
+\subsection{Requests}
+
+% usually Nav.nav_error
+<<[[Www.request]] error managment method>>=
+mutable www_error : Error.t;
+@
+
+
+\section{Exceptions}
+
+\subsection{URL}
 
 <<exception Url.Url_Lexing>>=
 exception Url_Lexing of string * int
@@ -13767,7 +13944,7 @@ exception Url_Lexing of string * int
 exception Invalid_url of t * string
 @
 
-\section{Links}
+\subsection{Links}
 
 <<exception Hyper.Invalid_link>>=
 exception Invalid_link of link_error
@@ -13780,13 +13957,13 @@ type link_error =
 @
 
 
-\section{Web requests}
+\subsection{Web requests}
 
 <<exception Www.Invalid_request>>=
 exception Invalid_request of request * string
 @
 
-\section{HTML}
+\subsection{HTML}
 
 <<exception Html.Html_Lexing>>=
 exception Html_Lexing of string * int
@@ -13800,7 +13977,7 @@ exception Invalid_Html of string
 val warning : string -> location -> unit
 @
 
-\section{HTTP}
+\subsection{HTTP}
 
 <<exception Http_headers.Invalid_HTTP_header>>=
 exception Invalid_HTTP_header of string

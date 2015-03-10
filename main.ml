@@ -211,7 +211,7 @@ let main () =
   let url_opt = 
     match !init_urls with 
     | []     -> None 
-    | x :: l -> Some x
+    | x::_l -> Some x
   in
   let user_preferences_file =
     (*s: [[Main.main()]] user preferences file *)

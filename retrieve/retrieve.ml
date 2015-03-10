@@ -50,7 +50,7 @@ let wrap_cache cache dh =
              dh.document_id.document_stamp);
   Retype.f dh;
   try
-    match Lexheaders.media_type (contenttype dh.document_headers) with
+    match Lexheaders.media_type (contenttype dh.dh_headers) with
     | ("text","html"),_ 
     | ("text","plain"),_ ->
         begin 
@@ -58,7 +58,7 @@ let wrap_cache cache dh =
         let doc, c = cache dh in
           Cache.add dh.document_id
                  {document_address = dh.document_id.document_url;
-                  document_data = doc; document_info = dh.document_headers};
+                  document_data = doc; document_headers = dh.dh_headers};
           Cache.wrap c dh
           with
             Cache.DontCache -> dh
@@ -155,14 +155,14 @@ let code200 wwwr dh = Ok
 (*s: function Retrieve.code204 *)
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.document_headers))
+  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
 (*e: function Retrieve.code204 *)
 
 (*s: function Retrieve.forward *)
 (* 302 Moved temporarily *)
 let forward wr dh =
   try 
-   let newurl = Http_headers.location dh.document_headers in
+   let newurl = Http_headers.location dh.dh_headers in
      if (* do we forward automatically ?*)
     match wr.www_link.h_method with
       GET -> true
@@ -190,7 +190,7 @@ let forward wr dh =
 (* 301 Moved permanently *)
 let forward_permanent wr dh =
   try
-    let newurl = Http_headers.location dh.document_headers in
+    let newurl = Http_headers.location dh.dh_headers in
     wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
     forward wr dh
   with Not_found -> 
@@ -199,7 +199,7 @@ let forward_permanent wr dh =
 
 (* 304 : Response to a conditional GET, the document is not modified
 let update wr dh =
-   Cache.patch dh.document_id dh.document_headers;
+   Cache.patch dh.document_id dh.dh_headers;
    Stop (s_ "Document %s has not changed.\n" (Url.string_of wr.www_url))
 Because of recursive update, this has moved elsewhere.
 *)
@@ -213,7 +213,7 @@ let code400 wr dh = Error (s_ "Bad Request")
 (* 401 Unauthorized *)
 let ask_auth wr dh =
   wr.www_logging (s_ "Checking authentication");
-  let rawchallenge = challenge dh.document_headers in
+  let rawchallenge = challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   let host = match wr.www_url.host with
@@ -249,10 +249,8 @@ let unauthorized wr dh =
           Auth.add space cookie;
         (* Put the challenge header again *)
         begin try
-          newdh.document_headers <- 
-             ("WWW-Authenticate: "^ 
-                   (challenge dh.document_headers))
-             :: newdh.document_headers
+          newdh.dh_headers <- ("WWW-Authenticate: "^ (challenge dh.dh_headers))
+                              :: newdh.dh_headers
          with
           Not_found -> ()
         end;
@@ -264,7 +262,7 @@ let unauthorized wr dh =
 (* We dump the realm altogether, because it has no meaning for proxies *)
 let ask_proxy_auth wr dh =
   wr.www_logging (s_ "Checking proxy authentication");
-  let rawchallenge = proxy_challenge dh.document_headers in
+  let rawchallenge = proxy_challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   Auth.check wr challenge
@@ -291,10 +289,9 @@ let proxy_unauthorized wr dh =
            Auth.add space cookie;
          (* Put the challenge header again *)
          begin try
-           newdh.document_headers <- 
-              ("Proxy-Authenticate: "^ 
-                                    (proxy_challenge dh.document_headers))
-              :: newdh.document_headers
+           newdh.dh_headers <- 
+              ("Proxy-Authenticate: "^ (proxy_challenge dh.dh_headers))
+              :: newdh.dh_headers
           with
            Not_found -> ()
          end;

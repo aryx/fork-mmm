@@ -7,7 +7,9 @@
 type link_method =
    GET 
  | POST of string
+ (*s: [[Hyper.link_method]] other cases *)
  | HEAD
+ (*e: [[Hyper.link_method]] other cases *)
 (*e: type Hyper.link_method *)
 
 (*s: signature Hyper.parse_method *)

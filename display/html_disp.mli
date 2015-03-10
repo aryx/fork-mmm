@@ -21,50 +21,70 @@ end
 (*s: signature class Html_disp.machine *)
 class  virtual machine : (unit) -> object
   (*s: [[Html_disp.machine]] virtual fields signatures *)
+  (* context *)
   method virtual ctx : Viewers.context
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
-  method virtual base : string
-  method virtual set_base : string -> unit
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
-  method virtual target : string option
-  method virtual set_target : string -> unit
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+
+  (* input *)
+  method virtual send : Html.token -> unit
+  (*s: [[Html_disp.machine]] html input other methods *)
+  method virtual look_for : Html.token -> unit
+  (*e: [[Html_disp.machine]] html input other methods *)
+
+  (* semantic *)
   method virtual add_tag: 
     string -> 
     (* open handler *)  (Htmlfmt.formatter -> Html.tag -> unit) -> 
     (* close handler *) (Htmlfmt.formatter -> unit) -> 
     unit
+  method virtual remove_tag : string -> unit
+  (*s: [[Html_disp.machine]] tags methods *)
   method virtual get_tag : 
     string -> 
     (Htmlfmt.formatter -> Html.tag -> unit) * 
     (Htmlfmt.formatter -> unit)
-  method virtual remove_tag : string -> unit
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] tags methods *)
+  (*s: [[Html_disp.machine]] action stack methods *)
   method virtual push_action : (string -> unit) -> unit
   method virtual pop_action : unit
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] action stack methods *)
+
+  (* backend *)
   method virtual formatter : Htmlfmt.formatter
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*s: [[Html_disp.machine]] formatter stack methods *)
   method virtual push_formatter : Htmlfmt.formatter -> unit
   method virtual pop_formatter : Htmlfmt.formatter
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] formatter stack methods *)
+  (*s: [[Html_disp.machine]] formatter misc methods *)
   method virtual create_formatter : 
     Htmlfmt.formatterSpec -> Widget.widget -> Htmlfmt.formatter * Widget.widget
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
-  method virtual look_for : Html.token -> unit
-  method virtual send : Html.token -> unit
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] formatter misc methods *)
+
+  (* special tags *)
+  (*s: [[Html_disp.machine]] embedded fields *)
   method virtual add_embedded : Embed.embobject -> unit
   method virtual embedded : Embed.embobject list
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] embedded fields *)
+  (*s: [[Html_disp.machine]] image methods *)
   method virtual imgmanager : imgloader
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] image methods *)
+  (*s: [[Html_disp.machine]] fragment method *)
   method virtual see_frag : string option -> unit
-  (*x: [[Html_disp.machine]] virtual fields signatures *)
+  (*e: [[Html_disp.machine]] fragment method *)
+
+  (* misc *)
+  (*s: [[Html_disp.machine]] i18 methods *)
   (* For other languages) *)
   (* encode the internal i18n strings to corresponding encodings *)
   method virtual i18n_encoder : string -> string
   method virtual set_i18n_encoder : (string -> string) -> unit
+  (*e: [[Html_disp.machine]] i18 methods *)
+  (*s: [[Html_disp.machine]] other fields *)
+  method virtual base : string
+  method virtual set_base : string -> unit
+  (*x: [[Html_disp.machine]] other fields *)
+  method virtual target : string option
+  method virtual set_target : string -> unit
+  (*e: [[Html_disp.machine]] other fields *)
   (*e: [[Html_disp.machine]] virtual fields signatures *)
 end
 (*e: signature class Html_disp.machine *)

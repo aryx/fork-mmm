@@ -63,7 +63,8 @@ let helpurl = function
 (*s: function Version.html *)
 let inithtml = function
   | "iso8859" ->
-"<HTML><HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
+"<HTML>
+  <HEAD><TITLE>MMM 0." ^ version_number ^ "</TITLE></HEAD>
 <BODY>
 <H1> The MMM navigator Version 0." ^ version_number ^ "</H1>
 <H2 ALIGN=CENTER> Written by Fran\231ois Rouaix </H2>
@@ -84,14 +85,14 @@ possible direct or indirect damage.
 </BLOCKQUOTE>
 <P>
 The MMM home page is 
-<A HREF=\"http://pauillac.inria.fr/mmm/\">here</A>,
+<A HREF='http://pauillac.inria.fr/mmm/'>here</A>,
 and there is also some
-<A HREF=\"http://pauillac.inria.fr/mmm/doc.html\">documentation</A>
+<A HREF='http://pauillac.inria.fr/mmm/doc.html'>documentation</A>
 and
-<A HREF=\"http://pauillac.inria.fr/mmm/releases.html\">release notes</A>.
+<A HREF='http://pauillac.inria.fr/mmm/releases.html'>release notes</A>.
 <BR>
 Join the author by clicking
-<A HREF=\"mailto:Francois.Rouaix@inria.fr\">here.</A>
+<A HREF='mailto:Francois.Rouaix@inria.fr'>here.</A>
 <P>
 <BLOCKQUOTE>
 This document is included in your browser. Click on <TT>Reload</TT> to

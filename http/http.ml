@@ -361,7 +361,7 @@ let rec process_response wwwr cont =
       document_fragment = wwwr.www_fragment;
 
       document_status = 0;
-      document_headers = [];
+      dh_headers = [];
       document_feed = Feed.of_fd cnx#fd;
 
       document_logger = Document.tty_logger;
@@ -396,13 +396,13 @@ let rec process_response wwwr cont =
        stuck := false;
        (*s: [[Http.process_response()]] reading headers *)
        try
-         if dh.document_headers = [] then begin
+         if dh.dh_headers = [] then begin
            (* it should be the HTTP Status-Line *)
            let l = Munix.read_line cnx#fd in
            dh.document_status <- (Http_headers.parse_status l).status_code;
-           dh.document_headers <- [l] (* keep it there *)
+           dh.dh_headers <- [l] (* keep it there *)
          end else 
-            dh.document_headers <- read_headers cnx#fd dh.document_headers
+            dh.dh_headers <- read_headers cnx#fd dh.dh_headers
        with
        (* each branch must unschedule *)
        (*s: [[Http.process_response()]] feed schedule callback failure cases *)
@@ -441,7 +441,7 @@ and process_response09  wwwr cont cnx =
        { document_id = document_id wwwr;
          document_referer = wwwr.www_link.h_context;
          document_status = 200;
-         document_headers = ["Content-Type: text/html"];
+         dh_headers = ["Content-Type: text/html"];
          document_feed = Feed.of_fd cnx#fd;
          document_fragment = wwwr.www_fragment;
          document_logger = tty_logger} 

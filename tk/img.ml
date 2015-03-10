@@ -139,7 +139,7 @@ module ImageData =
       let url = dh.document_id.document_url in
       let img = 
         try
-          let ctype = contenttype dh.document_headers in
+          let ctype = contenttype dh.dh_headers in
           match Lexheaders.media_type ctype with
            ("image","jpeg"), _ -> Low.busy tk_load_jpeg file
           | ("image","gif"), _ -> Low.busy tk_load_gif file
@@ -151,7 +151,7 @@ module ImageData =
       if !verbose then
         Log.f (sprintf "Loaded %s as %s" file (Url.string_of url));
       Msys.rm file;
-      add url img referers dh.document_headers;
+      add url img referers dh.dh_headers;
       img
       |	304 -> (* we did an update an a document, and it induced a 
           recursive update. The document didn't change *)

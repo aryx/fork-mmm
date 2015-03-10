@@ -295,8 +295,9 @@ class  virtual html_parse (dh) =
  object (self)
   (* red tape for progress report *)
   val mutable red = 0
-  val mutable size = try Some (Http_headers.contentlength dh.document_headers)
-    with Not_found -> None (* duh *);
+  val mutable size = 
+    try Some (Http_headers.contentlength dh.dh_headers)
+    with Not_found -> None (* duh *)
   val mutable feed_read = new Japan.read_i18n (fun s o n -> 0)
 
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
@@ -520,7 +521,7 @@ class display_html ((top : Widget.widget),
       pack [hgbas] [Side Side_Bottom; Fill Fill_X];
 
       let headgroup, set_title, add_link, add_header, add_ext_header =
-        html_head_ui dh.document_headers (fun () -> self#redisplay)
+        html_head_ui dh.dh_headers (fun () -> self#redisplay)
         self#current_scroll_mode frame ctx
       in
       add_extra_header <- add_ext_header;
