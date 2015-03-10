@@ -17,6 +17,8 @@ open Common
 module G = Gui
 module Color = Simple_color
 
+open Www (* for the fields *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -121,17 +123,26 @@ let draw_rectangle_xywh ?alpha ~cr ~x ~y ~w ~h ~color () =
 let nav_error s = failwith s
 let s_ = Printf.sprintf
 exception Duplicate of Url.t
+class ctx (did) =
+ object (self)
+  inherit Viewers.context (did, []) as super
+  method log s = pr2 s
+end
 
-let absolutegoto url =
+let absolutegoto top url =
   let link = Hyper.default_link url in
   try
     let wr = Www.make link in
     let cont = 
       { Document.
         document_process = (fun dh ->
-          (* process nav wr dh; *)
-          pr2 "doc_process";
-          pr2_gen dh;
+
+          let frame = top in
+          let ctx = new ctx(dh.document_id) in
+          match Viewers.view frame ctx dh with
+          | None -> () (* external viewer *)
+          | Some di ->
+              pr2_gen di
         );
         document_finish = (fun _ -> 
           pr2 "doc_finish"
@@ -246,7 +257,7 @@ let init () =
   in
 
   let statusbar = GMisc.statusbar () in
-  let ctx = statusbar#new_context "main" in
+  let _ctx = statusbar#new_context "main" in
 
 (*
   Controller._set_title := (fun s -> win#set_title s);
@@ -255,6 +266,8 @@ let init () =
 
   let win = GWindow.window ~title:"MMM" () in
   let quit () = GMain.Main.quit (); in
+
+  let top = Tk.openTkDisplayClass "" "mmm" in
 
 
   (*-------------------------------------------------------------------*)
@@ -323,7 +336,7 @@ let init () =
 
         entry#connect#activate (fun () -> 
           let s = entry#text in
-          absolutegoto s
+          absolutegoto top s
         ) |> ignore;
       ));
 
