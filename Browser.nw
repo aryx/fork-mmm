@@ -1058,6 +1058,8 @@ method virtual di_widget : Widget.widget
 
 <<type Html.token>>=
 type token =
+ | Doctype of string
+
  | OpenTag of tag
  | CloseTag of string
 
@@ -1065,11 +1067,11 @@ type token =
  | CData of string
 
  | Comment of string
- | Doctype of string
 
  | EOF
 @
-%less: need doctype? diff PCData and CData?
+% Doctype is usually at the top, and this will guide which dtd to use
+%less: diff PCData and CData?
 
 %where is the tree? the full AST? token is really the main thing returned
 % by the lexer/parser. You have to rebuild the tree from it
@@ -2714,7 +2716,6 @@ let normalize_host s =
 
 \subsection{Path, search}
 
-
 <<function Lexurl.pathsearch>>=
 (* /<path>?<search> *)
 and pathsearch = parse
@@ -2736,9 +2737,6 @@ and pathsearch = parse
 and any = parse
   [^ '\n']*  { Some (Lexing.lexeme lexbuf) }    (* in fact any char *)
 @
-
-
-
 
 
 
@@ -3009,10 +3007,6 @@ let strict_form_standard = ref true
 
 
 
-
-
-
-
 \section{Links}
 
 % Www.make -> <>
@@ -3077,64 +3071,49 @@ val urlconcat: Url.t -> string -> string
 
 let urlconcat contextp newuri =
   let l = String.length newuri in 
-    if l = 0 then string_of contextp 
-    else if l > 2 && newuri.[0] = '/' && newuri.[1] = '/' then
+  if l = 0 
+  then string_of contextp 
+  else 
+   if l > 2 && newuri.[0] = '/' && newuri.[1] = '/' 
+   then
       (* this is probably a gopher relative uri *)
       sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
-    else if newuri.[0] = '/' then (* start from root *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = Some (Urlenc.unquote 
-                (String.sub newuri 1 (String.length newuri - 1)));
-     search = None }
-    else if newuri.[0] = '?' then (* change only search part *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = contextp.path;
-     search = Some (String.sub newuri 1 (String.length newuri - 1))}
-    else 
-      let pathpart,searchpart =
-    try
-      let n = String.index newuri '?' in
-      String.sub newuri 0 n,
-      Some (String.sub newuri (n+1) (l - n - 1))
-    with
-      Not_found -> newuri, None
-      in
-      match contextp.path with
-      None | Some "" -> 
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote (Lexurl.remove_dots pathpart));
-        search = searchpart}
-    | Some old ->
-        (* only the "dirname" part of the context path is important *)
-        (* e.g  .../d/e/f becomes /d/e/ *)
-       let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
-        (* we then have to remove dots *)
-    let reduced = Lexurl.remove_dots path in
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote reduced);
-        search = searchpart}
+   else 
+     if newuri.[0] = '/' 
+     then (* start from root *)
+       string_of { contextp with 
+                   path = Some (Urlenc.unquote 
+                      (String.sub newuri 1 (String.length newuri - 1)));
+                   search = None }
+     else 
+       if newuri.[0] = '?' 
+       then (* change only search part *)
+         string_of { contextp with
+                     search = Some(String.sub newuri 1(String.length newuri-1))}
+       else 
+        let pathpart,searchpart =
+         try
+           let n = String.index newuri '?' in
+           String.sub newuri 0 n,
+           Some (String.sub newuri (n+1) (l - n - 1))
+         with Not_found -> newuri, None
+        in
+        match contextp.path with
+        | None | Some "" -> 
+            string_of { contextp with
+                        path=Some(Urlenc.unquote(Lexurl.remove_dots pathpart));
+                        search = searchpart }
+        | Some old ->
+            (* only the "dirname" part of the context path is important *)
+            (* e.g  .../d/e/f becomes /d/e/ *)
+            let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
+            (* we then have to remove dots *)
+            let reduced = Lexurl.remove_dots path in
+            string_of { contextp with
+                        path = Some (Urlenc.unquote reduced);
+                        search = searchpart }
 @
-
+% todo: rewrite in match () with
 
 
 % ??? -> <>
@@ -3151,22 +3130,19 @@ let parse_method = function
 
 
 
-
-
-
 \section{HTML}
 
 %https://html.spec.whatwg.org/multipage/syntax.html#parsing
-
 
 \subsection{Lexing}
 
 % see type Html.token in core DS
 
-
+% ??? -> <>
 <<signature Lexhtml.html>>=
 val html : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 @
+% ??? -> <>
 <<signature Lexhtml.cdata>>=
 val cdata : Lexing.lexbuf -> t -> warnings * Html.token * Html.location
 @
@@ -3432,7 +3408,7 @@ and next_comment = parse
 
 <<type Lexhtml.tagtoken>>=
 type tagtoken =
-   Attribute of string * string
+ | Attribute of string * string
  | Closetag of int
  | Bogus of string * int   (* Bogus(s,n) == bug at pos [n] for reason [s] *)
 @
@@ -3998,11 +3974,11 @@ let dtd20 =
   } in
 
   let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = 
-    Hashtbl.add dtd.contents
+    dtd.open_omitted <- Elements.add el dtd.open_omitted in
+  let omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted in
+  let add_elem = 
+    Hashtbl.add dtd.contents in
   in
 
   (* Some entities *)
@@ -4193,8 +4169,7 @@ let dtd20 =
 %   attempt to choose them
 % *)
 
-%todo: copy the comments made on dtd20 to dtd32
-% and adapt to latest dtd of html5?
+% less: copy comments of dtd 2.0 here? and LP split?
 <<constant Dtd.dtd32>>=
 let dtd32 =
   let dtd = {
@@ -4202,12 +4177,13 @@ let dtd32 =
     contents = Hashtbl.create 53;
     open_omitted = Elements.empty;
     close_omitted = Elements.empty
-     } in
+   } in
   let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
+    dtd.open_omitted <- Elements.add el dtd.open_omitted in
+  let omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted in
+  let add_elem = 
+    Hashtbl.add dtd.contents in
   in
 
   let head_misc_E = sol ["script"; "style"; "meta"; "link"]
@@ -4240,10 +4216,8 @@ let dtd32 =
               "hr"; "table"];
          list_E; preformatted_E]
   in
-  let flow_E = sos [text_E; block_E]
-  in
-  let body_content_E = sos [sol ["address"]; heading_E; text_E; block_E]
-  in
+  let flow_E = sos [text_E; block_E] in
+  let body_content_E = sos [sol ["address"]; heading_E; text_E; block_E] in
   add_elem "body" body_content_E;
   omit_open "body";
   omit_close "body";
@@ -4312,9 +4286,7 @@ let dtd32 =
   List.iter (fun e -> add_elem e body_content_E; omit_close e) ["th"; "td"];
   add_elem "caption" text_E;
 
-
-  let head_content_E = sol ["title"; "isindex"; "base"]
-  in
+  let head_content_E = sol ["title"; "isindex"; "base"] in
 
   add_elem "head" (Elements.union head_content_E head_misc_E);
   omit_close "head";
@@ -4393,52 +4365,8 @@ let names () =
 @
 
 
-
-<<signature Dtd.dtd32f>>=
-val dtd32f : t
-@
-% with frame?
-<<constant Dtd.dtd32f>>=
-(* Add frames somwhere to dtd32.
- * Luckily we chose sets, and they are functional
- *)
-let dtd32f =
-  let dtd = {
-    dtd_name = "HTML 3.2 + frames";
-    contents = Hashtbl.create 101;
-    open_omitted = dtd32.open_omitted;
-    close_omitted = dtd32.close_omitted;
-  } in
-  let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = 
-   Hashtbl.add dtd.contents
-  in
-  (* first : copy in the 3.2 contents *)
-  Hashtbl.iter add_elem dtd32.contents;
-
-  (* frameset and frames is pretty simple *)
-  add_elem "frameset" (sol ["frameset"; "frame"; "noframes"]);
-  add_elem "frame" Elements.empty;
-  omit_close "frame";
-  (* we say that noframes contains the same thing as body in 3.2 *)
-  add_elem "noframes" (Hashtbl.find dtd.contents "body");
-  (* and we say that frameset can occur in html *)
-  let html_contents = Hashtbl.find dtd.contents "html" in
-  Hashtbl.remove dtd.contents "html";
-  add_elem "html" (Elements.add "frameset" 
-             (Elements.add "noframes" html_contents));
-  dtd
-@
-
 <<toplevel Dtd._1>>=
 let _ = add dtd20; add dtd32
-@
-
-<<toplevel Dtd._2>>=
-let _ = add dtd32f
 @
 
 
@@ -4446,7 +4374,7 @@ let _ = add dtd32f
 
 \subsubsection{[[automat()]]}
 
-% Htparse.html_lex | ... -> <>
+% Htparse.html_lex | ???? -> <>
 <<signature Html_eval.automat>>=
 val automat : 
   Dtd.t -> Lexing.lexbuf -> 
@@ -4927,7 +4855,7 @@ let html_lex name =
         match token with
         | EOF -> close_in ic
         | t -> 
-          <<[[Htparse.html_lex()]] print token t if verbose>>
+            <<[[Htparse.html_lex()]] print token t if verbose>>
      )
      (error name find_line)
 @
@@ -5128,6 +5056,8 @@ let parse_status s =
 val http_status : int -> Messages.status
   (* [http_status n] returns Status-Line for code [n] *)
 @
+%less: when need to build a status ourselves? parse_status I understand
+% but this?
 <<function Http_headers.http_status>>=
 (* A typical status line *)
 let http_status code =
@@ -5137,7 +5067,9 @@ let http_status code =
    status_message = status_message code
   }
 @
+%less: rename mk_http_status ?
 
+% mk_http_status -> <>, for debugging or error reporting?
 <<function Http_headers.status_message>>=
 let status_message code =  
   try Hashtbl.find status_messages code
@@ -5148,8 +5080,6 @@ let status_message code =
 (* Messages in Status-Line *)
 let status_messages = Hashtbl.create 101
 @
-
-
 <<toplevel Http_headers._2>>=
 let _ = 
   [ 200, "OK";
@@ -5177,7 +5107,7 @@ let _ =
   ] |> List.iter (function (code, msg) -> Hashtbl.add status_messages code msg)
 @
 %404!! :)
-
+%less: could use Hashtbl.of_list
 
 
 
@@ -5363,7 +5293,7 @@ val contentencoding : Messages.header list -> string
 let contentencoding = 
   get_header "content-encoding"
 @
-
+% UTF-8!!??
 
 
 
@@ -5387,6 +5317,8 @@ type retrievalStatus =
  | InUse
 @
 
+% so close to the retriever protocol type,
+% which was request -> continuation -> aborter
 
 \section{[[Retrieve.f()]]}
 
@@ -5405,8 +5337,8 @@ and f request retry cont =
     try 
       let (req, cache) = Protos.get request.www_url.protocol in
       Started (req request
-               { cont with
-                 document_process = http_check cache retry cont request})
+                 { cont with
+                   document_process = http_check cache retry cont request})
 
    with 
    | Not_found ->
@@ -5420,6 +5352,154 @@ and f request retry cont =
        raise (Invalid_request (request, s))
    end
 @
+
+% http_check intermediate continuation!
+
+\section{Behaviour}
+
+<<type Retrieve.behaviour>>=
+(* We should implement the proper behaviours for all return codes
+ * defined in the HTTP/1.0 protocol draft. 
+ * Return codes are HTTP specific, but since all protocols are more or
+ * less mapped to http, we deal with them at the retrieval level.
+ *)
+type behaviour =
+ | Ok 			              (* process the document *)
+ | Stop of string             (* stop (no document) and display message *)
+ | Retry of Hyper.link        (* restart with a new link *)
+ | Error of string            (* same as stop, but it's an error *)
+ | Restart of (Document.handle -> Document.handle) 
+   (* restart the same request, but apply transformation on the continuation *)
+@
+%less: LP split and aspectize advanced features
+
+\subsection{[[Retrieve.http_check()]]}
+
+<<function Retrieve.http_check>>=
+(* 
+ * Dispatch according to status code
+ *  retry: how to re-emit a request
+ *  cont: what to do with the response 
+ *)
+let rec http_check cache retry cont wwwr dh =
+  Log.debug "Retrieve.http_check";
+  try (* the appropriate behavior *)
+    let behav = Hashtbl.find http_process dh.document_status in
+    match behav wwwr dh with
+    | Ok -> 
+        (* do I cache ? *)
+        let cacheable = wwwr.www_link.h_method = GET in
+        cont.document_process
+          (if cacheable then wrap_cache cache dh else dh)
+    | Stop msg ->
+        dclose true dh;
+        cont.document_finish false;
+        wwwr.www_error#ok msg
+    | Error msg ->
+        dclose true dh;
+        cont.document_finish false;
+        wwwr.www_error#f msg
+    | Retry hlink ->
+        dclose true dh;
+        cont.document_finish false;
+        retry hlink
+    | Restart transform ->
+        dclose true dh;
+        f wwwr retry 
+         { cont with 
+           document_process = (fun dh -> cont.document_process (transform dh))}
+        |> ignore; (* we should probably do something of the result ! *)
+  with Not_found ->
+     (* default behavior is to call the normal continuation 
+      * BUT WE DON'T CACHE !
+      * e.g. 404 Not found, 500, ...
+      *)
+      cont.document_process dh
+@
+
+
+% Retrieve.f -> http_check -> <> (-> Retype.f)
+<<function Retrieve.wrap_cache>>=
+(* What do we cache ? : text/html and text/plain in memory *)
+let wrap_cache cache dh =
+  Log.debug (sprintf "Wrapping cache for %s(%d)"
+             (Url.string_of dh.document_id.document_url)
+             dh.document_id.document_stamp);
+  Retype.f dh;
+  try
+    match Lexheaders.media_type (contenttype dh.dh_headers) with
+    | ("text","html"),_ 
+    | ("text","plain"),_ ->
+      begin 
+       try
+         let doc, c = cache dh in
+         Cache.add dh.document_id
+                 { document_address = dh.document_id.document_url;
+                   document_data = doc; 
+                   document_headers = dh.dh_headers };
+          Cache.wrap c dh
+       with Cache.DontCache -> dh
+      end
+    | _ -> dh
+  with Not_found -> dh
+@
+
+
+\subsection{HTTP status codes}
+% processor? postprocessor? status code post processor?
+
+<<constant Retrieve.http_process>>=
+(*
+ * Provision for user (re)definition of behaviours.
+ *)
+let http_process = (Hashtbl.create 37: 
+   (int, Www.request -> Document.handler -> behaviour) Hashtbl.t)
+@
+% pass handler so can access the headers
+
+<<signature Retrieve.add_http_processor>>=
+val add_http_processor : 
+  int -> (Www.request -> Document.handle -> behaviour) -> unit
+@
+<<constant Retrieve.add_http_processor>>=
+let add_http_processor = Hashtbl.add http_process
+@
+
+<<toplevel Retrieve._1>>=
+(* 400 : proxies do return this code when they can satisfy the request,
+ *       so we keep it as default (displayed)
+ *)
+let _ =
+  [200, code200;
+   201, code200;
+   202, code200;
+   204, code204;
+   <<Retrieve code behaviour other elements>>
+  ] |> List.iter (function (code, behave) -> 
+     Hashtbl.add http_process code behave
+  )
+@
+
+% no 404? :)
+
+
+<<function Retrieve.code200>>=
+(* 200 OK *)
+let code200 _wwwr _dh = Ok
+(* 201 Created (same as 200) *)
+(* 202 Accepted (same as 200) *)
+@
+<<function Retrieve.code204>>=
+(* 204 No Content: we should modify the headers of the referer ? *)
+let code204 _wwwr dh =
+  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
+@
+
+<<function Retrieve.code400>>=
+(* 400 Bad request *)
+let code400 _wr _dh = Error (s_ "Bad Request")
+@
+% dead??
 
 \section{Active connections}
 
@@ -5494,6 +5574,7 @@ type t = {
 <<signature Feed.of_fd>>=
 val of_fd : Unix.file_descr -> t
 @
+% ??? -> <>
 <<function Feed.of_fd>>=
 (* We should distinguish internal/external connections *)
 let of_fd fd =
@@ -5516,8 +5597,9 @@ let of_fd fd =
      Fileevent_.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
      Fileevent_.add_fileinput fd (fun () ->
-     Fileevent_.remove_fileinput fd; (* remove myself *)
-     Condition.set condition);
+       Fileevent_.remove_fileinput fd; (* remove myself *)
+       Condition.set condition
+     );
      (* wait for the condition to happen *)
      Condition.wait condition;
      (* Meanwhile, someone may have unscheduled/closed the 
@@ -5528,7 +5610,8 @@ let of_fd fd =
       *)
      let n = try safe_read buf ofs len with _ -> 0 in
      (* reschedule; it is essential that Low.add_fileinput does not
-      * call the event loop, otherwise we loose sequentiality of reads *)
+      * call the event loop, otherwise we loose sequentiality of reads 
+      *)
      (match !action with
       | Some f ->
           Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
@@ -5564,8 +5647,9 @@ let of_fd fd =
      | None -> 
          (* this happens quite often (for all action codes which
           * do not process the body of the document, the feed got
-          * unscheduled as the end of headers) *)
-       ()
+          * unscheduled as the end of headers) 
+          *)
+         ()
    );
 
    (* feed_close must be called only if the feed it *not* scheduled *)
@@ -5599,74 +5683,6 @@ let internal feed =
   feed.feed_internal
 @
 
-
-\section{XXX}
-
-<<type Retrieve.behaviour>>=
-(* We should implement the proper behaviours for all return codes
- * defined in the HTTP/1.0 protocol draft. 
- * Return codes are HTTP specific, but since all protocols are more or
- * less mapped to http, we deal with them at the retrieval level.
- *)
-type behaviour =
- | Ok 			              (* process the document *)
- | Stop of string             (* stop (no document) and display message *)
- | Retry of Hyper.link        (* restart with a new link *)
- | Error of string            (* same as stop, but it's an error *)
- | Restart of (Document.handle -> Document.handle) 
-   (* restart the same request, but apply transformation on the continuation *)
-@
-
-<<signature Retrieve.add_http_processor>>=
-val add_http_processor : 
-  int -> (Www.request -> Document.handle -> behaviour) -> unit
-@
-
-
-<<constant Retrieve.http_process>>=
-(*
- * Provision for user (re)definition of behaviours.
- *)
-let http_process = Hashtbl.create 37
-@
-
-<<constant Retrieve.add_http_processor>>=
-let add_http_processor = Hashtbl.add http_process
-@
-
-<<toplevel Retrieve._1>>=
-(* 400 : proxies do return this code when they can satisfy the request,
- *       so we keep it as default (displayed)
- *)
-let _ =
- List.iter (function (code, behave) -> Hashtbl.add http_process code behave)
-  [200, code200;
-   201, code200;
-   202, code200;
-   204, code204;
-
-   301, forward_permanent;
-   302, forward;
-   (* 304, update; *)
-   401, unauthorized;
-   407, proxy_unauthorized]
-@
-
-% no 404? :)
-
-
-<<function Retrieve.code200>>=
-(* 200 OK *)
-let code200 wwwr dh = Ok
-(* 201 Created (same as 200) *)
-(* 202 Accepted (same as 200) *)
-@
-
-
-<<function Retrieve.code400>>=
-(* 400 Bad request *)
-let code400 wr dh = Error (s_ "Bad Request")
-@
 
 \section{Logging}
 
@@ -10749,7 +10765,7 @@ type t = {
    EXCEPT when you go back and then on a new link.
 *)
 type history_entry = {
-  h_did : document_id;
+  h_did : Document.document_id;
   h_fragment : string option;
 
   h_prev : history_entry option;
@@ -12278,6 +12294,58 @@ then Url.string_of wwwr.www_url
 % we need to give the info to the proxy host of the actual
 % original host we wanted to reach, so we unparse the full url
 
+
+\section{Forwarding}
+
+<<Retrieve code behaviour other elements>>=
+301, forward_permanent;
+302, forward;
+(* 304, update; *)
+@
+
+
+
+<<function Retrieve.forward_permanent>>=
+(* 301 Moved permanently *)
+let forward_permanent wr dh =
+  try
+    let newurl = Http_headers.location dh.dh_headers in
+    wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
+    forward wr dh
+  with Not_found -> 
+    Error (s_ "No Location: in forwarding header")
+@
+
+<<function Retrieve.forward>>=
+(* 302 Moved temporarily *)
+let forward wr dh =
+  try 
+   let newurl = Http_headers.location dh.dh_headers in
+     if (* do we forward automatically ?*)
+    match wr.www_link.h_method with
+      GET -> true
+    | POST _ ->
+        (* Do NOT redirect automatically if method was POST *)
+        wr.www_error#choose (s_ 
+         "Destination for your POST request has changed\n\
+              from %s\nto %s\nConfirm action ?"
+            (Url.string_of wr.www_url) newurl)
+    | _ -> true 
+     then begin (* consider forwarding as a link *)
+       wr.www_logging "Forwarding";
+       Retry { wr.www_link with h_uri = newurl; }
+     end else 
+      (* not forwarding a moved POST. We show the document after all,
+        since some people (servers ?) use this trick to show the results
+        of a POST, despite what the protocol says about this *)
+       Ok
+  with 
+    Not_found -> 
+      Error (s_ "No Location: in forwarding header")
+@
+
+
+
 \section{Encodings}
 
 % base64, 8859, url encode, etc.
@@ -13162,6 +13230,104 @@ let init () =
   tim ()
 @
 
+\subsection{HTTP status}
+
+
+<<Retrieve code behaviour other elements>>=
+401, unauthorized;
+407, proxy_unauthorized;
+@
+
+<<function Retrieve.ask_auth>>=
+(* 401 Unauthorized *)
+let ask_auth wr dh =
+  wr.www_logging (s_ "Checking authentication");
+  let rawchallenge = challenge dh.dh_headers in
+  let challenge = 
+    Lexheaders.challenge (Lexing.from_string rawchallenge) in
+  let host = match wr.www_url.host with
+     Some h -> h
+   | None -> ""
+  and dir = match wr.www_url.path with
+     Some "" -> "/"
+   | Some h -> Filename.dirname h
+   | None -> "/" 
+  and port = match wr.www_url.port with
+     Some p -> p
+   | None -> 80 (* should never happen *) in
+
+  Auth.check wr challenge
+      {auth_proxy = false;
+       auth_host = host; 
+       auth_port = port;
+       auth_dir = dir;
+       auth_realm = challenge.challenge_realm}
+@
+
+<<function Retrieve.unauthorized>>=
+let unauthorized wr dh =
+  match ask_auth wr dh with
+    None -> (* no attempt to answer challenge, display the message *)
+      Ok
+  | Some (cookie, isnew, space) ->
+     (* restart the request with a continuation that says first
+    to check if authorization was valid, and then proceed
+    to the normal intended continuation *)
+     Restart (fun newdh ->
+        if newdh.document_status <> 401 && isnew then
+          Auth.add space cookie;
+        (* Put the challenge header again *)
+        begin try
+          newdh.dh_headers <- ("WWW-Authenticate: "^ (challenge dh.dh_headers))
+                              :: newdh.dh_headers
+         with
+          Not_found -> ()
+        end;
+                newdh)
+@
+
+
+<<function Retrieve.ask_proxy_auth>>=
+(* 407 Unauthorized *)
+(* We dump the realm altogether, because it has no meaning for proxies *)
+let ask_proxy_auth wr dh =
+  wr.www_logging (s_ "Checking proxy authentication");
+  let rawchallenge = proxy_challenge dh.dh_headers in
+  let challenge = 
+    Lexheaders.challenge (Lexing.from_string rawchallenge) in
+  Auth.check wr challenge
+      {auth_proxy = true;
+       auth_host = !proxy;
+       auth_port = !proxy_port;
+       auth_dir = "";
+       auth_realm = ""}
+@
+
+<<function Retrieve.proxy_unauthorized>>=
+let proxy_unauthorized wr dh =
+  Log.debug "proxy_unauthorized handler";
+  match ask_proxy_auth wr dh with
+    None -> (* no attempt to answer challenge, display the message *)
+      Ok
+  | Some (cookie, isnew, space) ->
+     (* restart the request with a continuation that says first
+    to check if authorization was valid, and then proceed
+    to the normal intended continuation *)
+      Restart (fun newdh -> 
+         Log.debug "proxy_unauthorized wrapper";
+         if newdh.document_status <> 407 && isnew then
+           Auth.add space cookie;
+         (* Put the challenge header again *)
+         begin try
+           newdh.dh_headers <- 
+              ("Proxy-Authenticate: "^ (proxy_challenge dh.dh_headers))
+              :: newdh.dh_headers
+          with
+           Not_found -> ()
+         end;
+                 newdh)
+@
+
 
 
 \section{Optimisations}
@@ -13356,6 +13522,54 @@ nav_id : int;  (* key for the gfx cache *)
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_id = hist.h_key;
 @
+
+\section{Frames}
+
+% they are actually obsolete in html5!
+
+<<signature Dtd.dtd32f>>=
+val dtd32f : t
+@
+% with frame?
+<<constant Dtd.dtd32f>>=
+(* Add frames somwhere to dtd32.
+ * Luckily we chose sets, and they are functional
+ *)
+let dtd32f =
+  let dtd = {
+    dtd_name = "HTML 3.2 + frames";
+    contents = Hashtbl.create 101;
+    open_omitted = dtd32.open_omitted;
+    close_omitted = dtd32.close_omitted;
+  } in
+  let omit_open el =
+    dtd.open_omitted <- Elements.add el dtd.open_omitted in
+  let omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted in
+  let add_elem = 
+   Hashtbl.add dtd.contents in
+  in
+  (* first : copy in the 3.2 contents *)
+  Hashtbl.iter add_elem dtd32.contents;
+
+  (* frameset and frames is pretty simple *)
+  add_elem "frameset" (sol ["frameset"; "frame"; "noframes"]);
+  add_elem "frame" Elements.empty;
+  omit_close "frame";
+  (* we say that noframes contains the same thing as body in 3.2 *)
+  add_elem "noframes" (Hashtbl.find dtd.contents "body");
+  (* and we say that frameset can occur in html *)
+  let html_contents = Hashtbl.find dtd.contents "html" in
+  Hashtbl.remove dtd.contents "html";
+  add_elem "html" (Elements.add "frameset" 
+             (Elements.add "noframes" html_contents));
+  dtd
+@
+
+<<toplevel Dtd._2>>=
+let _ = add dtd32f
+@
+
 
 \section{Fake CGI}
 
@@ -13602,13 +13816,15 @@ let debug_mode = ref true
 <<signature Log.f>>=
 val f : string -> unit
 @
-% ?? fatal?
+% fatal?, no flush
 <<function Log.f>>=
 (* flushes ! *)
 let f s = 
   try prerr_endline s 
   with _ -> ()
 @
+%less: rename Log.flush, or get rid of it,
+% just do flush everytime
 
 
 
@@ -13619,8 +13835,9 @@ val debug : string -> unit
 <<function Log.debug>>=
 let debug s = 
   if !debug_mode 
-  then f s 
+  then f (s ^ "\n")
 @
+%pad: I added the \n, so it flushes maybe
 
 
 \section{Postmortem}
@@ -13691,6 +13908,12 @@ let postmortem () =
 \subsection{Requests}
 
 % request is first alive entity!
+
+%in retrieve.ml
+%(* In all the following, we avoid popping up dialog boxes, and use
+% * wwwr logging instead. Otherwise we might get too verbose for
+% * in-lined images...
+% *)
 
 <<[[Www.request]] logging method>>=
 mutable www_logging : string -> unit;	  (* logging *)

@@ -39,8 +39,9 @@ let of_fd fd =
      Fileevent_.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
      Fileevent_.add_fileinput fd (fun () ->
-     Fileevent_.remove_fileinput fd; (* remove myself *)
-     Condition.set condition);
+       Fileevent_.remove_fileinput fd; (* remove myself *)
+       Condition.set condition
+     );
      (* wait for the condition to happen *)
      Condition.wait condition;
      (* Meanwhile, someone may have unscheduled/closed the 
@@ -51,7 +52,8 @@ let of_fd fd =
       *)
      let n = try safe_read buf ofs len with _ -> 0 in
      (* reschedule; it is essential that Low.add_fileinput does not
-      * call the event loop, otherwise we loose sequentiality of reads *)
+      * call the event loop, otherwise we loose sequentiality of reads 
+      *)
      (match !action with
       | Some f ->
           Fileevent_.add_fileinput fd (fun () -> first_read := true; f())
@@ -87,8 +89,9 @@ let of_fd fd =
      | None -> 
          (* this happens quite often (for all action codes which
           * do not process the body of the document, the feed got
-          * unscheduled as the end of headers) *)
-       ()
+          * unscheduled as the end of headers) 
+          *)
+         ()
    );
 
    (* feed_close must be called only if the feed it *not* scheduled *)

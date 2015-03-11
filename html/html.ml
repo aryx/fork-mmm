@@ -22,6 +22,8 @@ type tag = {
 
 (*s: type Html.token *)
 type token =
+ | Doctype of string
+
  | OpenTag of tag
  | CloseTag of string
 
@@ -29,7 +31,6 @@ type token =
  | CData of string
 
  | Comment of string
- | Doctype of string
 
  | EOF
 (*e: type Html.token *)

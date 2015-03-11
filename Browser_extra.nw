@@ -4057,169 +4057,6 @@ open Url
 
 \subsection*{[[./retrieve/retrieve.ml]]}
 
-% ??? -> <> -> Retype.f
-<<function Retrieve.wrap_cache>>=
-(* What do we cache ? : text/html and text/plain in memory *)
-let wrap_cache cache dh =
-  Log.debug (sprintf "Wrapping cache for %s(%d)"
-             (Url.string_of dh.document_id.document_url)
-             dh.document_id.document_stamp);
-  Retype.f dh;
-  try
-    match Lexheaders.media_type (contenttype dh.dh_headers) with
-    | ("text","html"),_ 
-    | ("text","plain"),_ ->
-        begin 
-      try
-        let doc, c = cache dh in
-          Cache.add dh.document_id
-                 {document_address = dh.document_id.document_url;
-                  document_data = doc; document_headers = dh.dh_headers};
-          Cache.wrap c dh
-          with
-            Cache.DontCache -> dh
-        end
-    | _ -> dh
-  with
-    Not_found -> dh
-@
-
-
-<<function Retrieve.code204>>=
-(* 204 No Content: we should modify the headers of the referer ? *)
-let code204 wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
-@
-
-<<function Retrieve.forward>>=
-(* 302 Moved temporarily *)
-let forward wr dh =
-  try 
-   let newurl = Http_headers.location dh.dh_headers in
-     if (* do we forward automatically ?*)
-    match wr.www_link.h_method with
-      GET -> true
-    | POST _ ->
-        (* Do NOT redirect automatically if method was POST *)
-        wr.www_error#choose (s_ 
-         "Destination for your POST request has changed\n\
-              from %s\nto %s\nConfirm action ?"
-            (Url.string_of wr.www_url) newurl)
-    | _ -> true 
-     then begin (* consider forwarding as a link *)
-       wr.www_logging "Forwarding";
-       Retry { wr.www_link with h_uri = newurl; }
-     end else 
-      (* not forwarding a moved POST. We show the document after all,
-        since some people (servers ?) use this trick to show the results
-        of a POST, despite what the protocol says about this *)
-       Ok
-  with 
-    Not_found -> 
-      Error (s_ "No Location: in forwarding header")
-@
-
-<<function Retrieve.forward_permanent>>=
-(* 301 Moved permanently *)
-let forward_permanent wr dh =
-  try
-    let newurl = Http_headers.location dh.dh_headers in
-    wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
-    forward wr dh
-  with Not_found -> 
-    Error (s_ "No Location: in forwarding header")
-@
-
-
-<<function Retrieve.ask_auth>>=
-(* 401 Unauthorized *)
-let ask_auth wr dh =
-  wr.www_logging (s_ "Checking authentication");
-  let rawchallenge = challenge dh.dh_headers in
-  let challenge = 
-    Lexheaders.challenge (Lexing.from_string rawchallenge) in
-  let host = match wr.www_url.host with
-     Some h -> h
-   | None -> ""
-  and dir = match wr.www_url.path with
-     Some "" -> "/"
-   | Some h -> Filename.dirname h
-   | None -> "/" 
-  and port = match wr.www_url.port with
-     Some p -> p
-   | None -> 80 (* should never happen *) in
-
-  Auth.check wr challenge
-      {auth_proxy = false;
-       auth_host = host; 
-       auth_port = port;
-       auth_dir = dir;
-       auth_realm = challenge.challenge_realm}
-@
-
-<<function Retrieve.unauthorized>>=
-let unauthorized wr dh =
-  match ask_auth wr dh with
-    None -> (* no attempt to answer challenge, display the message *)
-      Ok
-  | Some (cookie, isnew, space) ->
-     (* restart the request with a continuation that says first
-    to check if authorization was valid, and then proceed
-    to the normal intended continuation *)
-     Restart (fun newdh ->
-        if newdh.document_status <> 401 && isnew then
-          Auth.add space cookie;
-        (* Put the challenge header again *)
-        begin try
-          newdh.dh_headers <- ("WWW-Authenticate: "^ (challenge dh.dh_headers))
-                              :: newdh.dh_headers
-         with
-          Not_found -> ()
-        end;
-                newdh)
-@
-
-<<function Retrieve.ask_proxy_auth>>=
-(* 407 Unauthorized *)
-(* We dump the realm altogether, because it has no meaning for proxies *)
-let ask_proxy_auth wr dh =
-  wr.www_logging (s_ "Checking proxy authentication");
-  let rawchallenge = proxy_challenge dh.dh_headers in
-  let challenge = 
-    Lexheaders.challenge (Lexing.from_string rawchallenge) in
-  Auth.check wr challenge
-      {auth_proxy = true;
-       auth_host = !proxy;
-       auth_port = !proxy_port;
-       auth_dir = "";
-       auth_realm = ""}
-@
-
-<<function Retrieve.proxy_unauthorized>>=
-let proxy_unauthorized wr dh =
-  Log.debug "proxy_unauthorized handler";
-  match ask_proxy_auth wr dh with
-    None -> (* no attempt to answer challenge, display the message *)
-      Ok
-  | Some (cookie, isnew, space) ->
-     (* restart the request with a continuation that says first
-    to check if authorization was valid, and then proceed
-    to the normal intended continuation *)
-      Restart (fun newdh -> 
-         Log.debug "proxy_unauthorized wrapper";
-         if newdh.document_status <> 407 && isnew then
-           Auth.add space cookie;
-         (* Put the challenge header again *)
-         begin try
-           newdh.dh_headers <- 
-              ("Proxy-Authenticate: "^ (proxy_challenge dh.dh_headers))
-              :: newdh.dh_headers
-          with
-           Not_found -> ()
-         end;
-                 newdh)
-@
-
 
 
 %-------------------------------------------------------------
@@ -4246,45 +4083,7 @@ open Auth
 
 <<function Retrieve.wrap_cache>>
 
-(* 
- * Dispatch according to status code
- *  retry: how to re-emit a request
- *  cont: what to do with the response 
- *)
-let rec http_check cache retry cont wwwr dh =
-  Log.debug "Retrieve.http_check";
-  try (* the appropriate behavior *)
-    let behav = Hashtbl.find http_process dh.document_status in
-    match behav wwwr dh with
-    | Ok -> 
-        (* do I cache ? *)
-        let cacheable = wwwr.www_link.h_method = GET in
-        cont.document_process
-          (if cacheable then wrap_cache cache dh else dh)
-    | Stop msg ->
-        dclose true dh;
-        cont.document_finish false;
-        wwwr.www_error#ok msg
-    | Error msg ->
-        dclose true dh;
-        cont.document_finish false;
-        wwwr.www_error#f msg
-    | Retry hlink ->
-        dclose true dh;
-        cont.document_finish false;
-        retry hlink
-    | Restart transform ->
-        dclose true dh;
-        f wwwr retry 
-         { cont with 
-          document_process = (fun dh -> cont.document_process (transform dh))}
-        |> ignore; (* we should probably do something of the result ! *)
-  with Not_found ->
-     (* default behavior is to call the normal continuation 
-      * BUT WE DON'T CACHE !
-      * e.g. 404 Not found, 500, ...
-      *)
-      cont.document_process dh
+<<function Retrieve.http_check>>
 
 <<function Retrieve.f>>
 
@@ -12805,6 +12604,14 @@ open Protocol
 
 val create: Document.document_id -> t
 
+val add: t -> Document.document_id -> string option -> unit
+
+val back: t -> (Document.document_id * string option) option
+val forward: t -> (Document.document_id * string option) option
+
+val contents: t -> history_entry list
+
+val set_current: t -> history_entry -> unit
 
 @
 

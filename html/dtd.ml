@@ -51,12 +51,11 @@ let dtd20 =
   } in
 
   let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = 
-    Hashtbl.add dtd.contents
-  in
+    dtd.open_omitted <- Elements.add el dtd.open_omitted in
+  let omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted in
+  let add_elem = 
+    Hashtbl.add dtd.contents in
 
   (* Some entities *)
   (* <!ENTITY % heading "H1|H2|H3|H4|H5|H6"> *)
@@ -260,13 +259,13 @@ let dtd32 =
     contents = Hashtbl.create 53;
     open_omitted = Elements.empty;
     close_omitted = Elements.empty
-     } in
+   } in
   let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = Hashtbl.add dtd.contents
-  in
+    dtd.open_omitted <- Elements.add el dtd.open_omitted in
+  let omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted in
+  let add_elem = 
+    Hashtbl.add dtd.contents in
 
   let head_misc_E = sol ["script"; "style"; "meta"; "link"]
   and heading_E = sol ["h1"; "h2"; "h3"; "h4"; "h5"; "h6"]
@@ -298,10 +297,8 @@ let dtd32 =
               "hr"; "table"];
          list_E; preformatted_E]
   in
-  let flow_E = sos [text_E; block_E]
-  in
-  let body_content_E = sos [sol ["address"]; heading_E; text_E; block_E]
-  in
+  let flow_E = sos [text_E; block_E] in
+  let body_content_E = sos [sol ["address"]; heading_E; text_E; block_E] in
   add_elem "body" body_content_E;
   omit_open "body";
   omit_close "body";
@@ -370,9 +367,7 @@ let dtd32 =
   List.iter (fun e -> add_elem e body_content_E; omit_close e) ["th"; "td"];
   add_elem "caption" text_E;
 
-
-  let head_content_E = sol ["title"; "isindex"; "base"]
-  in
+  let head_content_E = sol ["title"; "isindex"; "base"] in
 
   add_elem "head" (Elements.union head_content_E head_misc_E);
   omit_close "head";
@@ -445,12 +440,12 @@ let dtd32f =
     close_omitted = dtd32.close_omitted;
   } in
   let omit_open el =
-    dtd.open_omitted <- Elements.add el dtd.open_omitted
-  and omit_close el =
-    dtd.close_omitted <- Elements.add el dtd.close_omitted
-  and add_elem = 
-   Hashtbl.add dtd.contents
-  in
+    dtd.open_omitted <- Elements.add el dtd.open_omitted in
+  let omit_close el =
+    dtd.close_omitted <- Elements.add el dtd.close_omitted in
+  let add_elem = 
+   Hashtbl.add dtd.contents in
+
   (* first : copy in the 3.2 contents *)
   Hashtbl.iter add_elem dtd32.contents;
 

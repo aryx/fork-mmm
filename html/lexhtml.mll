@@ -5,7 +5,7 @@ open Html
 
 (*s: type Lexhtml.tagtoken *)
 type tagtoken =
-   Attribute of string * string
+ | Attribute of string * string
  | Closetag of int
  | Bogus of string * int   (* Bogus(s,n) == bug at pos [n] for reason [s] *)
 (*e: type Lexhtml.tagtoken *)

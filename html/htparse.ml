@@ -65,13 +65,13 @@ let html_lex name =
         match token with
         | EOF -> close_in ic
         | t -> 
-          (*s: [[Htparse.html_lex()]] print token t if verbose *)
-          if !verbose 
-          then begin 
-             Html.print t; 
-             flush stdout
-          end
-          (*e: [[Htparse.html_lex()]] print token t if verbose *)
+            (*s: [[Htparse.html_lex()]] print token t if verbose *)
+            if !verbose 
+            then begin 
+               Html.print t; 
+               flush stdout
+            end
+            (*e: [[Htparse.html_lex()]] print token t if verbose *)
      )
      (error name find_line)
 (*e: function Htparse.html_lex *)

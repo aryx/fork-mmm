@@ -35,7 +35,8 @@ type behaviour =
 (*
  * Provision for user (re)definition of behaviours.
  *)
-let http_process = Hashtbl.create 37
+let http_process = (Hashtbl.create 37: 
+   (int, Www.request -> Document.handle -> behaviour) Hashtbl.t)
 (*e: constant Retrieve.http_process *)
 
 (*s: constant Retrieve.add_http_processor *)
@@ -53,21 +54,21 @@ let wrap_cache cache dh =
     match Lexheaders.media_type (contenttype dh.dh_headers) with
     | ("text","html"),_ 
     | ("text","plain"),_ ->
-        begin 
-      try
-        let doc, c = cache dh in
-          Cache.add dh.document_id
-                 {document_address = dh.document_id.document_url;
-                  document_data = doc; document_headers = dh.dh_headers};
+      begin 
+       try
+         let doc, c = cache dh in
+         Cache.add dh.document_id
+                 { document_address = dh.document_id.document_url;
+                   document_data = doc; 
+                   document_headers = dh.dh_headers };
           Cache.wrap c dh
-          with
-            Cache.DontCache -> dh
-        end
+       with Cache.DontCache -> dh
+      end
     | _ -> dh
-  with
-    Not_found -> dh
+  with Not_found -> dh
 (*e: function Retrieve.wrap_cache *)
 
+(*s: function Retrieve.http_check *)
 (* 
  * Dispatch according to status code
  *  retry: how to re-emit a request
@@ -99,7 +100,7 @@ let rec http_check cache retry cont wwwr dh =
         dclose true dh;
         f wwwr retry 
          { cont with 
-          document_process = (fun dh -> cont.document_process (transform dh))}
+           document_process = (fun dh -> cont.document_process (transform dh))}
         |> ignore; (* we should probably do something of the result ! *)
   with Not_found ->
      (* default behavior is to call the normal continuation 
@@ -107,6 +108,7 @@ let rec http_check cache retry cont wwwr dh =
       * e.g. 404 Not found, 500, ...
       *)
       cont.document_process dh
+(*e: function Retrieve.http_check *)
 
 (*s: function Retrieve.f *)
 (*
@@ -123,8 +125,8 @@ and f request retry cont =
     try 
       let (req, cache) = Protos.get request.www_url.protocol in
       Started (req request
-               { cont with
-                 document_process = http_check cache retry cont request})
+                 { cont with
+                   document_process = http_check cache retry cont request})
 
    with 
    | Not_found ->
@@ -147,14 +149,14 @@ and f request retry cont =
 
 (*s: function Retrieve.code200 *)
 (* 200 OK *)
-let code200 wwwr dh = Ok
+let code200 _wwwr _dh = Ok
 (* 201 Created (same as 200) *)
 (* 202 Accepted (same as 200) *)
 (*e: function Retrieve.code200 *)
 
 (*s: function Retrieve.code204 *)
 (* 204 No Content: we should modify the headers of the referer ? *)
-let code204 wwwr dh =
+let code204 _wwwr dh =
   Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
 (*e: function Retrieve.code204 *)
 
@@ -206,7 +208,7 @@ Because of recursive update, this has moved elsewhere.
 
 (*s: function Retrieve.code400 *)
 (* 400 Bad request *)
-let code400 wr dh = Error (s_ "Bad Request")
+let code400 _wr _dh = Error (s_ "Bad Request")
 (*e: function Retrieve.code400 *)
 
 (*s: function Retrieve.ask_auth *)
@@ -303,16 +305,20 @@ let proxy_unauthorized wr dh =
  *       so we keep it as default (displayed)
  *)
 let _ =
- List.iter (function (code, behave) -> Hashtbl.add http_process code behave)
   [200, code200;
    201, code200;
    202, code200;
    204, code204;
-
+   (*s: Retrieve code behaviour other elements *)
    301, forward_permanent;
    302, forward;
    (* 304, update; *)
+   (*x: Retrieve code behaviour other elements *)
    401, unauthorized;
-   407, proxy_unauthorized]
+   407, proxy_unauthorized;
+   (*e: Retrieve code behaviour other elements *)
+  ] |> List.iter (function (code, behave) -> 
+     Hashtbl.add http_process code behave
+  )
 (*e: toplevel Retrieve._1 *)
 (*e: ./retrieve/retrieve.ml *)

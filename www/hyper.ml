@@ -63,62 +63,47 @@ exception Invalid_link of link_error
 
 let urlconcat contextp newuri =
   let l = String.length newuri in 
-    if l = 0 then string_of contextp 
-    else if l > 2 && newuri.[0] = '/' && newuri.[1] = '/' then
+  if l = 0 
+  then string_of contextp 
+  else 
+   if l > 2 && newuri.[0] = '/' && newuri.[1] = '/' 
+   then
       (* this is probably a gopher relative uri *)
       sprintf "%s:%s" (string_of_protocol contextp.protocol) newuri
-    else if newuri.[0] = '/' then (* start from root *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = Some (Urlenc.unquote 
-                (String.sub newuri 1 (String.length newuri - 1)));
-     search = None }
-    else if newuri.[0] = '?' then (* change only search part *)
-      string_of {
-        protocol = contextp.protocol;
-     user = contextp.user;
-     password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-     path = contextp.path;
-     search = Some (String.sub newuri 1 (String.length newuri - 1))}
-    else 
-      let pathpart,searchpart =
-    try
-      let n = String.index newuri '?' in
-      String.sub newuri 0 n,
-      Some (String.sub newuri (n+1) (l - n - 1))
-    with
-      Not_found -> newuri, None
-      in
-      match contextp.path with
-      None | Some "" -> 
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote (Lexurl.remove_dots pathpart));
-        search = searchpart}
-    | Some old ->
-        (* only the "dirname" part of the context path is important *)
-        (* e.g  .../d/e/f becomes /d/e/ *)
-       let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
-        (* we then have to remove dots *)
-    let reduced = Lexurl.remove_dots path in
-        string_of {
-        protocol = contextp.protocol;
-        user = contextp.user;
-        password = contextp.password;
-        host = contextp.host;
-        port = contextp.port;
-        path = Some (Urlenc.unquote reduced);
-        search = searchpart}
+   else 
+     if newuri.[0] = '/' 
+     then (* start from root *)
+       string_of { contextp with 
+                   path = Some (Urlenc.unquote 
+                      (String.sub newuri 1 (String.length newuri - 1)));
+                   search = None }
+     else 
+       if newuri.[0] = '?' 
+       then (* change only search part *)
+         string_of { contextp with
+                     search = Some(String.sub newuri 1(String.length newuri-1))}
+       else 
+        let pathpart,searchpart =
+         try
+           let n = String.index newuri '?' in
+           String.sub newuri 0 n,
+           Some (String.sub newuri (n+1) (l - n - 1))
+         with Not_found -> newuri, None
+        in
+        match contextp.path with
+        | None | Some "" -> 
+            string_of { contextp with
+                        path=Some(Urlenc.unquote(Lexurl.remove_dots pathpart));
+                        search = searchpart }
+        | Some old ->
+            (* only the "dirname" part of the context path is important *)
+            (* e.g  .../d/e/f becomes /d/e/ *)
+            let path = sprintf "%s/%s" (Filename.dirname old) pathpart in
+            (* we then have to remove dots *)
+            let reduced = Lexurl.remove_dots path in
+            string_of { contextp with
+                        path = Some (Urlenc.unquote reduced);
+                        search = searchpart }
 (*e: function Hyper.urlconcat *)
           
 (*s: function Hyper.resolve *)
