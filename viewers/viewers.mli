@@ -65,26 +65,27 @@ class  virtual display_info : (unit) -> object ('a)
   (*s: [[Viewers.display_info]] embedded virtual methods signatures *)
   method virtual di_update : unit      (* update embedded objects *)
   (*e: [[Viewers.display_info]] embedded virtual methods signatures *)
+  (*s: [[Viewers.display_info]] fragment virtual method signature *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+  (*e: [[Viewers.display_info]] fragment virtual method signature *)
 
   (*s: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_abort : unit		 (* stop display *)
   (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_redisplay : unit		(* redisplay *)
-  (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
-  method virtual di_destroy : unit	 (* die *)
   (*e: [[Viewers.display_info]] lifecycle virtual methods signatures *)
-  (*s: [[Viewers.display_info]] fragment virtual method signature *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
-  (*e: [[Viewers.display_info]] fragment virtual method signature *)
 
+  (*s: [[Viewers.display_info]] graphic cache virtual methods signatures *)
+  method virtual di_destroy : unit	 (* die *)
+  (*e: [[Viewers.display_info]] graphic cache virtual methods signatures *)
   (*s: [[Viewers.display_info]] other virtual methods signatures *)
   method virtual di_source : unit 	        (* source viewer *)
   (*e: [[Viewers.display_info]] other virtual methods signatures *)
   (*e: [[Viewers.display_info]] virtual methods signatures *)
-  (*s: [[Viewers.display_info]] cache methods signatures *)
-  method di_last_used : int
+  (*s: [[Viewers.display_info]] graphic cache methods signatures *)
   method di_touch : unit
-  (*e: [[Viewers.display_info]] cache methods signatures *)
+  method di_last_used : int
+  (*e: [[Viewers.display_info]] graphic cache methods signatures *)
 end
 (*e: signature class Viewers.display_info *)
 

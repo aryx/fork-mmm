@@ -62,17 +62,19 @@ let nocache did =
  *   used when adding in the middle of the history
  *)
 let remove hkey did =
-  if !debug then Log.f
-    (sprintf "Removing %s in window %d" (Url.string_of did.document_url) hkey);
+  if !debug 
+  then Log.f (sprintf "Removing %s in window %d" 
+                 (Url.string_of did.document_url) hkey);
   try
     let r = Hashtbl.find table hkey in
     let di = List.assoc did !r in
-     di#di_abort;
-     di#di_destroy;
-     r := Mlist.except_assoc did !r;
-    if !Cache.history_mode then nocache did
-  with
-     Not_found -> Log.debug "Gcache.remove failed !"
+    di#di_abort;
+    di#di_destroy;
+    r := Mlist.except_assoc did !r;
+    if !Cache.history_mode 
+    then nocache did
+  with Not_found -> 
+    Log.debug "Gcache.remove failed !"
 (*e: function Gcache.remove *)
 
 (*s: function Gcache.displace *)

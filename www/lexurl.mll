@@ -91,9 +91,9 @@ rule f = parse
           let h,po = hostport lexbuf in
           result.protocol <- TELNET;
           result.user <- u;
-         result.password <- p;
+          result.password <- p;
           result.host <- h;
-         result.port <- po
+          result.port <- po
       (*x: [[Lexurl.f]] protocol cases *)
       | "NNTP" ->
           let h,po = hostport lexbuf in
@@ -121,7 +121,7 @@ rule f = parse
           let pa,se = pathsearch lexbuf in
           result.protocol <- WAIS;
           result.host <- h;
-         result.port <- po;
+          result.port <- po;
           result.path <- pa;
           result.search <- se
       | "PROSPERO" ->
@@ -130,7 +130,7 @@ rule f = parse
           let p = slashpath lexbuf in
           result.protocol <- PROSPERO;
           result.host <- h;
-         result.port <- po;
+          result.port <- po;
           result.path <- p
       (*e: [[Lexurl.f]] protocol cases *)
       | s ->

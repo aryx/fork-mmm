@@ -52,9 +52,10 @@ let progress_report top ctx =
   let pointstov = Textvariable.create_temporary f in
   let pointsto = Textvariable.set pointstov in
   let lpoint = 
-    Label.create_named f "pointsto" [TextVariable pointstov; Anchor W]
-  and fprog = Frame.create_named f "fr" [Width (Pixels 200); Height (Pixels 5)]
-  in
+    Label.create_named f "pointsto" [TextVariable pointstov; Anchor W] in
+  let fprog = 
+    Frame.create_named f "fr" [Width (Pixels 200); Height(Pixels 5)]in
+
   (* progress meter requires an alt widget, but we don't have to pack it *)
   let fakealt = Label.create_named fprog "alt" [] in
   pack [fprog][Side Side_Left];
@@ -66,19 +67,20 @@ let progress_report top ctx =
   Pack.propagate_set f false;
 
   ctx#add_nav ("pointsto" ,
-           { hyper_visible = false;
-         hyper_title = "Show target";
-         hyper_func = (fun _ h -> 
-           let target = 
-             try Hyper.string_of h
-             with Invalid_link msg -> "invalid link" in
-           pointsto target)});
+                { hyper_visible = false;
+                  hyper_title = "Show target";
+                  hyper_func = (fun _ h -> 
+                    let target = 
+                      try Hyper.string_of h
+                      with Invalid_link msg -> "invalid link" 
+                    in
+                    pointsto target
+                  )});
   ctx#add_nav ("clearpointsto" ,
-           { hyper_visible = false;
-         hyper_title = "Clear target";
-         hyper_func = (fun _ h -> pointsto "")
-           });
-  
+                { hyper_visible = false;
+                  hyper_title = "Clear target";
+                  hyper_func = (fun _ h -> pointsto "")
+                });
   f, Tk_progress.meter fprog
 (*e: function Htmlw.progress_report *)
 
@@ -616,10 +618,6 @@ class display_html ((top : Widget.widget),
      )
   (*e: [[Htmlw.display_html]] init method *)
 
-  (*s: [[Htmlw.display_html]] fragment methods *)
-  method di_fragment = 
-    mach#see_frag
-  (*e: [[Htmlw.display_html]] fragment methods *)
   (*s: [[Htmlw.display_html]] load images methods *)
   method mach = mach
   (*x: [[Htmlw.display_html]] load images methods *)
@@ -680,6 +678,10 @@ class display_html ((top : Widget.widget),
        }
     )
   (*e: [[Htmlw.display_html]] load frames methods *)
+  (*s: [[Htmlw.display_html]] fragment methods *)
+  method di_fragment = 
+    mach#see_frag
+  (*e: [[Htmlw.display_html]] fragment methods *)
 
   (*s: [[Htmlw.display_html]] error managment methods *)
   (* error reporting *)
@@ -727,11 +729,12 @@ class display_html ((top : Widget.widget),
       with Not_found ->
         Error.f (s_ "Document not in cache anymore")
   (*e: [[Htmlw.display_html]] redisplay methods *)
-  (*s: [[Htmlw.display_html]] destroy methods *)
+
+  (*s: [[Htmlw.display_html]] graphic cache destroy methods *)
   method di_destroy = 
     if Winfo.exists frame 
     then Tk.destroy frame;
-  (*e: [[Htmlw.display_html]] destroy methods *)
+  (*e: [[Htmlw.display_html]] graphic cache destroy methods *)
   (*s: [[Htmlw.display_html]] other methods or fields *)
   method annotate loc = function
     | OpenTag {tag_name=name} ->

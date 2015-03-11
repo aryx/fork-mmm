@@ -252,77 +252,13 @@ module TableLogic = Html_table
       val mutable (*private*) action = (fun s -> ())
       val mutable (*private*) action_stack = []
       (*x: [[Html_disp.display_machine]] private fields *)
+      val mutable (*private*) formatter = default_fo
+      (*x: [[Html_disp.display_machine]] private fields *)
       val mutable (*private*) formatter_stack = []
       (*x: [[Html_disp.display_machine]] private fields *)
       val mutable see_frag = (fun _ -> ())
       (*e: [[Html_disp.display_machine]] private fields *)
 
-      (*s: [[Html_disp.display_machine]] tag machinery methods *)
-      (* Adding and removing tag behaviors *)
-      method add_tag t o c = 
-        Hashtbl.add tags t {tag_open = o; tag_close = c}
-      method get_tag t =
-        let {tag_open = o; tag_close = c} = Hashtbl.find tags t in 
-        o,c
-      method remove_tag = Hashtbl.remove tags
-      (*e: [[Html_disp.display_machine]] tag machinery methods *)
-      (*s: [[Html_disp.display_machine]] action stack methods *)
-      (* Changing the default mode for pcdata and cdata *)
-      method push_action f =
-        action_stack <-  f :: action_stack;
-        action <- f
-      method pop_action =
-        match action_stack with
-        | [] -> Log.f "Warning: empty action stack"
-        |	old::l ->
-        action_stack <- l;
-        action <- match l with [] -> (fun s ->()) | newa::_ -> newa
-      (*e: [[Html_disp.display_machine]] action stack methods *)
-      (*s: [[Html_disp.display_machine]] formatter methods *)
-      (* Accessing the variables *)
-      val mutable (*private*) formatter = default_fo
-      method formatter = formatter
-      (*x: [[Html_disp.display_machine]] formatter methods *)
-      (* Nested formatters for table cells and other usage *)
-      method push_formatter fo =
-        formatter <- fo;
-        formatter_stack <- fo :: formatter_stack;
-        self#push_action fo.format_string;
-        see_frag <- fo.see_frag
-
-      method pop_formatter =
-        self#pop_action;
-        match formatter_stack with
-        | [] -> 
-            Log.f "Warning: empty formatter stack";
-            default_fo
-        | old::l ->
-            old.flush();
-            see_frag <- old.see_frag;
-            formatter_stack <- l;
-            formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
-            old
-      (*x: [[Html_disp.display_machine]] formatter methods *)
-      (* Nested windows *)
-      val table_namer = Mstring.egensym "tablecell"
-      method create_formatter spec w = G.create table_namer spec w ctx
-      (*x: [[Html_disp.display_machine]] formatter methods *)
-      (* This is only for robustness *)
-      method flush_formatters =
-        while List.length formatter_stack > 0 do
-          Log.f "WARNING: too many formatters in stack";
-          self#pop_formatter.flush()
-        done
-      (*e: [[Html_disp.display_machine]] formatter methods *)
-
-
-      (*s: [[Html_disp.display_machine]] fragment methods *)
-      (* This is an intrusion of graphics, but I don't see any other way 
-       * The last formatter always tries see_frag...
-       *)
-      method see_frag = see_frag
-      (*e: [[Html_disp.display_machine]] fragment methods *)
-    
       (*s: [[Html_disp.display_machine]] html token input methods *)
       (* ignore everything up to some tag *)
       val mutable look_for = None
@@ -360,14 +296,78 @@ module TableLogic = Html_table
         | _ -> ()
       (*e: [[Html_disp.display_machine]] html token input methods *)
 
-     (*s: [[Html_disp.display_machine]] embedded methods *)
-     (* record all embedded objects in this machine *)
-     val mutable (*private*) embedded = []
-     method add_embedded x = 
-       Embed.add x;
-       embedded <- x :: embedded
-     method embedded = embedded
-     (*e: [[Html_disp.display_machine]] embedded methods *)
+      (*s: [[Html_disp.display_machine]] tag machinery methods *)
+      (* Adding and removing tag behaviors *)
+      method add_tag t o c = 
+        Hashtbl.add tags t {tag_open = o; tag_close = c}
+      method get_tag t =
+        let {tag_open = o; tag_close = c} = Hashtbl.find tags t in 
+        o,c
+      method remove_tag = Hashtbl.remove tags
+      (*e: [[Html_disp.display_machine]] tag machinery methods *)
+      (*s: [[Html_disp.display_machine]] action stack methods *)
+      (* Changing the default mode for pcdata and cdata *)
+      method push_action f =
+        action_stack <-  f :: action_stack;
+        action <- f
+      method pop_action =
+        match action_stack with
+        | [] -> Log.f "Warning: empty action stack"
+        |	old::l ->
+        action_stack <- l;
+        action <- match l with [] -> (fun s ->()) | newa::_ -> newa
+      (*e: [[Html_disp.display_machine]] action stack methods *)
+      (*s: [[Html_disp.display_machine]] formatter methods *)
+      (* Accessing the variables *)
+      method formatter = formatter
+      (*x: [[Html_disp.display_machine]] formatter methods *)
+      (* Nested formatters for table cells and other usage *)
+      method push_formatter fo =
+        formatter <- fo;
+        formatter_stack <- fo :: formatter_stack;
+        self#push_action fo.format_string;
+        see_frag <- fo.see_frag
+
+      method pop_formatter =
+        self#pop_action;
+        match formatter_stack with
+        | [] -> 
+            Log.f "Warning: empty formatter stack";
+            default_fo
+        | old::l ->
+            old.flush();
+            see_frag <- old.see_frag;
+            formatter_stack <- l;
+            formatter <- (match l with [] -> default_fo | newf :: _ -> newf);
+            old
+      (*x: [[Html_disp.display_machine]] formatter methods *)
+      (* Nested windows *)
+      val table_namer = Mstring.egensym "tablecell"
+      method create_formatter spec w = G.create table_namer spec w ctx
+      (*x: [[Html_disp.display_machine]] formatter methods *)
+      (* This is only for robustness *)
+      method flush_formatters =
+        while List.length formatter_stack > 0 do
+          Log.f "WARNING: too many formatters in stack";
+          self#pop_formatter.flush()
+        done
+      (*e: [[Html_disp.display_machine]] formatter methods *)
+
+      (*s: [[Html_disp.display_machine]] embedded methods *)
+      (* record all embedded objects in this machine *)
+      val mutable (*private*) embedded = []
+      method add_embedded x = 
+        Embed.add x;
+        embedded <- x :: embedded
+      method embedded = embedded
+      (*e: [[Html_disp.display_machine]] embedded methods *)
+      (*s: [[Html_disp.display_machine]] fragment methods *)
+      (* This is an intrusion of graphics, but I don't see any other way 
+       * The last formatter always tries see_frag...
+       *)
+      method see_frag = see_frag
+      (*e: [[Html_disp.display_machine]] fragment methods *)
+
      (*s: [[Html_disp.display_machine]] i18n methods *)
      val mutable i18n_encoder = (fun s -> s : string -> string)
      method i18n_encoder = i18n_encoder

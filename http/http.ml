@@ -227,12 +227,8 @@ let full_request w proxy_mode wwwr =
   (*x: [[Http.full_request()]] helper functions *)
   let write_referer = 
     match wwwr.www_link.h_context with
-    | None -> 
-      (fun () -> ())
-    | Some r -> 
-       (fun () -> 
-         if !send_referer 
-         then w ("Referer: " ^ r ^ "\r\n"))
+    | None ->   (fun () -> ())
+    | Some r -> (fun () -> if !send_referer then w ("Referer: " ^ r ^ "\r\n"))
   in
   (*x: [[Http.full_request()]] helper functions *)
   (* If the request has an Authorization, write it *)

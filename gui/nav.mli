@@ -14,9 +14,9 @@ type t = {
   nav_rem_active : Url.t -> unit;
   (*e: [[Nav.t]] manage active connections methods *)
 
-  (*s: [[Nav.t]] cache related methods *)
+  (*s: [[Nav.t]] graphic cache related methods *)
   nav_id : int;  (* key for the gfx cache *)
-  (*e: [[Nav.t]] cache related methods *)
+  (*e: [[Nav.t]] graphic cache related methods *)
   (*s: [[Nav.t]] error methods *)
   nav_error : Error.t;			(* popping error dialogs *)
   (*e: [[Nav.t]] error methods *)

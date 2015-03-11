@@ -79,9 +79,8 @@ let get mailaddr referer =
 (*s: function Mailto.f *)
 let f wr =
   match wr.www_url.path with
-  | None -> wr.www_error#f (s_ "No address given for mailto:")
-  | Some rawaddress ->
-      let address = Urlenc.decode rawaddress in
+  | Some raw_address ->
+      let address = Urlenc.decode raw_address in
       (match wr.www_link.h_method with
       | GET -> get address wr.www_link.h_context
       | POST d ->
@@ -98,5 +97,6 @@ let f wr =
      | _ ->
         wr.www_error#f (s_ "Unsupported method for mailto:")
      )
+  | None -> wr.www_error#f (s_ "No address given for mailto:")
 (*e: function Mailto.f *)
 (*e: ./protocols/mailto.ml *)

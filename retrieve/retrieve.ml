@@ -164,28 +164,25 @@ let code204 _wwwr dh =
 (* 302 Moved temporarily *)
 let forward wr dh =
   try 
-   let newurl = Http_headers.location dh.dh_headers in
-     if (* do we forward automatically ?*)
-    match wr.www_link.h_method with
-      GET -> true
-    | POST _ ->
-        (* Do NOT redirect automatically if method was POST *)
-        wr.www_error#choose (s_ 
-         "Destination for your POST request has changed\n\
-              from %s\nto %s\nConfirm action ?"
+    let newurl = Http_headers.location dh.dh_headers in
+    if (* do we forward automatically ?*)
+      match wr.www_link.h_method with
+      | GET -> true
+      | POST _ ->
+         (* Do NOT redirect automatically if method was POST *)
+         wr.www_error#choose (s_ "Destination for your POST request has changed\n  from %s\nto %s\nConfirm action ?"
             (Url.string_of wr.www_url) newurl)
-    | _ -> true 
-     then begin (* consider forwarding as a link *)
+      | _ -> true 
+    then begin (* consider forwarding as a link *)
        wr.www_logging "Forwarding";
        Retry { wr.www_link with h_uri = newurl; }
-     end else 
+    end else 
       (* not forwarding a moved POST. We show the document after all,
         since some people (servers ?) use this trick to show the results
         of a POST, despite what the protocol says about this *)
        Ok
-  with 
-    Not_found -> 
-      Error (s_ "No Location: in forwarding header")
+  with Not_found -> 
+    Error (s_ "No Location: in forwarding header")
 (*e: function Retrieve.forward *)
 
 (*s: function Retrieve.forward_permanent *)

@@ -6,6 +6,7 @@ open Unix
 let request sock cmd url =
   if cmd <> "" 
   then write sock cmd 0 (String.length cmd) |> ignore;
+
   write sock url 0 (String.length url) |> ignore;
   write sock "\n" 0 1 |> ignore;
   let buf = String.create 1024 in

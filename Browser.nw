@@ -1009,7 +1009,7 @@ method hyper_funs : (string * hyper_func) list
 class  virtual display_info : (unit) -> object ('a)
 
   <<[[Viewers.display_info]] virtual methods signatures>>
-  <<[[Viewers.display_info]] cache methods signatures>>
+  <<[[Viewers.display_info]] graphic cache methods signatures>>
 end
 @
 %note: the <<[[Viewers.display_info]] virtual methods signatures>> chunk
@@ -1025,10 +1025,11 @@ method virtual di_widget : Widget.widget
 
 <<[[Viewers.display_info]] images virtual methods signatures>>
 <<[[Viewers.display_info]] embedded virtual methods signatures>>
-
-<<[[Viewers.display_info]] lifecycle virtual methods signatures>>
 <<[[Viewers.display_info]] fragment virtual method signature>>
 
+<<[[Viewers.display_info]] lifecycle virtual methods signatures>>
+
+<<[[Viewers.display_info]] graphic cache virtual methods signatures>>
 <<[[Viewers.display_info]] other virtual methods signatures>>
 @
 % di_title is used by the caller to modify the window's title
@@ -1637,7 +1638,7 @@ let rec navigator is_main_window initial_url =
   let top = 
     if is_main_window
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
-    <<[[Mmm.navigator()]] if not main window, create default toplevel>>
+    else Toplevel.create       Widget.default_toplevel       [Class "MMM"]
   in
   Wm.title_set top (s_ "MMM Browser");
   <<[[Mmm.navigator()]] setup top packing>>
@@ -1728,7 +1729,7 @@ type t = {
   <<[[Nav.t]] manage history methods>>
   <<[[Nav.t]] manage active connections methods>>
 
-  <<[[Nav.t]] cache related methods>>
+  <<[[Nav.t]] graphic cache related methods>>
   <<[[Nav.t]] error methods>>
   <<[[Nav.t]] logging method>>
 
@@ -6846,7 +6847,8 @@ class display_plain ((top : Widget.widget),
   <<[[Plain.plain]] progress methods>>
   <<[[Plain.plain]] abort methods>>
   <<[[Plain.plain]] redisplay methods>>
-  <<[[Plain.plain]] destroy methods>>
+
+  <<[[Plain.plain]] graphic cache destroy methods>>
   <<[[Plain.plain]] empty methods>>
   <<[[Plain.plain]] other methods or fields>>
 end
@@ -7186,18 +7188,18 @@ class stdctx (did, nav) =
     (* a new context for an embedded window *)
     let make_embed_ctx w targets = 
       let targets = 
-    ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
+        ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
       let newctx = (new stdctx(did,nav))#init in
       begin
-    try 
-      let f = List.assoc "pointsto" self#hyper_funs in
-      let g = List.assoc "clearpointsto" self#hyper_funs in
-      newctx#add_nav ("pointsto", f);
-      newctx#add_nav ("clearpointsto", g);
-    with
-      Not_found -> ()
+        try 
+          let f = List.assoc "pointsto" self#hyper_funs in
+          let g = List.assoc "clearpointsto" self#hyper_funs in
+          newctx#add_nav ("pointsto", f);
+          newctx#add_nav ("clearpointsto", g);
+        with Not_found -> ()
       end;
       (newctx#for_embed [] targets :> Viewers.context) in
+
     (* by default, use the cache, don't touch the request *)
     let follow_link _ = 
       request nav (process_viewer true make_ctx) 
@@ -7262,6 +7264,7 @@ class stdctx (did, nav) =
         Not_found -> follow_link targets hlink
     in
     !user_navigation |> List.iter super#add_nav;
+
     ["copy", copy_link, s_ "Copy this Link to clipboard";
      "head", head_link, s_ "Headers of document";
      "save", save_link, s_ "Save this Link";
@@ -7594,17 +7597,18 @@ class display_html ((top : Widget.widget),
   <<[[Htmlw.display_html]] frame widget methods>>
   <<[[Htmlw.display_html]] init method>>
 
-  <<[[Htmlw.display_html]] fragment methods>>
   <<[[Htmlw.display_html]] load images methods>>
   <<[[Htmlw.display_html]] update embedded objects methods>>
   <<[[Htmlw.display_html]] load frames methods>>
+  <<[[Htmlw.display_html]] fragment methods>>
 
   <<[[Htmlw.display_html]] error managment methods>>
 
   <<[[Htmlw.display_html]] progress method>>
   <<[[Htmlw.display_html]] abort methods>>
   <<[[Htmlw.display_html]] redisplay methods>>
-  <<[[Htmlw.display_html]] destroy methods>>
+
+  <<[[Htmlw.display_html]] graphic cache destroy methods>>
   <<[[Htmlw.display_html]] other methods or fields>>
 
 end
@@ -7817,16 +7821,15 @@ class display_machine (ctx, imgmanager) =
 
     <<[[Html_disp.display_machine]] private fields>>
 
+    <<[[Html_disp.display_machine]] html token input methods>>
+
     <<[[Html_disp.display_machine]] tag machinery methods>>
     <<[[Html_disp.display_machine]] action stack methods>>
     <<[[Html_disp.display_machine]] formatter methods>>
 
-
+    <<[[Html_disp.display_machine]] embedded methods>>
     <<[[Html_disp.display_machine]] fragment methods>>
-    
-    <<[[Html_disp.display_machine]] html token input methods>>
 
-   <<[[Html_disp.display_machine]] embedded methods>>
    <<[[Html_disp.display_machine]] i18n methods>>
      
 end
@@ -7908,9 +7911,11 @@ method pop_action =
 @
 
 
+<<[[Html_disp.display_machine]] private fields>>=
+val mutable (*private*) formatter = default_fo
+@
 <<[[Html_disp.display_machine]] formatter methods>>=
 (* Accessing the variables *)
-val mutable (*private*) formatter = default_fo
 method formatter = formatter
 @
 
@@ -8084,8 +8089,7 @@ type formatterSpec =
   | NestedFormatter
   | FrameFormatter of (string * string) list (* decoration ... *)
 @
-%TODO lp split
-
+%TODO lp split, and aspectize frames
 
 
 <<[[Textw_fo.create]] locals>>=
@@ -10092,8 +10096,6 @@ type width_constraint =
   | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
 @
 
-\section{Frames}
-
 \section{XXX}
 
 \subsection{Meta tag}
@@ -10245,8 +10247,6 @@ method embedded = embedded
 @
 
 
-
-
 <<[[Viewers.context]] embedded methods signatures>>=
 (*-*)
 method for_embed : vparams -> frame_targets -> 'a
@@ -10290,6 +10290,36 @@ val update :
     -> unit
 @
 
+
+
+
+
+
+
+
+
+
+<<[[Viewers.display_info]] embedded virtual methods signatures>>=
+method virtual di_update : unit      (* update embedded objects *)
+@
+
+
+<<[[Plain.plain]] empty methods>>=
+method di_update = ()
+@
+
+<<[[Htmlw.display_html]] update embedded objects methods>>=
+method di_update =
+  imgmanager#update_images;
+
+  Frx_after.idle (fun () ->
+    mach#embedded |> List.iter (fun {embed_frame = f} ->
+      Winfo.children f |> List.iter (Frx_synth.send "update")
+    )
+  )
+@
+
+\section{Embedded viewers}
 
 
 <<signature Embed.add_viewer>>=
@@ -10339,19 +10369,12 @@ let embedded_viewer frame ctx doc =
       let l = Label.create frame [Text t] in pack [l][]
 @
 
-
-
 \chapter{Images}
+% include in previous chapter? section of embed?
 
 <<[[Html_disp.machine]] image methods>>=
 method virtual imgmanager : imgloader
 @
-
-
-
-
-
-
 
 
 <<Document menu elements>>=
@@ -10433,30 +10456,6 @@ class loader : (unit) -> object
 end
 @
 
-\section{Embedded objects}
-
-<<[[Viewers.display_info]] embedded virtual methods signatures>>=
-method virtual di_update : unit      (* update embedded objects *)
-@
-
-
-<<[[Plain.plain]] empty methods>>=
-method di_update = ()
-@
-
-<<[[Htmlw.display_html]] update embedded objects methods>>=
-method di_update =
-  imgmanager#update_images;
-
-  Frx_after.idle (fun () ->
-    mach#embedded |> List.iter (fun {embed_frame = f} ->
-      Winfo.children f |> List.iter (Frx_synth.send "update")
-    )
-  )
-@
-
-
-
 
 
 
@@ -10484,7 +10483,7 @@ method di_update =
 
 
 \chapter{Concurrency}
-% important in browser context, servo was actually started just for that
+% important in browser context, servo was actually started just for that.
 % could also have an isolation chapter?
 
 \section{Tasks}
@@ -10545,10 +10544,6 @@ val cur_tachy : tachymeter ref
 
 \subsection{frontend}
 
-<<[[Mmm.navigator()]] if not main window, create default toplevel>>=
-else Toplevel.create Widget.default_toplevel [Class "MMM"]
-@
-
 <<[[Mmm.navigator()]] set tachymeter>>=
 (* put this as a function so we can restart it if needed *)
 let rec restart_tachy () =
@@ -10556,32 +10551,35 @@ let rec restart_tachy () =
    let fcontainer = Frame.create hgroup [] in
    container_frame := Some fcontainer;
    (* restart it if destroyed *)
-   bind fcontainer [[], Destroy]
-    (BindSet ([Ev_Widget],
-      (fun ei -> 
-        if ei.ev_Widget = fcontainer 
-                && Winfo.exists hgroup (* but we're not dead *) then
-          restart_tachy())));
-
+   bind fcontainer [[], Destroy] (BindSet ([Ev_Widget], (fun ei -> 
+      if ei.ev_Widget = fcontainer 
+         && Winfo.exists hgroup (* but we're not dead *) 
+      then restart_tachy()))
+   );
   let rw = Winfo.reqwidth fcontainer in
   let rh = Winfo.reqheight fcontainer in
   Wm.minsize_set top rw rh;
   pack [fcontainer][Side Side_Right; Anchor N];
+
   start_tachy();
+
   (* Bad hack to do bindings for our own internal tachymeter:
    * others, in applets, can just access these functions from the safe
-   * library *)
+   * library 
+   *)
   if !tachy_maker == About.create_tachy then begin 
     match Winfo.children fcontainer with
     | [c] ->
-         bind c (Glevents.get "tachy_new")
-          (BindSet ([], (fun _ -> new_window_initial ())));
-         bind c (Glevents.get "tachy_sel")
-          (BindSet ([], (fun _ -> new_window_sel ())));
+         bind c (Glevents.get "tachy_new") (BindSet ([], (fun _ -> 
+           new_window_initial ())));
+         bind c (Glevents.get "tachy_sel") (BindSet ([], (fun _ -> 
+           new_window_sel ())));
     | _ -> ()
   end
 in
+
 restart_tachy(); (* first initialisation *)
+
 (* good size for keeping only the tachy *)
 Wm.minsize_set top 80 80;
 @
@@ -10590,17 +10588,16 @@ Wm.minsize_set top 80 80;
 <<signature Mmm.change_tachy>>=
 val change_tachy : (Widget.widget -> Low.tachymeter) -> unit
 @
-
 <<function Mmm.change_tachy>>=
 let change_tachy (t : Widget.widget -> Low.tachymeter) = 
   !Low.cur_tachy#quit;
   tachy_maker := t;
-  begin match !container_frame with
-    Some f -> 
+  (match !container_frame with
+   | Some f -> 
       List.iter Tk.destroy (Winfo.children f);
       Low.cur_tachy := t f
-  | None -> ()
-  end
+   | None -> ()
+  )
 @
 
 <<constant Mmm.tachy_maker>>=
@@ -10610,11 +10607,9 @@ let tachy_maker = ref About.create_tachy
 
 <<function Mmm.start_tachy>>=
 let start_tachy () = 
-  begin match !container_frame with
-    Some f -> 
-      Low.cur_tachy := !tachy_maker f
-  | None -> ()
-  end
+  match !container_frame with
+   | Some f -> Low.cur_tachy := !tachy_maker f
+   | None -> ()
 @
 
 <<constant Mmm.container_frame>>=
@@ -10631,7 +10626,7 @@ let container_frame = ref None
 
 \chapter{Extra features}
 
-\section{Fragments}
+\section{Fragment navigation}
 
 % saw already
 % - uri_abs.uri_fragment, 
@@ -10658,25 +10653,19 @@ method virtual di_fragment : string option -> unit	(* for # URIs *)
 
 % easy case:
 <<[[Plain.plain]] empty methods>>=
-method di_fragment _frag = 
-  ()
+method di_fragment _frag = ()
 @
 
 <<[[Htmlw.display_html]] fragment methods>>=
 method di_fragment = 
   mach#see_frag
 @
-
 <<[[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment>>=
 mach#see_frag dh.document_fragment;
 @
 
 
 
-
-<<[[Html_disp.display_machine]] private fields>>=
-val mutable see_frag = (fun _ -> ())
-@
 
 <<[[Html_disp.machine]] fragment method>>=
 method virtual see_frag : string option -> unit
@@ -10687,7 +10676,11 @@ method virtual see_frag : string option -> unit
  *)
 method see_frag = see_frag
 @
-
+% return the field (confusing ...)
+<<[[Html_disp.display_machine]] private fields>>=
+val mutable see_frag = (fun _ -> ())
+@
+% can be changed?
 
 <<[[Htmlfmt.formatter]] fragment method>>=
 see_frag : string option -> unit;
@@ -10698,8 +10691,8 @@ see_frag : string option -> unit;
  * switch back from a goto to some particular place in the document
  *)
 see_frag = begin
-  let prev_frag = ref false
-  and view_mem = ref 0.0 in
+  let prev_frag = ref false in
+  let view_mem = ref 0.0 in
   match spec with
   | TopFormatter true -> (* this is pscrolling mode *)
     (function
@@ -10709,10 +10702,10 @@ see_frag = begin
            with Protocol.TkError _ -> ()
          end;
          prev_frag := false
-    | Some s ->
-        if not !prev_frag then begin
-          try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
-          with Protocol.TkError _ -> ()
+     | Some s ->
+         if not !prev_frag then begin
+           try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
+           with Protocol.TkError _ -> ()
         end;
         prev_frag := true;
         if s <> "" then
@@ -10724,7 +10717,7 @@ see_frag = begin
            Canvas.yview (Winfo.parent thtml) 
                 (MoveTo (float y /. float ye))
           with Protocol.TkError _ -> ()
-  )
+   )
   |	_ ->
     (function
     | None -> (* no place in particular *)
@@ -10749,7 +10742,7 @@ see_frag = begin
 end
 @
 
-\section{History}
+\section{History navigation}
 
 % see in Interface chapter code that call History API
 % and historygoto!
@@ -10865,7 +10858,9 @@ let historygoto nav did frag usecache =
    end
 @
 
-\section{Abort}
+\section{Lifecycle control}
+
+\subsection{Abort}
 % advanced topic?
 % important! you want the user to control things
 
@@ -10932,8 +10927,8 @@ method finish abort =
 %less: could say "Finish" at least in the log?
 
 
-% very similar for html one
-
+% very similar for html one, with img and embed scheduler interruption
+% in addition
 <<[[Htmlw.display_html]] private fields>>=
 val mutable (*private*) terminated = false
 @
@@ -10956,7 +10951,7 @@ method finish abort =
   end
 @
 
-\section{Refresh}
+\subsection{Refresh}
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let reloadb = Button.create_named buttons
@@ -10973,10 +10968,11 @@ let reload () =
     Gcache.remove hist.h_key did;
     historygoto nav did frag false |> ignore
   end
-    else error#f 
+  else error#f 
       (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
 in
 @
+% which error is that?
 
 % ??? -> <>
 % see also update_true alias
@@ -10990,7 +10986,7 @@ let update nocache =
 in
 @
 
-\section{Redisplay}
+\subsection{Redisplay}
 % diff?
 
 <<Document menu elements>>=
@@ -11046,6 +11042,8 @@ method redisplay =
       Error.f (s_ "Document not in cache anymore")
 @
 
+%\subsection{Destroy}?
+
 \section{Progress feedback}
 
 <<[[Plain.plain]] progress methods>>=
@@ -11053,11 +11051,11 @@ method redisplay =
 val mutable set_progress = Progress.no_meter
 method set_progress = set_progress
 @
+% need a mutable set_progress?
 
 <<[[Htmlw.display_html]] private fields>>=
 val mutable set_progress = Progress.no_meter
 @
-
 <<[[Htmlw.display_html]] progress method>>=
 (* progress report *)
 method set_progress = set_progress
@@ -11072,9 +11070,10 @@ let progress_report top ctx =
   let pointstov = Textvariable.create_temporary f in
   let pointsto = Textvariable.set pointstov in
   let lpoint = 
-    Label.create_named f "pointsto" [TextVariable pointstov; Anchor W]
-  and fprog = Frame.create_named f "fr" [Width (Pixels 200); Height (Pixels 5)]
-  in
+    Label.create_named f "pointsto" [TextVariable pointstov; Anchor W] in
+  let fprog = 
+    Frame.create_named f "fr" [Width (Pixels 200); Height(Pixels 5)]in
+
   (* progress meter requires an alt widget, but we don't have to pack it *)
   let fakealt = Label.create_named fprog "alt" [] in
   pack [fprog][Side Side_Left];
@@ -11086,22 +11085,23 @@ let progress_report top ctx =
   Pack.propagate_set f false;
 
   ctx#add_nav ("pointsto" ,
-           { hyper_visible = false;
-         hyper_title = "Show target";
-         hyper_func = (fun _ h -> 
-           let target = 
-             try Hyper.string_of h
-             with Invalid_link msg -> "invalid link" in
-           pointsto target)});
+                { hyper_visible = false;
+                  hyper_title = "Show target";
+                  hyper_func = (fun _ h -> 
+                    let target = 
+                      try Hyper.string_of h
+                      with Invalid_link msg -> "invalid link" 
+                    in
+                    pointsto target
+                  )});
   ctx#add_nav ("clearpointsto" ,
-           { hyper_visible = false;
-         hyper_title = "Clear target";
-         hyper_func = (fun _ h -> pointsto "")
-           });
-  
+                { hyper_visible = false;
+                  hyper_title = "Clear target";
+                  hyper_func = (fun _ h -> pointsto "")
+                });
   f, Tk_progress.meter fprog
 @
-
+%todo: those hyper_xxx??
 
 \section{Bookmarks}
 
@@ -11119,7 +11119,6 @@ let hotlist = ref ""
 @
 % dead?
 
-
 <<function Mmm.navigator.add_to_hotlist>>=
 let add_to_hotlist () =
   match !current_di with
@@ -11128,8 +11127,6 @@ let add_to_hotlist () =
       Hotlist.f (Url.string_of hist.h_current.h_did.document_url) di#di_title
 in
 @
-
-
 
 <<constant Hotlist.program>>=
 (* A cool module *)
@@ -11145,152 +11142,6 @@ let f url title =
       Error.ok (s_ "%s\nadded to hotlist with title\n%s" url title)
 @
 %less: rename, Hotlist.f is bad
-
-\section{User preferences}
-
-% important, like in efuns
-
-\subsection{Preference file, [[-prefs]]}
-<<constant Mmm.preferences>>=
-(* placeholder for preference panel *)
-let preferences = ref (fun () -> ())
-@
-
-<<[[Mmm.initial_navigator()]] set preferences>>=
-preferences := Mmmprefs.f preffile;
-!preferences();
-@
-
-
-<<[[Main.main()]] locals>>=
-let preffile = ref (Mmm.user_file "MMM.ad") in
-@
-<<[[Main.main()]] command line options>>=
-"-prefs", Arg.String (fun s -> preffile := s),
-"<file>\t\tPreference File";
-@
-% .ad?
-% preferences of navigator
-% diff with code using MMM.ad below?
-
-
-
-<<signature Mmm.user_file>>=
-val user_file : string -> string
-    (* [user_file base] returns $HOME/.mmm/[base] *)
-@
-%$
-<<function Mmm.user_file>>=
-let user_file name =
-  Filename.concat (Filename.concat home ".mmm") name
-@
-
-%less: rename homedir!
-<<constant Mmm.home>>=
-let home =
-  try
-    Sys.getenv "HOME"
-  with
-  | Not_found -> 
-      prerr_endline "Please set the HOME environment variable.";
-      exit (-1)
-@
-
-
-% user (localized) file
-<<[[Main.main()]] user preferences file>>=
-localize !preffile
-@
-
-\subsection{Initial geometry, [[-geometry]]}
-
-<<signature Mmm.initial_geom>>=
-val initial_geom : string option ref
-@
-<<constant Mmm.initial_geom>>=
-let initial_geom = ref None
-@
-<<[[Main.main()]] command line options>>=
-"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-"<wxh+x+y>\tInitial geometry for the first navigator";
-@
-
-<<[[Mmm.navigator()]] set geometry if specified>>=
-(match !initial_geom with 
- | None -> ()
- | Some g -> 
-    Wm.geometry_set top g
- );
-@
-
-\section{TK customization}
-
-\subsection{Color palette, [[-palette]]}
-
-<<[[Main.main()]] resource initialisation>>=
-begin match !palette with
-| None -> ()
-| Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
-end;
-@
-% ??
-
-<<[[Main.main()]] locals>>=
-let palette = ref None in
-@
-<<[[Main.main()]] command line options>>=
-"-palette", Arg.String (fun s -> palette := Some s),
-"<color>\tTk Palette";
-@
-
-\subsection{Click to follow, [[-clicktofocus]]}
-
-<<[[Main.main()]] tk initialisation>>=
-if not !clicktofocus 
-then Focus.follows_mouse();
-@
-
-<<[[Main.main()]] locals>>=
-let clicktofocus = ref false in
-@
-<<[[Main.main()]] command line options>>=
-"-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-"\tClick to Focus mode (default is Focus Follows Mouse)";
-@
-
-
-\section{Help URL, [[-helpurl]]}
-
-<<signature Mmm.helpurl>>=
-(* Preferences, options *)
-val helpurl : Url.t ref
-@
-<<constant Mmm.helpurl>>=
-let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
-@
-<<[[Main.main()]] command line options>>=
-"-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-"<url>\tHelp URL";
-@
-
-<<signature Version.helpurl>>=
-val helpurl : string -> string (* help url *)
-@
-<<function Version.helpurl>>=
-let helpurl = function
-  | "iso8859" -> 
-      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
-  | _ -> assert false
-@
-
-
-
-<<Help menu elements>>=
-Menu.add_command helpm
-  [Label (s_ "Help on MMM"); 
-   Command (fun () -> navigator false !helpurl |> ignore)];
-@
-% false means not toplevel, no_tachy
 
 \section{Multiple windows}
 
@@ -11378,6 +11229,150 @@ let new_window_sel () =
 in
 @
 
+\section{User preferences}
+
+% important, like in efuns
+
+\subsection{Preference file, [[-prefs]]}
+<<constant Mmm.preferences>>=
+(* placeholder for preference panel *)
+let preferences = ref (fun () -> ())
+@
+
+<<[[Mmm.initial_navigator()]] set preferences>>=
+preferences := Mmmprefs.f preffile;
+!preferences();
+@
+
+
+<<[[Main.main()]] locals>>=
+let preffile = ref (Mmm.user_file "MMM.ad") in
+@
+<<[[Main.main()]] command line options>>=
+"-prefs", Arg.String (fun s -> preffile := s),
+"<file>\t\tPreference File";
+@
+% .ad?
+% preferences of navigator
+% diff with code using MMM.ad below?
+
+
+
+<<signature Mmm.user_file>>=
+val user_file : string -> string
+    (* [user_file base] returns $HOME/.mmm/[base] *)
+@
+%$
+<<function Mmm.user_file>>=
+let user_file name =
+  Filename.concat (Filename.concat home ".mmm") name
+@
+
+%less: rename homedir!
+<<constant Mmm.home>>=
+let home =
+  try
+    Sys.getenv "HOME"
+  with Not_found -> 
+    prerr_endline "Please set the HOME environment variable.";
+    exit (-1)
+@
+
+
+% user (localized) file
+<<[[Main.main()]] user preferences file>>=
+localize !preffile
+@
+
+\subsection{Initial geometry, [[-geometry]]}
+
+<<signature Mmm.initial_geom>>=
+val initial_geom : string option ref
+@
+<<constant Mmm.initial_geom>>=
+let initial_geom = ref None
+@
+<<[[Main.main()]] command line options>>=
+"-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
+"<wxh+x+y>\tInitial geometry for the first navigator";
+@
+
+<<[[Mmm.navigator()]] set geometry if specified>>=
+(match !initial_geom with 
+ | None -> ()
+ | Some g -> Wm.geometry_set top g
+ );
+@
+
+\section{TK customization}
+
+\subsection{Color palette, [[-palette]]}
+
+<<[[Main.main()]] resource initialisation>>=
+begin match !palette with
+| None -> ()
+| Some bg -> try Palette.set_background (Tk.NamedColor bg) with _ -> ()
+end;
+@
+% ??
+
+<<[[Main.main()]] locals>>=
+let palette = ref None in
+@
+<<[[Main.main()]] command line options>>=
+"-palette", Arg.String (fun s -> palette := Some s),
+"<color>\tTk Palette";
+@
+
+\subsection{Click to follow, [[-clicktofocus]]}
+
+<<[[Main.main()]] tk initialisation>>=
+if not !clicktofocus 
+then Focus.follows_mouse();
+@
+
+<<[[Main.main()]] locals>>=
+let clicktofocus = ref false in
+@
+<<[[Main.main()]] command line options>>=
+"-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
+"\tClick to Focus mode (default is Focus Follows Mouse)";
+@
+
+
+\section{Help URL, [[-helpurl]]}
+
+<<signature Mmm.helpurl>>=
+(* Preferences, options *)
+val helpurl : Url.t ref
+@
+<<constant Mmm.helpurl>>=
+let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
+@
+<<[[Main.main()]] command line options>>=
+"-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
+"<url>\tHelp URL";
+@
+
+<<signature Version.helpurl>>=
+val helpurl : string -> string (* help url *)
+@
+<<function Version.helpurl>>=
+let helpurl = function
+  | "iso8859" -> 
+      Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
+  | _ -> assert false
+@
+
+
+
+<<Help menu elements>>=
+Menu.add_command helpm
+  [Label (s_ "Help on MMM"); 
+   Command (fun () -> navigator false !helpurl |> ignore)];
+@
+% false means not toplevel, no_tachy
+
 \section{Extra Protocols}
 
 
@@ -11413,12 +11408,12 @@ and fhost = parse
 @
 
 
-
 <<signature File.request>>=
 (* file: protocol *)
 val request : Www.request -> Document.document_continuation -> Www.aborter
     (* [request wr cont] returns [abort] *)
 @
+% a retriever
 
 <<exception File.File_error>>=
 exception File_error of string
@@ -11428,6 +11423,7 @@ exception File_error of string
 let document_id wwwr =
   { document_url = wwwr.www_url; document_stamp = no_stamp}
 @
+%less: rename mk_did ?
 
 %less: LP split and distribute in two sections below
 <<function File.request>>=
@@ -11438,15 +11434,15 @@ let document_id wwwr =
  *)
 
 let request wr cont =
-  let path = match wr.www_url.path with
-    Some path -> "/" ^ (Lexurl.remove_dots path)
-  | None -> "/" 
+  let path = 
+    match wr.www_url.path with
+    | Some path -> "/" ^ (Lexurl.remove_dots path)
+    | None -> "/" 
   in
   <<[[File.request()]] if CGI path>>
   else   (* A bit weird, but we don't want to capture errors from the cont *)
     let st =
-      try 
-        stat path 
+      try stat path 
       with _ -> raise (File_error (s_ "cannot stat file")) 
     in
     match st.st_kind with
@@ -11630,7 +11626,7 @@ let isdir path f =
 <<[[Nav.request.handle_wr()]] match protocol special cases>>=
 | MAILTO -> Mailto.f wr
  (* mailto: is really a pain. It doesn't fit the retrieval semantics
-  of WWW requests. *)
+  * of WWW requests. *)
 @
 
 % this seems to work! there is a new window appearing
@@ -11648,9 +11644,8 @@ type msg = {
 <<function Mailto.f>>=
 let f wr =
   match wr.www_url.path with
-  | None -> wr.www_error#f (s_ "No address given for mailto:")
-  | Some rawaddress ->
-      let address = Urlenc.decode rawaddress in
+  | Some raw_address ->
+      let address = Urlenc.decode raw_address in
       (match wr.www_link.h_method with
       | GET -> get address wr.www_link.h_context
       | POST d ->
@@ -11667,6 +11662,7 @@ let f wr =
      | _ ->
         wr.www_error#f (s_ "Unsupported method for mailto:")
      )
+  | None -> wr.www_error#f (s_ "No address given for mailto:")
 @
 
 <<constant Mailto.mailer>>=
@@ -11822,9 +11818,9 @@ and slashpath = parse
     let h,po = hostport lexbuf in
     result.protocol <- TELNET;
     result.user <- u;
-   result.password <- p;
+    result.password <- p;
     result.host <- h;
-   result.port <- po
+    result.port <- po
 @
 
 \subsection{[[nntp://]]}
@@ -11861,7 +11857,7 @@ and slashpath = parse
     let pa,se = pathsearch lexbuf in
     result.protocol <- WAIS;
     result.host <- h;
-   result.port <- po;
+    result.port <- po;
     result.path <- pa;
     result.search <- se
 | "PROSPERO" ->
@@ -11870,7 +11866,7 @@ and slashpath = parse
     let p = slashpath lexbuf in
     result.protocol <- PROSPERO;
     result.host <- h;
-   result.port <- po;
+    result.port <- po;
     result.path <- p
 @
 
@@ -11886,12 +11882,9 @@ and slashpath = parse
 "pgp",	ContentEncoding  "Content-Encoding: pgp";
 @
 
-% for gzip stuff?
-
 <<signature Decoders.insert>>=
 val insert  : Document.handle -> Document.handle
 @
-
 <<signature Decoders.add>>=
 val add : string -> (Document.handle -> Document.handle) -> unit
 @
@@ -11901,17 +11894,16 @@ val add : string -> (Document.handle -> Document.handle) -> unit
  * We don't do it in http, since we don't want do decompress when we
  * save for example.
  *)
-
 let decoders = Hashtbl.create 37
 @
 
 
 <<toplevel Decoders._1>>=
 let _ =  
-  [ "COMPRESS", gzip;
-    "X-COMPRESS", gzip;
-    "GZIP", gzip;
-    "X-GZIP", gzip
+  [ "COMPRESS"   , gzip;
+    "X-COMPRESS" , gzip;
+    "GZIP"       , gzip;
+    "X-GZIP"     , gzip
   ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
 @
 
@@ -11920,8 +11912,9 @@ let _ =
 \section{Animaged GIFs}
 
 \section{Audio}
+% <audio>
 
-% there is an <audio> in html 5 no?
+% there is an <audio> in html 5!
 
 <<function Audio.fake_embed>>=
 (* Defines embedded viewer for audio types as re-running the document *)
@@ -11943,9 +11936,14 @@ let _ =
   Mmm.add_embedded_viewer ("audio", "*") fake_embed
 @
 
+% ???
+
+\section{video}
+% <video>
 
 
 \section{[[mmm_remote]]}
+% emacsclient
 
 \subsection{Server}
 
@@ -11969,6 +11967,7 @@ then Cci.init();
 let request sock cmd url =
   if cmd <> "" 
   then write sock cmd 0 (String.length cmd) |> ignore;
+
   write sock url 0 (String.length url) |> ignore;
   write sock "\n" 0 1 |> ignore;
   let buf = String.create 1024 in
@@ -12026,6 +12025,7 @@ in
 method virtual di_source : unit 	        (* source viewer *)
 @
 
+% easy case, actually could return the whole document
 <<[[Plain.plain]] other methods or fields>>=
 method di_source = ()
 @
@@ -12051,6 +12051,7 @@ val view:
   Japan.detected_code -> 
   unit
 @
+% argh, very complicated signature
 
 % apparently it also allow to modify the html!
 
@@ -12066,67 +12067,67 @@ let view attach did redisplay errors annotations coding =
      *)
     let load, cachesave, saveurl =
       match doc.document_data with
-    FileData (fname,_) ->
-     let tmpfile = Msys.mktemp "buf" in
-     (* load *)
-     (fun t ->
-     begin
-         let ic = open_in fname 
-         and buf = String.create 2048
-         in
-          try
-             while true do
-               let n = input ic buf 0 2048 in
-                if n = 0 then raise End_of_file
-                else
-                Text.insert t textEnd (
-                  if n = 2048 then buf else String.sub buf 0 n)
-                  []
-             done
-          with End_of_file -> close_in ic
-     end
-     ),
-     (* commit *)
-      (fun t ->
-        let oc = open_out tmpfile in
-         output_string oc
-          (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-         close_out oc;
-         (* SWITCH CACHE *)
-         doc.document_data <- FileData(tmpfile, true)),
-     (* save *)
-     Some (fun t ->
-        let oc = open_out fname in
-         output_string oc
-          (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-         close_out oc;
-         (* SWITCH CACHE *)
-         doc.document_data <- FileData(fname, false))
+      | FileData (fname,_) ->
+          let tmpfile = Msys.mktemp "buf" in
+          (* load *)
+          (fun t ->
+             let ic = open_in fname in
+             let buf = String.create 2048 in
+             try
+               while true do
+                 let n = input ic buf 0 2048 in
+                 if n = 0 
+                 then raise End_of_file
+                 else Text.insert t textEnd 
+                        (if n = 2048 then buf else String.sub buf 0 n) []
+               done
+             with End_of_file -> close_in ic
+          ),
+
+         (* commit *)
+         (fun t ->
+            let oc = open_out tmpfile in
+            output_string oc
+            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+            close_out oc;
+            (* SWITCH CACHE *)
+            doc.document_data <- FileData(tmpfile, true)),
+
+        (* save *)
+        Some (fun t ->
+          let oc = open_out fname in
+          output_string oc
+            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+          close_out oc;
+          (* SWITCH CACHE *)
+          doc.document_data <- FileData(fname, false)
+       )
 
       | MemoryData buf ->
-     (* load *)
-     (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
-     (* commit *)
-     (fun t -> 
-        Ebuffer.reset buf;
-        Ebuffer.output_string buf
-        (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
-         None
+          (* load *)
+          (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
+          (* commit *)
+          (fun t -> 
+             Ebuffer.reset buf;
+             Ebuffer.output_string buf
+              (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
+          None
     in
-  let top = Toplevel.create attach [Class "MMMSource"] in
+    let top = Toplevel.create attach [Class "MMMSource"] in
     Wm.title_set top "HTML source display";
-  let errorv = Textvariable.create_temporary top in
-  let f, t = new_scrollable_text top [Foreground Black; Background White] false
-  and f' = Frame.create_named top "buttons" [] in
-  let dismiss = Button.create_named f' "dismiss"
-    [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] 
-  and commit = Button.create_named f' "commit" [Text (s_ "Commit")]
-  and save = Button.create_named f' "save" [Text (s_ "Save")]
-  and err = Button.create_named f' "errors" []
-  in
-  let ferr = Frame.create top [] in
-  let err_msg = 
-    Label.create_named ferr "error" 
+
+    let errorv = Textvariable.create_temporary top in
+    let f, t = 
+      new_scrollable_text top [Foreground Black; Background White] false in
+    let f' = Frame.create_named top "buttons" [] in
+    let dismiss = Button.create_named f' "dismiss"
+      [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] in
+    let commit = Button.create_named f' "commit" [Text (s_ "Commit")] in
+    let save = Button.create_named f' "save" [Text (s_ "Save")] in
+    let err = Button.create_named f' "errors" [] in
+    let ferr = Frame.create top [] in
+    let err_msg = 
+      Label.create_named ferr "error" 
             [Relief Sunken;TextVariable errorv; Anchor W]
   in
 
@@ -12230,6 +12231,8 @@ let view attach did redisplay errors annotations coding =
   with Not_found ->
     Error.f "document not in cache"
 @
+% so complicated function again
+
 
 
 \chapter{Advanced Topics}
@@ -12315,7 +12318,6 @@ then Url.string_of wwwr.www_url
 @
 
 
-
 <<function Retrieve.forward_permanent>>=
 (* 301 Moved permanently *)
 let forward_permanent wr dh =
@@ -12331,28 +12333,25 @@ let forward_permanent wr dh =
 (* 302 Moved temporarily *)
 let forward wr dh =
   try 
-   let newurl = Http_headers.location dh.dh_headers in
-     if (* do we forward automatically ?*)
-    match wr.www_link.h_method with
-      GET -> true
-    | POST _ ->
-        (* Do NOT redirect automatically if method was POST *)
-        wr.www_error#choose (s_ 
-         "Destination for your POST request has changed\n\
-              from %s\nto %s\nConfirm action ?"
+    let newurl = Http_headers.location dh.dh_headers in
+    if (* do we forward automatically ?*)
+      match wr.www_link.h_method with
+      | GET -> true
+      | POST _ ->
+         (* Do NOT redirect automatically if method was POST *)
+         wr.www_error#choose (s_ "Destination for your POST request has changed\n  from %s\nto %s\nConfirm action ?"
             (Url.string_of wr.www_url) newurl)
-    | _ -> true 
-     then begin (* consider forwarding as a link *)
+      | _ -> true 
+    then begin (* consider forwarding as a link *)
        wr.www_logging "Forwarding";
        Retry { wr.www_link with h_uri = newurl; }
-     end else 
+    end else 
       (* not forwarding a moved POST. We show the document after all,
         since some people (servers ?) use this trick to show the results
         of a POST, despite what the protocol says about this *)
        Ok
-  with 
-    Not_found -> 
-      Error (s_ "No Location: in forwarding header")
+  with Not_found -> 
+    Error (s_ "No Location: in forwarding header")
 @
 
 
@@ -12362,6 +12361,7 @@ let forward wr dh =
 % base64, 8859, url encode, etc.
 
 \subsection{Base 64}
+% could be in appendix in general utilities, independent of mmm
 
 \subsubsection{Decoding}
 
@@ -12872,12 +12872,8 @@ method set_i18n_encoder enc = i18n_encoder <- enc
 <<[[Http.full_request()]] helper functions>>=
 let write_referer = 
   match wwwr.www_link.h_context with
-  | None -> 
-    (fun () -> ())
-  | Some r -> 
-     (fun () -> 
-       if !send_referer 
-       then w ("Referer: " ^ r ^ "\r\n"))
+  | None ->   (fun () -> ())
+  | Some r -> (fun () -> if !send_referer then w ("Referer: " ^ r ^ "\r\n"))
 in
 @
 
@@ -12895,6 +12891,8 @@ let send_referer = ref false
 document_referer: string option;
   (* URL of refering document, if any *)
 @
+
+% code using that?
 
 \section{Security}
 
@@ -13344,7 +13342,6 @@ let proxy_unauthorized wr dh =
 \section{Optimisations}
 % could also have an parallel chapter?
 
-
 \subsection{Document cache, [[Cache]]}
 
 %rappel:
@@ -13353,7 +13350,7 @@ let proxy_unauthorized wr dh =
 <<signature Cache.tobuffer>>=
 val tobuffer: Document.handle -> Document.document_data * cache_fill
 @
-
+% ?? -> <> (as ?? <-  ...)
 <<function Cache.tobuffer>>=
 let tobuffer dh =
   let b = Ebuffer.create 1024 in
@@ -13366,13 +13363,14 @@ let tobuffer dh =
 (* Add a new entry *)
 let add did doc =
   if !debug 
-  then Log.f (sprintf  "Adding new cache entry %s(%d) %s"
+  then Log.f (sprintf "Adding new cache entry %s(%d) %s"
                         (Url.string_of did.document_url)
                         did.document_stamp
                         (match doc.document_data with
                         | MemoryData _ -> "in memory"
                         | FileData (f,true) -> f
-                        | FileData (f,false) -> "fake " ^f));
+                        | FileData (f,false) -> "fake " ^f)
+                        );
 
   (* Kill the previous entry, if any [for update] *)
   kill did;
@@ -13381,25 +13379,24 @@ let add did doc =
    *)
   if (*not !history_mode && *)!current >= !max_documents 
   then make_room()
-  else 
-   if !debug 
-   then Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
-   incr current;
+  else begin
+    if !debug 
+    then Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
+    incr current;
     memory := (did,
                { cache_document = doc;
                  cache_pending = true;
                  cache_lastused = max_lastused;
                  cache_condition = Condition.create()
                }) :: !memory
+  end
 @
+%bug? I added some begin/end for the last else, was not there before
 
 
 <<[[Nav.request.handle_wr()]] if use cache>>=
 (* If the the document can be cached, then it is with no_stamp *)
-let did = 
-  { document_url = wr.www_url; 
-    document_stamp = no_stamp }
-in
+let did = { document_url = wr.www_url; document_stamp = no_stamp } in
 try
   specific nav did wr
 with Not_found ->
@@ -13457,12 +13454,12 @@ touch_current();
 di#di_touch;
 @
 
-<<[[Viewers.display_info]] cache methods signatures>>=
-method di_last_used : int
+<<[[Viewers.display_info]] graphic cache methods signatures>>=
 method di_touch : unit
+method di_last_used : int
 @
 
-<<[[Viewers.display_info]] cache methods>>=
+<<[[Viewers.display_info]] graphic cache methods>>=
 val mutable di_last_used = !Low.global_time
 method di_last_used = 
   di_last_used
@@ -13483,12 +13480,10 @@ let di_compare di di' =
 Gcache.add nav.nav_id dh.document_id di;
 @
 
-
-
 <<[[Mmm.navigator()]] destroy navigator hook>>=
 Gcache.kill hist.h_key;
 @
-
+% same than nav.nav_id I think
 
 
 <<function Gcache.remove>>=
@@ -13496,38 +13491,39 @@ Gcache.kill hist.h_key;
  *   used when adding in the middle of the history
  *)
 let remove hkey did =
-  if !debug then Log.f
-    (sprintf "Removing %s in window %d" (Url.string_of did.document_url) hkey);
+  if !debug 
+  then Log.f (sprintf "Removing %s in window %d" 
+                 (Url.string_of did.document_url) hkey);
   try
     let r = Hashtbl.find table hkey in
     let di = List.assoc did !r in
-     di#di_abort;
-     di#di_destroy;
-     r := Mlist.except_assoc did !r;
-    if !Cache.history_mode then nocache did
-  with
-     Not_found -> Log.debug "Gcache.remove failed !"
+    di#di_abort;
+    di#di_destroy;
+    r := Mlist.except_assoc did !r;
+    if !Cache.history_mode 
+    then nocache did
+  with Not_found -> 
+    Log.debug "Gcache.remove failed !"
 @
 
-<<[[Viewers.display_info]] lifecycle virtual methods signatures>>=
+<<[[Viewers.display_info]] graphic cache virtual methods signatures>>=
 method virtual di_destroy : unit	 (* die *)
 @
 
-<<[[Plain.plain]] destroy methods>>=
+<<[[Plain.plain]] graphic cache destroy methods>>=
 method di_destroy = 
   if Winfo.exists frame 
   then Tk.destroy frame
 @
 
-<<[[Htmlw.display_html]] destroy methods>>=
+<<[[Htmlw.display_html]] graphic cache destroy methods>>=
 method di_destroy = 
   if Winfo.exists frame 
   then Tk.destroy frame;
 @
 
 
-
-<<[[Nav.t]] cache related methods>>=
+<<[[Nav.t]] graphic cache related methods>>=
 nav_id : int;  (* key for the gfx cache *)
 @
 <<[[Mmm.navigator()]] set nav fields>>=
@@ -13597,7 +13593,7 @@ let binary_path = ref ([] : string list)
 <<function File.is_cgi>>=
 let is_cgi file =
   match !binary_path with
-    [] -> false
+  | [] -> false
   | path ->
       let l = String.length file in
       List.exists (fun dir ->
@@ -13700,6 +13696,7 @@ let fake_cgi wwwr cont path =
 
 
 \section{Applets}
+% and modules
 
 <<[[Http_headers.suffixes]] elements>>=
 "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
@@ -13738,6 +13735,7 @@ let applet_init = ref (fun _ -> ())
 <<[[Mmm.navigator()]] User menu>>=
 (* User menu, extensible by applets *)
 let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
+
 let userm = ref (Menu.create_named userb "menu" []) in
 let reset_user_menu _ =
   Tk.destroy !userm;
@@ -13791,6 +13789,9 @@ let user_hooks = ref []
 !user_hooks |> List.iter (fun f -> f (mach :> machine));
 @
 
+%\section{Modules}?
+% separate from Applets?
+
 \section{Signals}
 
 <<[[Main.main()]] signal handling>>=
@@ -13819,6 +13820,9 @@ val debug_mode : bool ref
 <<constant Log.debug_mode>>=
 let debug_mode = ref true
 @
+% note that this is set also in the preferences, so the value
+% here has no meaning unless you comment the relevant code in the prefs
+% (C-s Log.debug_mode)
 
 \section{Logging}
 % this is not only for the developer here, it's also useful
@@ -13827,14 +13831,13 @@ let debug_mode = ref true
 <<signature Log.f>>=
 val f : string -> unit
 @
-% fatal?
+% fatal? rename Log.print I think
 <<function Log.f>>=
 (* flushes ! *)
 let f s = 
   try prerr_endline s 
   with _ -> ()
 @
-% rename? Log.print?
 
 
 <<signature Log.debug>>=
@@ -13925,7 +13928,7 @@ let postmortem () =
 <<[[Www.request]] logging method>>=
 mutable www_logging : string -> unit;	  (* logging *)
 @
-% who sets it? nobody apparently ...
+%todo: who sets it? nobody apparently ...
 
 \subsection{Documents}
 
@@ -13933,7 +13936,7 @@ mutable www_logging : string -> unit;	  (* logging *)
 mutable document_logger : logger;
   (* how to log information relative to this document processing *)
 @
-% who sets that agai?
+% who sets that again?
 
 <<signature type Document.logger>>=
 (* pad: exported for tk_document, but normally should be abstract *)
@@ -13990,6 +13993,9 @@ then begin
 end
 @
 
+<<signature Html.warning>>=
+val warning : string -> location -> unit
+@
 % ??? -> <>
 <<function Html.warning>>=
 let warning s (Loc(n,m)) = 
@@ -14050,6 +14056,17 @@ val debug : bool ref
 let debug = ref false 
 @
 
+% who uses that?
+
+\subsection{HTML display}
+
+<<signature Html_disp.verbose>>=
+val verbose : bool ref
+@
+<<constant Html_disp.verbose>>=
+let verbose = ref false
+@
+
 \subsection{GUI}
 
 % main -> <>
@@ -14067,6 +14084,7 @@ let init () =
   Frx_rpc.register "camltkdb" (fun _ -> 
     Protocol.debug := not !Protocol.debug)
 @
+% ????
 
 <<function Debug.active_cb>>=
 let active_cb _ =
@@ -14084,15 +14102,7 @@ let active_cb _ =
   Printf.fprintf stdout "Active cb: %d\n" !cnter;
   flush stdout
 @
-
-\subsection{HTML display}
-
-<<signature Html_disp.verbose>>=
-val verbose : bool ref
-@
-<<constant Html_disp.verbose>>=
-let verbose = ref false
-@
+% ???
 
 \section{Dumpers}
 
@@ -14364,9 +14374,6 @@ exception Html_Lexing of string * int
 exception Invalid_Html of string
 @
 
-<<signature Html.warning>>=
-val warning : string -> location -> unit
-@
 
 \subsection{HTTP}
 
@@ -14381,15 +14388,18 @@ exception HTTP_error of string
 
 \chapter{A Preferences Library}
 
+% actually it's from Tk
+
 \chapter{Standard Library}
 
-<<constant Common.spf>>=
-let spf = Printf.sprintf
-@
-
-<<function Common.TODOOPERATOR>>=
-let (|>) o f = f o
-@
+%<<constant Common.spf>>=
+%let spf = Printf.sprintf
+%@
+%
+%<<function Common.TODOOPERATOR>>=
+%let (|>) o f = f o
+%@
+% in unlpized common.ml (copy pasted from pfff) now
 
 \section{Lists}
 
@@ -14905,6 +14915,7 @@ MIME = Multi-Purpose Internet Mail Extensions
 
 DID  = Document IDentifier
 WR   = Web Request
+WWWR = Web Request
 \end{verbatim}
 
 

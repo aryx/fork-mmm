@@ -158,18 +158,18 @@ class display_plain ((top : Widget.widget),
       Error.f (s_ "Document not in cache anymore")
     *)
   (*e: [[Plain.plain]] redisplay methods *)
-  (*s: [[Plain.plain]] destroy methods *)
+
+  (*s: [[Plain.plain]] graphic cache destroy methods *)
   method di_destroy = 
     if Winfo.exists frame 
     then Tk.destroy frame
-  (*e: [[Plain.plain]] destroy methods *)
+  (*e: [[Plain.plain]] graphic cache destroy methods *)
   (*s: [[Plain.plain]] empty methods *)
-  method di_load_images = ()
-  (*x: [[Plain.plain]] empty methods *)
   method di_update = ()
   (*x: [[Plain.plain]] empty methods *)
-  method di_fragment _frag = 
-    ()
+  method di_load_images = ()
+  (*x: [[Plain.plain]] empty methods *)
+  method di_fragment _frag = ()
   (*e: [[Plain.plain]] empty methods *)
   (*s: [[Plain.plain]] other methods or fields *)
   method di_source = ()

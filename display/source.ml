@@ -33,67 +33,67 @@ let view attach did redisplay errors annotations coding =
      *)
     let load, cachesave, saveurl =
       match doc.document_data with
-    FileData (fname,_) ->
-     let tmpfile = Msys.mktemp "buf" in
-     (* load *)
-     (fun t ->
-     begin
-         let ic = open_in fname 
-         and buf = String.create 2048
-         in
-          try
-             while true do
-               let n = input ic buf 0 2048 in
-                if n = 0 then raise End_of_file
-                else
-                Text.insert t textEnd (
-                  if n = 2048 then buf else String.sub buf 0 n)
-                  []
-             done
-          with End_of_file -> close_in ic
-     end
-     ),
-     (* commit *)
-      (fun t ->
-        let oc = open_out tmpfile in
-         output_string oc
-          (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-         close_out oc;
-         (* SWITCH CACHE *)
-         doc.document_data <- FileData(tmpfile, true)),
-     (* save *)
-     Some (fun t ->
-        let oc = open_out fname in
-         output_string oc
-          (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-         close_out oc;
-         (* SWITCH CACHE *)
-         doc.document_data <- FileData(fname, false))
+      | FileData (fname,_) ->
+          let tmpfile = Msys.mktemp "buf" in
+          (* load *)
+          (fun t ->
+             let ic = open_in fname in
+             let buf = String.create 2048 in
+             try
+               while true do
+                 let n = input ic buf 0 2048 in
+                 if n = 0 
+                 then raise End_of_file
+                 else Text.insert t textEnd 
+                        (if n = 2048 then buf else String.sub buf 0 n) []
+               done
+             with End_of_file -> close_in ic
+          ),
+
+         (* commit *)
+         (fun t ->
+            let oc = open_out tmpfile in
+            output_string oc
+            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+            close_out oc;
+            (* SWITCH CACHE *)
+            doc.document_data <- FileData(tmpfile, true)),
+
+        (* save *)
+        Some (fun t ->
+          let oc = open_out fname in
+          output_string oc
+            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+          close_out oc;
+          (* SWITCH CACHE *)
+          doc.document_data <- FileData(fname, false)
+       )
 
       | MemoryData buf ->
-     (* load *)
-     (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
-     (* commit *)
-     (fun t -> 
-        Ebuffer.reset buf;
-        Ebuffer.output_string buf
-        (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
-         None
+          (* load *)
+          (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
+          (* commit *)
+          (fun t -> 
+             Ebuffer.reset buf;
+             Ebuffer.output_string buf
+              (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
+          None
     in
-  let top = Toplevel.create attach [Class "MMMSource"] in
+    let top = Toplevel.create attach [Class "MMMSource"] in
     Wm.title_set top "HTML source display";
-  let errorv = Textvariable.create_temporary top in
-  let f, t = new_scrollable_text top [Foreground Black; Background White] false
-  and f' = Frame.create_named top "buttons" [] in
-  let dismiss = Button.create_named f' "dismiss"
-    [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] 
-  and commit = Button.create_named f' "commit" [Text (s_ "Commit")]
-  and save = Button.create_named f' "save" [Text (s_ "Save")]
-  and err = Button.create_named f' "errors" []
-  in
-  let ferr = Frame.create top [] in
-  let err_msg = 
-    Label.create_named ferr "error" 
+
+    let errorv = Textvariable.create_temporary top in
+    let f, t = 
+      new_scrollable_text top [Foreground Black; Background White] false in
+    let f' = Frame.create_named top "buttons" [] in
+    let dismiss = Button.create_named f' "dismiss"
+      [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] in
+    let commit = Button.create_named f' "commit" [Text (s_ "Commit")] in
+    let save = Button.create_named f' "save" [Text (s_ "Save")] in
+    let err = Button.create_named f' "errors" [] in
+    let ferr = Frame.create top [] in
+    let err_msg = 
+      Label.create_named ferr "error" 
             [Relief Sunken;TextVariable errorv; Anchor W]
   in
 

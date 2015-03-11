@@ -29,9 +29,9 @@ type t = {
   nav_rem_active : Url.t -> unit;
   (*e: [[Nav.t]] manage active connections methods *)
 
-  (*s: [[Nav.t]] cache related methods *)
+  (*s: [[Nav.t]] graphic cache related methods *)
   nav_id : int;  (* key for the gfx cache *)
-  (*e: [[Nav.t]] cache related methods *)
+  (*e: [[Nav.t]] graphic cache related methods *)
   (*s: [[Nav.t]] error methods *)
   nav_error : Error.t;			(* popping error dialogs *)
   (*e: [[Nav.t]] error methods *)
@@ -103,7 +103,7 @@ let request nav process (usecache, wrapwr, specific) lk =
       (*s: [[Nav.request.handle_wr()]] match protocol special cases *)
       | MAILTO -> Mailto.f wr
        (* mailto: is really a pain. It doesn't fit the retrieval semantics
-        of WWW requests. *)
+        * of WWW requests. *)
       (*e: [[Nav.request.handle_wr()]] match protocol special cases *)
       | _ ->
          if (not usecache) || dont_check_cache wr 
@@ -111,10 +111,7 @@ let request nav process (usecache, wrapwr, specific) lk =
          else
            (*s: [[Nav.request.handle_wr()]] if use cache *)
            (* If the the document can be cached, then it is with no_stamp *)
-           let did = 
-             { document_url = wr.www_url; 
-               document_stamp = no_stamp }
-           in
+           let did = { document_url = wr.www_url; document_stamp = no_stamp } in
            try
              specific nav did wr
            with Not_found ->
@@ -275,18 +272,18 @@ class stdctx (did, nav) =
     (* a new context for an embedded window *)
     let make_embed_ctx w targets = 
       let targets = 
-    ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
+        ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
       let newctx = (new stdctx(did,nav))#init in
       begin
-    try 
-      let f = List.assoc "pointsto" self#hyper_funs in
-      let g = List.assoc "clearpointsto" self#hyper_funs in
-      newctx#add_nav ("pointsto", f);
-      newctx#add_nav ("clearpointsto", g);
-    with
-      Not_found -> ()
+        try 
+          let f = List.assoc "pointsto" self#hyper_funs in
+          let g = List.assoc "clearpointsto" self#hyper_funs in
+          newctx#add_nav ("pointsto", f);
+          newctx#add_nav ("clearpointsto", g);
+        with Not_found -> ()
       end;
       (newctx#for_embed [] targets :> Viewers.context) in
+
     (* by default, use the cache, don't touch the request *)
     let follow_link _ = 
       request nav (process_viewer true make_ctx) 
@@ -351,6 +348,7 @@ class stdctx (did, nav) =
         Not_found -> follow_link targets hlink
     in
     !user_navigation |> List.iter super#add_nav;
+
     ["copy", copy_link, s_ "Copy this Link to clipboard";
      "head", head_link, s_ "Headers of document";
      "save", save_link, s_ "Save this Link";

@@ -201,7 +201,7 @@ let r = Str.regexp ":"
 (*s: function File.is_cgi *)
 let is_cgi file =
   match !binary_path with
-    [] -> false
+  | [] -> false
   | path ->
       let l = String.length file in
       List.exists (fun dir ->
@@ -222,9 +222,10 @@ let is_cgi file =
  *)
 
 let request wr cont =
-  let path = match wr.www_url.path with
-    Some path -> "/" ^ (Lexurl.remove_dots path)
-  | None -> "/" 
+  let path = 
+    match wr.www_url.path with
+    | Some path -> "/" ^ (Lexurl.remove_dots path)
+    | None -> "/" 
   in
   (*s: [[File.request()]] if CGI path *)
   if is_cgi path 
@@ -232,8 +233,7 @@ let request wr cont =
   (*e: [[File.request()]] if CGI path *)
   else   (* A bit weird, but we don't want to capture errors from the cont *)
     let st =
-      try 
-        stat path 
+      try stat path 
       with _ -> raise (File_error (s_ "cannot stat file")) 
     in
     match st.st_kind with

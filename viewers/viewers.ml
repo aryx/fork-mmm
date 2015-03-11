@@ -106,29 +106,30 @@ class  virtual display_info () =
   (*s: [[Viewers.display_info]] embedded virtual methods signatures *)
   method virtual di_update : unit      (* update embedded objects *)
   (*e: [[Viewers.display_info]] embedded virtual methods signatures *)
+  (*s: [[Viewers.display_info]] fragment virtual method signature *)
+  method virtual di_fragment : string option -> unit	(* for # URIs *)
+  (*e: [[Viewers.display_info]] fragment virtual method signature *)
 
   (*s: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_abort : unit		 (* stop display *)
   (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
   method virtual di_redisplay : unit		(* redisplay *)
-  (*x: [[Viewers.display_info]] lifecycle virtual methods signatures *)
-  method virtual di_destroy : unit	 (* die *)
   (*e: [[Viewers.display_info]] lifecycle virtual methods signatures *)
-  (*s: [[Viewers.display_info]] fragment virtual method signature *)
-  method virtual di_fragment : string option -> unit	(* for # URIs *)
-  (*e: [[Viewers.display_info]] fragment virtual method signature *)
 
+  (*s: [[Viewers.display_info]] graphic cache virtual methods signatures *)
+  method virtual di_destroy : unit	 (* die *)
+  (*e: [[Viewers.display_info]] graphic cache virtual methods signatures *)
   (*s: [[Viewers.display_info]] other virtual methods signatures *)
   method virtual di_source : unit 	        (* source viewer *)
   (*e: [[Viewers.display_info]] other virtual methods signatures *)
   (*e: [[Viewers.display_info]] virtual methods signatures *)
-  (*s: [[Viewers.display_info]] cache methods *)
+  (*s: [[Viewers.display_info]] graphic cache methods *)
   val mutable di_last_used = !Low.global_time
   method di_last_used = 
     di_last_used
   method di_touch = 
     di_last_used <- !Low.global_time
-  (*e: [[Viewers.display_info]] cache methods *)
+  (*e: [[Viewers.display_info]] graphic cache methods *)
 end
 
 (*s: function Viewers.di_compare *)

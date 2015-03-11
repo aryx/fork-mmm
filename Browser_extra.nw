@@ -1,23 +1,5 @@
 \section{[[./commons/]]}
 
-\subsection*{[[./commons/common.ml]]}
-
-
-%-------------------------------------------------------------
-
-<<./commons/common.ml>>=
-
-module StringSet = Set.Make(struct type t = string let compare = compare end)
-
-<<constant Common.spf>>
-
-<<function Common.TODOOPERATOR>>
-
-let pr2 s = prerr_string (s ^ "\n")
-
-@
-
-
 \subsection*{[[./commons/condition.mli]]}
 
 %todo: replaced with the one in ocaml?
@@ -5662,7 +5644,7 @@ class  virtual display_info () =
  object (_self : 'a)
   (* boilerplate class decl *)
   <<[[Viewers.display_info]] virtual methods signatures>>
-  <<[[Viewers.display_info]] cache methods>>
+  <<[[Viewers.display_info]] graphic cache methods>>
 end
 
 <<function Viewers.di_compare>>

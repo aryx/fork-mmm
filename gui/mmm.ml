@@ -28,10 +28,9 @@ let initial_geom = ref None
 let home =
   try
     Sys.getenv "HOME"
-  with
-  | Not_found -> 
-      prerr_endline "Please set the HOME environment variable.";
-      exit (-1)
+  with Not_found -> 
+    prerr_endline "Please set the HOME environment variable.";
+    exit (-1)
 (*e: constant Mmm.home *)
       
 
@@ -64,21 +63,19 @@ let tachy_maker = ref About.create_tachy
 let change_tachy (t : Widget.widget -> Low.tachymeter) = 
   !Low.cur_tachy#quit;
   tachy_maker := t;
-  begin match !container_frame with
-    Some f -> 
+  (match !container_frame with
+   | Some f -> 
       List.iter Tk.destroy (Winfo.children f);
       Low.cur_tachy := t f
-  | None -> ()
-  end
+   | None -> ()
+  )
 (*e: function Mmm.change_tachy *)
 
 (*s: function Mmm.start_tachy *)
 let start_tachy () = 
-  begin match !container_frame with
-    Some f -> 
-      Low.cur_tachy := !tachy_maker f
-  | None -> ()
-  end
+  match !container_frame with
+   | Some f -> Low.cur_tachy := !tachy_maker f
+   | None -> ()
 (*e: function Mmm.start_tachy *)
 
 (* Switching current viewers in the browser *)
@@ -147,9 +144,7 @@ let rec navigator is_main_window initial_url =
   let top = 
     if is_main_window
     then Toplevel.create_named Widget.default_toplevel "mmm" [Class "MMM"]
-    (*s: [[Mmm.navigator()]] if not main window, create default toplevel *)
-    else Toplevel.create Widget.default_toplevel [Class "MMM"]
-    (*e: [[Mmm.navigator()]] if not main window, create default toplevel *)
+    else Toplevel.create       Widget.default_toplevel       [Class "MMM"]
   in
   Wm.title_set top (s_ "MMM Browser");
   (*s: [[Mmm.navigator()]] setup top packing *)
@@ -281,7 +276,7 @@ let rec navigator is_main_window initial_url =
         Gcache.remove hist.h_key did;
         historygoto nav did frag false |> ignore
       end
-        else error#f 
+      else error#f 
           (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
     in
     (*e: function Mmm.navigator.reload *)
@@ -617,6 +612,7 @@ let rec navigator is_main_window initial_url =
     (*s: [[Mmm.navigator()]] User menu *)
     (* User menu, extensible by applets *)
     let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
+
     let userm = ref (Menu.create_named userb "menu" []) in
     let reset_user_menu _ =
       Tk.destroy !userm;
@@ -678,8 +674,7 @@ let rec navigator is_main_window initial_url =
       (*s: [[Mmm.navigator()]] set geometry if specified *)
       (match !initial_geom with 
        | None -> ()
-       | Some g -> 
-          Wm.geometry_set top g
+       | Some g -> Wm.geometry_set top g
        );
       (*e: [[Mmm.navigator()]] set geometry if specified *)
       (*s: [[Mmm.navigator()]] set tachymeter *)
@@ -689,32 +684,35 @@ let rec navigator is_main_window initial_url =
          let fcontainer = Frame.create hgroup [] in
          container_frame := Some fcontainer;
          (* restart it if destroyed *)
-         bind fcontainer [[], Destroy]
-          (BindSet ([Ev_Widget],
-            (fun ei -> 
-              if ei.ev_Widget = fcontainer 
-                      && Winfo.exists hgroup (* but we're not dead *) then
-                restart_tachy())));
-
+         bind fcontainer [[], Destroy] (BindSet ([Ev_Widget], (fun ei -> 
+            if ei.ev_Widget = fcontainer 
+               && Winfo.exists hgroup (* but we're not dead *) 
+            then restart_tachy()))
+         );
         let rw = Winfo.reqwidth fcontainer in
         let rh = Winfo.reqheight fcontainer in
         Wm.minsize_set top rw rh;
         pack [fcontainer][Side Side_Right; Anchor N];
+
         start_tachy();
+
         (* Bad hack to do bindings for our own internal tachymeter:
          * others, in applets, can just access these functions from the safe
-         * library *)
+         * library 
+         *)
         if !tachy_maker == About.create_tachy then begin 
           match Winfo.children fcontainer with
           | [c] ->
-               bind c (Glevents.get "tachy_new")
-                (BindSet ([], (fun _ -> new_window_initial ())));
-               bind c (Glevents.get "tachy_sel")
-                (BindSet ([], (fun _ -> new_window_sel ())));
+               bind c (Glevents.get "tachy_new") (BindSet ([], (fun _ -> 
+                 new_window_initial ())));
+               bind c (Glevents.get "tachy_sel") (BindSet ([], (fun _ -> 
+                 new_window_sel ())));
           | _ -> ()
         end
       in
+
       restart_tachy(); (* first initialisation *)
+
       (* good size for keeping only the tachy *)
       Wm.minsize_set top 80 80;
       (*e: [[Mmm.navigator()]] set tachymeter *)

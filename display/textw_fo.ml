@@ -496,8 +496,8 @@ let create namer spec top ctx =
      * switch back from a goto to some particular place in the document
      *)
     see_frag = begin
-      let prev_frag = ref false
-      and view_mem = ref 0.0 in
+      let prev_frag = ref false in
+      let view_mem = ref 0.0 in
       match spec with
       | TopFormatter true -> (* this is pscrolling mode *)
         (function
@@ -507,10 +507,10 @@ let create namer spec top ctx =
                with Protocol.TkError _ -> ()
              end;
              prev_frag := false
-        | Some s ->
-            if not !prev_frag then begin
-              try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
-              with Protocol.TkError _ -> ()
+         | Some s ->
+             if not !prev_frag then begin
+               try view_mem := fst (Canvas.yview_get (Winfo.parent thtml))
+               with Protocol.TkError _ -> ()
             end;
             prev_frag := true;
             if s <> "" then
@@ -522,7 +522,7 @@ let create namer spec top ctx =
                Canvas.yview (Winfo.parent thtml) 
                     (MoveTo (float y /. float ye))
               with Protocol.TkError _ -> ()
-      )
+       )
       |	_ ->
         (function
         | None -> (* no place in particular *)

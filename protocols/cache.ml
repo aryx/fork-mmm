@@ -179,13 +179,14 @@ let kill did =
 (* Add a new entry *)
 let add did doc =
   if !debug 
-  then Log.f (sprintf  "Adding new cache entry %s(%d) %s"
+  then Log.f (sprintf "Adding new cache entry %s(%d) %s"
                         (Url.string_of did.document_url)
                         did.document_stamp
                         (match doc.document_data with
                         | MemoryData _ -> "in memory"
                         | FileData (f,true) -> f
-                        | FileData (f,false) -> "fake " ^f));
+                        | FileData (f,false) -> "fake " ^f)
+                        );
 
   (* Kill the previous entry, if any [for update] *)
   kill did;
@@ -194,16 +195,17 @@ let add did doc =
    *)
   if (*not !history_mode && *)!current >= !max_documents 
   then make_room()
-  else 
-   if !debug 
-   then Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
-   incr current;
+  else begin
+    if !debug 
+    then Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
+    incr current;
     memory := (did,
                { cache_document = doc;
                  cache_pending = true;
                  cache_lastused = max_lastused;
                  cache_condition = Condition.create()
                }) :: !memory
+  end
 (*e: function Cache.add *)
 
 

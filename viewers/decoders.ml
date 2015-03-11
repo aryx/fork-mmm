@@ -9,7 +9,6 @@ open Http_headers
  * We don't do it in http, since we don't want do decompress when we
  * save for example.
  *)
-
 let decoders = Hashtbl.create 37
 (*e: constant Decoders.decoders *)
 
@@ -64,10 +63,10 @@ let gzip dh =
 
 (*s: toplevel Decoders._1 *)
 let _ =  
-  [ "COMPRESS", gzip;
-    "X-COMPRESS", gzip;
-    "GZIP", gzip;
-    "X-GZIP", gzip
+  [ "COMPRESS"   , gzip;
+    "X-COMPRESS" , gzip;
+    "GZIP"       , gzip;
+    "X-GZIP"     , gzip
   ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
 (*e: toplevel Decoders._1 *)
 
