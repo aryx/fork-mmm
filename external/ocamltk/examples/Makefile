@@ -2,7 +2,7 @@ include ../Makefile.config
 
 # We are using the non-installed library !
 COMPFLAGS= -I ../lib -I ../support 
-LINKFLAGS= -I ../lib -ccopt "-L/opt/local/lib"
+LINKFLAGS= -I ../lib -ccopt "-L/opt/local/lib" -ccopt "-L/opt/X11/lib"
 
 # Use pieces of Makefile.config
 #TKLINKOPT=-ccopt -L../support -cclib -lcamltk \
