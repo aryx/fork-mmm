@@ -12,7 +12,10 @@ class display_plain ((top : Widget.widget),
                      (dh : Document.handle)) =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
+(*
   inherit Htmlw.viewer_globs (ctx, dh)
+*)
+  method ctx = ctx
 
   method di_title =
     Url.string_of dh.document_id.document_url
@@ -34,16 +37,18 @@ class display_plain ((top : Widget.widget),
   (*e: [[Plain.plain]] frame widget methods *)
   (*s: [[Plain.plain]] init method *)
   method init =
+    Log.debug "Plain#init";
     (*s: [[Plain.plain#init]] set header widgets *)
+    (*
     let hgbas, progf = Htmlw.progress_report frame ctx in
     set_progress <- progf;
     pack [hgbas] [Side Side_Bottom; Fill Fill_X];
-
     let (headgroup,_,_,_,_) = 
       Htmlw.html_head_ui dh.document_headers (fun () -> ()) (ref false)
        frame ctx 
     in 
     pack [headgroup][Side Side_Top; Fill Fill_X];
+    *)
     (*e: [[Plain.plain#init]] set header widgets *)
 
     (* Scrollable text widget *)
@@ -61,6 +66,7 @@ class display_plain ((top : Widget.widget),
     pack [hgroup][Fill Fill_Both; Expand true];
 
     (*s: [[Plain.plain#init]] setup fonts *)
+    (*
     (* pick up the fixed font *)
     let attrs_fixed   = Styles.get_font "fixed" in
     let attrs_default = Styles.get_font "default" in
@@ -68,6 +74,7 @@ class display_plain ((top : Widget.widget),
       Fonts.merge (Fonts.merge !Fonts.default attrs_default) attrs_fixed in
     let (_, opts) = Fonts.compute_tag fd in
     Text.configure text opts;
+    *)
     (*e: [[Plain.plain#init]] setup fonts *)
 
     tw <- text;
@@ -75,7 +82,7 @@ class display_plain ((top : Widget.widget),
     (*s: [[Plain.plain#init]] locals *)
     let buffer = String.create 2048 in
     let size = 
-      try Some (Http_headers.contentlength dh.document_headers)
+      try Some (Http_headers.contentlength dh.dh_headers)
       with Not_found -> None (* duh *) 
     in
     let read = ref 0 in
@@ -89,7 +96,7 @@ class display_plain ((top : Widget.widget),
           if !lastwascr 
           then self#add_text "\n";
           self#add_text ""; (* special case to indicate end *)
-          self#set_progress (Some !red) !red;
+          self#set_progress (Some !read) !read;
           self#finish false (* not abort *)
         end else begin
           read := !read + n;
@@ -141,12 +148,15 @@ class display_plain ((top : Widget.widget),
   (* to redisplay, we have to destroy all widgets, then restart, except
      that we don't use the feed, but rather the cache *)
   method redisplay =
+    failwith "redisplay:TODO"
+    (*
     try
       dh <- Decoders.insert (Cache.renew_handle dh);
       Winfo.children frame |> List.iter destroy;
       self#init
     with Not_found ->
       Error.f (s_ "Document not in cache anymore")
+    *)
   (*e: [[Plain.plain]] redisplay methods *)
   (*s: [[Plain.plain]] destroy methods *)
   method di_destroy = 

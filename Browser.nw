@@ -3979,7 +3979,6 @@ let dtd20 =
     dtd.close_omitted <- Elements.add el dtd.close_omitted in
   let add_elem = 
     Hashtbl.add dtd.contents in
-  in
 
   (* Some entities *)
   (* <!ENTITY % heading "H1|H2|H3|H4|H5|H6"> *)
@@ -4184,7 +4183,6 @@ let dtd32 =
     dtd.close_omitted <- Elements.add el dtd.close_omitted in
   let add_elem = 
     Hashtbl.add dtd.contents in
-  in
 
   let head_misc_E = sol ["script"; "style"; "meta"; "link"]
   and heading_E = sol ["h1"; "h2"; "h3"; "h4"; "h5"; "h6"]
@@ -5453,7 +5451,7 @@ let wrap_cache cache dh =
  * Provision for user (re)definition of behaviours.
  *)
 let http_process = (Hashtbl.create 37: 
-   (int, Www.request -> Document.handler -> behaviour) Hashtbl.t)
+   (int, Www.request -> Document.handle -> behaviour) Hashtbl.t)
 @
 % pass handler so can access the headers
 
@@ -5685,7 +5683,7 @@ let internal feed =
 
 
 \section{Logging}
-
+%less: mv in appendix
 
 
 
@@ -6657,9 +6655,12 @@ and view frame ctx dh =
     let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
+      Log.debug (spf "Viewers.view %s/%s" typ sub);
       let viewer =
         try Hashtbl.find viewers (typ,sub)
-        with Not_found -> Hashtbl.find viewers (typ,"*")
+        with Not_found -> 
+          Log.debug (spf "Viewer.view: didn't find viewer for %s/%s" typ sub);
+          Hashtbl.find viewers (typ,"*")
       in
       match viewer with
       <<[[Viewers.view]] match viewer cases>>
@@ -6673,7 +6674,7 @@ and view frame ctx dh =
 \subsection{[[Viewers.viewers]]}
 
 <<constant Viewers.viewers>>=
-let viewers = (Hashtbl.create 17: (media_type, spec) Hashtbl.t)
+let viewers = (Hashtbl.create 17: (Http_headers.media_type, spec) Hashtbl.t)
 @
 
 <<type Viewers.spec>>=
@@ -6731,13 +6732,13 @@ let add_builtin t v =
 <<signature Viewers.reset>>=
 val reset : unit -> unit
 @
-
 % ??? -> <>
 <<function Viewers.reset>>=
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
+  pr2_gen builtin_viewers;
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
 
@@ -6766,7 +6767,7 @@ let reset () =
 @
 
 <<[[Viewers.view]] exn handler 2>>=
-| Invalid_HTTP_header e ->
+| Http_headers.Invalid_HTTP_header e ->
     ctx#log (s_ "Malformed type: %s" e);
     unknown frame ctx dh
 | Not_found -> 
@@ -6828,7 +6829,10 @@ class display_plain ((top : Widget.widget),
                      (dh : Document.handle)) =
  object (self)
   inherit Viewers.display_info () as di  (* gives us basic features *)
+(*
   inherit Htmlw.viewer_globs (ctx, dh)
+*)
+  method ctx = ctx
 
   method di_title =
     Url.string_of dh.document_id.document_url
@@ -6870,6 +6874,7 @@ val mutable (*private*) tw = Widget.default_toplevel
 % display_plain -> <>
 <<[[Plain.plain]] init method>>=
 method init =
+  Log.debug "Plain#init";
   <<[[Plain.plain#init]] set header widgets>>
 
   (* Scrollable text widget *)
@@ -6896,7 +6901,7 @@ method init =
 <<[[Plain.plain#init]] locals>>=
 let buffer = String.create 2048 in
 let size = 
-  try Some (Http_headers.contentlength dh.document_headers)
+  try Some (Http_headers.contentlength dh.dh_headers)
   with Not_found -> None (* duh *) 
 in
 let read = ref 0 in
@@ -6912,7 +6917,7 @@ try
     if !lastwascr 
     then self#add_text "\n";
     self#add_text ""; (* special case to indicate end *)
-    self#set_progress (Some !red) !red;
+    self#set_progress (Some !read) !read;
     self#finish false (* not abort *)
   end else begin
     read := !read + n;
@@ -6941,15 +6946,16 @@ method add_text s =
 %less: what pending is for? who uses that? can remove it?
 
 <<[[Plain.plain#init]] set header widgets>>=
+(*
 let hgbas, progf = Htmlw.progress_report frame ctx in
 set_progress <- progf;
 pack [hgbas] [Side Side_Bottom; Fill Fill_X];
-
 let (headgroup,_,_,_,_) = 
   Htmlw.html_head_ui dh.document_headers (fun () -> ()) (ref false)
    frame ctx 
 in 
 pack [headgroup][Side Side_Top; Fill Fill_X];
+*)
 @
 
 <<[[Plain.plain#init]] tk fixes on text widget>>=
@@ -7362,7 +7368,7 @@ Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype ->
   try
     let (typ,sub), pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) External
-  with Invalid_HTTP_header e ->
+  with Http_headers.Invalid_HTTP_header e ->
     !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
@@ -7383,19 +7389,19 @@ Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype ->
  *     	 between fork/exec with no apparent reason (on SunOS4.1 only)
  *)
 let extern dh ctype =
-  let (pin, pout) = pipe() in
+  let (pin, pout) = Unix.pipe() in
   (* children must not keep pout open *)
   Unix.set_close_on_exec pout;
   match Low.fork() with
   | 0 ->
-      dup2 pin stdin; 
-      close pin;
+      Unix.dup2 pin Unix.stdin; 
+      Unix.close pin;
       Munix.execvp "metamail" [| "metamail"; "-b"; "-x"; "-c"; ctype |]
   | pid ->  
-      close pin;
+      Unix.close pin;
       let kill () = 
          try Unix.kill pid 2
-         with Unix_error (e,_,_) ->
+         with Unix.Unix_error (e,_,_) ->
           Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
       in
       let url = Url.string_of dh.document_id.document_url in
@@ -7415,19 +7421,19 @@ let extern dh ctype =
             let n = dh.document_feed.feed_read buffer 0 4096 in
             if n = 0 then begin
               dclose true dh;
-              close pout;
+              Unix.close pout;
               Document.end_log dh (s_ "End of transmission")
             end else begin
-              ignore (write pout buffer 0 n);
+              ignore (Unix.write pout buffer 0 n);
               red := !red + n;
               Document.progress_log dh (!red * 100 / size)
             end
-          with Unix_error(e,_,_) ->
+          with Unix.Unix_error(e,_,_) ->
             Log.f (sprintf "Error writing to viewer (%s)"
                     (Unix.error_message e));
             dclose true dh;
             kill();
-            close pout;
+            Unix.close pout;
             Document.destroy_log dh false;
             Error.f (s_ "Error during retrieval of %s" url)
        )
@@ -7498,7 +7504,7 @@ Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype ->
   try
     let (typ,sub),pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) Save
-  with Invalid_HTTP_header e ->
+  with Http_headers.Invalid_HTTP_header e ->
     Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
@@ -10058,6 +10064,7 @@ let frame_fugue targets =
 %todo? http://www.google.com/fonts
 
 <<[[Plain.plain#init]] setup fonts>>=
+(*
 (* pick up the fixed font *)
 let attrs_fixed   = Styles.get_font "fixed" in
 let attrs_default = Styles.get_font "default" in
@@ -10065,6 +10072,7 @@ let fd =
   Fonts.merge (Fonts.merge !Fonts.default attrs_default) attrs_fixed in
 let (_, opts) = Fonts.compute_tag fd in
 Text.configure text opts;
+*)
 @
 
 \section{Forms}
@@ -11009,12 +11017,15 @@ method di_redisplay =
 (* to redisplay, we have to destroy all widgets, then restart, except
    that we don't use the feed, but rather the cache *)
 method redisplay =
+  failwith "redisplay:TODO"
+  (*
   try
     dh <- Decoders.insert (Cache.renew_handle dh);
     Winfo.children frame |> List.iter destroy;
     self#init
   with Not_found ->
     Error.f (s_ "Document not in cache anymore")
+  *)
 @
 
 <<[[Htmlw.display_html]] redisplay methods>>=
@@ -13548,7 +13559,7 @@ let dtd32f =
     dtd.close_omitted <- Elements.add el dtd.close_omitted in
   let add_elem = 
    Hashtbl.add dtd.contents in
-  in
+
   (* first : copy in the 3.2 contents *)
   Hashtbl.iter add_elem dtd32.contents;
 
@@ -13816,17 +13827,14 @@ let debug_mode = ref true
 <<signature Log.f>>=
 val f : string -> unit
 @
-% fatal?, no flush
+% fatal?
 <<function Log.f>>=
 (* flushes ! *)
 let f s = 
   try prerr_endline s 
   with _ -> ()
 @
-%less: rename Log.flush, or get rid of it,
-% just do flush everytime
-
-
+% rename? Log.print?
 
 
 <<signature Log.debug>>=
@@ -13835,9 +13843,8 @@ val debug : string -> unit
 <<function Log.debug>>=
 let debug s = 
   if !debug_mode 
-  then f (s ^ "\n")
+  then f s
 @
-%pad: I added the \n, so it flushes maybe
 
 
 \section{Postmortem}
@@ -13903,7 +13910,7 @@ let postmortem () =
 
 % flow of logging?
 
-% Nav.nav_log (=~ loggingv label update) -> Viewer_context.log -> ???
+% Nav.nav_log (=~ loggingv label update) -> Viewer_context#log -> ???
 
 \subsection{Requests}
 
@@ -13921,6 +13928,12 @@ mutable www_logging : string -> unit;	  (* logging *)
 % who sets it? nobody apparently ...
 
 \subsection{Documents}
+
+<<[[Document.handle]] other fields>>=
+mutable document_logger : logger;
+  (* how to log information relative to this document processing *)
+@
+% who sets that agai?
 
 <<signature type Document.logger>>=
 (* pad: exported for tk_document, but normally should be abstract *)
@@ -13958,10 +13971,6 @@ let tty_logger =
 % who sets something more complex?
 
 
-<<[[Document.handle]] other fields>>=
-mutable document_logger : logger;
-  (* how to log information relative to this document processing *)
-@
 
 \subsection{HTML}
 
@@ -13995,7 +14004,6 @@ let warning s (Loc(n,m)) =
 (* HTML Evaluation *)
 val debug : bool ref
 @
-
 <<constant Html_eval.debug>>=
 let debug = ref false
 @

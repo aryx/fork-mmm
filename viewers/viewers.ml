@@ -2,16 +2,10 @@
 (*
  * Multimedia
  *)
+open Common
 open I18n
-open Printf
-open Unix
-open Lexing
-open Url
-open Http_headers
+
 open Document
-open Feed
-open Www
-open Hyper
 
 (* The context given to a viewer *)
 (*s: type Viewers.vparams *)
@@ -176,19 +170,19 @@ let extern_batch dh ctype =
  *     	 between fork/exec with no apparent reason (on SunOS4.1 only)
  *)
 let extern dh ctype =
-  let (pin, pout) = pipe() in
+  let (pin, pout) = Unix.pipe() in
   (* children must not keep pout open *)
   Unix.set_close_on_exec pout;
   match Low.fork() with
   | 0 ->
-      dup2 pin stdin; 
-      close pin;
+      Unix.dup2 pin Unix.stdin; 
+      Unix.close pin;
       Munix.execvp "metamail" [| "metamail"; "-b"; "-x"; "-c"; ctype |]
   | pid ->  
-      close pin;
+      Unix.close pin;
       let kill () = 
          try Unix.kill pid 2
-         with Unix_error (e,_,_) ->
+         with Unix.Unix_error (e,_,_) ->
           Log.f (sprintf "Can't kill child (%s)" (Unix.error_message e))
       in
       let url = Url.string_of dh.document_id.document_url in
@@ -208,19 +202,19 @@ let extern dh ctype =
             let n = dh.document_feed.feed_read buffer 0 4096 in
             if n = 0 then begin
               dclose true dh;
-              close pout;
+              Unix.close pout;
               Document.end_log dh (s_ "End of transmission")
             end else begin
-              ignore (write pout buffer 0 n);
+              ignore (Unix.write pout buffer 0 n);
               red := !red + n;
               Document.progress_log dh (!red * 100 / size)
             end
-          with Unix_error(e,_,_) ->
+          with Unix.Unix_error(e,_,_) ->
             Log.f (sprintf "Error writing to viewer (%s)"
                     (Unix.error_message e));
             dclose true dh;
             kill();
-            close pout;
+            Unix.close pout;
             Document.destroy_log dh false;
             Error.f (s_ "Error during retrieval of %s" url)
        )
@@ -258,7 +252,7 @@ type spec =
 (*e: type Viewers.spec *)
 
 (*s: constant Viewers.viewers *)
-let viewers = (Hashtbl.create 17: (media_type, spec) Hashtbl.t)
+let viewers = (Hashtbl.create 17: (Http_headers.media_type, spec) Hashtbl.t)
 (*e: constant Viewers.viewers *)
 
 (*s: function Viewers.add_viewer *)
@@ -338,9 +332,12 @@ and view frame ctx dh =
     let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
+      Log.debug (spf "Viewers.view %s/%s" typ sub);
       let viewer =
         try Hashtbl.find viewers (typ,sub)
-        with Not_found -> Hashtbl.find viewers (typ,"*")
+        with Not_found -> 
+          Log.debug (spf "Viewer.view: didn't find viewer for %s/%s" typ sub);
+          Hashtbl.find viewers (typ,"*")
       in
       match viewer with
       (*s: [[Viewers.view]] match viewer cases *)
@@ -374,7 +371,7 @@ and view frame ctx dh =
     (*e: [[Viewers.view]] exn handler 1 *)
   with 
   (*s: [[Viewers.view]] exn handler 2 *)
-  | Invalid_HTTP_header e ->
+  | Http_headers.Invalid_HTTP_header e ->
       ctx#log (s_ "Malformed type: %s" e);
       unknown frame ctx dh
   | Not_found -> 
@@ -397,6 +394,7 @@ let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
+  pr2_gen builtin_viewers;
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
 
@@ -406,7 +404,7 @@ let reset () =
     try
       let (typ,sub), pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
-    with Invalid_HTTP_header e ->
+    with Http_headers.Invalid_HTTP_header e ->
       !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*x: [[Viewers.reset()]] setting other viewers *)
@@ -414,7 +412,7 @@ let reset () =
     try
       let (typ,sub),pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
-    with Invalid_HTTP_header e ->
+    with Http_headers.Invalid_HTTP_header e ->
       Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*e: [[Viewers.reset()]] setting other viewers *)

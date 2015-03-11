@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= decoders.ml save.ml viewers.ml embed.ml 
+SRC= decoders.ml save.ml viewers.ml plain.ml embed.ml 
 
 SYSLIBS= str.cma unix.cma 
 LIBS=

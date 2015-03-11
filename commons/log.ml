@@ -15,7 +15,7 @@ let f s =
 (*s: function Log.debug *)
 let debug s = 
   if !debug_mode 
-  then f (s ^ "\n")
+  then f s
 (*e: function Log.debug *)
 
 (*e: ./commons/log.ml *)

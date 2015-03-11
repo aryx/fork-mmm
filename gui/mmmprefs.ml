@@ -83,7 +83,7 @@ let internal top =
     bool_pref "Strict encoding of Form field names" Urlenc.strict_form_standard;
     bool_pref "HTTP Requests" Http.verbose;
     int_pref "Internal buffer" Textw_fo.internal_buffer;
-    bool_pref "General trace" Log.debug_mode;
+(* always on for now    bool_pref "General trace" Log.debug_mode; *)
     bool_pref "Scheduler" Scheduler.debug;
     bool_pref "Cache debug" Cache.debug;
     bool_pref "Widget Cache debug" Gcache.debug;

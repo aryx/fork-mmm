@@ -101,8 +101,9 @@ depend::
 #SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
 #CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
-	$(OCAMLC) -custom -ccopt "-L/opt/X11/lib" -o $@ $(LINKFLAGS) \
+	$(OCAMLC) -linkall -custom -ccopt "-L/opt/X11/lib" -o $@ $(LINKFLAGS) \
          $(SYSLIBS) $(TKLIBS) $^
+# use -linkall for plugins to be included like plain.ml
 
 # The native version does not support applets !
 mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx) 
