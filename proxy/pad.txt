@@ -1,0 +1,4 @@
+
+to test recent pages with mmm:
+ http://virtuallyfun.superglobalmegacorp.com/?p=3866
+See wrp11.py in this directory.
