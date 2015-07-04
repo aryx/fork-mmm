@@ -1,0 +1,73 @@
+-*- org -*-
+
+* Now
+
+** bugs (tk prototype)
+
+*** ./mmm docs/website/index.html segfault!!!!
+file://localhost/home/pad/size.txt
+
+*** bug!!!: why file: events works and http: does not, I have to switch
+back and forth to the app to get the events flushed for http
+stuff
+
+*** bug: when in file: mode, the link are relative to the pwd
+when mmm was run, it should be updated when go in subdirectories,
+should use the referer path to generate the right urls
+
+*** About button is wrong
+
+* Later
+
+** gtk/cairo prototype
+make a mimimal version, no menus, just rendering of an url?
+or goes with tk. It's not that bad actually, if I find
+the way to fix the flush event bug.
+
+*** get text/plain working now that I fixed the issue with -linkall
+
+*** try to extract formatter and machine from display/,
+should be more tk independent
+=> can plug my own formatter backend?
+
+can make the machine and formatter mostly independent of Tk?
+
+try to have format/ independent of tk and display?
+htmlfmt.mli, html_form. html_table, attrs?
+
+*** less: try to make class polymorphic? have 'widget at more places?
+
+
+** stuff in regular browser
+
+*** CSS
+
+*** Javascript
+
+*** M-+ to enlarge the font
+
+*** Tabs
+
+*** Canvas (part of JS)
+just redirect to cairo?
+
+** stuff not in current browser
+
+*** expose for tabs!
+
+*** save full history!
+
+** internals
+
+*** remove all those classes?
+all those self#xxx, hard to follow responsibilities
+
+deobjectify?
+so can be processed by ocaml light :)
+
+*** use threads? can simplify the code?
+
+** misc
+
+look at my todo_browser/
+look at servo
