@@ -1,6 +1,8 @@
 -*- org -*-
 
 * Now
+See also Browser.nw section in plan9/todo.txt
+
 
 ** bugs (tk prototype)
 
