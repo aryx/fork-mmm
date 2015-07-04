@@ -183,6 +183,7 @@ Here are other candidates that were considered but ultimately discarded:
 
 %todo:
 %https://github.com/servo/servo/wiki/Relevant-spec-links
+% 2015-servo-experience-report-draft1.pdf
 
 %good: http://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html
 %todo: http://www.html5rocks.com/en/tutorials/internals/howbrowserswork/
@@ -230,7 +231,7 @@ the main author of MMM.
 
 % before seing the browser, first expose web principles: world wide web.
 % a "web" of interconnected machines with:
-%  - "resources": html documents, images, plain text, music
+%  - "resources": html documents, images, plain text, music, video, flash
 %  - URL to reference a resource; an html document contains itself
 %    possible links to other documents or resources (e.g. images)
 %    => it forms a "web" of documents
@@ -239,10 +240,16 @@ the main author of MMM.
 
 % a web browser is then a special kind of interface on top of that:
 % a navigator interface! (history, forward, click, multiple windows, etc).
-% One important thing is that it must provide feedback, especially
-% when fecth data from the network, you want to see if something is stucked
-% or is progressing (hence the complex passing of continuation,
-% error hooks, abort, etc)
+% A few important things
+% - it must provide feedback, especially
+%    when fecth data from the network, you want to see if something is stucked
+%    or is progressing (hence the complex passing of continuation,
+%    error hooks, abort, etc)
+% - it must be incremental, to display things as soon as possible
+%   (so incremental html lexer/parser, incremental formatter, async
+%    img fetching and incremental display, etc)
+% - a bit like an OS you want to be "multitask" and that one web page
+%   does not block every other things
 
 % see mmm-gdr-fr.ps
 % todo: see docs/website/tech.html
@@ -369,6 +376,8 @@ let version_number =
 
 % enter URL in address bar and type enter, what happens?
 % lots of components involved I think
+
+%https://github.com/alex/what-happens-when/blob/master/README.rst
 
 \section{Trace of a mouse click}
 
@@ -10067,6 +10076,8 @@ let frame_fugue targets =
 
 %todo? http://www.google.com/fonts
 
+% http://www.ampsoft.net/webdesign-l/WindowsMacFonts.html
+
 <<[[Plain.plain#init]] setup fonts>>=
 (*
 (* pick up the fixed font *)
@@ -10232,6 +10243,18 @@ warnings |> List.iter (fun (reason, pos) ->
 @
 
 \chapter{Embedded Elements}
+
+\section{Overview}
+
+% example, images, but also java applets, caml applets :)
+% flash, iframe?. Pretty important. Pretty important
+% also to display then independently of main document, to not
+% wait to have all the pictures to start to draw things
+% (also why jpg is good, because can start to draw things
+% and then as get more data we can refine the picture).
+% Incremental!
+
+\section{XXX}
 
 <<[[Html_disp.machine]] embedded fields>>=
 method virtual add_embedded : Embed.embobject -> unit
@@ -13343,6 +13366,10 @@ let proxy_unauthorized wr dh =
 % could also have an parallel chapter?
 
 \subsection{Document cache, [[Cache]]}
+
+% pretty important, because network is super slow.
+% cache in RAM, and then cache on (local) disk, so
+% don't have to fetch over slow network
 
 %rappel:
 %let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
