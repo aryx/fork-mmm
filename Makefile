@@ -283,6 +283,7 @@ TOP=.
 
 include $(TOP)/docs/latex/Makefile.common
 
+VERSION=2
 TEXMAIN=Browser.nw
 TEX=Browser.tex
 

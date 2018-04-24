@@ -1,4 +1,4 @@
-\documentclass[twocolumn]{report}
+\documentclass[twocolumn, landscape]{report}
 
 %******************************************************************************
 % Prelude
@@ -172,13 +172,20 @@ Here are other candidates that were considered but ultimately discarded:
 \item netsurf
 % with subprojects like hubhub, libcss, libdom, etc
 %... was used originally by servo
+% also recent js engine called duktape is maybe used with it
 \item servo
 % already lots of LOC actually
 % https://github.com/servo/servo/wiki/Design
 \end{itemize}
 
-% see wikipedia page on history of web browser, pretty good,
-% I have it printed.
+%other:
+% - Qnx Voyager browser, 1.44MB demo disk! full GUI and web browser!
+%mini:
+% - vado: very basic html rendering in haskell
+%   https://github.com/chrisdone/vado
+
+
+% see wikipedia page on history of web browser, pretty good,I have it printed.
 %todo: my todo-browser/ somewhere
 
 %todo:
@@ -190,6 +197,9 @@ Here are other candidates that were considered but ultimately discarded:
 % HBW
 
 %todo: look at ocamlnet? more up to date web components?
+
+%tutorial of android web browser internals (dead browser, but maybe interesting)
+%https://medium.com/@camaelon/what-s-in-a-web-browser-83793b51df6c#.nblcubeka
 
 \section{Getting started}
 
@@ -261,6 +271,7 @@ the main author of MMM.
 %be a PDF, image, or some other type of content. The location of the
 %resource is specified by the user using a URI (Uniform Resource
 %Identifier)." HBW
+
 
 \section{[[mmm]] services}
 
@@ -399,6 +410,8 @@ let version_number =
 
 % URLs are URIs, who is more general?
 % URL is uniform, URIs is universal, so URI is more general!
+
+%https://eager.io/blog/the-history-of-the-url-domain-and-protocol/
 
 \subsection{URLs and protocols}
 % =~ protocol://user:pass@host:port/path?search
@@ -10485,6 +10498,11 @@ end
 
 \chapter{CSS}
 
+% visual guide to most popular properties:
+%http://cssreference.io/
+
+%https://eager.io/blog/the-languages-which-almost-were-css/
+
 %http://www.w3.org/TR/CSS2/
 % (better spec than CSS 3 according to rubeck, more self contained)
 
@@ -13830,6 +13848,9 @@ Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 \chapter{Conclusion}
 
 
+%related: 
+% - search engine, see http://queue.acm.org/detail.cfm?id=988407
+%   and page/brin article on archi of Google
 
 
 
