@@ -36,9 +36,10 @@ MAINDIRS= \
 #  applets \
 #  sandbox \
 # dynamically loaded extensions
-#MOREDIRS= extensions demos/applets demos/sboard
 
-MAKESUBDIRS= $(MAINDIRS) $(MOREDIRS)
+MOREDIRS=demos/applets demos/sboard extensions
+
+MAKESUBDIRS= $(MAINDIRS)
 
 INCLUDEDIRS=$(MAINDIRS) $(GRAPHICSDIR)
 #sandbox/gen crcs
@@ -92,7 +93,7 @@ MAIN=main.cmo
 clean::
 	rm -f main.cm*
 clean::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS) $(MOREDIRS); do $(MAKE) -C $$i clean; done 
 
 depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
