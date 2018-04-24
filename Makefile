@@ -37,7 +37,7 @@ MAINDIRS= \
 #  sandbox \
 # dynamically loaded extensions
 
-MOREDIRS=demos/applets demos/sboard extensions
+MOREDIRS=demos/applets demos/sboard extensions extensions/applets extensions/sandbox
 
 MAKESUBDIRS= $(MAINDIRS)
 
