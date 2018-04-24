@@ -284,8 +284,7 @@ TOP=.
 include $(TOP)/docs/latex/Makefile.common
 
 VERSION=2
-TEXMAIN=Browser.nw
-TEX=Browser.tex
+DOC=Browser
 
 SRC_ORIG=Browser.nw Browser_extra.nw
 
