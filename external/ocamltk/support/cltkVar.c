@@ -1,7 +1,10 @@
 /* Alternative to tkwait variable */
 #include <string.h>
+
+#define USE_INTERP_RESULT
 #include <tcl.h>
 #include <tk.h>
+
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/alloc.h>

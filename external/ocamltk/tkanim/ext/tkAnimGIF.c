@@ -1,7 +1,10 @@
 #define TKANIM_VERSION "1.0"
 /* #define TKANIM_DEBUG */
 
+#define USE_INTERP_RESULT
 #include <tk.h>
+
+#include <string.h>
 
 /*
  * The format record for the Animated GIF file format:

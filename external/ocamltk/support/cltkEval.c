@@ -1,8 +1,11 @@
 #include <stdlib.h>
 
 #include <string.h>
+
+#define USE_INTERP_RESULT
 #include <tcl.h>
 #include <tk.h>
+
 #include <assert.h>
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
