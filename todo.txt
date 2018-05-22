@@ -1,8 +1,12 @@
--*- org -*-
+# -*- org -*-
+
+** cleanup .gitignore
+
+** compile again fork-mmm without its commons, use opam_lib in
+external/
 
 * Now
 See also Browser.nw section in plan9/todo.txt
-
 
 ** bugs (tk prototype)
 
@@ -56,6 +60,7 @@ just redirect to cairo?
 ** stuff not in current browser
 
 *** expose for tabs!
+actually Safari has this now?
 
 *** save full history!
 
