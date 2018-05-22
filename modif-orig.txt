@@ -6,7 +6,8 @@ Moved arount lots of stuff. Simplified the Makefiles.
 
 Have first to:
  $ cd external/ocamltk
- $ ./configure
+ update site.config CPPFLAGS to find tcl.h
+ $ ./configure --with-config=./site.config
  $ make
  $ make install
 

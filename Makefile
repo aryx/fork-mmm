@@ -181,13 +181,13 @@ install: mmm htparse mmm_remote mmm.sh install-mdk
 	cp htparse mmm_remote $(INSTALLBINDIR)
 	/bin/rm -rf $(INSTALLLIBDIR)/*
 	cp mmm $(INSTALLLIBDIR)
-	cp msgs*.txt $(INSTALLLIBDIR)
-	cp MMM.ad MMM.ad.* $(INSTALLLIBDIR)
-	cp -pr doc $(INSTALLLIBDIR)	
+	cp data/msgs*.txt $(INSTALLLIBDIR)
+	cp data/MMM.ad data/MMM.ad.* $(INSTALLLIBDIR)
+	cp -pr docs $(INSTALLLIBDIR)	
 	sed -e '/_INSTALLLIBDIR_/s,_INSTALLLIBDIR_,$(INSTALLLIBDIR),g' \
 	     mmm.sh > $(INSTALLBINDIR)/mmm
 	chmod 755 $(INSTALLBINDIR)/mmm
-	for i in doc/*.m; do cp $$i $(MANDIR)/`basename $$i .m`.$(MANEXT); done
+	for i in docs/man/*.m; do cp $$i $(MANDIR)/`basename $$i .m`.$(MANEXT); done
 
 
 ## Post-install configuration (?)
@@ -209,14 +209,14 @@ installopt: mmmx.bin
 	cp mmmx.bin $(INSTALLLIBDIR)
 
 install-mdk:
-	if [ ! -d $(INSTALLLIBDIR)/mdk ]; then \
-         mkdir -p $(INSTALLLIBDIR)/mdk; \
-        fi
-	cp sandbox/safe418*.mli sandbox/safe418*.cmi \
-	    $(INSTALLLIBDIR)/mdk
-	sed -e '/_MDKDIR_/s,_MDKDIR_,$(INSTALLLIBDIR)/mdk,g' \
-	     scripts/mmmc > $(INSTALLBINDIR)/mmmc
-	chmod 755 $(INSTALLBINDIR)/mmmc
+#	if [ ! -d $(INSTALLLIBDIR)/mdk ]; then \
+#         mkdir -p $(INSTALLLIBDIR)/mdk; \
+#        fi
+#	cp sandbox/safe418*.mli sandbox/safe418*.cmi \
+#	    $(INSTALLLIBDIR)/mdk
+#	sed -e '/_MDKDIR_/s,_MDKDIR_,$(INSTALLLIBDIR)/mdk,g' \
+#	     scripts/mmmc > $(INSTALLBINDIR)/mmmc
+#	chmod 755 $(INSTALLBINDIR)/mmmc
 
 ##############################################################################
 # Package rules

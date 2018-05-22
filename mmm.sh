@@ -20,13 +20,13 @@ port=80
 
 # CHECK: MMMDIR should be the same as INSTALLLIBDIR in Makefile.config
 # "make install" normally does this substitution.
-MMMDIR=/home/pad/mmm
+MMMDIR=_INSTALLLIBDIR_
 
 ### END OF CONFIGURATION
 # Below this line, there should be nothing to change
 
 # Binaries copied during installation
-bin=$MMMDIR/mmm.bin
+bin=$MMMDIR/mmm
 binx=$MMMDIR/mmmx.bin
 # The default I18N message file
 msgfile_default=$MMMDIR/msgs.txt
