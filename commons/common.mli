@@ -16,8 +16,10 @@ val _already_printed : (string, bool) Hashtbl.t
 val disable_pr2_once : bool ref
 val pr2_once : string -> unit
 
+(*
 val pr2_gen: 'a -> unit
 val dump: 'a -> string
+*)
 
 exception Todo
 exception Impossible
@@ -52,7 +54,9 @@ type path = string
 val cat :      filename -> string list
 
 val write_file : file:filename -> string -> unit
+(*
 val read_file : filename -> string
+*)
 
 val with_open_outfile : 
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
@@ -182,9 +186,9 @@ val action_list:
 val debugger : bool ref
 
 (* emacs spirit *)
-val unwind_protect : (unit -> 'a) -> (exn -> 'b) -> 'a
+val unwind_protect : (unit -> 'a) -> (exn -> unit) -> 'a
 (* java spirit *)
-val finalize :       (unit -> 'a) -> (unit -> 'b) -> 'a
+val finalize :       (unit -> 'a) -> (unit -> unit) -> 'a
 
 val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 
@@ -206,7 +210,9 @@ val _profile_table : (string, (float ref * int ref)) Hashtbl.t ref
 val profile_code : string -> (unit -> 'a) -> 'a
 val profile_diagnostic : unit -> string
 val profile_code_exclusif : string -> (unit -> 'a) -> 'a
+(*
 val profile_code_inside_exclusif_ok : string -> (unit -> 'a) -> 'a
+*)
 val report_if_take_time : int -> string -> (unit -> 'a) -> 'a
 (* similar to profile_code but print some information during execution too *)
 val profile_code2 : string -> (unit -> 'a) -> 'a
