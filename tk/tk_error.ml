@@ -1,5 +1,3 @@
-open Tk
-open Widget
 open Mstring
 
 class t (top) =

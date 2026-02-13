@@ -1,0 +1,13 @@
+(library
+ (public_name mmm.tk)
+ (name mmm_tk)
+ (wrapped false)
+ (libraries
+    labltk
+    mmm.commons
+    ;mmm.globals mmm.www
+    mmm.protocols mmm.retrieve
+    
+ )
+ (preprocess (pps ppx_deriving.show))
+)

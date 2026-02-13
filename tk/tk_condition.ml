@@ -5,7 +5,6 @@
    condition
  *)
 open Printf
-open Condition
 
 type t = Textvariable.textVariable * int ref
 
