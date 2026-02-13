@@ -439,7 +439,7 @@ let dtd32f =
     open_omitted = dtd32.open_omitted;
     close_omitted = dtd32.close_omitted;
   } in
-  let omit_open el =
+  let _omit_open el =
     dtd.open_omitted <- Elements.add el dtd.open_omitted in
   let omit_close el =
     dtd.close_omitted <- Elements.add el dtd.close_omitted in

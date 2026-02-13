@@ -80,24 +80,25 @@ let print = function
  *   could use String.blit to avoid char copying
  * NOTE: add \0 detection here (we need it for Tk)
  *)
-let beautify remove_leading s =
+let beautify (remove_leading : bool) (s : string) : string =
   let j = ref 0 in
   let white = ref remove_leading in
-  for i = 0 to String.length s - 1 do
-    match s.[i] with
+  let s = Bytes.of_string s in
+  for i = 0 to Bytes.length s - 1 do
+    match Bytes.get s i with
     | ' ' | '\t' | '\r' | '\n' | '\000' -> 
        if not !white 
        then begin
-         s.[!j] <- ' '; 
+         Bytes.set s !j ' '; 
          incr j; 
          white := true
        end
     | c -> 
-       s.[!j] <- c; 
+       Bytes.set s !j c; 
        white := false; 
        incr j
   done;
-  String.sub s 0 !j
+  Bytes.sub_string s 0 !j
 (*e: function Html.beautify *)
 
 (*s: function Html.beautify2 *)
