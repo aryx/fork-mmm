@@ -1,0 +1,8 @@
+(library
+ (public_name mmm.common)
+ (name mmm_common)
+ (wrapped false)
+ ;(inline_tests)
+ ;(preprocess
+ ; (pps ppx_inline_test))
+)

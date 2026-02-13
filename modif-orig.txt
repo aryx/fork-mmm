@@ -14,3 +14,7 @@ Have first to:
 Then:
  $ make depend # adjust path to ocamltk in some .depend
  $ make
+
+
+UPDATE 2026:
+updated to use dune instead and the official labltk OPAM package.

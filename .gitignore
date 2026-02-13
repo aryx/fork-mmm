@@ -1,4 +1,7 @@
 
+#dune
+_build
+
 external/ocamltk
 external/stdlib/*
 
