@@ -14,7 +14,6 @@
 
 open Printf
 open Unix
-open Mstring
 open Date
 
 (*s: type Http_date.http_time *)

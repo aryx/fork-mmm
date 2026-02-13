@@ -1,0 +1,15 @@
+(library
+ (public_name mmm.http)
+ (name mmm_http)
+ (wrapped false)
+ (libraries
+    mmm.commons
+    mmm.globals mmm.www
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+
+(ocamllex lexdate)
+(ocamllex lexheaders)
+
+

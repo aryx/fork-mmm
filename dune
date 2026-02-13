@@ -1,0 +1,5 @@
+(env
+ (dev
+  ; -52 for Failure "concrete_string"
+  (flags (:standard -w -52)))
+)

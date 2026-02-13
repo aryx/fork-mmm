@@ -1,10 +1,7 @@
 {
-
-open Mstring
 open Http_date
 
 exception Invalid_date of string * int
-
 }
 
 rule wkday = parse

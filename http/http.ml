@@ -454,7 +454,7 @@ and process_response09  wwwr cont cnx =
 and async_request proxy_mode wwwr cont cnx =
   let b = Ebuffer.create 1024 in
   full_request (fun x -> Ebuffer.output_string b x) proxy_mode wwwr;
-  let req = Ebuffer.get b in
+  let req = Bytes.of_string (Ebuffer.get b) in
   let len = Ebuffer.used b in
   let curpos = ref 0 in
   wwwr.www_logging (s_ "Writing request...");
@@ -465,7 +465,7 @@ and async_request proxy_mode wwwr cont cnx =
       Fileevent_.remove_fileoutput cnx#fd;
       (*s: [[Http.async_request()]] log request string req if verbose *)
       if !verbose 
-      then Log.f req;
+      then Log.f (Bytes.to_string req);
       (*e: [[Http.async_request()]] log request string req if verbose *)
       (* ! calling the continuation, e.g. process_response *)
       cont cnx

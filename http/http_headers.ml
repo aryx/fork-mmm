@@ -11,7 +11,7 @@ exception Invalid_HTTP_header of string
 (*s: function Http_headers.parse_status *)
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
 let parse_status s =
- if String.length s > 5 & String.sub s 0 5 = "HTTP/" 
+ if String.length s > 5 && String.sub s 0 5 = "HTTP/" 
  then
    try
     match Str.bounded_split (regexp "[ ]") s 3 with
@@ -68,7 +68,7 @@ let get_header field_name =
    | [] -> raise Not_found
    | s::l ->
       if String.length s >= size + 2 (* : SP *) && 
-         String.lowercase (String.sub s 0 size) = field_name
+         String.lowercase_ascii (String.sub s 0 size) = field_name
       then String.sub s (size + 2) (String.length s - size - 2)
       else search l 
   in
@@ -85,7 +85,7 @@ let get_multi_header field_name =
      [] -> []
    | s::l ->
     if   String.length s >= size + 2 (* : SP *)
-       & String.lowercase (String.sub s 0 size) = field_name
+       && String.lowercase_ascii (String.sub s 0 size) = field_name
     then (String.sub s (size + 2) (String.length s - size - 2)) :: search l
     else search l in
   search
@@ -94,7 +94,7 @@ let get_multi_header field_name =
 (*s: function Http_headers.header_type *)
 let header_type s =
   match Str.bounded_split (regexp "[:]") s 2 with
-  | [t;_] -> String.lowercase t
+  | [t;_] -> String.lowercase_ascii t
   | _ -> raise (Invalid_HTTP_header s)
 (*e: function Http_headers.header_type *)
 
@@ -104,12 +104,12 @@ let merge_headers oldh newh =
   let rec filter acc = function
      [] -> acc
    | s::l ->
-      if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
+      if String.length s > 5 && String.sub s 0 5 = "HTTP/" then
        filter acc l
       else
        try
         let t = header_type s in
-        let d = get_header t newh in
+        let _dTODO = get_header t newh in
       filter acc l
        with
           Invalid_HTTP_header _ -> 
@@ -141,7 +141,7 @@ let remove_headers hs names =
 let rec status_msg = function
     [] -> raise Not_found
   | s::l -> if String.length s >= 5 (* "HTTP/" *)
-          & (String.sub s 0 5) = "HTTP/"
+          && (String.sub s 0 5) = "HTTP/"
          then (parse_status s).status_message
          else status_msg l
 (*e: function Http_headers.status_msg *)
@@ -178,7 +178,7 @@ let is_contentencoding =
   let l = String.length "Content-Encoding" in
   (fun s ->
        String.length s >= l + 2
-    && String.lowercase (String.sub s 0 (l+2)) = "content-encoding: ")
+    && String.lowercase_ascii (String.sub s 0 (l+2)) = "content-encoding: ")
 (*e: constant Http_headers.is_contentencoding *)
 
 (*s: function Http_headers.rem_contentencoding *)
@@ -313,7 +313,7 @@ let hints path =
     let v = 
       try Hashtbl.find suffixes sufx 
       with Not_found -> 
-        Hashtbl.find suffixes (String.lowercase sufx)
+        Hashtbl.find suffixes (String.lowercase_ascii sufx)
     in
     match v with
     | ContentType t -> [t] (* good, we have a type *)

@@ -1,11 +1,8 @@
 (*s: ./http/auth.ml *)
 (* HTTP Basic Authentication *)
 open I18n
-open Printf
 open Unix
 open Http_headers
-open Url
-open Www
 
 (*s: type Auth.authSpace *)
 (* Authorizations are remembered on the base of the directory url and realm
@@ -97,7 +94,7 @@ let add space cookie =
 
 (*s: function Auth.check *)
 (* Kind is either: realm or proxy *)
-let check wwwr challenge authspace =
+let check (wwwr : Www.request) challenge authspace =
   let kind = if authspace.auth_proxy then "proxy" else "realm" in
   match challenge.challenge_scheme with
     AuthExtend _ -> (* we don't know how to do this *) 

@@ -17,7 +17,7 @@
 (* Encoding is [A-Z][a-z][0-9]+/= *)
 (* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
 
-let index64 = Array.create 128 0
+let index64 = Array.make 128 0
 (*e: constant Base64.index64 *)
 (*s: toplevel Base64._1 *)
 (* Init the index *)
@@ -34,7 +34,7 @@ let decode s =
   let rpos = ref 0
   and wpos = ref 0
   and len = String.length s in
-  let res = String.create (len / 4 * 3) in
+  let res = Bytes.create (len / 4 * 3) in
     while !rpos < len do
       let v1 = index64.(Char.code s.[!rpos]) in
       let v2 = index64.(Char.code s.[!rpos + 1]) in
@@ -42,9 +42,9 @@ let decode s =
       let v4 = index64.(Char.code s.[!rpos + 3]) in
       (* each char gives 6 bits *)
       let i = (v1 lsl 18) lor (v2 lsl 12) lor (v3 lsl 6) lor v4 in
-      res.[!wpos] <- Char.chr (i lsr 16);
-      res.[!wpos+1] <- Char.chr ((i lsr 8) land 0xFF);
-      res.[!wpos+2] <- Char.chr (i land 0xFF);
+      Bytes.set res !wpos (Char.chr (i lsr 16));
+      Bytes.set res (!wpos+1) (Char.chr ((i lsr 8) land 0xFF));
+      Bytes.set res (!wpos+2) (Char.chr (i land 0xFF));
       rpos := !rpos + 4;
       wpos := !wpos + 3
       done;
@@ -54,12 +54,12 @@ let decode s =
       else 1
     else 0 
   in
-  String.sub res 0 (String.length res - cut)
+  Bytes.sub_string res 0 (Bytes.length res - cut)
 (*e: function Base64.decode *)
 
 
 (*s: constant Base64.char64 *)
-let char64 = Array.create 64 'a'
+let char64 = Array.make 64 'a'
 (*e: constant Base64.char64 *)
 (*s: toplevel Base64._2 *)
 let _ =
@@ -82,22 +82,24 @@ let encode s =
     | 2 -> s ^ "\000", origlen + 1 
     | _ -> assert false
   in
-  let res = String.create (len / 3 * 4) in
+  let res = Bytes.create (len / 3 * 4) in
     while !rpos < len do
       let i1 = Char.code s.[!rpos] in
       let i2 = Char.code s.[!rpos+1] in
       let i3 = Char.code s.[!rpos+2] in
       let i = (i1 lsl 16) lor (i2 lsl 8) lor i3 in
-      res.[!wpos] <- char64.((i lsr 18) land 0x3f);
-      res.[!wpos+1] <- char64.((i lsr 12) land 0x3f);
-      res.[!wpos+2] <- char64.((i lsr 6) land 0x3f);
-      res.[!wpos+3] <- char64.(i land 0x3f);
+      Bytes.set res !wpos (char64.((i lsr 18) land 0x3f));
+      Bytes.set res (!wpos+1) (char64.((i lsr 12) land 0x3f));
+      Bytes.set res (!wpos+2) (char64.((i lsr 6) land 0x3f));
+      Bytes.set res (!wpos+3) (char64.(i land 0x3f));
       rpos := !rpos + 3;
       wpos := !wpos + 4
       done;
   (* Correct padding *)
-  for i = 1 to len - origlen do res.[String.length res - i] <- '=' done;
-  res
+  for i = 1 to len - origlen do 
+    Bytes.set res (Bytes.length res - i) '=' 
+  done;
+  Bytes.to_string res
 (*e: function Base64.encode *)
 
 (*e: ./http/base64.ml *)
