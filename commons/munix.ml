@@ -47,8 +47,8 @@ let eval_cmd cmd args back =
 (*e: function Munix.eval_cmd *)
 
 (*s: function Munix.write_string *)
-let write_string fd s =
-  ignore (write fd s 0 (Bytes.length s))
+let write_string fd (s : string) : unit =
+  ignore (Unix.write fd (Bytes.of_string s) 0 (String.length s))
 (*e: function Munix.write_string *)
 
 (*s: function Munix.read_line *)

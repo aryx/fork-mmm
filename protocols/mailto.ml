@@ -1,7 +1,6 @@
 (*s: ./protocols/mailto.ml *)
 (* mailto: *)
 open I18n
-open Sys
 open Unix
 open Www
 open Hyper

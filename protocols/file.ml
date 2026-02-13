@@ -4,7 +4,6 @@ open I18n
 open Printf
 open Unix
 open Filename
-open Mstring
 open Hyper
 open Www
 open Url
@@ -22,7 +21,7 @@ exception File_error of string
 (* 
  * Simulate directory
  *)
-let isdir path f =
+let _isdir path f =
   let fullname = Filename.concat path f in
   (stat fullname).st_kind = S_DIR
 (*e: function File.isdir *)
@@ -56,7 +55,7 @@ let d2html path d =
      done      	
    with  End_of_file -> closedir d
   end;
-  entries := Sort.list (<=) !entries;
+  entries := List.sort compare !entries;
   !entries |> List.iter (function
     |  "." -> ()
     | ".." ->
@@ -92,10 +91,10 @@ let dir path =
           with e ->
             print_endline (Printexc.to_string e)
         end;
-        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
+        flush Stdlib.stdout; (* strange bug with our at_exit stuff *)
         exit 0
         (*cin (*duh*) *)
-     | n -> closedir d; close cout; cin
+     | _n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
 (*e: function File.dir *)
@@ -138,7 +137,7 @@ let fake_cgi wwwr cont path =
             Munix.write_string stdout "\n";
             exit 1
          end
-   | n ->
+   | _n ->
       close cmd_out;
       let dh = {document_id = document_id wwwr;
                 document_referer = wwwr.www_link.h_context;
@@ -191,7 +190,7 @@ let fake_cgi wwwr cont path =
 let binary_path = ref ([] : string list)
 (*e: constant File.binary_path *)
 (*s: constant File.r *)
-let r = Str.regexp ":"
+let _rTODO = Str.regexp ":"
 (*e: constant File.r *)
 (*s: function File.pref_init *)
 (*e: function File.pref_init *)
