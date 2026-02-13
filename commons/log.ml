@@ -1,6 +1,4 @@
 (*s: ./commons/log.ml *)
-open Printf
-
 (*s: constant Log.debug_mode *)
 let debug_mode = ref true
 (*e: constant Log.debug_mode *)

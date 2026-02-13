@@ -1,8 +1,5 @@
 (*s: ./commons/low.ml *)
 (* Wrapping of some low-level functions *)
-open Common
-
-open Unix
 
 (* Tachymeter support *)
 class  virtual tachymeter = object
@@ -17,9 +14,9 @@ class  virtual tachymeter = object
 class no_tachy = object
   inherit tachymeter
 
-  method report_cnx cnx = ()
-  method report_busy flag = ()
-  method report_traffic tick total sample = ()
+  method report_cnx _cnx = ()
+  method report_busy _flag = ()
+  method report_traffic _tick _total _sample = ()
   method quit = ()
 end
 
@@ -46,7 +43,7 @@ let read fd buf offs l =
 (*s: global Low.pending_read *)
 let pending_read = ref 0
 (*e: global Low.pending_read *)
-let action = ref (fun _ -> ())
+let _actionTODO = ref (fun _ -> ())
 
 (*s: function Low.add_fileinput *)
 let add_fileinput fd f =
@@ -72,7 +69,7 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 let fork () =
  begin try
   while 
-    let p, s = Unix.waitpid [Unix.WNOHANG] 0 in 
+    let p, _s = Unix.waitpid [Unix.WNOHANG] 0 in 
       (*
       Printf.eprintf "%d\n" p;
       begin match s with

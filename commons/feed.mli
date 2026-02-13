@@ -6,7 +6,7 @@ type internal = Unix.file_descr
 
 (*s: type Feed.t *)
 type t = {
-  feed_read : string -> int -> int -> int;
+  feed_read : bytes -> int -> int -> int;
 
   feed_schedule : (unit -> unit) -> unit;
   feed_unschedule : unit -> unit;

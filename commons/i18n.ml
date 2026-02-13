@@ -19,14 +19,14 @@ let message_file = ref ""
 (*e: constant I18n.message_file *)
 
 (*s: function I18n.read_transl_file *)
-let read_transl_file msgfile =
+let read_transl_file (msgfile : string) : (string, string) Hashtbl.t =
   let ic = open_in msgfile in
-  let tag_buffer = String.create 16
-  and msg_buffer = String.create 1024 in
+  let tag_buffer = Bytes.create 16
+  and msg_buffer = Bytes.create 1024 in
   let rec store_tag c i =
-    if i >= 16 then i else (tag_buffer.[i] <- c; succ i)
+    if i >= 16 then i else (Bytes.set tag_buffer i c; succ i)
   and store_msg c i =
-    if i >= 1024 then i else (msg_buffer.[i] <- c; succ i)
+    if i >= 1024 then i else (Bytes.set msg_buffer i c; succ i)
   and read_line i =
     match input_char ic with
       '\n' -> i
@@ -51,10 +51,10 @@ let read_transl_file msgfile =
   begin try
     while true do
       let (tag_len, msg_len) = read_tag 0 in
-      if String.sub tag_buffer 0 tag_len = "src" then
-        currsrc := String.sub msg_buffer 0 msg_len
-      else if String.sub tag_buffer 0 tag_len = !language then
-        Hashtbl.add transl_tbl !currsrc (String.sub msg_buffer 0 msg_len)
+      if Bytes.sub_string tag_buffer 0 tag_len = "src" then
+        currsrc := Bytes.sub_string msg_buffer 0 msg_len
+      else if Bytes.sub_string tag_buffer 0 tag_len = !language then
+        Hashtbl.add transl_tbl !currsrc (Bytes.sub_string msg_buffer 0 msg_len)
       else ()
     done
   with End_of_file ->
@@ -113,8 +113,8 @@ let sprintf (fmt : ('a, unit, string) format) =
 
 let s_ fmt = sprintf fmt
 
-let printf fmt = fprintf stdout fmt
-and eprintf fmt = fprintf stderr fmt
+let _printf fmt = fprintf stdout fmt
+and _eprintf fmt = fprintf stderr fmt
 
 (*s: function I18n.menu_option *)
 (*e: function I18n.menu_option *)

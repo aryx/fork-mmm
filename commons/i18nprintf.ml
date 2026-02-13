@@ -48,11 +48,11 @@ let fprintf outchan format =
                     int_of_string (String.sub format (i+1) (j-i-1))
                   with _ ->
                     invalid_arg "I18nprintf.fprintf: bad %s format" in
-                if p > 0 & String.length s < p then begin
+                if p > 0 && String.length s < p then begin
                   output_string outchan
                                 (String.make (p - String.length s) ' ');
                   output_string outchan s
-                end else if p < 0 & String.length s < -p then begin
+                end else if p < 0 && String.length s < -p then begin
                   output_string outchan s;
                   output_string outchan
                                 (String.make (-p - String.length s) ' ')
@@ -86,7 +86,7 @@ let fprintf outchan format =
             Obj.magic(fun printer ->
               printer outchan;
               doprn(succ j))
-        | c ->
+        | _c ->
             invalid_arg ("I18nprintf.fprintf: unknown format")
       end
     end
@@ -94,7 +94,7 @@ let fprintf outchan format =
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | c -> j
+    | _c -> j
 
   in doprn 0
 (*e: function I18nprintf.fprintf *)
@@ -144,9 +144,9 @@ let sprintf format =
                       int_of_string (String.sub format (i+1) (j-i-1))
                     with _ ->
                       invalid_arg "I18nprintf.fprintf: bad %s format" in
-                  if p > 0 & String.length s < p then
+                  if p > 0 && String.length s < p then
                     s :: String.make (p - String.length s) ' ' :: accu1
-                  else if p < 0 & String.length s < -p then
+                  else if p < 0 && String.length s < -p then
                     String.make (-p - String.length s) ' ' :: s :: accu1
                   else
                     s :: accu1
@@ -172,14 +172,14 @@ let sprintf format =
         | 't' ->
             Obj.magic(fun printer ->
               doprn (succ j) (succ j) (printer () :: accu1))
-        | c ->
+        | _c ->
             invalid_arg ("I18nprintf.sprintf: unknown format")
       end
 
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | c -> j
+    | _c -> j
 
   in doprn 0 0 []
 (*e: function I18nprintf.sprintf *)

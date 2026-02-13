@@ -15,14 +15,14 @@
 (*s: type Ebuffer.t *)
 (* Extensible buffers *)
 type t = {
-    mutable buffer : string;
+    mutable buffer : bytes;
     mutable pos : int;
     mutable len : int}
 (*e: type Ebuffer.t *)
 
 (*s: function Ebuffer.create *)
 let create n = {
-   buffer = String.create n;
+   buffer = Bytes.create n;
    pos = 0;
    len = n
    }
@@ -44,8 +44,8 @@ let output_string buf s =
   let l = String.length s in
   if buf.pos + l > buf.len then begin
     let size = newsize buf.len l in
-    let news = String.create size in
-      String.unsafe_blit buf.buffer 0 news 0 buf.pos;
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
       buf.buffer <- news;
       buf.len <- size
     end;
@@ -56,12 +56,12 @@ let output_string buf s =
 let output_char buf c =
   if buf.pos >= buf.len then begin
     let size = newsize buf.len 1 in
-    let news = String.create size in
-      String.unsafe_blit buf.buffer 0 news 0 buf.pos;
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
       buf.buffer <- news;
       buf.len <- size
     end;
-  buf.buffer.[buf.pos] <- c;
+  Bytes.set buf.buffer buf.pos c;
   buf.pos <- buf.pos + 1
 (*e: function Ebuffer.output_char *)
 
@@ -69,8 +69,8 @@ let output_char buf c =
 let output buf s ofs l =
   if buf.pos + l > buf.len then begin
     let size = newsize buf.len l in
-    let news = String.create size in
-      String.unsafe_blit buf.buffer 0 news 0 buf.pos;
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
       buf.buffer <- news;
       buf.len <- size
     end;
@@ -81,7 +81,7 @@ let output buf s ofs l =
 
 (*s: function Ebuffer.get *)
 let get buf = 
-  String.sub buf.buffer 0 buf.pos
+  Bytes.sub_string buf.buffer 0 buf.pos
 (*e: function Ebuffer.get *)
 
 (*s: function Ebuffer.used *)

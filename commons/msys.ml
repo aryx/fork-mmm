@@ -11,8 +11,6 @@
 (*                                                                     *)
 (***********************************************************************)
 (*e: copyright header v6 *)
-
-open Printf
 open Unix
 
 (* Tilde substitution *)
@@ -20,7 +18,7 @@ open Unix
 (*s: function Msys.next_slash *)
 (* skip to next / *)
 let rec next_slash s n =
-  if  n >= String.length s or s.[n] = '/' 
+  if  n >= String.length s || s.[n] = '/' 
   then n
   else next_slash s (succ n)
 (*e: function Msys.next_slash *)
@@ -28,7 +26,7 @@ let rec next_slash s n =
 (*s: function Msys.tilde_subst *)
 let tilde_subst s =
  try
-  if s = "" or s.[0] <> '~' then s 
+  if s = "" || s.[0] <> '~' then s 
   else
     let len = String.length s in
     if len = 1 then Sys.getenv "HOME"

@@ -16,7 +16,7 @@ let execvp s args =
   with
     Unix_error(e, _, _) ->
        Printf.eprintf "%s\n" (Unix.error_message e);
-       flush Pervasives.stderr;
+       flush Stdlib.stderr;
        exit 1
 (*e: function Munix.execvp *)
 
@@ -48,7 +48,7 @@ let eval_cmd cmd args back =
 
 (*s: function Munix.write_string *)
 let write_string fd s =
-  ignore (write fd s 0 (String.length s))
+  ignore (write fd s 0 (Bytes.length s))
 (*e: function Munix.write_string *)
 
 (*s: function Munix.read_line *)
@@ -57,19 +57,21 @@ let write_string fd s =
  *   strips terminator !
  *)
 let read_line fd =
-  let rec read_rec buf bufsize offs =
+  let rec read_rec (buf : bytes) bufsize offs =
     let n = Low.read fd buf offs 1 in
       if n = 0 then raise End_of_file
-      else if buf.[offs] = '\n'
+      else if Bytes.get buf offs = '\n'
            then (* strips \n and possibly \r  *)
-             let len = if offs >= 1 & buf.[offs-1] = '\r' then offs-1 
+             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
                        else offs in
-               String.sub buf 0 len
+               Bytes.sub_string buf 0 len
            else let offs = succ offs in
                   if offs = bufsize 
-                  then read_rec (buf ^ String.create 128) (bufsize + 128) offs
+                  then 
+                    let newbuf = Bytes.cat buf (Bytes.create 128) in
+                    read_rec newbuf (bufsize + 128) offs
                   else read_rec buf bufsize offs in
-  read_rec (String.create 128) 128 0 
+  read_rec (Bytes.create 128) 128 0 
 (*e: function Munix.read_line *)
 
 
@@ -79,7 +81,7 @@ let full_random_init () =
     let env = environment () in
     let vect =
       Array.append (Array.map Hashtbl.hash env)
-           [| getpid(); Pervasives.truncate (time()); (* JPF: bogus *)
+           [| getpid(); Stdlib.truncate (time()); (* JPF: bogus *)
               getuid(); getgid();
               Hashtbl.hash (getlogin()) |] in
     Random.full_init vect
@@ -129,7 +131,7 @@ let vars = Str.regexp "\\$[A-Z]+"
 (*s: function Munix.system_eval *)
 let system_eval cmd args back =
   let replaced = ref []
-  and qargs = List.map (fun (x, v) -> x, quote_for_shell v) args
+  and _qargsTODO = List.map (fun (x, v) -> x, quote_for_shell v) args
   in
   let replfun s =
     let matched = Str.matched_string s in

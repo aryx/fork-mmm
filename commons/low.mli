@@ -2,7 +2,7 @@
 open Unix
 
 (*s: signature Low.read *)
-val read : file_descr -> string -> int -> int -> int
+val read : file_descr -> bytes -> int -> int -> int
   (* Unix.read wrapper, to be used when data transferred has to
      be counted by the tachymeter
    *)

@@ -14,10 +14,10 @@ type condition_backend = {
 }
 
 let default_backend () = {
-  create = (fun s -> ());
-  set = (fun s -> ());
-  wait = (fun s -> ());
-  free = (fun s -> ());
+  create = (fun _s -> ());
+  set = (fun _s -> ());
+  wait = (fun _s -> ());
+  free = (fun _s -> ());
 }
 let backend = ref (default_backend ())
   

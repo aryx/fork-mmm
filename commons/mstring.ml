@@ -55,11 +55,11 @@ let dec_to_hex i =
 (* Converting a hex stored string *)
 let hex_to_string s =
   let len = String.length s / 2 in
-  let res = String.create len in
+  let res = Bytes.create len in
     for i = 0 to len - 1 do
-      res.[i] <- Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1])
+      Bytes.set res i (Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1]))
       done;
-    res
+    Bytes.to_string res
 (*e: function Mstring.hex_to_string *)
 
 (*s: constant Mstring.gensym *)
@@ -107,33 +107,33 @@ let catenate_sep sep =
 let norm_crlf lastwascr buf offs len =
   let rpos = ref offs
   and wpos = ref 0
-  and dest = String.create (len + 1) (* we need one more char *)
+  and dest = Bytes.create (len + 1) (* we need one more char *)
   and limit = offs + len - 1  
   and lastiscr = ref false in
   if lastwascr then
     if buf.[!rpos] = '\n' then begin
-      dest.[!wpos] <- '\n';
+      Bytes.set dest !wpos '\n';
       incr rpos; incr wpos
     end
     else begin
-      dest.[!wpos] <- '\n'; incr wpos
+      Bytes.set dest !wpos '\n'; incr wpos
     end;
 
   while !rpos < limit do
     match buf.[!rpos] with
-      '\n' -> dest.[!wpos] <- '\n'; incr rpos; incr wpos
+      '\n' -> Bytes.set dest !wpos '\n'; incr rpos; incr wpos
     | '\r' -> 
     if buf.[!rpos + 1] = '\n'
-    then begin dest.[!wpos] <- '\n'; rpos := !rpos + 2; incr wpos end
-    else begin dest.[!wpos] <- '\n'; incr rpos; incr wpos end
-    | c -> dest.[!wpos] <- c; incr rpos; incr wpos 
+    then begin Bytes.set dest !wpos '\n'; rpos := !rpos + 2; incr wpos end
+    else begin Bytes.set dest !wpos '\n'; incr rpos; incr wpos end
+    | c -> Bytes.set dest !wpos c; incr rpos; incr wpos 
   done;
   begin match buf.[offs+len-1] with
-    '\n' -> dest.[!wpos] <- '\n'; incr wpos
+    '\n' -> Bytes.set dest !wpos '\n'; incr wpos
   | '\r' -> lastiscr := true
-  | c -> dest.[!wpos] <- c; incr wpos
+  | c -> Bytes.set dest !wpos c; incr wpos
   end;
-  String.sub dest 0 !wpos, !lastiscr
+  Bytes.sub_string dest 0 !wpos, !lastiscr
 (*e: function Mstring.norm_crlf *)
 
 
