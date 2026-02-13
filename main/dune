@@ -1,0 +1,17 @@
+(executable
+ (name htparse)
+ (modules htparse)
+ (libraries
+   mmm.html
+ )
+ ; 'byte' is for ocamldebug
+ (modes native byte))
+
+(install
+ (package mmm)
+ (section bin)
+ (files
+  (htparse.exe as htparse)
+  ; useful to debug, see ../../debug and ocamldebug
+  (htparse.bc as htparse.bc))
+)
