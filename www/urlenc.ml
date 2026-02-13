@@ -16,11 +16,11 @@ open Mstring
 
 (*s: function Urlenc.hexchar *)
 let hexchar c = 
-  let s = String.make 3 '%'
+  let s = Bytes.make 3 '%'
   and i = Char.code c in
-  s.[1] <- dec_to_hex (i/16);
-  s.[2] <- dec_to_hex (i mod 16);
-  s
+  Bytes.set s 1 (dec_to_hex (i/16));
+  Bytes.set s 2 (dec_to_hex (i mod 16));
+  Bytes.to_string s
 (*e: function Urlenc.hexchar *)
 
 (*s: function Urlenc.decode *)
@@ -31,7 +31,7 @@ let decode s =
   let target = Ebuffer.create l in
   let pos = ref 0 in
   while !pos < l do
-    if s.[!pos] = '%' & !pos + 2 < l  then begin
+    if s.[!pos] = '%' && !pos + 2 < l  then begin
        let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
        Ebuffer.output_char target (Char.chr c);
     pos := !pos + 3
@@ -68,13 +68,13 @@ let unquote s =
        if perpos > !pos 
        then Ebuffer.output target s !pos (perpos - !pos);
        pos := perpos;
-       if s.[!pos] = '%' & !pos + 2 < l  
+       if s.[!pos] = '%' && !pos + 2 < l  
        then begin
          let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
          let substc = Char.chr c in
          if List.mem substc keep_quoted 
          then
-           for i = 0 to 2 do
+           for _i = 0 to 2 do
              Ebuffer.output_char target s.[!pos];
              incr pos
            done

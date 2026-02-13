@@ -1,8 +1,6 @@
 (*s: ./www/hyper.ml *)
 open I18n
 open Printf
-open Mstring
-open Uri
 open Url
 
 (* An hypertext(media) link on the Web *)
@@ -121,7 +119,7 @@ let resolve link =
   if Uri.is_absolute newuri 
   then
     try
-      { uri_url = Lexurl.normalize newuri;
+      Uri.{ uri_url = Lexurl.normalize newuri;
         uri_fragment = frag 
       }
     with Url_Lexing _ ->

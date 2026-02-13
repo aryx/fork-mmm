@@ -1,6 +1,6 @@
 (library
- (public_name mmm.common)
- (name mmm_common)
+ (public_name mmm.commons)
+ (name mmm_commons)
  (wrapped false)
  ;(inline_tests)
  ;(preprocess

@@ -1,8 +1,5 @@
 (*s: www/lexurl.mll *)
 {
-open Lexing
-
-open Mstring
 open Mlist
 
 open Url
@@ -18,7 +15,7 @@ let normalize_port = function
 (*s: function Lexurl.normalize_host *)
 (* lowercase, don't use final . in FQDN *)
 let normalize_host s = 
-  let s = String.lowercase s in
+  let s = String.lowercase_ascii s in
   let l = String.length s in
   if s.[l-1] = '.' 
   then String.sub s 0 (l-1)
@@ -40,7 +37,7 @@ rule f = parse
          } 
       in
       let protocol =
-        String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
+        String.uppercase_ascii (String.sub lexeme 0 (String.length lexeme - 1)) in
       (match protocol with
       (*s: [[Lexurl.f]] protocol cases *)
       | "HTTP" ->

@@ -1,6 +1,4 @@
 (*s: ./www/uri.ml *)
-open Printf
-open Mstring
 
 (*s: type Uri.abs_uri *)
 (* URI utilities. RFC 1630 *)

@@ -1,5 +1,4 @@
 (*s: ./www/url.ml *)
-open Printf
 
 (*s: type Url.protocol *)
 type protocol =
@@ -49,7 +48,7 @@ type t =
 exception Url_Lexing of string * int
 (*e: exception Url.Url_Lexing *)
 (*s: exception Url.Invalid_url *)
-exception Invalid_url of t * string
+(*exception Invalid_url of t * string*)
 (*e: exception Url.Invalid_url *)
 
 (*s: function Url.string_of *)
@@ -68,10 +67,10 @@ let string_of p =
   let write_hostport def =
       match p.host, p.port with
          None, None -> ()
-       | Some h, None -> ws (String.lowercase h)
-       | Some h, Some p when p = def -> ws (String.lowercase h)
+       | Some h, None -> ws (String.lowercase_ascii h)
+       | Some h, Some p when p = def -> ws (String.lowercase_ascii h)
        | Some h, Some p -> 
-           ws (String.lowercase h); wc ':'; ws (string_of_int p)
+           ws (String.lowercase_ascii h); wc ':'; ws (string_of_int p)
        | None, Some _ -> failwith "url_of_parsed"	    
   in
   let write_pathsearch () =
@@ -94,7 +93,7 @@ let string_of p =
   let write_fhost () =
       match p.host with
        None -> ws "localhost"
-      | Some h -> ws (String.lowercase h)
+      | Some h -> ws (String.lowercase_ascii h)
   in
   begin match p.protocol with
     FTP ->
@@ -113,7 +112,7 @@ let string_of p =
     begin match p.host with
       None | Some "localhost" ->
         ws "file://"; write_fhost(); write_slashpath()
-    | Some h ->
+    | Some _h ->
        p.protocol <- FTP;
         ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
     end
