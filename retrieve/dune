@@ -1,0 +1,11 @@
+(library
+ (public_name mmm.retrieve)
+ (name mmm_retrieve)
+ (wrapped false)
+ (libraries
+    mmm.commons
+    mmm.www mmm.http
+    mmm.protocols
+ )
+ (preprocess (pps ppx_deriving.show))
+)

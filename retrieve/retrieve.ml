@@ -205,7 +205,7 @@ Because of recursive update, this has moved elsewhere.
 
 (*s: function Retrieve.code400 *)
 (* 400 Bad request *)
-let code400 _wr _dh = Error (s_ "Bad Request")
+let _code400 _wr _dh = Error (s_ "Bad Request")
 (*e: function Retrieve.code400 *)
 
 (*s: function Retrieve.ask_auth *)

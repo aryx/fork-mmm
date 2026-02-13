@@ -6,7 +6,6 @@ open Www
 open Document
 open Url
 open Feed
-open Retrieve
 open Http_headers
 
 (*s: constant Scheduler.debug *)
@@ -222,7 +221,7 @@ module Make(J: Data) = struct
                 (* open the temporary file in which doc is to be saved *)
                 let file = Msys.mktemp "data" in
                 let oc = open_out file 
-                and buffer = String.create 2048 in
+                and buffer = Bytes.create 2048 in
 
         (* JPF HACK -- for Image retrieval progress meter *)
         begin try 
@@ -252,10 +251,10 @@ module Make(J: Data) = struct
               begin
             try 
                          let data = J.load dh referers file in
-              List.iter (fun (referer,(cont,_)) -> 
+              List.iter (fun (_referer,(cont,_)) -> 
                 try Printexc.print 
                 (cont dh.document_id.document_url) data
-                with _ -> flush Pervasives.stderr)
+                with _ -> flush Stdlib.stderr)
                            job.conts
             with (* load failed *)
               e -> 
@@ -350,7 +349,7 @@ module Make(J: Data) = struct
        List.map (fun q ->
      let newq = Queue.create () in
      Queue.iter (function
-       | (wr, didr, cont, progress) when did = didr -> ()
+       | (_wr, didr, _cont, _progress) when did = didr -> ()
        | r -> Queue.add r newq)
        q;
      newq)
@@ -361,7 +360,7 @@ module Make(J: Data) = struct
     *)
     let rem = ref [] in (* jobs to kill *)
     Hashtbl.iter 
-      (fun url job ->
+      (fun _url job ->
     try 
       job.conts <- Mlist.except_assoc did job.conts;
       if job.conts = [] then rem := job :: !rem
@@ -378,22 +377,22 @@ module Make(J: Data) = struct
    *)
   type delayed = queue
 
-  let new_delayed = Queue.create
+  let new_delayed () = Queue.create ()
 
-  let is_empty q = 
-    try Queue.peek q; false with Queue.Empty -> true
+  let is_empty (q : queue) = 
+    try Queue.peek q |> ignore; false with Queue.Empty -> true
 
   (* add a new request in the queue *)
   (* Actually, if the document is already in the cache, then process
      the continuation *)
-  let add_delayed q wr did cont progress =
+  let add_delayed (q : queue) wr did cont progress =
     try 
       if skip_cache wr then raise Not_found
       else cont wr.www_url (J.cache_access wr.www_url did)
     with Not_found -> Queue.add (wr,did,cont,progress) q
 
   (* Put the queue in the list of queues *)
-  let flush_delayed q =
+  let flush_delayed (q : queue) =
     (* Queue.iter (function (_,_,_,prog) -> prog None 0) q;(* create the gauge *) *)
     queues := !queues @ [q];
     next_request()
