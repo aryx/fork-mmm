@@ -4,6 +4,7 @@
 
 ** build infra
 - switch to dune and use of OPAM for dependencies
+  (but very few dependencies as camltk is vendored)
 
 * beta (Q1 2015) (maintenance)
 
