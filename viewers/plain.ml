@@ -3,7 +3,6 @@ open Tk
 open Unix
 open Frx_text
 open Document
-open Viewers
 open Feed
 
 (*s: class Plain.plain *)
@@ -11,7 +10,7 @@ class display_plain ((top : Widget.widget),
                      (ctx : Viewers.context),
                      (dh : Document.handle)) =
  object (self)
-  inherit Viewers.display_info () as di  (* gives us basic features *)
+  inherit Viewers.display_info () as _di  (* gives us basic features *)
 (*
   inherit Htmlw.viewer_globs (ctx, dh)
 *)
@@ -80,7 +79,7 @@ class display_plain ((top : Widget.widget),
     tw <- text;
 
     (*s: [[Plain.plain#init]] locals *)
-    let buffer = String.create 2048 in
+    let buffer : bytes = Bytes.create 2048 in
     let size = 
       try Some (Http_headers.contentlength dh.dh_headers)
       with Not_found -> None (* duh *) 
@@ -101,7 +100,7 @@ class display_plain ((top : Widget.widget),
         end else begin
           read := !read + n;
           self#set_progress size !read;
-          let s,flag = Mstring.norm_crlf !lastwascr buffer 0 n in
+          let s,flag = Mstring.norm_crlf !lastwascr (Bytes.to_string buffer) 0 n in
           lastwascr := flag;
           self#add_text s
         end

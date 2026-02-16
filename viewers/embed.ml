@@ -5,7 +5,6 @@ open Tk
 open Document
 open Www
 open Hyper
-open Url
 open Http_headers
 
 (* Assume any kind of data could be embedded 
@@ -19,7 +18,7 @@ module EmbeddedData =
 
     type t = document
 
-    let cache_access url referer =
+    let cache_access url __referer =
       let did =  {document_url = url; document_stamp = no_stamp} in
       (* look in the cache *)
       Cache.find did
@@ -58,7 +57,7 @@ module EmbeddedData =
 
       |	_ -> failwith "load"
 
-    let error url jobs = 
+    let error url _jobs = 
       Error.f (s_ "Can't find embedded document %s"  (Url.string_of url))
 
     let error_msg (_,_) = ()
@@ -147,7 +146,7 @@ let _ =
 let add ({ embed_hlink = link;
        embed_frame = frame;
        embed_context = embed_ctx;
-       embed_map = m;
+       embed_map = _m;
        embed_alt = alt_txt} as emb) =
   (* Put up the ALT text *)
   List.iter Tk.destroy (Winfo.children frame);
@@ -165,7 +164,7 @@ let add ({ embed_hlink = link;
        (Www.make link)
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
-       (fun url doc ->
+       (fun _url doc ->
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
@@ -185,7 +184,7 @@ let add ({ embed_hlink = link;
    | Invalid_request (w,msg) ->
        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
-   | Invalid_link err ->
+   | Invalid_link _err ->
        let t = s_ "Embed Error: invalid link" in
        pack [Message.create frame [Text t ]][]
   with
@@ -197,13 +196,13 @@ let add ({ embed_hlink = link;
      (embed_ctx#base)
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
-     (fun url doc -> embedded_viewer frame embed_ctx doc)
+     (fun _url doc -> embedded_viewer frame embed_ctx doc)
      (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
-       | Invalid_link err ->
+       | Invalid_link _err ->
        let t = s_ "Embed Error: invalid link" in
        pack [Message.create frame [Text t ]][]
 (*e: function Embed.add *)
@@ -243,7 +242,7 @@ let update frame embed_ctx doc notchanged =
        (rewrite_wr (Www.make link))
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
-       (fun url doc ->
+       (fun _url doc ->
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
@@ -259,7 +258,7 @@ let update frame embed_ctx doc notchanged =
       | Invalid_request (w,msg) ->
       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
       pack [Message.create frame [Text t]][]
-      | Invalid_link err ->
+      | Invalid_link _err ->
       let t = s_ "Embed Error: invalid link" in
       pack [Message.create frame [Text t ]][]
     with
@@ -271,13 +270,13 @@ let update frame embed_ctx doc notchanged =
         (embed_ctx#base)
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
-        (fun url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
+        (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
         (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
         let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
         pack [Message.create frame [Text t]][]
-        | Invalid_link err ->
+        | Invalid_link _err ->
         let t = s_ "Embed Error: invalid link" in
         pack [Message.create frame [Text t ]][]
   with
