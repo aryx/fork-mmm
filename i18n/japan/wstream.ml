@@ -11,7 +11,7 @@ type t = {
 let init_value = UNKNOWN "", ""
 
 let create n = {
-   buffer = Array.create n init_value;
+   buffer = Array.make n init_value;
    start = 0;
    pos = 0;
    len = n
@@ -36,7 +36,7 @@ let output_array buf s =
   let l = Array.length s in
   if buf.pos - buf.start + l > buf.len then begin (* no mean of gc *)
     let size = newsize buf.len l in
-    let news = Array.create size init_value in
+    let news = Array.make size init_value in
       Array.blit buf.buffer buf.start news 0 (buf.pos - buf.start);
       buf.buffer <- news;
       buf.len <- size;
@@ -53,7 +53,7 @@ let output_one buf c =
   try
   if buf.pos - buf.start >= buf.len then begin (* no mean of gc *)
     let size = newsize buf.len 1 in
-    let news = Array.create size init_value in
+    let news = Array.make size init_value in
       Array.blit buf.buffer buf.start news 0 (buf.pos - buf.start);
       buf.buffer <- news;
       buf.len <- size;
@@ -70,7 +70,7 @@ let output buf s ofs l =
   try
   if buf.pos - buf.start + l > buf.len then begin (* no mean of gc *)
     let size = newsize buf.len l in
-    let news = Array.create size init_value in
+    let news = Array.make size init_value in
       Array.blit buf.buffer buf.start news 0 (buf.pos - buf.start);
       buf.buffer <- news;
       buf.len <- size;
@@ -84,7 +84,7 @@ let output buf s ofs l =
   with _ -> raise (Failure "output")
 
 let get buf = 
-  let dest = Array.create (buf.pos - buf.start) init_value in
+  let dest = Array.make (buf.pos - buf.start) init_value in
   Array.blit buf.buffer buf.start dest 0 (buf.pos - buf.start);
   dest
 

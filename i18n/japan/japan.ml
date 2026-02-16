@@ -1,8 +1,8 @@
 open Lexkanji
 open Charset
-open Wchar
 
-open Lexing
+
+
 
 let debug = ref false
 
@@ -20,8 +20,10 @@ let encode_table = (* I am sure this is not correct *)
   [ "iso[-_]?8859[-_]?.*", ISO8859;
     "ascii", ISO8859;
     "iso[-_]?2022[-_]?jp", JIS;
+(*
     "\(x[-_]\|\)euc[-_]jp", EUC;
     "\(x[-_]\|\)sjis", SJIS;
+*)
     "shift[-_]jis", SJIS;
     "ms[-_]kanji", SJIS ]
 
@@ -47,7 +49,7 @@ type decoder =
   | DecoderSJIS
   | DecoderISO8859
 
-type read_type = string -> int -> int -> int
+type read_type = bytes -> int -> int -> int
 
 class read_native (read_func : read_type) =
  object
@@ -67,7 +69,7 @@ let esc_sequence = function
 class read_i18n (read_func) =
  object
   inherit read_native (read_func) (* nothing is inherited ... *)
-  method set_code = fun (code : code) -> ()
+  method set_code = fun (_code : code) -> ()
   method get_code = Code ISO8859
 end
 
@@ -84,10 +86,10 @@ class  virtual read_i18n_implement (read_func) =
 
   method virtual lex_and_store : unit
 
-  method set_code code =
+  method! set_code code =
     curcode <- code
 
-  method get_code = Code curcode
+  method! get_code = Code curcode
 
   method fill_wstream =
     while Wstream.used outbuf = 0 do
@@ -102,7 +104,7 @@ class  virtual read_i18n_implement (read_func) =
       Wstream.reset lexdata.stored;
     done
 
-  method read = fun s n1 n2 ->
+  method! read = fun s n1 n2 ->
     (* If it is in Binary mode and there is no tokens in outbuf *)
 (*
     if curcode = Binary && Wstream.used outbuf = 0 then begin
@@ -169,7 +171,7 @@ class  virtual read_i18n_implement (read_func) =
 end
 
 class read_junet (read_func) =
- object (self)
+ object (_self)
   inherit read_i18n_implement (read_func)
   method lex_and_store = junet lexbuf lexdata
 end
@@ -217,7 +219,7 @@ class read_japanese (read_func, config) =
 
   val mutable wholecode = Code Unknown
 
-  method get_code = wholecode
+  method! get_code = wholecode
 
   (* val config = config *) 
 
@@ -312,7 +314,7 @@ class read_japanese (read_func, config) =
     val mutable error = 0
 
   method robust decoder lexbuf lexdata =
-    try decoder lexbuf lexdata with Failure s -> 
+    try decoder lexbuf lexdata with Failure _s -> 
       self#set_code Unknown
 	  
   method robust_error decoder lexbuf lexdata =

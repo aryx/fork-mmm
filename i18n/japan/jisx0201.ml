@@ -1,5 +1,4 @@
 open Charset
-open Wchar
 open Tool
 
 (* This code is to convert JISX0201_Katakana characters into JISX0208 and *)

@@ -1,5 +1,4 @@
 open Charset
-open Wchar
 
 (* Non perfect version of convert function between J-EUC to JISX0208. *)
 (* This function is for the library itself only. *)
@@ -17,10 +16,10 @@ let wcharlist_of_euc euc =
 	  incr pos;
 	  if !pos >= len then raise (Failure "1byte upper char");
 	  let c2 = Char.code (euc.[!pos]) in
-	  let buf = String.create 2 in
-	  buf.[0] <- Char.chr (c - 128);
-	  buf.[1] <- Char.chr (c2 - 128);
-	  (JISX0208_1983, buf)
+	  let buf = Bytes.create 2 in
+	  Bytes.set buf 0 (Char.chr (c - 128));
+	  Bytes.set buf 1 (Char.chr (c2 - 128));
+	  (JISX0208_1983, Bytes.to_string buf)
     in
     wcharlist := wc :: !wcharlist;
     incr pos;
@@ -31,8 +30,9 @@ let wcharlist_of_euc euc =
 let euc_of_wchar (charset, s) =
   match charset with
     JISX0208_1978 | JISX0208_1983 | JISX0208_1990 ->
-      let s = String.create 2 in
-      s.[0] <- Char.chr (Char.code s.[0] + 128);
-      s.[1] <- Char.chr (Char.code s.[1] + 128);
-      s
+      (* bugfix: was s but then was setting accessing same s *)
+      let s2 = Bytes.create 2 in
+      Bytes.set s2 0 (Char.chr (Char.code s.[0] + 128));
+      Bytes.set s2 1 (Char.chr (Char.code s.[1] + 128));
+      Bytes.to_string s2
   | _ -> s

@@ -15,14 +15,14 @@ let lexeme_sub lexbuf start code size =
   let str = String.sub (lexeme lexbuf) start 
     (String.length (lexeme lexbuf) - start) in
   let len = String.length str / size in
-  let a = Array.create len (code, "") in
+  let a = Array.make len (code, "") in
   for i = 0 to len - 1 do
     a.(i) <- code, String.sub str (i * size) size
   done;
   a
 
 let ascii_array s =
-  let a = Array.create (String.length s) (ASCII, "") in
+  let a = Array.make (String.length s) (ASCII, "") in
   for i = 0 to String.length s - 1 do
     a.(i) <- ASCII, String.make 1 s.[i]
   done;
@@ -33,7 +33,7 @@ let newdata () = {
   unresolved = Ebuffer.create 100
 } 
 
-let debug s = 
+let _debug s = 
   prerr_string s;
   prerr_string (Printf.sprintf " %d " (String.length s));
   prerr_string "<<";
@@ -48,7 +48,7 @@ rule ascii = parse
    { ( fun lexdata ->
        Wstream.output_array lexdata.stored (ascii_array (lexeme lexbuf)) )}
  | eof 
-   { ( fun lexdata ->
+   { ( fun _lexdata ->
        raise End_of_file )}
 
 and iso8859 = parse
@@ -57,7 +57,7 @@ and iso8859 = parse
    { ( fun lexdata ->
        Wstream.output_array lexdata.stored (ascii_array (lexeme lexbuf)) )}
  | eof 
-   { ( fun lexdata ->
+   { ( fun _lexdata ->
        raise End_of_file )}
 
 and junet = parse
@@ -103,7 +103,7 @@ and junet = parse
  | ['\001' - '\026' '\028' - '\127']
     { ( fun lexdata -> 
 	Wstream.output_one lexdata.stored (ASCII, lexeme lexbuf) )}
- | eof {( fun lexdata ->
+ | eof {( fun _lexdata ->
           raise End_of_file )}
 
 and eucjapan = parse
@@ -112,11 +112,11 @@ and eucjapan = parse
        Wstream.output_array lexdata.stored (ascii_array (lexeme lexbuf)) )}
  | ['\161' - '\254'] ['\161' - '\254'] (* Characters (right) *)
     { ( fun lexdata ->
-        let buf = String.create 2 in
+        let buf = Bytes.create 2 in
         let src = lexeme lexbuf in
-        buf.[0] <- Char.chr (Char.code src.[0] - 128);
-        buf.[1] <- Char.chr (Char.code src.[1] - 128);
-        Wstream.output_one lexdata.stored (JISX0208_1983, buf) )}
+        Bytes.set buf 0 (Char.chr (Char.code src.[0] - 128));
+        Bytes.set buf 1 (Char.chr (Char.code src.[1] - 128));
+        Wstream.output_one lexdata.stored (JISX0208_1983, Bytes.to_string buf) )}
  | ('\142' ['\161' - '\254'])+ (* "hankaku" katakana *)
    { ( fun lexdata ->
        let src = lexeme lexbuf in 
@@ -127,12 +127,12 @@ and eucjapan = parse
        done )}
  | '\143' ['\161' - '\254'] ['\161' - '\254'] (* JISX0212_1990 *)
    { ( fun lexdata ->
-       let buf = String.create 2 in
+       let buf = Bytes.create 2 in
        let src = lexeme lexbuf in
-       buf.[0] <- Char.chr (Char.code src.[1] - 128);
-       buf.[1] <- Char.chr (Char.code src.[2] - 128);
-       Wstream.output_one lexdata.stored (JISX0212_1990, buf) )}
- | eof {( fun lexdata ->
+       Bytes.set buf 0 (Char.chr (Char.code src.[1] - 128));
+       Bytes.set buf 1 (Char.chr (Char.code src.[2] - 128));
+       Wstream.output_one lexdata.stored (JISX0212_1990, Bytes.to_string buf) )}
+ | eof {( fun _lexdata ->
           raise End_of_file )}
 
 and sjis = parse
@@ -151,11 +151,11 @@ and sjis = parse
    (* 8/1 - 9/15, 14/0 - 15/10 :: 4/0 - 15/12 (except 7/15) *) 
    { ( fun lexdata ->  
        let src = lexeme lexbuf in
-       let dst = String.create 2 in
+       let dst = Bytes.create 2 in
        try
   	 let ku, ten = 
   	   match Char.code src.[0], Char.code src.[1] with
-  	     c, c2 when c >= 240 -> (* f$%^ing GAIJI *)
+  	     c, _c2 when c >= 240 -> (* f$%^ing GAIJI *)
   	       raise Exit
   	   | c, c2 when c <= 159 && c2 < 159 ->
   	       c * 2 - 257, if c2 <= 126 then c2 - 63 else c2 - 64
@@ -167,12 +167,12 @@ and sjis = parse
   	       c * 2 - 384, c2 - 158 
   	   | _, _ -> raise (Lexkanji_Error "Lexkanji.sjis")
 	 in
-	   dst.[0] <- Char.chr (ku + 32);
-	   dst.[1] <- Char.chr (ten + 32);
-	   Wstream.output_one lexdata.stored (JISX0208_1983, dst)
+	   Bytes.set dst 0 (Char.chr (ku + 32));
+	   Bytes.set dst 1 (Char.chr (ten + 32));
+	   Wstream.output_one lexdata.stored (JISX0208_1983, Bytes.to_string dst)
        with
 	 Exit -> Wstream.output_array lexdata.stored (ascii_array "[GAIJI]") )}
- | eof {( fun lexdata ->
+ | eof {( fun _lexdata ->
           raise End_of_file )}
 
 and eucorsjis = parse
@@ -239,14 +239,14 @@ and eucorsjis = parse
  | (['\161' - '\254'] ['\161' - '\254'] |
     '\142' ['\161' - '\254'] |
     '\143' ['\161' - '\254'] ['\161' - '\254'])
-   { ( fun lexdata -> raise (Failure "eucorsjis: EUC is not exterminated") )}
+   { ( fun _lexdata -> raise (Failure "eucorsjis: EUC is not exterminated") )}
 
  (* Debug : SJIS *)
  | ( ['\161' - '\223'] |
      ['\129' - '\159' '\224' - '\250'] ['\064' - '\126' '\128' - '\252'] )
-   { ( fun lexdata -> raise (Failure "eucorsjis: SJIS is not exterminated") )}
+   { ( fun _lexdata -> raise (Failure "eucorsjis: SJIS is not exterminated") )}
 
- | eof {( fun lexdata ->
+ | eof {( fun _lexdata ->
           raise End_of_file )}
   
 and remove_garbage = parse
@@ -257,7 +257,7 @@ and remove_garbage = parse
    { ( fun lexdata ->
        Wstream.output_one lexdata.stored (ASCII, "#")) }
  | eof 
-   { ( fun lexdata ->
+   { ( fun _lexdata ->
        raise End_of_file )}
 
 

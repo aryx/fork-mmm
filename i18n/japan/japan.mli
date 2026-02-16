@@ -16,7 +16,7 @@ type decoder =
   | DecoderSJIS
   | DecoderISO8859
 
-type read_type = string -> int -> int -> int
+type read_type = bytes -> int -> int -> int
 
 class read_native : (read_type) -> object
   method read : read_type
