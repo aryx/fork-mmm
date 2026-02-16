@@ -1,22 +1,9 @@
-
-#dune
-_build
-
-external/ocamltk
-external/stdlib/*
-
-.md5sum_*
-*.opti
-
-*.aux
-*.brf
-*.log
-*.out
-*.tex
-*.toc
+# -*- sh -*-
+# ----------------------------------------------------------------------------
+# Patterns
+# ----------------------------------------------------------------------------
 
 # ocaml object files
-
 *.o
 *.cm*
 *.annot
@@ -24,17 +11,48 @@ external/stdlib/*
 *.so
 *.a
 
+# syncweb
+.md5sum_*
+
+# codegraph
+*.opti
+
+# latex
+*.aux
+*.brf
+*.log
+*.out
+*.tex
+*.toc
+*.bbl
+*.blg
+
+# ocamldep
 .depend
 
-#
+# ----------------------------------------------------------------------------
+# Specific files
+# ----------------------------------------------------------------------------
+#dune
+_build
+
+external/ocamltk
+external/stdlib/*
+
+/docs/lineage.dot
+/docs/lineage.pdf
+/docs/mmm-*.pdf
+
+# ocamldoc
 *Fig_graph_ml.pdf
 
 # lexers
 /html/lexhtml.ml
 /http/lexdate.ml
 /http/lexheaders.ml
-/japan/lexkanji.ml
+/i18n/japan/lexkanji.ml
 /misc/lexpath.ml
+/commons/lexpath.ml
 /www/lexurl.ml
 
 #binaries
@@ -55,11 +73,11 @@ external/stdlib/*
 
 /safe/safe418mmm.ml
 /safe/safe418mmm.mli
-/.DS_Store
-/i18n/japan/lexkanji.ml
+
 /external/ocamltk/Makefile.camltk
 /external/ocamltk/Makefile.config
 /external/ocamltk/tkanim/ext/Makefile
+
 /safe/safe418.ml
 /safe/safe418.mli
 /safe/safefrx.ml
@@ -70,8 +88,9 @@ external/stdlib/*
 /safe/safetk.mli
 /safe/safetkanim.ml
 /safe/safetkanim.mli
+
 /ocamldoc.out
-/commons/lexpath.ml
+
 /commons/ocamldoc.out
 /viewers/ocamldoc.out
 /mmm
@@ -79,8 +98,10 @@ external/stdlib/*
 /safe/gen/safe418.mli
 /safe/gen/safe418mmm.ml
 /safe/gen/safe418mmm.mli
+
 /demos/sboard/surfboard
 /demos/sboard/surfboard_remote
+
 extensions/sandbox/crcs.ml
 extensions/sandbox/crcs.ml.bak
 extensions/sandbox/crcsmmm.ml
@@ -93,15 +114,19 @@ extensions/sandbox/safetk.ml
 extensions/sandbox/safetk.mli
 extensions/sandbox/safetkanim.ml
 extensions/sandbox/safetkanim.mli
+
 /crcs/crcs.ml.bak
 /crcs/crcsmmm.ml.bak
+
 /dependencies.marshall
 extensions/sandbox/gen/*.*
+
 /Browser.pdf
 /graph_code.marshall
+
 /extensions/crcs/crcs.ml.bak
 /extensions/crcs/crcsmmm.ml.bak
+
 /mmm2
-/.#Browser.nw
 /TAGS
 /diff
