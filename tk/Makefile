@@ -55,8 +55,10 @@ clean::
 	rm -f $(TARGET).top
 
 
-# for tk ressource and its use of the parser extension
-PP=-pp camlp4o
+#old: for tk ressource and its use of the parser extension
+# PP=-pp camlp4o
+#but I switched to raw Stream API without needing the OCaml stream
+# extension
 
 tkresource.cmo: tkresource.cmi
 	$(OCAMLC) $(PP) -c tkresource.ml
