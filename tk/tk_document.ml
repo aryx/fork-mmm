@@ -1,7 +1,4 @@
 open Tk
-open Feed
-open Www
-open Hyper
 open Document
 
 let add_log dh initmsg abort =

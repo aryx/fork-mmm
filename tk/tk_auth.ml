@@ -1,8 +1,4 @@
 open Tk
-open Unix
-open Http_headers
-open Url
-open Www
 open Auth
 
 
@@ -12,7 +8,7 @@ let edit () =
          [Class "MMMAuthorizations"] in
     Wm.title_set top (I18n.sprintf "Authorizations");
     let f,lb = Frx_listbox.new_scrollable_listbox top [TextWidth 40] in
-      Hashtbl.iter (fun space cookie ->
+      Hashtbl.iter (fun space _cookie ->
        Listbox.insert lb End
       [Printf.sprintf "(%s) http://%s:%d/%s" 
          space.auth_realm space.auth_host space.auth_port space.auth_dir])

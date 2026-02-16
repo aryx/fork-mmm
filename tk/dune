@@ -3,7 +3,8 @@
  (name mmm_tk)
  (wrapped false)
  (libraries
-    labltk
+    camlp-streams
+    camltk
     mmm.commons
     ;mmm.globals mmm.www
     mmm.protocols mmm.retrieve

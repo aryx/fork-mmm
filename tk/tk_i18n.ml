@@ -19,15 +19,15 @@ let menu_option l =
       let new_text, new_under_pos =
     if !text = trans then !text, !under_pos
     else
-      if !under_pos = 0 & 
+      if !under_pos = 0 &&
         String.get !text 0 = String.get trans 0 then trans, 0
       else
         (String.make 1 (String.get !text !under_pos)) ^ ":" ^ trans, 0 
       in
         List.map (function
         UnderlinedChar _ -> UnderlinedChar new_under_pos
-      | Text x -> Text new_text
-      | Label x -> Label new_text
+      | Text _x -> Text new_text
+      | Label _x -> Label new_text
       | x -> x ) l
 
 exception Found of string

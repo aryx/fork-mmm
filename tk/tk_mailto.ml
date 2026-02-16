@@ -1,13 +1,5 @@
-open Sys
-open Unix
-
 open Tk
 open Frx_text
-
-open Www
-open Hyper
-open Url
-
 open Mailto
 
 
@@ -18,8 +10,8 @@ let internal address referer =
   and subject = Textvariable.create_temporary top in
      Textvariable.set dest address;
      Textvariable.set subject referer;
-  let fto,eto = Frx_entry.new_labelm_entry top "To:" dest
-  and fsub, esub = Frx_entry.new_labelm_entry top "Subject:" subject
+  let fto, _eto = Frx_entry.new_labelm_entry top "To:" dest
+  and fsub, _esub = Frx_entry.new_labelm_entry top "Subject:" subject
   and fbody, tbody = new_scrollable_text top [] false in
 
     pack [fto; fsub][Fill Fill_X];
