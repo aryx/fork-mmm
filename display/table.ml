@@ -53,7 +53,7 @@ type t = {
 (* Internal structure of tables *)
 type table = {
   master_widget : Widget.widget;
-  width : length;
+  _width : length;
   mutable slaves :
       (Widget.widget * (int*int*int*int*width_constraint*length*string)) list;
   mutable cur_col : int;
@@ -104,7 +104,7 @@ let dynamic_fight cell nowrap gameover align =
       Log.f (sprintf "Switching %s to vertical resize"
                      (Widget.name cell));
         (* in all cases, we have to grow vertically *)
-       let scroll, check = Fit.vert cell in
+       let scroll, _check = Fit.vert cell in
        Text.configure cell [YScrollCommand scroll];
         (* A posteriori updates for embedded windows
        List.iter 
@@ -173,9 +173,9 @@ let fixed_size cell width nowrap align =
  *  table.width contains the specified width for the table
  *  contextwidth was the width computed the context of the table
  *)
-let sizing table nowrap width =
+let sizing table nowrap _width =
   (* For cells of given width and colspan 1, set a col minsize *)
-  let colwidths = Array.create (Array.length table.slots) 0 in
+  let colwidths = Array.make (Array.length table.slots) 0 in
   let setcolwidth col n =
     if n > colwidths.(col) then begin
       colwidths.(col) <- n;
@@ -193,7 +193,7 @@ let sizing table nowrap width =
   (* Set initial size and dynamic resizing *)
   List.iter (function w,(_,col,_,cspan,cellwidth,_,align) -> 
     (* set initial width from images *)
-    let initw = Fit.set_initial_width w
+    let _initw = Fit.set_initial_width w
     (* set initial height from line number *)
     and _ = Fit.set_initial_height w in
     match cellwidth with
@@ -257,7 +257,7 @@ let get_slot table needed_cols rspan =
     if first + needed_cols > Array.length table.slots then
       table.slots <- 
          Array.append table.slots 
-           (Array.create (first + needed_cols - (Array.length table.slots)) 
+           (Array.make (first + needed_cols - (Array.length table.slots)) 
                          rspan);
     (* Mark used *)
     for i = first to first + needed_cols - 1 do
@@ -268,7 +268,7 @@ let get_slot table needed_cols rspan =
   with
     Not_found -> (* Grow *)
       let first = Array.length table.slots in
-      table.slots <- Array.append table.slots (Array.create needed_cols rspan);
+      table.slots <- Array.append table.slots (Array.make needed_cols rspan);
       table.cur_col <- Array.length table.slots;
       first
 (*e: function Table.get_slot *)
@@ -313,7 +313,7 @@ let create top tag contextwidth =
  let tab = {
     master_widget = top;
     slaves = [];
-    width = width;
+    _width = width;
     cur_col = 0;
     cur_row = -1; (* Start with TR *)
     slots = [||];
@@ -391,11 +391,11 @@ let create top tag contextwidth =
        try Some (int_of_string (get_attribute tag "width"))
        with Not_found | Failure "int_of_string" -> None
       in 
-      for i = 1 to span do
+      for _i = 1 to span do
     tab.cols <- width :: tab.cols 
       done);
 
-    open_row = (fun t ->
+    open_row = (fun _t ->
     tab.cur_col <- 0;
     tab.cur_row <- 1 + tab.cur_row;
         in_row := true;

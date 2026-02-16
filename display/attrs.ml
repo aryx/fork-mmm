@@ -1,15 +1,15 @@
 (*s: ./display/attrs.ml *)
-open Common
+
 
 (* Utilities for tags and attributes *)
 
 open Printf
 open Protocol
 open Tk
-open Frx_text
+
 open Fonts
 
-open Htmlfmt
+
 
 (* Delayed and shared configuration of tags *)
 
@@ -54,7 +54,7 @@ module LocMap = Ibtree.Make(struct
   end)
 
 class anchortags (thtml) =
- object (self)
+ object (_self)
   inherit tags (thtml) as tags
   inherit Htbind.hypertext (thtml)
 
@@ -65,7 +65,7 @@ class anchortags (thtml) =
     tags#add ("anchor", s, e);
     mappings <- (s,e,h) :: mappings
 
-  method flush =
+  method! flush =
     tags#flush;
     mappings |> List.iter (fun (s,e,h) ->
       let loc1 = Text.index wid s
@@ -113,7 +113,7 @@ class  virtual ['a] nested (tagdef) =
        [] -> 
         (* no current definition, don't issue a put *)
         last_change <- current_pos
-     | curtag::l ->
+     | curtag::_l ->
         self#put current_pos curtag
     end;
     stack <- tag :: stack;
@@ -136,11 +136,11 @@ class align (tagdef) =
  object
   inherit [string] nested tagdef
   method push_convert ad =
-    match String.lowercase ad with
+    match String.lowercase_ascii ad with
      "right" -> "right", [Justify Justify_Right]
        | "center" -> "center", [Justify Justify_Center]
        | _ -> "left", [Justify Justify_Left]
-  method pop_convert ad = ()
+  method pop_convert _ad = ()
 end
 
 (*
@@ -171,7 +171,7 @@ class font (tagdef) =
   method push_convert fil = 
     let curfd = match font_stack with
       [] -> basefont
-    | x::l -> x in
+    | x::_l -> x in
     let newfd = Fonts.merge curfd fil in
       font_stack <- newfd :: font_stack;
       Fonts.compute_tag newfd
@@ -179,7 +179,7 @@ class font (tagdef) =
   method pop_convert _ = 
     match font_stack with
       [] -> ()
-    | x::l -> font_stack <- l
+    | _x::l -> font_stack <- l
 
   (* by changing the base, we should be changing both the current default size 
      and the behaviour of subsequent FONT SIZE tags. The size changes is easy.
@@ -227,7 +227,7 @@ let _ = List.iter (fun (name, value) -> Hashtbl.add color_mappings name value)
 
 (*s: function Attrs.html_color *)
 let html_color s =
-  try Hashtbl.find color_mappings (String.lowercase s)
+  try Hashtbl.find color_mappings (String.lowercase_ascii s)
   with Not_found -> s
 (*e: function Attrs.html_color *)
 
@@ -244,7 +244,7 @@ class fgcolor (tagdef) =
       s, [Foreground (NamedColor colordef)]
     else
       s, []
-  method pop_convert s = 
+  method pop_convert _s = 
     ()
 end
 
@@ -261,7 +261,7 @@ class bgcolor (tagdef) =
       s, [Background (NamedColor colordef)]
     else 
       s, []
-  method pop_convert s = 
+  method pop_convert _s = 
     ()
 end
 
@@ -283,7 +283,7 @@ end
  * Other stuff where nesting is not important
 *)
 class misc (tagdef, tagname, attr) =
- object (self)
+ object (_self)
   
   val mutable start_pos = TextIndex(LineChar(0,0),[])
   (* val tagdef = tagdef *)

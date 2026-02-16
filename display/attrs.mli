@@ -49,8 +49,8 @@ class anchortags :
   end
 
 class virtual ['a] nested :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'b;
-    define : string -> Tk.options list -> 'c; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -62,8 +62,8 @@ class virtual ['a] nested :
   end
 
 class align :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -75,8 +75,8 @@ class align :
   end
 
 class margin :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable current : int
     val mutable last_change : Tk.textIndex
@@ -89,8 +89,8 @@ class margin :
   end
 
 class font :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable basefont : Fonts.fontDesc
     val mutable font_stack : Fonts.fontDesc list
@@ -113,8 +113,8 @@ val html_color : string -> string
 (*e: signature Attrs.html_color *)
 
 class fgcolor :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -126,8 +126,8 @@ class fgcolor :
   end
 
 class bgcolor :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -139,8 +139,8 @@ class bgcolor :
   end
 
 class offset :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable cur_offset : int
     val mutable last_change : Tk.textIndex
@@ -153,7 +153,8 @@ class offset :
   end
 
 class misc :
-  < add : 'a * Tk.textIndex * Tk.textIndex -> unit; define : 'a -> 'b -> 'c;
+  < add : 'a * Tk.textIndex * Tk.textIndex -> unit; 
+    define : 'a -> 'b -> 'c;
     .. > *
   'a * 'b ->
   object
@@ -164,8 +165,8 @@ class misc :
   end
 
 class spacing :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     method pop : Tk.textIndex -> int -> unit
     method push : Tk.textIndex -> int -> unit

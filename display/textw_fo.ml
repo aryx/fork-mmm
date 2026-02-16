@@ -3,8 +3,8 @@ open Printf
 open Tk
 open Frx_text
 open Hyper
-open Viewers
-open Html
+
+
 open Htmlfmt
 open Fonts
 
@@ -212,7 +212,7 @@ let create namer spec top ctx =
 
   in
   let put_embedded w align =
-    let opts = match String.lowercase align with
+    let opts = match String.lowercase_ascii align with
       "top" -> [Align Align_Top]
     | "middle" -> [Align Align_Center] (* not exactly *)
     | "bottom" -> [Align Align_Baseline] 
@@ -468,7 +468,7 @@ let create namer spec top ctx =
       (* avoid space leak in Tk hash table : reuse the same names *)
       let embsym = Mstring.egensym "emb" in
 
-      (fun a w h ->
+      (fun _a w h ->
          let f = Frame.create_named thtml (embsym()) [Class "HtmlEmbedded"] in
          if !usecolors 
          then Frame.configure f [Background (NamedColor !bg)];

@@ -7,7 +7,7 @@ open Htmlfmt
 
 (*s: constant Htframe.geom_sep *)
 (* geometry specs *)
-let geom_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
+let geom_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
 (*e: constant Htframe.geom_sep *)
 (*s: function Htframe.parse_geom *)
 let parse_geom s = List.map Html.length_of_string (Str.split geom_sep s)
@@ -78,19 +78,19 @@ and celldesc = {
 let ignore_fo f = {
   new_paragraph = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline = (fun b -> ());
-  print_verbatim = (fun s -> ());
-  format_string = (fun s -> ());
-  hr = (fun l n b -> ());
-  bullet = (fun n -> ());
-  set_defaults = (fun s l -> ());
-  push_attr = (fun l -> ());
-  pop_attr = (fun l -> ());
-  isindex = (fun s s' -> ());
+  print_newline = (fun _b -> ());
+  print_verbatim = (fun _s -> ());
+  format_string = (fun _s -> ());
+  hr = (fun _l _n _b -> ());
+  bullet = (fun _n -> ());
+  set_defaults = (fun _s _l -> ());
+  push_attr = (fun _l -> ());
+  pop_attr = (fun _l -> ());
+  isindex = (fun _s _s' -> ());
   start_anchor = (fun () -> ());
-  end_anchor = (fun h -> ());
+  end_anchor = (fun _h -> ());
   add_mark = (fun _ -> ());
-  create_embedded = (fun a w h -> Frame.create f []);
+  create_embedded = (fun _a _w _h -> Frame.create f []);
   see_frag = (fun _ -> ());
   flush = (fun () -> ());
   } 
@@ -216,11 +216,11 @@ let add_frames load_frames kill_body top mach =
        if it was already created *)
     kill_body();
     mach#add_tag "body"
-      (fun fo t -> mach#look_for EOF) ignore_close
+      (fun _fo _t -> mach#look_for EOF) ignore_close
 
   in
   mach#add_tag "frameset"
-      (fun fo t ->
+      (fun _fo t ->
     let rows = get_attribute t "rows"
     and cols = get_attribute t "cols" in
     let newset =
@@ -244,7 +244,7 @@ let add_frames load_frames kill_body top mach =
           initial_cell.cell_contents <- Some (Frameset newset);
           framesets := newset :: !framesets
         end
-    | (ri, rj, set)::l ->
+    | (ri, rj, set)::_l ->
         if !ri >= Array.length set then
           raise (Invalid_Html "no room for <frameset> in this <frameset>")
         else begin
@@ -252,18 +252,18 @@ let add_frames load_frames kill_body top mach =
           next_cell set ri rj;
           framesets := newset :: !framesets
         end)
-      (fun t -> 
+      (fun _t -> 
     match !framesets with
     | [] -> 
         raise (Invalid_Html "unmatched </frameset>")
-    | [x] -> (* the last one *)
+    | [_x] -> (* the last one *)
         framesets := [];
         doit()
-    | x::l ->
+    | _x::l ->
         framesets := l);
 
   mach#add_tag "frame"  
-    (fun fo t ->
+    (fun _fo t ->
       match !framesets with
       | [] -> raise (Invalid_Html "<frame> outside <frameset>")
       |	(ri, rj, set) :: _ ->
@@ -277,9 +277,9 @@ let add_frames load_frames kill_body top mach =
            try int_of_string (get_attribute t "frameborder")
            with Failure "int_of_string" -> 
         (* compatibility ? *)
-          if String.lowercase (get_attribute t "frameborder") = "no"
+          if String.lowercase_ascii (get_attribute t "frameborder") = "no"
           then 0 else 1
-          and scrolling = String.lowercase (get_attribute t "scrolling")
+          and scrolling = String.lowercase_ascii (get_attribute t "scrolling")
           in
           let borderopts = 
            if border = 0 then [BorderWidth (Pixels 0)]
@@ -306,11 +306,11 @@ let add_frames load_frames kill_body top mach =
    * know that, do we ?
    *)
   mach#add_tag "noframes"
-    (fun fo t -> 
+    (fun _fo _t -> 
       mach#push_formatter (ignore_fo top);
       mach#look_for (CloseTag "noframes"))
 
-    (fun t -> mach#pop_formatter; ())
+    (fun _t -> mach#pop_formatter |> ignore; ())
 (*e: function Htframe.add_frames *)
 
 (*e: ./display/htframe.ml *)
