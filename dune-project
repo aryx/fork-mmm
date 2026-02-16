@@ -27,4 +27,17 @@
   ; if we want to depend only for testing
   ;(alcotest :with-test)
 ))
+
+;(package
+; (name ocamltk)
+; (synopsis "XXX")
+; (description "A _really_ long description of a simple project")
+; (source (github aryx/fork-mmm))
+; (authors "Yoann Padioleau <yoann.padioleauo@gmail.com>")
+; (maintainers "Yoann Padioleau <yoann.padioleau@gmail.com>")
+; (depends
+;  (ocaml (>= 4.14.0))
+;  conf-tk
+;))
+
 (generate_opam_files)

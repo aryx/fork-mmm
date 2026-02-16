@@ -91,7 +91,7 @@ end
 
 
 (*s: signature Viewers.di_compare *)
-val di_compare : display_info -> display_info -> bool
+val di_compare : display_info -> display_info -> int
 (*e: signature Viewers.di_compare *)
 
 (*s: type Viewers.t *)

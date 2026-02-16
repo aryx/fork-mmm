@@ -5,11 +5,11 @@ open Unix
 (*s: function Main_remote.request *)
 let request sock cmd url =
   if cmd <> "" 
-  then write sock cmd 0 (String.length cmd) |> ignore;
+  then write sock (Bytes.of_string cmd) 0 (String.length cmd) |> ignore;
 
-  write sock url 0 (String.length url) |> ignore;
-  write sock "\n" 0 1 |> ignore;
-  let buf = String.create 1024 in
+  write sock (Bytes.of_string url) 0 (String.length url) |> ignore;
+  write sock (Bytes.of_string "\n") 0 1 |> ignore;
+  let buf = Bytes.create 1024 in
   try
     while true do
       let n = read sock buf 0 1024 in

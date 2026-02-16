@@ -1,0 +1,19 @@
+(library
+ (public_name mmm.gui)
+ (name mmm_gui)
+ (wrapped false)
+ (libraries
+    camltk
+    ;mmm.commons
+    ;mmm.japan
+    mmm.www
+    ;mmm.html
+    ;; mmm.http
+    ;mmm.protocols
+    ;mmm.tk
+    mmm.viewers
+    mmm.display
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+

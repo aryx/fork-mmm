@@ -11,6 +11,8 @@ clean::
 
 mmm.opam:
 	dune build $@
+ocamltk.opam:
+	dune build $@
 
 #############################################################################
 # Developer's targets

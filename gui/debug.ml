@@ -1,5 +1,5 @@
 (*s: ./gui/debug.ml *)
-open Tk
+
 open Protocol
 (*s: function Debug.active_cb *)
 let active_cb _ =

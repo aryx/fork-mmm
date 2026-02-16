@@ -21,8 +21,8 @@ let rec safe_loop() =
   | Out_of_memory -> raise Out_of_memory
   | Sys.Break -> raise Sys.Break
   | Stack_overflow -> raise Stack_overflow
-  | e -> 
-      flush Pervasives.stderr; 
+  | _e -> 
+      flush Stdlib.stderr; 
       safe_loop()
 (*e: function Main.safe_loop *)
        
@@ -167,9 +167,9 @@ let main () =
    * No prerequisite except Tk *)
   Frx_text.init ();
   (* Initialisations in jpf's balloon library *)
-  Balloon.init ();
+(*  Balloon.init (); *)
   (* Initialisations in jpf's GIF ANIMATION library *)
-  Tkaniminit.f ();
+(*  Tkaniminit.f (); *)
   (*e: [[Main.main()]] tk libs initialisation *)
   (*s: [[Main.main()]] local initialisation *)
   (* Local initialisations *)

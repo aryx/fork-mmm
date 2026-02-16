@@ -4,8 +4,10 @@ open Tk
 (* some resource utilities : cache and parser for comme types *)
 
 (* Resource.get returns "" when not found *)
+(*
 let get name = 
   Resource.get Widget.default_toplevel name name
+*)
 
 (* Getting resource from X Server should be heavy operation. *)
 (* Use cache instead ... *)
@@ -82,16 +84,88 @@ type token =
   | Int of int
   | EndEvent
 
+(* old parser using the Stream extension not available since 4.08 *)
+
+(* CHATGPT: *)
+let is_letter = function
+  | 'a'..'z' | 'A'..'Z' -> true
+  | _ -> false
+
+let is_digit = function
+  | '0'..'9' -> true
+  | _ -> false
+
+let lexer input =
+  let len = String.length input in
+  let pos = ref 0 in
+
+  let rec skip () =
+    if !pos < len then
+      match input.[!pos] with
+      | ' ' | '\t' | '-' ->
+          incr pos; skip ()
+      | _ -> ()
+  in
+
+  let next_token _ =
+    skip ();
+    if !pos >= len then
+      None
+    else
+      match input.[!pos] with
+      | '<' ->
+          incr pos;
+          Some StartEvent
+      | '>' ->
+          incr pos;
+          Some EndEvent
+      | c when is_letter c ->
+          let buf = Buffer.create 16 in
+          while !pos < len &&
+                (is_letter input.[!pos] || is_digit input.[!pos])
+          do
+            Buffer.add_char buf input.[!pos];
+            incr pos
+          done;
+          Some (Ident (Buffer.contents buf))
+      | c when is_digit c ->
+          let buf = Buffer.create 16 in
+          while !pos < len && is_digit input.[!pos] do
+            Buffer.add_char buf input.[!pos];
+            incr pos
+          done;
+          Some (Int (int_of_string (Buffer.contents buf)))
+      | c ->
+          failwith ("Unexpected character: " ^ String.make 1 c)
+  in
+
+  Stream.from next_token
+
+exception Parse_error of string
+
+let expect stream tok =
+  match Stream.peek stream with
+  | Some t when t = tok -> Stream.junk stream
+  | _ -> raise (Parse_error "Unexpected token")
+
+
+(* OLD:
 let rec ident ebuf = parser
   | [< '  'A'..'Z'|'a'..'z'|'0'..'9' as c; s >] ->
       Ebuffer.output_char ebuf c; ident ebuf s
   | [<>] -> Ident (Ebuffer.get ebuf)
+*)
 
+
+
+(* OLD:
 let rec num ebuf = parser 
   | [< '  '0'..'9' as c; s >] ->
       Ebuffer.output_char ebuf c; num ebuf s
   | [<>] -> Int (int_of_string (Ebuffer.get ebuf))
+*)
 
+(* OLD:
 let rec token = parser
   | [< '  '<' >] -> StartEvent
   | [< '  '>' >] -> EndEvent
@@ -106,8 +180,10 @@ let rec token = parser
   | [< '  '-'; s>] -> token s
   (* also allow spaces as separators *)
   | [< '  ' '|'\t'; s>] -> token s
+*)
 
 (* the parser *)
+(* OLD:
 let modifier = parser
   | [< 'Ident "Control" >] -> Control
   | [< 'Ident "Shift" >] -> Shift
@@ -126,7 +202,29 @@ let modifier = parser
   | [< 'Ident "Mod5" >] -> Mod5 | [< 'Ident "M5" >] -> Mod5
   | [< 'Ident "Meta" >] -> Meta | [< 'Ident "M" >] -> Meta
   | [< 'Ident "Alt" >] -> Alt
+*)
 
+let parse_modifier = function
+  | Ident "Control" -> Some Control
+  | Ident "Shift" -> Some Shift
+  | Ident "Lock" -> Some Lock
+  | Ident "Button1" | Ident "B1" -> Some Button1
+  | Ident "Button2" | Ident "B2" -> Some Button2
+  | Ident "Button3" | Ident "B3" -> Some Button3
+  | Ident "Button4" | Ident "B4" -> Some Button4
+  | Ident "Button5" | Ident "B5" -> Some Button5
+  | Ident "Double" -> Some Double
+  | Ident "Triple" -> Some Triple
+  | Ident "Mod1" | Ident "M1" -> Some Mod1
+  | Ident "Mod2" | Ident "M2" -> Some Mod2
+  | Ident "Mod3" | Ident "M3" -> Some Mod3
+  | Ident "Mod4" | Ident "M4" -> Some Mod4
+  | Ident "Mod5" | Ident "M5" -> Some Mod5
+  | Ident "Meta" | Ident "M" -> Some Meta
+  | Ident "Alt" -> Some Alt
+  | _ -> None
+
+(* OLD:
 let event = parser
   | [< 'Ident "ButtonPress" >] -> ButtonPress 
   | [< 'Ident "Button" >] -> ButtonPress
@@ -150,8 +248,34 @@ let event = parser
   | [< 'Ident "Reparent" >] -> Reparent
   | [< 'Ident "Unmap" >] -> Unmap
   | [< 'Ident "Visibility" >] -> Visibility
+*)
+
+let parse_event_type = function
+  | Ident "ButtonPress" | Ident "Button" -> Some ButtonPress
+  | Ident "ButtonRelease" -> Some ButtonRelease
+  | Ident "Circulate" -> Some Circulate
+  | Ident "Colormap" -> Some ColorMap
+  | Ident "Configure" -> Some Configure
+  | Ident "Destroy" -> Some Destroy
+  | Ident "Enter" -> Some Enter
+  | Ident "Expose" -> Some Expose
+  | Ident "FocusIn" -> Some FocusIn
+  | Ident "FocusOut" -> Some FocusOut
+  | Ident "Gravity" -> Some Gravity
+  | Ident "KeyPress" | Ident "Key" -> Some KeyPress
+  | Ident "KeyRelease" -> Some KeyRelease
+  | Ident "Leave" -> Some Leave
+  | Ident "Map" -> Some Map
+  | Ident "Motion" -> Some Motion
+  | Ident "Property" -> Some Property
+  | Ident "Reparent" -> Some Reparent
+  | Ident "Unmap" -> Some Unmap
+  | Ident "Visibility" -> Some Visibility
+  | _ -> None
+
 
 (* An event has modifiers and an event type *)
+(* OLD:
 let rec event_constituents mods = parser
   | [< m = modifier; s >] -> event_constituents (m::mods) s
   | [< e = event; s >] -> begin
@@ -185,12 +309,91 @@ let rec event_constituents mods = parser
   | [< 'Int n >] -> List.rev mods, ButtonPressDetail n
   (* assume all other idents to be keysyms *)
   | [< 'Ident s >] -> List.rev mods, KeyPressDetail s
+*)
 
 
+let parse_event_constituents stream =
+  let rec collect mods =
+    match Stream.peek stream with
+    | Some tok ->
+        begin match parse_modifier tok with
+        | Some m ->
+            Stream.junk stream;
+            collect (m :: mods)
+        | None ->
+            begin match parse_event_type tok with
+            | Some e ->
+                Stream.junk stream;
+                let real_e =
+                  match e with
+                  | ButtonPress ->
+                      begin match Stream.peek stream with
+                      | Some (Int n) ->
+                          Stream.junk stream;
+                          ButtonPressDetail n
+                      | _ -> ButtonPress
+                      end
+                  | ButtonRelease ->
+                      begin match Stream.peek stream with
+                      | Some (Int n) ->
+                          Stream.junk stream;
+                          ButtonReleaseDetail n
+                      | _ -> ButtonRelease
+                      end
+                  | KeyPress ->
+                      begin match Stream.peek stream with
+                      | Some (Ident s) ->
+                          Stream.junk stream;
+                          KeyPressDetail s
+                      | _ -> KeyPress
+                      end
+                  | KeyRelease ->
+                      begin match Stream.peek stream with
+                      | Some (Ident s) ->
+                          Stream.junk stream;
+                          KeyReleaseDetail s
+                      | _ -> KeyRelease
+                      end
+                  | _ -> e
+                in
+                (List.rev mods, real_e)
+            | None ->
+                begin match tok with
+                | Int n ->
+                    Stream.junk stream;
+                    (List.rev mods, ButtonPressDetail n)
+                | Ident s ->
+                    Stream.junk stream;
+                    (List.rev mods, KeyPressDetail s)
+                | _ ->
+                    raise (Parse_error "Invalid event")
+                end
+            end
+        end
+    | None ->
+        raise (Parse_error "Unexpected end of stream")
+  in
+  collect []
+
+
+(* OLD:
 let event = parser
     [< 'StartEvent; e = event_constituents []; 'EndEvent >] -> e
+*)
+
+let parse_event stream =
+  match Stream.peek stream with
+  | Some StartEvent ->
+      Stream.junk stream;
+      let result = parse_event_constituents stream in
+      expect stream EndEvent;
+      result
+  | _ ->
+      raise (Parse_error "Expected <")
+
 
 (* standard combinator *)
+(* OLD:
 let rec list_of p = parser
   | [< e = p ; l = list_of p>] -> e::l
   | [<>] -> []			 
@@ -200,15 +403,42 @@ let event_sequence = list_of event
 let token_stream s = 
   Stream.from (fun n -> try Some (token s) with Stream.Failure -> None)
 
-let parse_event s = event (token_stream s)
-let parse_event_sequence s = event_sequence (token_stream s)
+let parse_event s = 
+  event (token_stream s)
+
+let parse_event_sequence s = 
+  event_sequence (token_stream s)
+
+*)
+
+let rec list_of p stream =
+  match Stream.peek stream with
+  | None -> []
+  | Some _ ->
+      try
+        let e = p stream in
+        e :: list_of p stream
+      with Parse_error _ ->
+        []
+
+let parse_event_sequence stream =
+  list_of parse_event stream
+
+(*
+let parse s =
+  let stream = lexer s in
+  parse_event stream
+*)
+
 
 (* This one is exported *)
 let event_sequence name default =
   let s = get name in
   if s = "" then default
   else 
-    try event_sequence (token_stream (Stream.of_string s))
+    try 
+      (* parse_event_sequence (token_stream (Stream.of_string s)) *)
+      parse_event_sequence (lexer s)
     with
       Stream.Failure | Stream.Error _ -> 
 	Log.f (sprintf "Error parsing binding of %s" name);

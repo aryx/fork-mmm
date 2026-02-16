@@ -134,7 +134,8 @@ end
 
 (*s: function Viewers.di_compare *)
 let di_compare di di' = 
-  di#di_last_used > di'#di_last_used
+  (*di#di_last_used > di'#di_last_used*)
+  compare di'#di_last_used di#di_last_used
 (*e: function Viewers.di_compare *)
 
 (* 
