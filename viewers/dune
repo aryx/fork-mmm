@@ -1,0 +1,16 @@
+(library
+ (public_name mmm.viewers)
+ (name mmm_viewers)
+ (wrapped false)
+ (libraries
+    camltk
+    mmm.commons
+    ;mmm.globals
+    mmm.www mmm.http
+    ;mmm.protocols
+    mmm.tk
+    mmm.retrieve
+    
+ )
+ (preprocess (pps ppx_deriving.show))
+)

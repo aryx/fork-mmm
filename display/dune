@@ -1,0 +1,20 @@
+(library
+ (public_name mmm.display)
+ (name mmm_display)
+ (wrapped false)
+ (libraries
+    camltk
+    mmm.commons
+    mmm.japan
+    mmm.www
+    mmm.html
+    ; mmm.http
+    mmm.protocols
+    mmm.tk
+    mmm.viewers
+ )
+ ; TODO: rename to .ml after omk sync
+ (modules_without_implementation htmlfmt)
+ (preprocess (pps ppx_deriving.show))
+)
+
