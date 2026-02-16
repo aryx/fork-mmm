@@ -83,7 +83,7 @@ let get_files_in_directory dir =
    with
       End_of_file -> closedir dirh; [] 
   in
-    Sort.list (<) (get_them ())
+    List.sort (Stdlib.compare) (get_them ())
       
 let rec get_directories_in_files path = function
     [] -> []

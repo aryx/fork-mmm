@@ -1,11 +1,11 @@
 (* Extensible buffers *)
 type extensible_buffer = {
-    mutable buffer : string;
+    mutable buffer : bytes;
     mutable pos : int;
     mutable len : int}
 
 let new_buffer () = {
-   buffer = String.create 128;
+   buffer = Bytes.create 128;
    pos = 0;
    len = 128
    }
@@ -13,14 +13,14 @@ let new_buffer () = {
 let print_in_buffer buf s =
   let l = String.length s in
   if buf.pos + l > buf.len then begin
-    buf.buffer <- buf.buffer ^ (String.create (l+128));
+    buf.buffer <- Bytes.cat buf.buffer (Bytes.create (l+128));
     buf.len <- buf.len + 128 + l
     end;
   String.blit s 0 buf.buffer buf.pos l;
   buf.pos <- buf.pos + l
 
 let get_buffer buf = 
-  String.sub buf.buffer 0 buf.pos
+  Bytes.sub_string buf.buffer 0 buf.pos
 
 
 

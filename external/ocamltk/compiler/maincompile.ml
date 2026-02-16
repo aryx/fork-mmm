@@ -99,7 +99,7 @@ let compile () =
     (sort_components !function_table);
   close_out oc;
   let write_module wname wdef =
-    let modname = String.uncapitalize wname in
+    let modname = String.uncapitalize_ascii wname in
     let oc = open_out_bin (destfile (modname ^ ".ml"))
     and oc' = open_out_bin (destfile (modname ^ ".mli")) in
     begin match wdef.module_type with
@@ -141,7 +141,7 @@ let compile () =
   output_string oc "WIDGETOBJS=";
   Hashtbl.iter
     (fun name _ ->
-       output_string oc (String.uncapitalize name);
+       output_string oc (String.uncapitalize_ascii name);
        output_string oc ".cmo ")
     module_table;
   output_string oc "\n";

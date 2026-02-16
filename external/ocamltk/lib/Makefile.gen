@@ -32,5 +32,5 @@ tk.ml .depend: tkgen.ml ../support/report.ml ../builtin/builtin_*.ml
          cat $(BUILTINAS)) > tk.ml
 	$(CAMLC) -c -i -I ../support tk.ml > tk.mli0
 	mv tk.mli0 tk.mli
-	rm tk.cm*
+	rm -f tk.cm*
 	$(CAMLDEP) *.mli *.ml > .depend

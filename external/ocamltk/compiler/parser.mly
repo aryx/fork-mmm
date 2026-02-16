@@ -1,12 +1,12 @@
 %{
 open Tables
 
-let lowercase s =
-  let r = String.create (String.length s) in
-  String.blit s 0 r 0 (String.length s);
+let lowercase (s : string) : string =
+  let r = Bytes.create (String.length s) in
+  Bytes.blit_string s 0 r 0 (String.length s);
   let c = s.[0] in
-  if c >= 'A' & c <= 'Z' then r.[0] <- Char.chr(Char.code c + 32);
-  r
+  if c >= 'A' && c <= 'Z' then Bytes.set r 0 (Char.chr(Char.code c + 32));
+  Bytes.to_string r
 
 %}
 

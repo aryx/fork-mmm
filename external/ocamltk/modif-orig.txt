@@ -1,2 +1,7 @@
 was camktk416. Ported to camltk418 and modified to make it compile
 on a recent tcl/tk version.
+
+UPDATE 2026:
+updated to compile with OCaml 4.14 which has many more
+warnings (e.g., unused vars) and enforce Bytes instead of String.
+

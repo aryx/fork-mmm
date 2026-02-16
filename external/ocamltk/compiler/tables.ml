@@ -40,7 +40,7 @@ type fullcomponent = {
   }
 
 let sort_components =
-  Sort.list (fun c1 c2 ->  c1.ml_name < c2.ml_name)
+  List.sort (fun c1 c2 ->  compare c1.ml_name c2.ml_name)
 
 
 (* components are given either in full or abbreviated *)
