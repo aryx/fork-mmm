@@ -8,14 +8,14 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
-PROGS=mmm htparse
+PROGS=mmm htparse mmm_remote
 # mmm2
 #, surfboard
 
-TARGET=mmm2
-GRAPHICSDIR=$(shell ocamlfind query lablgtk2) $(shell ocamlfind query cairo)
-OTHERSYSLIBS=lablgtk.cma cairo.cma cairo_lablgtk.cma 
-GTKLOOP=gtkThread.cmo
+#TARGET=mmm2
+#GRAPHICSDIR=$(shell ocamlfind query lablgtk2) $(shell ocamlfind query cairo)
+#OTHERSYSLIBS=lablgtk.cma cairo.cma cairo_lablgtk.cma 
+#GTKLOOP=gtkThread.cmo
 
 
 OPTPROGS= $(PROGS:=.opt)
@@ -120,8 +120,8 @@ $(TARGET): $(LIBS) $(OBJS) gui.cmo main_gtk.cmo
 
 # The standalone HTML syntax checker
 HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo\
-       i18n/japan/lib.cma html/lib.cma html/htparse.cmo
-htparse: $(HTMISC)
+       i18n/japan/lib.cma html/lib.cma
+htparse: $(HTMISC)  htparse.cmo
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
