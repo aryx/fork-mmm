@@ -1,10 +1,11 @@
 # -*- org -*-
 
-* 0.42 (Q1 2026) (switch to dune and OPAM)
+* 0.42 (Q1 2026) (resume with 4.14.2)
 
 ** build infra
-- switch to dune and use of OPAM for dependencies
-  (but very few dependencies as camltk is vendored)
+- resume compilation of mmm with OCaml 4.14, fixed many unused
+  vars warnings, many String -> Byte, remove use of 
+  camlp4 stream extension (removed from 4.08), and a few more fixes
 
 * beta (Q1 2015) (maintenance)
 

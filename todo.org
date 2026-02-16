@@ -1,4 +1,17 @@
-# -*- org -*-
+* Big plan
+
+** TODO changes.txt
+
+X** build infra
+- switch to dune and use of OPAM for dependencies
+  (but very few dependencies as camltk is vendored)
+
+** Overview
+
+
+** Later
+
+* Last
 
 ** cleanup .gitignore
 
