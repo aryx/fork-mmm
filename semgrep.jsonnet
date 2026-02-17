@@ -149,7 +149,7 @@ local cap_rules = [
     |||,
     paths: {
       exclude: [ 
-        'i18nprintf.ml', 'i18n.ml'
+        'i18nprintf.ml', 'i18n.ml', 'Dumper.ml',
         ] + exclude_dirs,
     },
   },
