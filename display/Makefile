@@ -34,8 +34,8 @@ SRC= \
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/globals $(TOP)/i18n/japan \
- $(TOP)/url $(TOP)/www $(TOP)/http $(TOP)/html \
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals $(TOP)/libs/i18n/japan \
+ $(TOP)/url $(TOP)/www $(TOP)/http $(TOP)/languages/html \
  $(TOP)/viewers $(TOP)/retrieve $(TOP)/protocols \
  $(TOP)/tk
 

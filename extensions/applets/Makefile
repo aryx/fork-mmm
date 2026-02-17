@@ -11,7 +11,7 @@ SRC= pgp.ml capabilities.ml dload.ml applets.ml appview.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals \
  $(TOP)/www $(TOP)/http \
  $(TOP)/protocols $(TOP)/viewers
 

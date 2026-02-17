@@ -1,4 +1,4 @@
-TOP=..
+TOP=../../..
 ##############################################################################
 # Variables
 ##############################################################################
@@ -6,15 +6,20 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= dtd.ml html.ml lexhtml.ml html_eval.ml
+#INCLUDES+=$(TKCOMPFLAGS)
+
+SRC= bug.ml \
+     charset.ml wchar.ml wstream.ml \
+     tool.ml \
+     jisx0201.ml \
+     lexkanji.ml \
+     encode.ml \
+     japan.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons \
- $(TOP)/i18n/japan
-
-SYSINCLUDES=$(TKCOMPFLAGS)
+INCLUDEDIRS=$(TOP)/libs/commons
 
 ##############################################################################
 # Generic variables
@@ -41,8 +46,12 @@ clean::
 	rm -f $(TARGET).top
 
 
-lexhtml.ml : lexhtml.mll
-	$(CAMLLEX) lexhtml.mll
+lexkanji.ml : lexkanji.mll
+	$(CAMLLEX) lexkanji.mll
 clean::
-	rm -rf lexhtml.ml
-beforedepend:: lexhtml.ml
+	rm -f lexkanji.ml
+beforedepend:: lexkanji.ml
+
+##############################################################################
+# Literate Programming rules
+##############################################################################

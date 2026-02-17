@@ -10,8 +10,8 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS= \
- $(TOP)/commons \
- $(TOP)/www $(TOP)/http $(TOP)/html \
+ $(TOP)/libs/commons \
+ $(TOP)/www $(TOP)/http $(TOP)/languages/html \
  $(TOP)/retrieve $(TOP)/protocols $(TOP)/viewers \
  $(TOP)/applets $(TOP)/display $(TOP)/gui \
  $(TOP)/tk \

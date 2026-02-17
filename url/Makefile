@@ -11,7 +11,7 @@ SRC= url.ml uri.ml urlenc.ml lexurl.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons
+INCLUDEDIRS=$(TOP)/libs/commons
 SYSINCLUDES=
 ##############################################################################
 # Generic variables

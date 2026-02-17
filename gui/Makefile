@@ -15,9 +15,9 @@ SRC= about.ml gcache.ml \
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/globals $(TOP)/i18n/japan \
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals $(TOP)/libs/i18n/japan \
  $(TOP)/url $(TOP)/www $(TOP)/http \
- $(TOP)/html $(TOP)/protocols \
+ $(TOP)/languages/html $(TOP)/protocols \
  $(TOP)/retrieve \
  $(TOP)/tk \
  $(TOP)/viewers \

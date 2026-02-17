@@ -11,7 +11,7 @@ SRC= retrieve.ml scheduler.ml progress.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals \
  $(TOP)/url $(TOP)/www $(TOP)/http \
  $(TOP)/protocols
 

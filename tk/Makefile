@@ -21,7 +21,7 @@ SRC= tkresource.ml\
 SYSLIBS= str.cma unix.cma 
 LIBS=
 INCLUDEDIRS=\
- $(TOP)/commons\
+ $(TOP)/libs/commons\
  $(TOP)/url\
  $(TOP)/www\
  $(TOP)/http\

@@ -1,7 +1,7 @@
 TOP=../..
 include $(TOP)/Makefile.config
 
-INCLUDES=-I $(TOP) -I $(TOP)/commons -I $(TOP)/www -I $(TOP)/html 
+INCLUDES=-I $(TOP) -I $(TOP)/libs/commons -I $(TOP)/www -I $(TOP)/languages/html 
 
 DEPFLAGS=$(INCLUDES)
 
@@ -18,9 +18,9 @@ JAPAN= 	$(JDIR)/bug.cmo \
 	$(JDIR)/encode.cmo \
 	$(JDIR)/japan.cmo
 
-LIBS=$(TOP)/commons/lib.cma
+LIBS=$(TOP)/libs/commons/lib.cma
 
-HTML=$(TOP)/html/dtd.cmo $(TOP)/html/html.cmo $(TOP)/html/lexhtml.cmo $(TOP)/html/html_eval.cmo
+HTML=$(TOP)/languages/html/dtd.cmo $(TOP)/languages/html/html.cmo $(TOP)/languages/html/lexhtml.cmo $(TOP)/languages/html/html_eval.cmo
 
 OBJS= misc.cmo \
       tree.cmo \

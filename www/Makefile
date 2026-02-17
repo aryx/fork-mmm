@@ -11,7 +11,7 @@ SRC= hyper.ml www.ml document.ml maps.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/url
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/url
 SYSINCLUDES=
 ##############################################################################
 # Generic variables

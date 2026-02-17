@@ -48,12 +48,12 @@ external/stdlib/*
 *Fig_graph_ml.pdf
 
 # lexers
-/html/lexhtml.ml
+/languages/html/lexhtml.ml
 /http/lexdate.ml
 /http/lexheaders.ml
-/i18n/japan/lexkanji.ml
+/libs/i18n/japan/lexkanji.ml
 /misc/lexpath.ml
-/commons/lexpath.ml
+/libs/commons/lexpath.ml
 /www/lexurl.ml
 
 #binaries

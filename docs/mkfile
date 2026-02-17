@@ -7,39 +7,39 @@ DOC=mmm
 SRC_ORIG=mmm.nw mmm_extra.nw
 
 SRC= \
-  commons/condition.mli\
-  commons/condition.ml\
-  commons/date.mli\
-  commons/date.ml\
-  commons/ebuffer.mli\
-  commons/ebuffer.ml\
-  commons/error.mli\
-  commons/error.ml\
-  commons/i18nprintf.mli\
-  commons/i18nprintf.ml\
-  commons/ibtree.mli\
-  commons/ibtree.ml\
-  commons/lang.mli\
-  commons/lang.ml\
-  commons/log.mli\
-  commons/log.ml\
-  commons/low.mli\
-  commons/low.ml\
-  commons/mlist.mli\
-  commons/mlist.ml\
-  commons/mstring.mli\
-  commons/mstring.ml\
-  commons/msys.mli\
-  commons/msys.ml\
-  commons/i18n.mli\
-  commons/i18n.ml\
-  commons/munix.ml\
+  libs/commons/condition.mli\
+  libs/commons/condition.ml\
+  libs/commons/date.mli\
+  libs/commons/date.ml\
+  libs/commons/ebuffer.mli\
+  libs/commons/ebuffer.ml\
+  libs/commons/error.mli\
+  libs/commons/error.ml\
+  libs/commons/i18nprintf.mli\
+  libs/commons/i18nprintf.ml\
+  libs/commons/ibtree.mli\
+  libs/commons/ibtree.ml\
+  libs/commons/lang.mli\
+  libs/commons/lang.ml\
+  libs/commons/log.mli\
+  libs/commons/log.ml\
+  libs/commons/low.mli\
+  libs/commons/low.ml\
+  libs/commons/mlist.mli\
+  libs/commons/mlist.ml\
+  libs/commons/mstring.mli\
+  libs/commons/mstring.ml\
+  libs/commons/msys.mli\
+  libs/commons/msys.ml\
+  libs/commons/i18n.mli\
+  libs/commons/i18n.ml\
+  libs/commons/munix.ml\
   \
-  commons/feed.mli\
-  commons/feed.ml\
+  libs/commons/feed.mli\
+  libs/commons/feed.ml\
   tk/glevents.mli\
   tk/glevents.ml\
-  commons/hotlist.ml\
+  libs/commons/hotlist.ml\
   \
   globals/version.mli\
   globals/version.ml\
@@ -62,14 +62,14 @@ SRC= \
   www/document.mli\
   www/document.ml\
   \
-  html/dtd.mli\
-  html/dtd.ml\
-  html/html.mli\
-  html/html.ml\
-  html/lexhtml.mli\
-  html/lexhtml.mll\
-  html/html_eval.mli\
-  html/html_eval.ml\
+  languages/html/dtd.mli\
+  languages/html/dtd.ml\
+  languages/html/html.mli\
+  languages/html/html.ml\
+  languages/html/lexhtml.mli\
+  languages/html/lexhtml.mll\
+  languages/html/html_eval.mli\
+  languages/html/html_eval.ml\
   \
   http/base64.mli\
   http/base64.ml\

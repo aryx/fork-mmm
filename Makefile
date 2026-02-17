@@ -26,8 +26,8 @@ SRC=main.ml
 
 # for the basic browser
 MAINDIRS= \
-  commons i18n/japan globals \
-  url www http html \
+  libs/commons libs/i18n/japan globals \
+  url www http languages/html \
   protocols retrieve \
   tk \
   viewers \
@@ -129,8 +129,8 @@ mmm.opt:
 
 
 # The standalone HTML syntax checker
-HTMISC=commons/lang.cmo commons/ebuffer.cmo commons/log.cmo\
-       i18n/japan/lib.cma html/lib.cma
+HTMISC=libs/commons/lang.cmo libs/commons/ebuffer.cmo libs/commons/log.cmo\
+       libs/i18n/japan/lib.cma languages/html/lib.cma
 htparse: $(HTMISC)  htparse.cmo
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
