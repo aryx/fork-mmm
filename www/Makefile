@@ -6,13 +6,12 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= url.ml uri.ml urlenc.ml lexurl.ml hyper.ml \
-     www.ml document.ml maps.ml
+SRC= hyper.ml www.ml document.ml maps.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons
+INCLUDEDIRS=$(TOP)/commons $(TOP)/url
 SYSINCLUDES=
 ##############################################################################
 # Generic variables
@@ -37,10 +36,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-lexurl.ml : lexurl.mll
-	$(CAMLLEX) lexurl.mll
-clean::
-	rm -f lexurl.ml
-beforedepend:: lexurl.ml

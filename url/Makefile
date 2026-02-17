@@ -6,25 +6,13 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= about.ml gcache.ml \
-     fontprefs.ml prefs.ml mmmprefs.ml \
-     history.ml plink.ml nav.ml \
-     mmm.ml cci.ml \
-     debug.ml
+SRC= url.ml uri.ml urlenc.ml lexurl.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/globals $(TOP)/i18n/japan \
- $(TOP)/url $(TOP)/www $(TOP)/http \
- $(TOP)/html $(TOP)/protocols \
- $(TOP)/retrieve \
- $(TOP)/tk \
- $(TOP)/viewers \
- $(TOP)/display \
-
-SYSINCLUDES=$(TKCOMPFLAGS)
-
+INCLUDEDIRS=$(TOP)/commons
+SYSINCLUDES=
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -48,3 +36,10 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+
+lexurl.ml : lexurl.mll
+	$(CAMLLEX) lexurl.mll
+clean::
+	rm -f lexurl.ml
+beforedepend:: lexurl.ml

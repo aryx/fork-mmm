@@ -27,7 +27,7 @@ SRC=main.ml
 # for the basic browser
 MAINDIRS= \
   commons i18n/japan globals \
-  www http html \
+  url www http html \
   protocols retrieve \
   tk \
   viewers \

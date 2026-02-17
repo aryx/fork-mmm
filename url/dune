@@ -1,0 +1,12 @@
+(library
+ (public_name mmm.www)
+ (name mmm_www)
+ (wrapped false)
+ (libraries
+    mmm.commons
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+
+(ocamllex lexurl)
+

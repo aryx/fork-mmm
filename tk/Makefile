@@ -22,6 +22,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 INCLUDEDIRS=\
  $(TOP)/commons\
+ $(TOP)/url\
  $(TOP)/www\
  $(TOP)/http\
  $(TOP)/protocols\

@@ -44,14 +44,15 @@ SRC= \
   globals/version.mli\
   globals/version.ml\
   \
-  www/uri.mli\
-  www/uri.ml\
-  www/url.mli\
-  www/url.ml\
-  www/urlenc.mli\
-  www/urlenc.ml\
-  www/lexurl.mli\
-  www/lexurl.mll\
+  url/uri.mli\
+  url/uri.ml\
+  url/url.mli\
+  url/url.ml\
+  url/urlenc.mli\
+  url/urlenc.ml\
+  url/lexurl.mli\
+  url/lexurl.mll\
+  \
   www/hyper.mli\
   www/hyper.ml\
   www/maps.mli\

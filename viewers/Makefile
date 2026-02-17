@@ -12,7 +12,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
-  $(TOP)/www $(TOP)/http $(TOP)/protocols \
+  $(TOP)/url $(TOP)/www $(TOP)/http $(TOP)/protocols \
   $(TOP)/retrieve \
   $(TOP)/tk
 

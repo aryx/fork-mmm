@@ -14,7 +14,7 @@ SRC= base64.ml lexdate.ml http_headers.ml \
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/commons $(TOP)/www $(TOP)/globals
+INCLUDEDIRS=$(TOP)/commons $(TOP)/url $(TOP)/www $(TOP)/globals
 SYSINCLUDES=
 
 ##############################################################################
