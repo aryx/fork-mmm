@@ -2,7 +2,9 @@
  (dev
   ; -52 for Failure "concrete_string"
   ; -33 for unused open because some are added for ocaml-light and field access
-  (flags (:standard -w -52-33)))
+  ; -32 for lack of deriving which forces to add some pp xx in commons/
+  ;  that seems unused but are used in ocaml-light context
+  (flags (:standard -w -52-33-32)))
 )
 
 (dirs :standard \ principia docs)
