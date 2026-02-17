@@ -3,10 +3,9 @@
  (name mmm_www)
  (wrapped false)
  (libraries
-    mmm.commons
+    mmm.commons mmm.url
  )
  (preprocess (pps ppx_deriving.show))
 )
 
-(ocamllex lexurl)
 

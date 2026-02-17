@@ -1,3 +1,5 @@
+; was called htdisp in original mmm
+
 (library
  (public_name mmm.display)
  (name mmm_display)
@@ -13,8 +15,6 @@
     mmm.tk
     mmm.viewers
  )
- ; TODO: rename to .ml after omk sync
- (modules_without_implementation htmlfmt)
  (preprocess (pps ppx_deriving.show))
 )
 

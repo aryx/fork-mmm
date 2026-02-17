@@ -49,12 +49,12 @@ external/stdlib/*
 
 # lexers
 /languages/html/lexhtml.ml
-/http/lexdate.ml
-/http/lexheaders.ml
+/src/http/lexdate.ml
+/src/http/lexheaders.ml
 /libs/i18n/japan/lexkanji.ml
 /misc/lexpath.ml
 /libs/commons/lexpath.ml
-/url/lexurl.ml
+/src/url/lexurl.ml
 
 #binaries
 /htparse

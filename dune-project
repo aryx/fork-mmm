@@ -8,24 +8,14 @@
  (synopsis "A simple Web browser")
  (description "A _really_ long description of a simple project")
  (source (github aryx/fork-mmm))
- (authors "Yoann Padioleau <yoann.padioleauo@gmail.com>")
+ (authors "Francois Rouaix")
  (maintainers "Yoann Padioleau <yoann.padioleau@gmail.com>")
  (depends
-  ; DO NOT declare dune/odoc as dependencies, dune will automatically add them
   (ocaml (>= 4.14.0))
-
-  ;(conf-tk)
-  ;(labltk)
-
-  ; old:
-  ;atdgen
-  ;(yojson (>= 2.0.0))
-  ;ppxlib
-  ;ppx_deriving
-  ;ppx_inline_test
-  ;(ocamlformat :with-test)
-  ; if we want to depend only for testing
-  ;(alcotest :with-test)
+  ppx_deriving
+  camlp-streams
+  conf-tk
+  ;NO: (labltk), we use the vendored more basic camltk in external/
 ))
 
 ;(package

@@ -4,12 +4,15 @@ version: "0.1.0"
 synopsis: "A simple Web browser"
 description: "A _really_ long description of a simple project"
 maintainer: ["Yoann Padioleau <yoann.padioleau@gmail.com>"]
-authors: ["Yoann Padioleau <yoann.padioleauo@gmail.com>"]
+authors: ["Francois Rouaix"]
 homepage: "https://github.com/aryx/fork-mmm"
 bug-reports: "https://github.com/aryx/fork-mmm/issues"
 depends: [
   "dune" {>= "3.7"}
   "ocaml" {>= "4.14.0"}
+  "ppx_deriving"
+  "camlp-streams"
+  "conf-tk"
   "odoc" {with-doc}
 ]
 build: [

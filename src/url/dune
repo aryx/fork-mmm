@@ -1,6 +1,8 @@
+; was merged in www/ in original mmm
+
 (library
- (public_name mmm.www)
- (name mmm_www)
+ (public_name mmm.url)
+ (name mmm_url)
  (wrapped false)
  (libraries
     mmm.commons
@@ -9,4 +11,3 @@
 )
 
 (ocamllex lexurl)
-

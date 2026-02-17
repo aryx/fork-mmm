@@ -1,0 +1,28 @@
+# Specifications for the "camltk" library:
+requires = ""
+version = "8.06.6"
+description = "The Tk windowing toolkit"
+
+archive(byte) = "camltk.cma"
+archive(native) = "camltk.cmxa"
+linkopts = ""
+
+package "jpf" (
+description = "a 'file selector' and 'balloon help' support for labltk"
+requires = "unix,camltk"
+archive(byte) = "libjpf.cma"
+archive(native) = "libjpf.cmxa"
+)
+package "frx" (
+description = "Francois Rouaix's widget set library"
+requires = "unix,camltk"
+archive(byte) = "libfrx.cma"
+archive(native) = "libfrx.cmxa"
+)
+
+package "tkanim" (
+description = "Anim"
+requires = "unix,camltk"
+archive(byte) = "tkanim.cmo"
+archive(native) = "tkanim.cmx"
+)

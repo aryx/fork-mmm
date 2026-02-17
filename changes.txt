@@ -1,11 +1,13 @@
 # -*- org -*-
 
-* 0.42 (Q1 2026) (resume with 4.14.2, Dockerfile/GHA)
+* 0.42 (Q1 2026) (resume with 4.14.2, Dockerfile/GHA, dune)
 
 ** build infra
 - resume compilation of mmm with OCaml 4.14, fixed many unused
   vars warnings, many String -> Byte, remove use of 
   camlp4 stream extension (removed from 4.08), and a few more fixes
+- build also with dune to get better warnings and code navigation
+  in efuns
 
 ** test infra
 - Dockerfile and docker.yml Github Actions CI check

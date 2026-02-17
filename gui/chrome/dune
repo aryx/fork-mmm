@@ -1,3 +1,5 @@
+; was called browser/ in original mmm
+
 (library
  (public_name mmm.gui)
  (name mmm_gui)

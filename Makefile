@@ -67,11 +67,24 @@ opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
 
+#add --progress=plain to debug
 #coupling: see also .github/workflows/docker.yml
 build-docker:
 	docker build -t "mmm" .
+#TODO: does not work yet
 build-docker-ocaml5:
 	docker build -t "mmm" --build-arg OCAML_VERSION=5.3.0 .
+
+mmm.opam: dune-project
+	dune build $@
+ocamltk.opam: dune-project
+	dune build $@
+
+build-dune:
+	dune build
+clean-dune:
+	dune clean
+
 
 allbyte: $(PROGS)
 

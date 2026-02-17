@@ -1,3 +1,5 @@
+; was called misc/ in original mmm
+
 (library
  (public_name mmm.commons)
  (name mmm_commons)
