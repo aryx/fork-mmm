@@ -21,7 +21,7 @@ local semgrep_rules = [
       Use `FS.with_open_in()` instead.
     |||,
     paths: {
-      exclude: ['todo/', 'save.ml', 'safeio.ml'],
+      exclude: ['todo/', 'save.ml', 'safeio.ml', 'ocamltk'],
     },
   },
 ];
@@ -30,7 +30,7 @@ local semgrep_rules = [
 // ----------------------------------------------------------------------------
 
 // lex and yacc are also part of ocaml-light so better not impose caps there
-local exclude_dirs = ['ocamltk', 'demos', 'extensions', 'common.ml'];
+local exclude_dirs = ['/external/ocamltk', 'demos', 'extensions', 'common.ml'];
 
 // partial copy of semgrep/TCB/forbid_xxx.jsonnet
 local cap_rules = [
