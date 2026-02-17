@@ -1,10 +1,10 @@
-(*s: ./http/http.mli *)
+(*s: http/http.mli *)
 
-(*s: exception Http.End_of_headers *)
+(*s: exception [[Http.End_of_headers]] *)
 exception End_of_headers
-(*e: exception Http.End_of_headers *)
+(*e: exception [[Http.End_of_headers]] *)
 
-(*s: signature Http.read_headers *)
+(*s: signature [[Http.read_headers]] *)
 (* [read_headers fd]
  *  reads HTTP headers from a fd
  *    raises End_of_file
@@ -12,28 +12,28 @@ exception End_of_headers
  *)
 val read_headers: 
   Unix.file_descr -> string list -> string list
-(*e: signature Http.read_headers *)
+(*e: signature [[Http.read_headers]] *)
 
-(*s: exception Http.HTTP_error *)
+(*s: exception [[Http.HTTP_error]] *)
 exception HTTP_error of string
-(*e: exception Http.HTTP_error *)
+(*e: exception [[Http.HTTP_error]] *)
 
-(*s: signature Http.req *)
+(*s: signature [[Http.req]] *)
 val req: Www.request -> Document.document_continuation -> Www.aborter
-(*e: signature Http.req *)
+(*e: signature [[Http.req]] *)
 
-(*s: signature Http.proxy_xxx *)
+(*s: signature [[Http.proxy_xxx]] *)
 val proxy: string ref
 val proxy_port: int ref
-(*e: signature Http.proxy_xxx *)
+(*e: signature [[Http.proxy_xxx]] *)
 
-(*s: signature Http.proxy_req *)
+(*s: signature [[Http.proxy_req]] *)
 val proxy_req: Www.request -> Document.document_continuation -> Www.aborter
-(*e: signature Http.proxy_req *)
+(*e: signature [[Http.proxy_req]] *)
 
 val always_proxy: bool ref
 val send_referer: bool ref
 val user_agent: string ref
 val timeout: int ref
 val verbose: bool ref
-(*e: ./http/http.mli *)
+(*e: http/http.mli *)

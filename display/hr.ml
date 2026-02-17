@@ -1,8 +1,8 @@
-(*s: ./display/hr.ml *)
+(*s: display/hr.ml *)
 open Tk
 open Html
 
-(*s: function Hr.create_named *)
+(*s: function [[Hr.create_named]] *)
 (* When creating an HR in a nested window (eg table cell), reqwidth is
    probably the width of 1 character
  *)
@@ -20,6 +20,6 @@ let create_named top name length height solid =
     Frame.configure fr [Relief Groove;
             BorderWidth (Pixels 2); Height (Pixels (height+2))];
   fr
-(*e: function Hr.create_named *)
+(*e: function [[Hr.create_named]] *)
 
-(*e: ./display/hr.ml *)
+(*e: display/hr.ml *)

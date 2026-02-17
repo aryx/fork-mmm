@@ -1,4 +1,4 @@
-(*s: ./commons/i18nprintf.ml *)
+(*s: commons/i18nprintf.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Objective Caml                            *)
@@ -13,7 +13,7 @@
 external format_int: string -> int -> string = "caml_format_int"
 external format_float: string -> float -> string = "caml_format_float"
 
-(*s: function I18nprintf.fprintf *)
+(*s: function [[I18nprintf.fprintf]] *)
 let fprintf outchan format =
   let format = (Obj.magic format : string) in
   let outside_iso8859 = ref false in
@@ -86,7 +86,7 @@ let fprintf outchan format =
             Obj.magic(fun printer ->
               printer outchan;
               doprn(succ j))
-        | _c ->
+        | c ->
             invalid_arg ("I18nprintf.fprintf: unknown format")
       end
     end
@@ -94,15 +94,15 @@ let fprintf outchan format =
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | _c -> j
+    | c -> j
 
   in doprn 0
-(*e: function I18nprintf.fprintf *)
+(*e: function [[I18nprintf.fprintf]] *)
 
 let printf fmt = fprintf stdout fmt
 and eprintf fmt = fprintf stderr fmt
 
-(*s: function I18nprintf.sprintf *)
+(*s: function [[I18nprintf.sprintf]] *)
 let sprintf format =
   let format = (Obj.magic format : string) in
   let outside_iso8859 = ref false in
@@ -172,15 +172,15 @@ let sprintf format =
         | 't' ->
             Obj.magic(fun printer ->
               doprn (succ j) (succ j) (printer () :: accu1))
-        | _c ->
+        | c ->
             invalid_arg ("I18nprintf.sprintf: unknown format")
       end
 
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | _c -> j
+    | c -> j
 
   in doprn 0 0 []
-(*e: function I18nprintf.sprintf *)
-(*e: ./commons/i18nprintf.ml *)
+(*e: function [[I18nprintf.sprintf]] *)
+(*e: commons/i18nprintf.ml *)

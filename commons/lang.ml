@@ -1,10 +1,10 @@
-(*s: ./commons/lang.ml *)
+(*s: commons/lang.ml *)
 
-(*s: function Lang.lang *)
+(*s: function [[Lang.lang]] *)
 let lang () =
   "iso8859"
-(*e: function Lang.lang *)
+(*e: function [[Lang.lang]] *)
 
 (* detect and set LANG information *)
 
-(*e: ./commons/lang.ml *)
+(*e: commons/lang.ml *)

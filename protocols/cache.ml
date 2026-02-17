@@ -1,4 +1,4 @@
-(*s: ./protocols/cache.ml *)
+(*s: protocols/cache.ml *)
 (* Document caching (in memory !) *)
 open Printf
 open Unix
@@ -9,38 +9,38 @@ open Document
 open Feed
 open Http_headers
 
-(*s: constant Cache.debug *)
+(*s: constant [[Cache.debug]] *)
 let debug = ref false
-(*e: constant Cache.debug *)
-(*s: constant Cache.history_mode *)
+(*e: constant [[Cache.debug]] *)
+(*s: constant [[Cache.history_mode]] *)
 let history_mode = ref false
   (* history mode means that we keep only the documents present in some
      navigator window. This mode is meant to be used in conjunction with
      a caching proxy *)
-(*e: constant Cache.history_mode *)
+(*e: constant [[Cache.history_mode]] *)
 
-(*s: constant Cache.max_lastused *)
+(*s: constant [[Cache.max_lastused]] *)
 let max_lastused = 100000000000.0
-(*e: constant Cache.max_lastused *)
+(*e: constant [[Cache.max_lastused]] *)
 
 (* The max values refer documents kept in memory *)
 let max_documents = ref 30
 and cleann = ref 5
 and current = ref 0
 
-(*s: constant Cache.cutlinks *)
+(*s: constant [[Cache.cutlinks]] *)
 (* A list of operations to do when we remove a document from the cache. *)
 let cutlinks = ref []
-(*e: constant Cache.cutlinks *)
+(*e: constant [[Cache.cutlinks]] *)
 
-(*s: type Cache.cache_fill (./protocols/cache.ml) *)
+(*s: type [[Cache.cache_fill]] ([[protocols/cache.ml]]) *)
 type cache_fill = {
   cache_write : string -> int -> int -> unit;
   cache_close : unit -> unit
  }
-(*e: type Cache.cache_fill (./protocols/cache.ml) *)
+(*e: type [[Cache.cache_fill]] ([[protocols/cache.ml]]) *)
 
-(*s: type Cache.entry *)
+(*s: type [[Cache.entry]] *)
 (* A cache entry *)
 type entry = {
   mutable cache_document : Document.document;
@@ -54,17 +54,17 @@ type entry = {
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
        *) (* JPF: it is now float! max_int -> max_float *)
   }
-(*e: type Cache.entry *)
+(*e: type [[Cache.entry]] *)
 
-(*s: exception Cache.DontCache (./protocols/cache.ml) *)
+(*s: exception [[Cache.DontCache]] ([[protocols/cache.ml]]) *)
 exception DontCache
-(*e: exception Cache.DontCache (./protocols/cache.ml) *)
+(*e: exception [[Cache.DontCache]] ([[protocols/cache.ml]]) *)
 
-(*s: constant Cache.memory *)
+(*s: constant [[Cache.memory]] *)
 let memory = ref ([] : (Document.document_id * entry) list)
-(*e: constant Cache.memory *)
+(*e: constant [[Cache.memory]] *)
 
-(*s: function Cache.postmortem *)
+(*s: function [[Cache.postmortem]] *)
 (* Debugging *)
 let postmortem () =
   Log.f (sprintf "Cache size(max): %d(%d)" !current !max_documents);
@@ -86,10 +86,10 @@ let postmortem () =
     Log.f (sprintf "Last used: %f" entry.cache_lastused);
     Log.f ""
   )
-(*e: function Cache.postmortem *)
+(*e: function [[Cache.postmortem]] *)
 
 
-(*s: function Cache.find *)
+(*s: function [[Cache.find]] *)
 (* Find a document*)
 let find did =
   let entry = List.assoc did !memory in
@@ -97,31 +97,31 @@ let find did =
   if entry.cache_pending 
   then Condition.wait entry.cache_condition;
   entry.cache_document
-(*e: function Cache.find *)
+(*e: function [[Cache.find]] *)
 
-(*s: function Cache.internal_kill *)
+(*s: function [[Cache.internal_kill]] *)
 (* Kills a document: stop and destroy all its dinfo
  * The caller is responsible for possible removing the document itself
  * from the memory.
  *)
-let internal_kill did _e =
+let internal_kill did e =
    (* Remove pointers to in-lined images and other goodies *)
    List.iter (fun f -> f did) !cutlinks
-(*e: function Cache.internal_kill *)
+(*e: function [[Cache.internal_kill]] *)
 
-(*s: function Cache.make_room *)
+(*s: function [[Cache.make_room]] *)
 let make_room () =
   if !debug then Log.f "Trying to make room in cache";
   (* Sort.list according to lru *)
   memory := List.sort 
-            (fun (_,e) (_,e') -> compare e.cache_lastused e'.cache_lastused)
+            (fun (_,e) (_,e') -> Stdlib.compare e.cache_lastused e'.cache_lastused)
          !memory;
   (* if the more recent entry has lu max_lastused, then we have to augment 
      the cache, since this means that only pending connexions are
      in the cache *)
   begin match !memory with
     [] -> ()
-  | (_,e)::_l ->
+  | (_,e)::l ->
      if e.cache_lastused = max_lastused then max_documents := !max_documents + 5
      else (* cleanup the oldests entries *)
        let rec rem1 n l = 
@@ -140,17 +140,17 @@ let make_room () =
      Log.f "Cache contents:";
      postmortem()
   end
-(*e: function Cache.make_room *)
+(*e: function [[Cache.make_room]] *)
 
 
-(*s: function Cache.finalize *)
+(*s: function [[Cache.finalize]] *)
 (* Remove the document source. *)
 let finalize = function
    FileData (f, true) -> Msys.rm f
  | _ -> () (* gc ! *)
-(*e: function Cache.finalize *)
+(*e: function [[Cache.finalize]] *)
 
-(*s: function Cache.kill_entry *)
+(*s: function [[Cache.kill_entry]] *)
 (* kill: removes a document from the cache
  *   Used by Reload. It can fail to find url in memory !
  *   It can also be used to remove something from the file cache
@@ -164,18 +164,18 @@ let kill_entry did e =
   finalize e.cache_document.document_data;	(* remove source *)
   memory := Mlist.except_assoc did !memory;
   decr current
-(*e: function Cache.kill_entry *)
+(*e: function [[Cache.kill_entry]] *)
 
-(*s: function Cache.kill *)
+(*s: function [[Cache.kill]] *)
 let kill did =
   try
     let e = List.assoc did !memory in
       kill_entry did e
   with
     Not_found -> ()
-(*e: function Cache.kill *)
+(*e: function [[Cache.kill]] *)
 
-(*s: function Cache.add *)
+(*s: function [[Cache.add]] *)
 (* Add a new entry *)
 let add did doc =
   if !debug 
@@ -206,12 +206,12 @@ let add did doc =
                  cache_condition = Condition.create()
                }) :: !memory
   end
-(*e: function Cache.add *)
+(*e: function [[Cache.add]] *)
 
 
 
 (* Pending documents should never be removed from the cache *)
-(*s: function Cache.finished *)
+(*s: function [[Cache.finished]] *)
 (* since they have lu = max_lastused *)
 let finished did =
   if !debug then
@@ -223,18 +223,18 @@ let finished did =
       Condition.set entry.cache_condition
   with
     Not_found -> ()
-(*e: function Cache.finished *)
+(*e: function [[Cache.finished]] *)
 
-(*s: function Cache.touch *)
+(*s: function [[Cache.touch]] *)
 let touch did =
   try
     let entry = List.assoc did !memory in
       entry.cache_lastused <- max (Unix.time()) entry.cache_lastused
   with
     Not_found -> ()
-(*e: function Cache.touch *)
+(*e: function [[Cache.touch]] *)
 
-(*s: function Cache.patch *)
+(*s: function [[Cache.patch]] *)
 (* Patch the headers of an existing entry *)
 let patch did headers =
   try
@@ -249,9 +249,9 @@ let patch did headers =
     entry.cache_lastused <- max (Unix.time()) entry.cache_lastused
   with
     Not_found -> () (* is this an error ? *)
-(*e: function Cache.patch *)
+(*e: function [[Cache.patch]] *)
 
-(*s: function Cache.init *)
+(*s: function [[Cache.init]] *)
 let init () =
   let initurl = Lexurl.make (Version.initurl (Lang.lang ())) in
 
@@ -274,33 +274,33 @@ let init () =
 
   memory := [docid, docentry];
   current := 1
-(*e: function Cache.init *)
+(*e: function [[Cache.init]] *)
 
 
-(*s: function Cache.tofile *)
+(*s: function [[Cache.tofile]] *)
 (* Cache savers *)
-let tofile _dh =
+let tofile dh =
   let f = Msys.mktemp "mmmcache" in
   let oc = open_out_bin f in
     FileData (f,true), 
       {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
        cache_close = (fun () -> close_out oc)}
-(*e: function Cache.tofile *)
+(*e: function [[Cache.tofile]] *)
 
-(*s: function Cache.tobuffer *)
-let tobuffer _dh =
+(*s: function [[Cache.tobuffer]] *)
+let tobuffer dh =
   let b = Ebuffer.create 1024 in
   MemoryData b, {cache_write = Ebuffer.output b;
                  cache_close = (fun () -> ())}
-(*e: function Cache.tobuffer *)
+(*e: function [[Cache.tobuffer]] *)
 
-(*s: constant Cache.discard *)
+(*s: constant [[Cache.discard]] *)
 let discard =
-    {cache_write = (fun _buf _offs _len -> ());
+    {cache_write = (fun buf offs len -> ());
      cache_close = (fun () -> ())}
-(*e: constant Cache.discard *)
+(*e: constant [[Cache.discard]] *)
 
-(*s: function Cache.dummy *)
+(*s: function [[Cache.dummy]] *)
 (* Pseudo-caching for documents that can be obtained from the local
    file system. Relies on trailing slash for directories !
  *)
@@ -317,10 +317,10 @@ let dummy dh =
       else FileData ("/"^p, false), discard
        end
    | _ -> raise DontCache
-(*e: function Cache.dummy *)
+(*e: function [[Cache.dummy]] *)
 
-(*s: function Cache.replace *)
-let _replace = function
+(*s: function [[Cache.replace]] *)
+let replace = function
    MemoryData b ->
     Ebuffer.reset b; 
     {cache_write = Ebuffer.output b; cache_close = (fun () -> ())}
@@ -328,9 +328,9 @@ let _replace = function
   let oc = open_out_bin f in
     {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
      cache_close = (fun () -> close_out oc)}
-(*e: function Cache.replace *)
+(*e: function [[Cache.replace]] *)
 
-(*s: function Cache.wrap *)
+(*s: function [[Cache.wrap]] *)
 (* Wrap a feed with cache saving *)
 let wrap c dh = 
   let wfeed = {
@@ -350,10 +350,10 @@ let wrap c dh =
     }
   in
   { dh with document_feed = wfeed }
-(*e: function Cache.wrap *)
+(*e: function [[Cache.wrap]] *)
 
 (* Obtain a dh from a cache entry *)
-(*s: function Cache.fd_of_doc *)
+(*s: function [[Cache.fd_of_doc]] *)
 (* This is stupid: to display a source that we have in the cache, we must
  * save it to disk in order to get a file descriptor...
  *)
@@ -369,9 +369,9 @@ let fd_of_doc doc =
       Msys.rm f;
       fd
   | FileData (f,_) -> openfile f [O_RDONLY] 0
-(*e: function Cache.fd_of_doc *)
+(*e: function [[Cache.fd_of_doc]] *)
 
-(*s: function Cache.make_handle *)
+(*s: function [[Cache.make_handle]] *)
 let make_handle wwwr doc =
   { document_id = { document_url = wwwr.www_url; document_stamp = no_stamp};
     document_referer = wwwr.www_link.h_context;
@@ -380,9 +380,9 @@ let make_handle wwwr doc =
     document_feed = Feed.of_fd (fd_of_doc doc);
     document_fragment = wwwr.www_fragment;
     document_logger = tty_logger}
-(*e: function Cache.make_handle *)
+(*e: function [[Cache.make_handle]] *)
 
-(*s: function Cache.renew_handle *)
+(*s: function [[Cache.renew_handle]] *)
 (* The same, if we kept the old dh *)
 let renew_handle dh =
   let did = dh.document_id in
@@ -394,10 +394,10 @@ let renew_handle dh =
     document_feed = Feed.of_fd (fd_of_doc doc);
     document_fragment = dh.document_fragment;
     document_logger = dh.document_logger}
-(*e: function Cache.renew_handle *)
+(*e: function [[Cache.renew_handle]] *)
 
 
-(*s: function Cache.make_embed_handle *)
+(*s: function [[Cache.make_embed_handle]] *)
 (* Same for embedded objects (but we don't have wwwr handy) *)
 let make_embed_handle doc =
   let fd =
@@ -420,20 +420,20 @@ let make_embed_handle doc =
      document_feed = Feed.of_fd fd;
      document_fragment = None;
      document_logger = tty_logger}
-(*e: function Cache.make_embed_handle *)
+(*e: function [[Cache.make_embed_handle]] *)
 
    
-(*s: function Cache.cleanup *)
+(*s: function [[Cache.cleanup]] *)
 let cleanup () =
   List.iter 
-    (fun (_did, entry) ->
+    (fun (did, entry) ->
       match entry.cache_document.document_data with
        FileData (f, true) -> Msys.rm f
       | _ -> ())
     !memory
-(*e: function Cache.cleanup *)
+(*e: function [[Cache.cleanup]] *)
 
-(*s: toplevel Cache._1 *)
+(*s: toplevel [[Cache._1]] *)
 let _ = at_exit cleanup
-(*e: toplevel Cache._1 *)
-(*e: ./protocols/cache.ml *)
+(*e: toplevel [[Cache._1]] *)
+(*e: protocols/cache.ml *)

@@ -1,4 +1,4 @@
-(*s: ./commons/munix.ml *)
+(*s: commons/munix.ml *)
 open Printf
 open Unix
 
@@ -7,7 +7,7 @@ open Unix
  *)
 
 
-(*s: function Munix.execvp *)
+(*s: function [[Munix.execvp]] *)
 (* If execvp fails in one of our children, it may be dangerous to leave
    the program running, since we don't know how Tk would react *)
 let execvp s args =
@@ -18,17 +18,17 @@ let execvp s args =
        Printf.eprintf "%s\n" (Unix.error_message e);
        flush Stdlib.stderr;
        exit 1
-(*e: function Munix.execvp *)
+(*e: function [[Munix.execvp]] *)
 
-(*s: constant Munix.quote *)
+(*s: constant [[Munix.quote]] *)
 let quote = Str.regexp "'"
-(*e: constant Munix.quote *)
-(*s: function Munix.quote_for_shell *)
+(*e: constant [[Munix.quote]] *)
+(*s: function [[Munix.quote_for_shell]] *)
 let quote_for_shell s =
   sprintf "'%s'" (Str.global_replace quote "'\\''" s)
-(*e: function Munix.quote_for_shell *)
+(*e: function [[Munix.quote_for_shell]] *)
 
-(*s: function Munix.system *)
+(*s: function [[Munix.system]] *)
 (* Wrapping of Sys.command with trivial arg quoting *)
 let system cmd args back =
   let b = Ebuffer.create 128 in
@@ -39,19 +39,19 @@ let system cmd args back =
     args;
    if back then Ebuffer.output_string b " &";
    Sys.command (Ebuffer.get b)
-(*e: function Munix.system *)
+(*e: function [[Munix.system]] *)
 
-(*s: function Munix.eval_cmd *)
+(*s: function [[Munix.eval_cmd]] *)
 let eval_cmd cmd args back =
  let _ = system cmd args back in ()
-(*e: function Munix.eval_cmd *)
+(*e: function [[Munix.eval_cmd]] *)
 
-(*s: function Munix.write_string *)
-let write_string fd (s : string) : unit =
-  ignore (Unix.write fd (Bytes.of_string s) 0 (String.length s))
-(*e: function Munix.write_string *)
+(*s: function [[Munix.write_string]] *)
+let write_string fd (s : string) =
+  ignore (write fd (Bytes.of_string s) 0 (String.length s))
+(*e: function [[Munix.write_string]] *)
 
-(*s: function Munix.read_line *)
+(*s: function [[Munix.read_line]] *)
 (*
  * Read a line (terminated by \n or \r\n).
  *   strips terminator !
@@ -67,15 +67,13 @@ let read_line fd =
                Bytes.sub_string buf 0 len
            else let offs = succ offs in
                   if offs = bufsize 
-                  then 
-                    let newbuf = Bytes.cat buf (Bytes.create 128) in
-                    read_rec newbuf (bufsize + 128) offs
+                  then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
                   else read_rec buf bufsize offs in
   read_rec (Bytes.create 128) 128 0 
-(*e: function Munix.read_line *)
+(*e: function [[Munix.read_line]] *)
 
 
-(*s: function Munix.full_random_init *)
+(*s: function [[Munix.full_random_init]] *)
 let full_random_init () =
   try 
     let env = environment () in
@@ -87,9 +85,9 @@ let full_random_init () =
     Random.full_init vect
   with
     _ -> ()
-(*e: function Munix.full_random_init *)
+(*e: function [[Munix.full_random_init]] *)
 
-(*s: function Munix.digdir *)
+(*s: function [[Munix.digdir]] *)
 let rec digdir dir perm =
   (* try to create the directory dir *)
   if Sys.file_exists dir then () 
@@ -98,13 +96,13 @@ let rec digdir dir perm =
     digdir pdir perm;
     Unix.mkdir dir perm
   end
-(*e: function Munix.digdir *)
+(*e: function [[Munix.digdir]] *)
 
-(*s: constant Munix.dns *)
+(*s: constant [[Munix.dns]] *)
 (* DNS Caching. It really helps on slow lines... *)
 let dns = Hashtbl.create 307
-(*e: constant Munix.dns *)
-(*s: function Munix.gethostbyname *)
+(*e: constant [[Munix.dns]] *)
+(*s: function [[Munix.gethostbyname]] *)
 let gethostbyname h =
   try Hashtbl.find dns h
   with
@@ -112,26 +110,26 @@ let gethostbyname h =
       let addr = Unix.gethostbyname h in
         Hashtbl.add dns h addr;
      addr
-(*e: function Munix.gethostbyname *)
+(*e: function [[Munix.gethostbyname]] *)
 
-(*s: toplevel Munix._1 *)
+(*s: toplevel [[Munix._1]] *)
 let _ =
   full_random_init()
-(*e: toplevel Munix._1 *)
+(*e: toplevel [[Munix._1]] *)
 
-(*s: constant Munix.vars *)
+(*s: constant [[Munix.vars]] *)
 (* Hack to run some external command with parameter substitution 
  * The command is a string containing $X
  * The arguments are [X, v]
  * For arguments not substituted, add them at the end,
  *)
 let vars = Str.regexp "\\$[A-Z]+"
-(*e: constant Munix.vars *)
+(*e: constant [[Munix.vars]] *)
 
-(*s: function Munix.system_eval *)
+(*s: function [[Munix.system_eval]] *)
 let system_eval cmd args back =
   let replaced = ref []
-  and _qargsTODO = List.map (fun (x, v) -> x, quote_for_shell v) args
+  and qargs = List.map (fun (x, v) -> x, quote_for_shell v) args
   in
   let replfun s =
     let matched = Str.matched_string s in
@@ -153,6 +151,6 @@ let system_eval cmd args back =
     if not (List.mem x !replaced) then remaining := v :: !remaining)
     args;
   system scmd (List.rev !remaining) back
-(*e: function Munix.system_eval *)
+(*e: function [[Munix.system_eval]] *)
 
-(*e: ./commons/munix.ml *)
+(*e: commons/munix.ml *)

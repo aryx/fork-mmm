@@ -1,4 +1,4 @@
-(*s: ./display/html_table.mli *)
+(*s: display/html_table.mli *)
 (*
 module Make :
   functor (TableDisplay : Htmlfmt.TableDisplay) ->
@@ -20,8 +20,8 @@ val init:
                     (Htmlfmt.formatter -> unit) -> unit;
           create_formatter : Htmlfmt.formatterSpec ->
                              Widget.widget -> 'a * Widget.widget;
-          pop_formatter : 'b; push_formatter : 'a -> unit;
+          pop_formatter : 'b; push_formatter : 'a -> 'c;
           remove_tag : string -> unit; .. > ->
         unit
 
-(*e: ./display/html_table.mli *)
+(*e: display/html_table.mli *)

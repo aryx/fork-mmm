@@ -1,4 +1,4 @@
-(*s: ./display/htmlw.ml *)
+(*s: display/htmlw.ml *)
 open I18n
 open Printf
 open Tk
@@ -12,18 +12,18 @@ open Feed
 open Embed
 open Htframe
 
-(*s: constant Htmlw.frames_as_links *)
+(*s: constant [[Htmlw.frames_as_links]] *)
 (* Prefs globals *)
 let frames_as_links = ref false
-(*e: constant Htmlw.frames_as_links *)
-(*s: constant Htmlw.pscrolling *)
+(*e: constant [[Htmlw.frames_as_links]] *)
+(*s: constant [[Htmlw.pscrolling]] *)
 let pscrolling = ref false
-(*e: constant Htmlw.pscrolling *)
-(*s: constant Htmlw.ignore_meta_charset *)
+(*e: constant [[Htmlw.pscrolling]] *)
+(*s: constant [[Htmlw.ignore_meta_charset]] *)
 let ignore_meta_charset = ref false
-(*e: constant Htmlw.ignore_meta_charset *)
+(*e: constant [[Htmlw.ignore_meta_charset]] *)
 
-(*s: constant Htmlw.scroll_icon *)
+(*s: constant [[Htmlw.scroll_icon]] *)
 let scroll_icon ="
 #define mini-scroll-arrows_width 16
 #define mini-scroll-arrows_height 14
@@ -31,19 +31,19 @@ static char mini-scroll-arrows_bits[] = {
  0x80,0x00,0xc0,0x01,0xc0,0x01,0xe0,0x03,0xf0,0x07,0xf0,0x07,0x00,0x00,0x00,
  0x00,0xf0,0x07,0xf0,0x07,0xe0,0x03,0xc0,0x01,0xc0,0x01,0x80,0x00};
 "
-(*e: constant Htmlw.scroll_icon *)
+(*e: constant [[Htmlw.scroll_icon]] *)
 
-(*s: constant Htmlw.scroll_image *)
+(*s: constant [[Htmlw.scroll_image]] *)
 let scroll_image = 
   lazy (ImageBitmap(Imagebitmap.create [Data scroll_icon]))
-(*e: constant Htmlw.scroll_image *)
+(*e: constant [[Htmlw.scroll_image]] *)
 
 (*s: module Htmlw.F *)
 module F = Html_disp (*Html_disp.Make(Textw_fo)(Form)(Table) *)
 (*e: module Htmlw.F *)
 
 
-(*s: function Htmlw.progress_report *)
+(*s: function [[Htmlw.progress_report]] *)
 (* Builds the progress report and pointsto zone.
  * Adds ctx nav function for pointsto
  *)
@@ -57,7 +57,7 @@ let progress_report top ctx =
     Frame.create_named f "fr" [Width (Pixels 200); Height(Pixels 5)]in
 
   (* progress meter requires an alt widget, but we don't have to pack it *)
-  let _fakealt = Label.create_named fprog "alt" [] in
+  let fakealt = Label.create_named fprog "alt" [] in
   pack [fprog][Side Side_Left];
   pack [lpoint][Side Side_Left; Fill Fill_X];
   (* hack to avoid lpoint forcing the navigator to grow like hell *)
@@ -72,19 +72,19 @@ let progress_report top ctx =
                   hyper_func = (fun _ h -> 
                     let target = 
                       try Hyper.string_of h
-                      with Invalid_link _msg -> "invalid link" 
+                      with Invalid_link msg -> "invalid link" 
                     in
                     pointsto target
                   )});
   ctx#add_nav ("clearpointsto" ,
                 { hyper_visible = false;
                   hyper_title = "Clear target";
-                  hyper_func = (fun _ _h -> pointsto "")
+                  hyper_func = (fun _ h -> pointsto "")
                 });
   f, Tk_progress.meter fprog
-(*e: function Htmlw.progress_report *)
+(*e: function [[Htmlw.progress_report]] *)
 
-(*s: function Htmlw.html_head_ui *)
+(*s: function [[Htmlw.html_head_ui]] *)
 let html_head_ui headers redisplay pscroll top ctx =
   (* The frame for all head UI elements *)
   let headgroup = Frame.create_named top "head" [] in
@@ -143,12 +143,12 @@ let html_head_ui headers redisplay pscroll top ctx =
   let add_header h v =
     if not !sep_added then (sep_added := true; Menu.add_separator headersm);
     let txt = sprintf "%s: %s" h v in
-    match String.lowercase_ascii h with
+    match String.lowercase h with
       "refresh" ->
        begin try
           let pos = String.index v ';'
           and pos2 = String.index v '=' in
-          let _delay = int_of_string (String.sub v 0 pos)
+          let delay = int_of_string (String.sub v 0 pos)
           and url = String.sub v (pos2+1) (String.length v - pos2 - 1) in
       Menu.add_command headersm 
         [Label txt;
@@ -178,10 +178,10 @@ let html_head_ui headers redisplay pscroll top ctx =
     (List.rev headers);
   
   headgroup, set_title, add_link, add_header, add_extra_header
-(*e: function Htmlw.html_head_ui *)
+(*e: function [[Htmlw.html_head_ui]] *)
 
 
-(*s: function Htmlw.ignore_open *)
+(*s: function [[Htmlw.ignore_open]] *)
 (*
  * Extend a display machine to interpret HEAD elements with
  * an influence on the HEAD ui display.
@@ -189,15 +189,15 @@ let html_head_ui headers redisplay pscroll top ctx =
  * even if we don't have UI for HEAD (e.g. base)
  *)
 let ignore_open _ _ = ()
-(*e: function Htmlw.ignore_open *)
-(*s: function Htmlw.ignore_close *)
+(*e: function [[Htmlw.ignore_open]] *)
+(*s: function [[Htmlw.ignore_close]] *)
 let ignore_close _ = ()
-(*e: function Htmlw.ignore_close *)
+(*e: function [[Htmlw.ignore_close]] *)
 
-(*s: function Htmlw.head_hook *)
+(*s: function [[Htmlw.head_hook]] *)
 let head_hook (headgroup,set_title,add_link,add_header) mach =
   mach#add_tag "title" 
-    (fun _fo _t ->
+    (fun fo t ->
       mach#push_action
     (fun s -> 
       set_title (Html.beautify2 s);
@@ -205,19 +205,19 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     ignore_close;
       
   mach#add_tag "isindex"
-    (fun _fo tag ->
+    (fun fo tag ->
       let prompt = get_attribute tag "prompt" in
       let action s =
     mach#ctx#goto { h_uri = "?" ^ Urlenc.encode s;
                h_context = Some mach#base;
                h_method = GET;
                h_params = []} in
-      let f,_e = Frx_entry.new_label_entry headgroup prompt action in
+      let f,e = Frx_entry.new_label_entry headgroup prompt action in
       pack [f] [Fill Fill_X])
     ignore_close;
 
   mach#add_tag "link"
-    (fun _fo tag ->
+    (fun fo tag ->
       try
         let href = get_attribute tag "href" in
     let name = 
@@ -244,7 +244,7 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
   begin
     let old =
       try
-    let oldo, _c = mach#get_tag "meta" in oldo
+    let oldo, c = mach#get_tag "meta" in oldo
       with
     Not_found -> ignore_open in
     mach#add_tag "meta"
@@ -261,7 +261,7 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
   (* Non standard extensions *)
   if !frames_as_links  then
     mach#add_tag "frame"
-      (fun _fo tag ->
+      (fun fo tag ->
     try
          let src = get_attribute tag "src" in
          let name =
@@ -274,7 +274,7 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     with
       Not_found -> () (* no src *))
       ignore_close
-(*e: function Htmlw.head_hook *)
+(*e: function [[Htmlw.head_hook]] *)
 
 (* This class only defines globals *)
 class  virtual viewer_globs ((ctx : Viewers.context),
@@ -293,18 +293,14 @@ class  virtual viewer_globs ((ctx : Viewers.context),
 end
 
 (* We still need dh at construction for the definition of feed_red *)
-class  virtual html_parse (dh : Document.handle) =
+class  virtual html_parse (dh) =
  object (self)
-  (* pad: NEW, needed with recent OCaml *)
-  method virtual dh : Document.handle
-  method virtual set_progress : int option -> int -> unit
- 
   (* red tape for progress report *)
   val mutable red = 0
   val mutable size = 
     try Some (Http_headers.contentlength dh.dh_headers)
     with Not_found -> None (* duh *)
-  val mutable feed_read = new Japan.read_i18n (fun _s _o _n -> 0)
+  val mutable feed_read = new Japan.read_i18n (fun s o n -> 0)
 
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
   method lexbuf = lexbuf  
@@ -331,10 +327,6 @@ end
 class  virtual html_body () =
  object (self)
 
-  (* pad: NEW, needed with recent OCaml *)
-  method virtual ctx: context
-  method virtual frame: Widget.widget
-
   method virtual mach : Html_disp.machine
 
   val current_scroll_mode = ref !pscrolling
@@ -347,7 +339,7 @@ class  virtual html_body () =
        a formatter and install it *)
     let body_formatter = ref None in
     self#mach#add_tag "body" 
-      (fun _fo t ->
+      (fun fo t ->
     match !body_formatter with
     | None -> (* it's the first body *)
         let format, fhtml = 
@@ -376,16 +368,13 @@ class  virtual html_body () =
     | Some f -> (* multiple body... *)
         self#mach#push_formatter f
      )
-      (fun _t -> 
-          ignore self#mach#pop_formatter)
+      (fun t -> 
+    ignore self#mach#pop_formatter)
 end
 
 (* geek stuff *)
 class  virtual bored () =
  object (self)
-  method virtual mach : Html_disp.machine
-  method virtual ctx: context
-
   method bored_init hgbas =
     let bored = 
       Resource.get Widget.default_toplevel "bored" "bored" = "yes"
@@ -410,17 +399,17 @@ class  virtual bored () =
 
 end
 
-(*s: class Htmlw.display_html *)
+(*s: class [[Htmlw.display_html]] *)
 class display_html ((top : Widget.widget),
                     (ctx : Viewers.context),
-                    (_mediapars : (string * string) list),
+                    (mediapars : (string * string) list),
                     (imgmanager: Imgload.loader),
                     (dh': Document.handle)) =
  object (self)
-  inherit Viewers.display_info () as _di  (* gives us basic features *)
+  inherit Viewers.display_info () as di  (* gives us basic features *)
   inherit viewer_globs (ctx, dh')
   inherit html_parse (dh')
-  inherit html_body () as _body
+  inherit html_body () as body
   inherit bored ()
 
   (* val imgmanager = imgmanager *)
@@ -433,7 +422,7 @@ class display_html ((top : Widget.widget),
   (*x: [[Htmlw.display_html]] private fields *)
   val (*private*) annotations = ref []
   (*x: [[Htmlw.display_html]] private fields *)
-  val mutable add_extra_header = fun _f -> ()
+  val mutable add_extra_header = fun f -> ()
   (*x: [[Htmlw.display_html]] private fields *)
   val (*private*) errors = ref []
   (*x: [[Htmlw.display_html]] private fields *)
@@ -478,23 +467,23 @@ class display_html ((top : Widget.widget),
     let meta_charset = ref None in
     (* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
     if not !ignore_meta_charset then begin 
-      mach#add_tag "meta" (fun _fo tag ->
+      mach#add_tag "meta" (fun fo tag ->
        try 
          let h = get_attribute tag "http-equiv" in
          let v = get_attribute tag "content" in
-         match String.lowercase_ascii h with
+         match String.lowercase h with
          | "content-type" ->
               begin try
                 let (t,h), l = Lexheaders.media_type v in
-                if String.lowercase_ascii t <> "text" ||
-                   String.lowercase_ascii h <> "html" then begin
+                if String.lowercase t <> "text" ||
+                   String.lowercase h <> "html" then begin
                      Log.f ("Unknown meta content-type = "^t^"/"^h);
                     raise Exit
                 end;
                 try 
                   List.iter (fun (h,v) ->
-                    if String.lowercase_ascii h = "charset" then begin
-                      let v = String.lowercase_ascii v in
+                    if String.lowercase h = "charset" then begin
+                      let v = String.lowercase v in
                       Log.f ("MetaCharset detect : " ^ v);
                       begin try
                         let code = 
@@ -591,7 +580,7 @@ class display_html ((top : Widget.widget),
         let rec annot_last = function
         | [] -> ()
         | [x] -> self#annotate loc x
-        | _x::l -> annot_last l
+        | x::l -> annot_last l
         in
         annot_last tokens;
         (*e: [[Htmlw.display_html]] in feed, annotate *)
@@ -608,13 +597,13 @@ class display_html ((top : Widget.widget),
          )
       with 
       | End_of_file ->
-          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler *)
+          (*s: [[Htmlw.display_html]] in feed, [[End_of_file]] exn handler *)
           self#set_progress (Some red) red;
           self#finish false;
-          (*s: [[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment *)
+          (*s: [[Htmlw.display_html]] in feed, [[End_of_file]] exn handler, goto fragment *)
           mach#see_frag dh.document_fragment;
-          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler, goto fragment *)
-          (*e: [[Htmlw.display_html]] in feed, End_of_file exn handler *)
+          (*e: [[Htmlw.display_html]] in feed, [[End_of_file]] exn handler, goto fragment *)
+          (*e: [[Htmlw.display_html]] in feed, [[End_of_file]] exn handler *)
       (*s: [[Htmlw.display_html]] in feed, other exceptions handler *)
       | Html_Lexing (s,n) ->
           (* this should not happen if Lexhtml was debugged *)
@@ -643,7 +632,7 @@ class display_html ((top : Widget.widget),
      *  event again during the processing of the event... 
      *)
     Frx_after.idle (fun () ->
-      mach#embedded |> List.iter (fun { embed_frame = f; _} ->
+      mach#embedded |> List.iter (fun { embed_frame = f} ->
         Winfo.children f |> List.iter (Frx_synth.send "load_images")
       )
     )
@@ -653,7 +642,7 @@ class display_html ((top : Widget.widget),
     imgmanager#update_images;
 
     Frx_after.idle (fun () ->
-      mach#embedded |> List.iter (fun {embed_frame = f; _} ->
+      mach#embedded |> List.iter (fun {embed_frame = f} ->
         Winfo.children f |> List.iter (Frx_synth.send "update")
       )
     )
@@ -748,7 +737,7 @@ class display_html ((top : Widget.widget),
   (*e: [[Htmlw.display_html]] graphic cache destroy methods *)
   (*s: [[Htmlw.display_html]] other methods or fields *)
   method annotate loc = function
-    | OpenTag {tag_name=name; _} ->
+    | OpenTag {tag_name=name} ->
         annotations := (name, loc) :: !annotations
     | CloseTag name ->
         annotations := (name, loc) :: !annotations
@@ -767,17 +756,17 @@ class display_html ((top : Widget.widget),
   (*e: [[Htmlw.display_html]] other methods or fields *)
 
 end
-(*e: class Htmlw.display_html *)
+(*e: class [[Htmlw.display_html]] *)
       
-(*s: function Htmlw.display_html *)
+(*s: function [[Htmlw.display_html]] *)
 let display_html mediapars top ctx dh =
   let imgmanager = Imgload.create() in
   let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
   viewer#init true;
   Some (viewer :> Viewers.display_info)
-(*e: function Htmlw.display_html *)
+(*e: function [[Htmlw.display_html]] *)
 
-(*s: function Htmlw.embedded_html *)
+(*s: function [[Htmlw.embedded_html]] *)
 (* TODO: we should be able to share the imgmanager, but I don't see
  *  where we can get it from (except by adding something in ctx)
  *)
@@ -790,18 +779,18 @@ let embedded_html mediapars top ctx doc =
   pack [viewer#di_widget][Expand true; Fill Fill_Both];
   (* set for events *)
   Frx_synth.bind viewer#di_widget "load_images" 
-    (fun _top -> viewer#di_load_images);
+    (fun top -> viewer#di_load_images);
   Frx_synth.bind viewer#di_widget "update" 
     (fun _ -> Embed.update top ctx doc (fun () -> viewer#di_update))
-(*e: function Htmlw.embedded_html *)
+(*e: function [[Htmlw.embedded_html]] *)
 
-(*s: toplevel Htmlw._1 *)
+(*s: toplevel [[Htmlw._1]] *)
 let _ =
   Viewers.add_builtin ("text","html") display_html
-(*e: toplevel Htmlw._1 *)
-(*s: toplevel Htmlw._2 *)
+(*e: toplevel [[Htmlw._1]] *)
+(*s: toplevel [[Htmlw._2]] *)
 let _ =
   Embed.add_viewer ("text", "html") embedded_html
-(*e: toplevel Htmlw._2 *)
+(*e: toplevel [[Htmlw._2]] *)
 
-(*e: ./display/htmlw.ml *)
+(*e: display/htmlw.ml *)

@@ -1,24 +1,25 @@
-(*s: ./protocols/mailto.ml *)
+(*s: protocols/mailto.ml *)
 (* mailto: *)
 open I18n
+open Sys
 open Unix
 open Www
 open Hyper
 open Url
 
-(*s: constant Mailto.mailer *)
+(*s: constant [[Mailto.mailer]] *)
 let mailer = ref ""
-(*e: constant Mailto.mailer *)
+(*e: constant [[Mailto.mailer]] *)
 
-(*s: type Mailto.msg *)
+(*s: type [[Mailto.msg]] *)
 type msg = {
   dest    : string;
   subject : string;
   body    : string 
 }
-(*e: type Mailto.msg *)
+(*e: type [[Mailto.msg]] *)
 
-(*s: function Mailto.error *)
+(*s: function [[Mailto.error]] *)
 let error body =
   try
     let oc = open_out_bin (Filename.concat (getenv "HOME") "dead.letter") in
@@ -27,9 +28,9 @@ let error body =
     Error.f (s_ "Can't send mail (saved in $HOME/dead.letter)")
   with _ -> 
     Error.f (s_ "Can't send mail, can't save dead.letter")
-(*e: function Mailto.error *)
+(*e: function [[Mailto.error]] *)
 
-(*s: function Mailto.sendmail *)
+(*s: function [[Mailto.sendmail]] *)
 (* if the mail contains a dot line, we're f*cked *)
 let sendmail msg =
   let cmd = try Sys.getenv "MMM_MAIL" with Not_found -> "mail" in
@@ -49,19 +50,19 @@ let sendmail msg =
        | _, _ -> error msg.body
        )
  with Unix_error(_,_,_) -> error msg.body
-(*e: function Mailto.sendmail *)
+(*e: function [[Mailto.sendmail]] *)
 
-(*s: global Mailto.internal_backend *)
+(*s: global [[Mailto.internal_backend]] *)
 let internal_backend = 
   ref (fun _ _ -> failwith "no Mailto.internal defined")
-(*e: global Mailto.internal_backend *)
+(*e: global [[Mailto.internal_backend]] *)
 
-(*s: function Mailto.internal *)
+(*s: function [[Mailto.internal]] *)
 let internal address referer =
   !internal_backend address referer
-(*e: function Mailto.internal *)
+(*e: function [[Mailto.internal]] *)
    
-(*s: function Mailto.get *)
+(*s: function [[Mailto.get]] *)
 let get mailaddr referer =
   let subject = 
     match referer with
@@ -73,9 +74,9 @@ let get mailaddr referer =
    | s -> 
        Munix.system_eval s ["_", "-s"; "SUBJECT", subject; "TO", mailaddr] true
         |> ignore
-(*e: function Mailto.get *)
+(*e: function [[Mailto.get]] *)
 
-(*s: function Mailto.f *)
+(*s: function [[Mailto.f]] *)
 let f wr =
   match wr.www_url.path with
   | Some raw_address ->
@@ -97,5 +98,5 @@ let f wr =
         wr.www_error#f (s_ "Unsupported method for mailto:")
      )
   | None -> wr.www_error#f (s_ "No address given for mailto:")
-(*e: function Mailto.f *)
-(*e: ./protocols/mailto.ml *)
+(*e: function [[Mailto.f]] *)
+(*e: protocols/mailto.ml *)

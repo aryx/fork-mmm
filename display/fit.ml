@@ -1,13 +1,13 @@
-(*s: ./display/fit.ml *)
+(*s: display/fit.ml *)
 open Printf
 open Tk
+open Protocol
 
-
-(*s: constant Fit.debug *)
+(*s: constant [[Fit.debug]] *)
 let debug = ref false
-(*e: constant Fit.debug *)
+(*e: constant [[Fit.debug]] *)
 
-(*s: function Fit.set_initial_width *)
+(*s: function [[Fit.set_initial_width]] *)
 (* initial width : a nested formatter starts with w=1 h=1
  * if the only contents is an embedded window, it's a bit short
  * thus we check for max width of embedded windows
@@ -26,19 +26,19 @@ let set_initial_width wid =
     Some w
   end
   else None
-(*e: function Fit.set_initial_width *)
+(*e: function [[Fit.set_initial_width]] *)
 
 (* initial height: we have to grow at least to the number of
  * lines of text so that the entire text is visible. Moreover,
  * large lines will fold so adjust. Moreover, embedded window
  * provide height.
  *)
-(*s: function Fit.wheight *)
+(*s: function [[Fit.wheight]] *)
 (* I still don't understand the difference between height and reqheight *)
 let wheight w = max (Winfo.height w) (Winfo.reqheight w)
-(*e: function Fit.wheight *)
+(*e: function [[Fit.wheight]] *)
 
-(*s: function Fit.set_initial_height *)
+(*s: function [[Fit.set_initial_height]] *)
 let set_initial_height wid =
   match Text.index wid (TextIndex(End,[])) with
     LineChar (l,_) ->
@@ -78,10 +78,10 @@ let set_initial_height wid =
                        (Widget.name wid) !height (l-1))
       end
   | _ -> ()
-(*e: function Fit.set_initial_height *)
+(*e: function [[Fit.set_initial_height]] *)
 
 
-(*s: function Fit.fixed_horiz *)
+(*s: function [[Fit.fixed_horiz]] *)
 (* Grow horizontally until we reached the maxium authorized width 
  * (or bound is reached)
  *)
@@ -96,9 +96,9 @@ let rec fixed_horiz wid maxw =
     Text.configure wid [TextWidth w];
     fixed_horiz wid maxw
   end
-(*e: function Fit.fixed_horiz *)
+(*e: function [[Fit.fixed_horiz]] *)
 
-(*s: function Fit.horiz *)
+(*s: function [[Fit.horiz]] *)
 let horiz wid stop continuation =
   (* all conditions for stopping *)
   let finished visible = visible >= 0.999 || stop()
@@ -161,10 +161,10 @@ let horiz wid stop continuation =
     
   in
   scroll, check
-(*e: function Fit.horiz *)
+(*e: function [[Fit.horiz]] *)
 
 
-(*s: function Fit.vert *)
+(*s: function [[Fit.vert]] *)
 (* somehow we need to do it differently : resize is delayed *)
 let vert wid =
   let finished visible = visible >= 0.999
@@ -242,9 +242,9 @@ let vert wid =
     end
   in
   scroll, check
-(*e: function Fit.vert *)
+(*e: function [[Fit.vert]] *)
 
-(*s: function Fit.bound_check *)
+(*s: function [[Fit.bound_check]] *)
 let bound_check wid width =
   let stop_now = ref false in
   bind wid [[], Configure]
@@ -258,6 +258,6 @@ let bound_check wid width =
   bind wid [[], Configure] BindRemove
       end)));
   (fun () -> !stop_now)
-(*e: function Fit.bound_check *)
+(*e: function [[Fit.bound_check]] *)
 
-(*e: ./display/fit.ml *)
+(*e: display/fit.ml *)

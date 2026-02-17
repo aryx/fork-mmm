@@ -1,14 +1,14 @@
-(*s: ./display/imgload.ml *)
+(*s: display/imgload.ml *)
 open Printf
 open Tk
 open Tkanim
 open Www
 open Uri
-
+open Hyper
 open Maps
 open Embed
 open Img
-
+open Viewers
 
 (*s: type Imgload.mode (./display/imgload.ml) *)
 (* Images are embedded objects, with a twist *)
@@ -18,18 +18,18 @@ type mode =
   | AfterDocManual
 (*e: type Imgload.mode (./display/imgload.ml) *)
 
-(*s: constant Imgload.mode *)
+(*s: constant [[Imgload.mode]] *)
 (* Preference settings *)
 let mode = ref AfterDocManual
-(*e: constant Imgload.mode *)
-(*s: constant Imgload.no_images *)
+(*e: constant [[Imgload.mode]] *)
+(*s: constant [[Imgload.no_images]] *)
 let no_images = ref false
-(*e: constant Imgload.no_images *)
-(*s: constant Imgload.gif_anim_auto *)
+(*e: constant [[Imgload.no_images]] *)
+(*s: constant [[Imgload.gif_anim_auto]] *)
 let gif_anim_auto = ref false
-(*e: constant Imgload.gif_anim_auto *)
+(*e: constant [[Imgload.gif_anim_auto]] *)
 
-(*s: function Imgload.display *)
+(*s: function [[Imgload.display]] *)
 (* Utilities *)
 let display emb i =
   let prop = ref false in
@@ -141,9 +141,9 @@ let display emb i =
       (Winfo.children emb.embed_frame)
   end;
   if !prop then Pack.propagate_set emb.embed_frame true
-(*e: function Imgload.display *)
+(*e: function [[Imgload.display]] *)
 
-(*s: function Imgload.put_alt *)
+(*s: function [[Imgload.put_alt]] *)
 (* put up the alternate text *)
 let put_alt emb =
   let m = Label.create_named emb.embed_frame "alt" [Text emb.embed_alt] in
@@ -173,9 +173,9 @@ let put_alt emb =
     end
 *)
   end
-(*e: function Imgload.put_alt *)
+(*e: function [[Imgload.put_alt]] *)
 
-(*s: function Imgload.make_auto *)
+(*s: function [[Imgload.make_auto]] *)
 (* for delayed load, add binding *)
 let make_auto delayed emb =
   try
@@ -185,7 +185,7 @@ let make_auto delayed emb =
       (BindSet ([], (fun _ -> Img.ImageScheduler.flush_one delayed url)))
   with
     e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
-(*e: function Imgload.make_auto *)
+(*e: function [[Imgload.make_auto]] *)
 
 (* for manual load, add binding
 let make_manual emb =
@@ -198,7 +198,7 @@ let make_manual emb =
     e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
  *)
 
-(*s: function Imgload.make_map *)
+(*s: function [[Imgload.make_map]] *)
 (* If the object is clickable, make it visible *)
 
 let make_map emb =
@@ -266,7 +266,7 @@ let make_map emb =
       Frame.configure emb.embed_frame visible;
       reconfigure_frame emb.embed_frame; 
       (new Htbind.formmap (emb.embed_frame, getlink))#init emb.embed_context
-(*e: function Imgload.make_map *)
+(*e: function [[Imgload.make_map]] *)
 
 
 (* The default behavior *)
@@ -303,7 +303,7 @@ class synchronous () =
  object
   inherit loader () as super
 
-  method! add_image emb =
+  method add_image emb =
     super#add_image emb; super#activate emb
 end
 
@@ -312,7 +312,7 @@ class auto () =
   inherit loader () as super
   val q = ImageScheduler.new_delayed()
 
-  method! add_image emb =
+  method add_image emb =
      super#add_image emb;
      try
        let wr = Www.make emb.embed_hlink in
@@ -326,29 +326,29 @@ class auto () =
        e -> Log.f (sprintf "Can't compute image link (%s)"
                    (Printexc.to_string e))
 
-  method! flush_images = ImageScheduler.flush_delayed q
+  method flush_images = ImageScheduler.flush_delayed q
 end
 
 class manual () =
  object
   inherit auto () as super
 
-  method! add_image emb =
+  method add_image emb =
     super#add_image emb;
     make_auto q emb
  
-  method! flush_images = ()
+  method flush_images = ()
 
-  method! load_images = ImageScheduler.flush_delayed q
+  method load_images = ImageScheduler.flush_delayed q
 end
 
-(*s: function Imgload.create *)
+(*s: function [[Imgload.create]] *)
 let create () =
    if !no_images then new loader ()
    else match !mode with
      DuringDoc -> (new synchronous () :> loader)
    | AfterDocAuto -> (new auto() :> loader)
    | AfterDocManual -> (new manual() :> loader)
-(*e: function Imgload.create *)
+(*e: function [[Imgload.create]] *)
 
-(*e: ./display/imgload.ml *)
+(*e: display/imgload.ml *)

@@ -1,10 +1,10 @@
-(*s: ./display/form.mli *)
+(*s: display/form.mli *)
 
-(*s: signature Form.form_bg *)
+(*s: signature [[Form.form_bg]] *)
 val form_bg : string ref
-(*e: signature Form.form_bg *)
+(*e: signature [[Form.form_bg]] *)
 
-(*s: type Form.t *)
+(*s: type [[Form.t]] *)
 type t = {
   text_input : Widget.widget -> Html.tag -> unit;
       (* [text_input top tag] *)
@@ -24,11 +24,11 @@ type t = {
   textarea:  Widget.widget -> string -> Html.tag -> unit
       (* [textarea top initial attrs] *)
 }
-(*e: type Form.t *)
+(*e: type [[Form.t]] *)
 
-(*s: signature Form.create *)
+(*s: signature [[Form.create]] *)
 val create: 
   string -> Htmlfmt.form_behaviour -> Viewers.context -> t
-(*e: signature Form.create *)
+(*e: signature [[Form.create]] *)
 
-(*e: ./display/form.mli *)
+(*e: display/form.mli *)

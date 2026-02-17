@@ -1,9 +1,10 @@
-(*s: ./protocols/file.ml *)
+(*s: protocols/file.ml *)
 (* The file: protocol *)
 open I18n
 open Printf
 open Unix
 open Filename
+open Mstring
 open Hyper
 open Www
 open Url
@@ -13,20 +14,20 @@ open Http
 open Document
 open Feed
 
-(*s: exception File.File_error *)
+(*s: exception [[File.File_error]] *)
 exception File_error of string
-(*e: exception File.File_error *)
+(*e: exception [[File.File_error]] *)
 
-(*s: function File.isdir *)
+(*s: function [[File.isdir]] *)
 (* 
  * Simulate directory
  *)
-let _isdir path f =
+let isdir path f =
   let fullname = Filename.concat path f in
   (stat fullname).st_kind = S_DIR
-(*e: function File.isdir *)
+(*e: function [[File.isdir]] *)
 
-(*s: function File.d2html *)
+(*s: function [[File.d2html]] *)
 let d2html path d =
   (* make sure that when path is used in url, it is / terminated *)
   let pathurl =
@@ -55,7 +56,7 @@ let d2html path d =
      done      	
    with  End_of_file -> closedir d
   end;
-  entries := List.sort compare !entries;
+  entries := List.sort Stdlib.compare !entries;
   !entries |> List.iter (function
     |  "." -> ()
     | ".." ->
@@ -74,9 +75,9 @@ let d2html path d =
        with Unix_error(_,_,_) -> ()
     );
   printf "</PRE></BODY></HTML>"
-(*e: function File.d2html *)
+(*e: function [[File.d2html]] *)
 
-(*s: function File.dir *)
+(*s: function [[File.dir]] *)
 (* It's easiest to do it asynchronously anyway *)
 let dir path =
   try
@@ -91,21 +92,21 @@ let dir path =
           with e ->
             print_endline (Printexc.to_string e)
         end;
-        flush Stdlib.stdout; (* strange bug with our at_exit stuff *)
+        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
         exit 0
         (*cin (*duh*) *)
-     | _n -> closedir d; close cout; cin
+     | n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
-(*e: function File.dir *)
+(*e: function [[File.dir]] *)
   
 
-(*s: function File.document_id *)
+(*s: function [[File.document_id]] *)
 let document_id wwwr =
   { document_url = wwwr.www_url; document_stamp = no_stamp}
-(*e: function File.document_id *)
+(*e: function [[File.document_id]] *)
 
-(*s: function File.fake_cgi *)
+(*s: function [[File.fake_cgi]] *)
 (* Not true CGI interface, just a hack *)
 (* TODO: headers ? *)
 let fake_cgi wwwr cont path =
@@ -137,7 +138,7 @@ let fake_cgi wwwr cont path =
             Munix.write_string stdout "\n";
             exit 1
          end
-   | _n ->
+   | n ->
       close cmd_out;
       let dh = {document_id = document_id wwwr;
                 document_referer = wwwr.www_link.h_context;
@@ -183,21 +184,21 @@ let fake_cgi wwwr cont path =
           )
   with Unix_error(_,_,_) -> 
     raise (File_error (s_ "cannot exec file"))
-(*e: function File.fake_cgi *)
+(*e: function [[File.fake_cgi]] *)
 
-(*s: constant File.binary_path *)
+(*s: constant [[File.binary_path]] *)
 (* Pref stuff *)
 let binary_path = ref ([] : string list)
-(*e: constant File.binary_path *)
-(*s: constant File.r *)
-let _rTODO = Str.regexp ":"
-(*e: constant File.r *)
-(*s: function File.pref_init *)
-(*e: function File.pref_init *)
-(*s: function File.pref_set *)
-(*e: function File.pref_set *)
+(*e: constant [[File.binary_path]] *)
+(*s: constant [[File.r]] *)
+let r = Str.regexp ":"
+(*e: constant [[File.r]] *)
+(*s: function [[File.pref_init]] *)
+(*e: function [[File.pref_init]] *)
+(*s: function [[File.pref_set]] *)
+(*e: function [[File.pref_set]] *)
 
-(*s: function File.is_cgi *)
+(*s: function [[File.is_cgi]] *)
 let is_cgi file =
   match !binary_path with
   | [] -> false
@@ -212,8 +213,8 @@ let is_cgi file =
  *  is path really supposed to be absolute ?
  * Note: completely ignores method (GET, POST,...)
  *)
-(*e: function File.is_cgi *)
-(*s: function File.request *)
+(*e: function [[File.is_cgi]] *)
+(*s: function [[File.request]] *)
 (*
  * Display a file on the local unix file system (file:)
  *  is path really supposed to be absolute ?
@@ -301,5 +302,5 @@ let request wr cont =
          (fun () -> ())
 
     | _ -> raise (File_error (s_ "cannot open file"))
-(*e: function File.request *)
-(*e: ./protocols/file.ml *)
+(*e: function [[File.request]] *)
+(*e: protocols/file.ml *)

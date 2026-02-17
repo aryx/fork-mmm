@@ -1,40 +1,40 @@
-(*s: ./html/html_eval.ml *)
+(*s: html/html_eval.ml *)
 open Printf
 open Html
 open Dtd
 
-(*s: type Html_eval.minimization *)
+(*s: type [[Html_eval.minimization]] *)
 (* Wrapped up lexer to insert open/close tags in the stream of "normal"
    tokens, according to some DTD, in order to always get fully parenthesized
    streams *)
 
 type minimization =
   Legal | Illegal of string
-(*e: type Html_eval.minimization *)
+(*e: type [[Html_eval.minimization]] *)
 
-(*s: constant Html_eval.debug *)
+(*s: constant [[Html_eval.debug]] *)
 let debug = ref false
-(*e: constant Html_eval.debug *)
+(*e: constant [[Html_eval.debug]] *)
 
-(*s: exception Html_eval.CantMinimize *)
+(*s: exception [[Html_eval.CantMinimize]] *)
 exception CantMinimize			            (* bogus HTML *)
-(*e: exception Html_eval.CantMinimize *)
+(*e: exception [[Html_eval.CantMinimize]] *)
 
-(*s: constant Html_eval.initial *)
+(*s: constant [[Html_eval.initial]] *)
 (* initial element of the DTD *)
 let initial = Elements.add "html" Elements.empty
-(*e: constant Html_eval.initial *)
+(*e: constant [[Html_eval.initial]] *)
 
 
-(*s: function Html_eval.dump_stack *)
+(*s: function [[Html_eval.dump_stack]] *)
 let dump_stack () = function
     (x,_)::(y,_)::(z,_)::_ -> sprintf "..<%s><%s><%s>" z y x
   | [x,_;y,_] -> sprintf "<%s><%s>" y x
   | [x,_] -> sprintf "<%s>" x
   | [] -> "empty stack"
-(*e: function Html_eval.dump_stack *)
+(*e: function [[Html_eval.dump_stack]] *)
 
-(*s: function Html_eval.ominimize *)
+(*s: function [[Html_eval.ominimize]] *)
 (* open minimize 
    [ominimize dtd open_tag current_stack]
    returns a list of inferred open/close tags and the new stack
@@ -45,7 +45,7 @@ let ominimize dtd t stack =
   (* Is elem allowed for the given stack ? *)
   let goodpos = function
       [] -> Elements.mem elem initial
-    | (_, cts)::_l -> Elements.mem elem cts
+    | (_, cts)::l -> Elements.mem elem cts
 
   (* Return with inferred and stack.
      The stack has been reduced during the inference, so it is enough
@@ -90,7 +90,7 @@ let ominimize dtd t stack =
       if goodpos newstack then return newaccu newstack
           else attempt_open newaccu newstack
 
-   | ((_, cts)::_l ) as stack ->
+   | ((_, cts)::l ) as stack ->
        (* check if, in contents, there is an element with implicit omission
           that would help *)
        let possible = Elements.inter cts dtd.open_omitted in
@@ -105,7 +105,7 @@ let ominimize dtd t stack =
         if goodpos newstack 
         then return newaccu newstack
         else attempt_open newaccu newstack (* maybe more ? *)
-        | _n -> (* since we have the choice, examine all possibilities *)
+        | n -> (* since we have the choice, examine all possibilities *)
        let elems = Elements.elements possible in
        let rec backtrack = function 
              [] -> raise CantMinimize
@@ -126,13 +126,13 @@ let ominimize dtd t stack =
    with
      CantMinimize ->
        (* what the hell, dammit, open it anyway, who cares, duh *)
-       let _currentTODO = match stack with (x,_)::_l -> x | [] -> "" in
+       let _currentTODO = match stack with (x,_)::l -> x | [] -> "" in
        Illegal (sprintf "illegal <%s> in %a, keep it though"
                 t.tag_name dump_stack stack),
        return [] stack
-(*e: function Html_eval.ominimize *)
+(*e: function [[Html_eval.ominimize]] *)
 
-(*s: function Html_eval.cminimize *)
+(*s: function [[Html_eval.cminimize]] *)
 (* close minimize
    [cminimize dtd elem current_stack]
    returns a list of inferred open/close tags and the new stack
@@ -141,7 +141,7 @@ let cminimize dtd tagname stack =
   (* Is elem allowed for the given stack ? *)
   let goodpos = function
       [] -> false
-    | (elem, _cts)::_l -> tagname = elem
+    | (elem, cts)::l -> tagname = elem
 
   and return inferred stack =
      List.rev ((CloseTag tagname) :: inferred), stack
@@ -185,14 +185,14 @@ let cminimize dtd tagname stack =
        Illegal (sprintf "unmatched </%s> in %a, skipped"
                     tagname dump_stack stack),
            ([], stack) (* just skip the damn thing *)
-(*e: function Html_eval.cminimize *)
+(*e: function [[Html_eval.cminimize]] *)
 
-(*s: function Html_eval.is_cdata *)
+(*s: function [[Html_eval.is_cdata]] *)
 let is_cdata cts =
   Elements.cardinal cts = 1 && Elements.mem "#cdata" cts
-(*e: function Html_eval.is_cdata *)
+(*e: function [[Html_eval.is_cdata]] *)
 
-(*s: function Html_eval.sgml_lexer *)
+(*s: function [[Html_eval.sgml_lexer]] *)
 let sgml_lexer dtd =
   let current_lex = ref Lexhtml.html in
   let stack = ref [] in
@@ -202,7 +202,7 @@ let sgml_lexer dtd =
   let allowed () = 
     match !stack with
     | [] -> initial
-    | (_elem, cts)::_ -> cts 
+    | (elem, cts)::_ -> cts 
   in
   (* whatever the situation (but close), if the previous element is empty
      with an omittable close, close it *)
@@ -255,13 +255,13 @@ let sgml_lexer dtd =
             match !stack with
             | [] -> 
               Illegal(sprintf "Unmatched closing </%s>" t), []
-            | (elem, _cts)::l when elem = t -> (* matching close *)
+            | (elem, cts)::l when elem = t -> (* matching close *)
                  stack := l; (* pop the stack *)
                  (* the lexer has to be "normal" again, because CDATA
                     can't be nested anyway *)
                  current_lex := Lexhtml.html;
                  Legal, [token]
-            | (_elem, cts)::_l -> (* unmatched close ! *)
+            | (elem, cts)::l -> (* unmatched close ! *)
                 (* if we were in cdata, change the token to cdata *)
                  if is_cdata cts 
                  then Legal, [CData (sprintf "</%s>" t)]
@@ -293,7 +293,7 @@ let sgml_lexer dtd =
            end
 
     (* CData never happens with an empty stack *)
-    | CData _s ->
+    | CData s ->
         let extraclose = close_empty() in    
         if Elements.mem "#cdata" (allowed()) 
         then Legal, extraclose @ [token]
@@ -333,17 +333,17 @@ let sgml_lexer dtd =
       
   in
   warnings, status, tokens, loc)
-(*e: function Html_eval.sgml_lexer *)
+(*e: function [[Html_eval.sgml_lexer]] *)
 
-(*s: constant Html_eval.filters *)
+(*s: constant [[Html_eval.filters]] *)
 let filters = ref []
-(*e: constant Html_eval.filters *)
-(*s: function Html_eval.add_html_filter *)
+(*e: constant [[Html_eval.filters]] *)
+(*s: function [[Html_eval.add_html_filter]] *)
 let add_html_filter f =
   filters := f :: !filters
-(*e: function Html_eval.add_html_filter *)
+(*e: function [[Html_eval.add_html_filter]] *)
 
-(*s: function Html_eval.sgml_lexer (./html/html_eval.ml) *)
+(*s: function [[Html_eval.sgml_lexer]] ([[html/html_eval.ml]]) *)
 (* Redefine sgml_lexer with filters *)
 let sgml_lexer dtd = 
   let org_lexer = sgml_lexer dtd in
@@ -358,10 +358,10 @@ let sgml_lexer dtd =
     let tokens = !buf in 
     buf := [];
     warnings, correct, tokens, loc
-(*e: function Html_eval.sgml_lexer (./html/html_eval.ml) *)
+(*e: function [[Html_eval.sgml_lexer]] ([[html/html_eval.ml]]) *)
   
   
-(*s: function Html_eval.automat *)
+(*s: function [[Html_eval.automat]] *)
 let automat dtd lexbuf action error =
   try
     let lexer = sgml_lexer dtd in
@@ -387,5 +387,5 @@ let automat dtd lexbuf action error =
       with Html_Lexing (s,n) -> error (Loc(n,n+1)) s
     done
   with Failure "quit_html_eval" -> ()
-(*e: function Html_eval.automat *)
-(*e: ./html/html_eval.ml *)
+(*e: function [[Html_eval.automat]] *)
+(*e: html/html_eval.ml *)

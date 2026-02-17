@@ -1,5 +1,8 @@
-(*s: ./commons/low.ml *)
+(*s: commons/low.ml *)
 (* Wrapping of some low-level functions *)
+open Common
+
+open Unix
 
 (* Tachymeter support *)
 class  virtual tachymeter = object
@@ -14,50 +17,50 @@ class  virtual tachymeter = object
 class no_tachy = object
   inherit tachymeter
 
-  method report_cnx _cnx = ()
-  method report_busy _flag = ()
-  method report_traffic _tick _total _sample = ()
+  method report_cnx cnx = ()
+  method report_busy flag = ()
+  method report_traffic tick total sample = ()
   method quit = ()
 end
 
-(*s: constant Low.cur_tachy *)
+(*s: constant [[Low.cur_tachy]] *)
 let cur_tachy = ref (new no_tachy :> tachymeter)
-(*e: constant Low.cur_tachy *)
+(*e: constant [[Low.cur_tachy]] *)
 
 (* for the tachymeter *)
-(*s: global Low.bytes_read *)
+(*s: global [[Low.bytes_read]] *)
 let bytes_read = ref 0
-(*e: global Low.bytes_read *)
-(*s: global Low.sample_read *)
+(*e: global [[Low.bytes_read]] *)
+(*s: global [[Low.sample_read]] *)
 let sample_read = ref 0
-(*e: global Low.sample_read *)
+(*e: global [[Low.sample_read]] *)
 
-(*s: function Low.read *)
+(*s: function [[Low.read]] *)
 let read fd buf offs l =
   let n = Unix.read fd buf offs l in
     bytes_read := !bytes_read + n;
     sample_read := !sample_read + n;
     n
-(*e: function Low.read *)
+(*e: function [[Low.read]] *)
 
-(*s: global Low.pending_read *)
+(*s: global [[Low.pending_read]] *)
 let pending_read = ref 0
-(*e: global Low.pending_read *)
-let _actionTODO = ref (fun _ -> ())
+(*e: global [[Low.pending_read]] *)
+let action = ref (fun _ -> ())
 
-(*s: function Low.add_fileinput *)
+(*s: function [[Low.add_fileinput]] *)
 let add_fileinput fd f =
   incr pending_read;
   !cur_tachy#report_cnx !pending_read;
   Fileevent_.add_fileinput fd f
-(*e: function Low.add_fileinput *)
+(*e: function [[Low.add_fileinput]] *)
 
-(*s: function Low.remove_fileinput *)
+(*s: function [[Low.remove_fileinput]] *)
 let remove_fileinput fd =
   decr pending_read;
   !cur_tachy#report_cnx !pending_read;
   Fileevent_.remove_fileinput fd
-(*e: function Low.remove_fileinput *)
+(*e: function [[Low.remove_fileinput]] *)
 
 (* We catch dead children here, to avoid large number of zombies.
    I know about SICHLD of course, but I hate interrupted syscalls
@@ -65,11 +68,11 @@ let remove_fileinput fd =
 
 external sys_exit : int -> 'a = "caml_sys_exit"
 
-(*s: function Low.fork *)
+(*s: function [[Low.fork]] *)
 let fork () =
  begin try
   while 
-    let p, _s = Unix.waitpid [Unix.WNOHANG] 0 in 
+    let p, s = Unix.waitpid [Unix.WNOHANG] 0 in 
       (*
       Printf.eprintf "%d\n" p;
       begin match s with
@@ -89,10 +92,10 @@ let fork () =
  match Unix.fork() with
    0 -> at_exit (fun () -> sys_exit 0); 0
  | n -> n
-(*e: function Low.fork *)
+(*e: function [[Low.fork]] *)
 
 
-(*s: function Low.busy *)
+(*s: function [[Low.busy]] *)
 let busy f x =
   !cur_tachy#report_busy true;
   try 
@@ -102,52 +105,52 @@ let busy f x =
     e ->
       !cur_tachy#report_busy false;
       raise e
-(*e: function Low.busy *)
+(*e: function [[Low.busy]] *)
 
-(*s: constant Low.global_time *)
+(*s: constant [[Low.global_time]] *)
 let global_time = ref 0
-(*e: constant Low.global_time *)
-(*s: constant Low.tick_duration *)
+(*e: constant [[Low.global_time]] *)
+(*s: constant [[Low.tick_duration]] *)
 let tick_duration = 500
-(*e: constant Low.tick_duration *)
+(*e: constant [[Low.tick_duration]] *)
 
-(*s: constant Low.tasks *)
+(*s: constant [[Low.tasks]] *)
 (* There is only a default task *)
 let tasks = ref [
   (fun () -> !cur_tachy#report_traffic tick_duration !bytes_read !sample_read)
   ]
-(*e: constant Low.tasks *)
+(*e: constant [[Low.tasks]] *)
 
-(*s: function Low.refresh *)
+(*s: function [[Low.refresh]] *)
 let rec refresh() =
   incr global_time;
   List.iter (fun f -> f ()) !tasks;
   sample_read := 0;
   Timer_.add tick_duration refresh
-(*e: function Low.refresh *)
+(*e: function [[Low.refresh]] *)
 
-(*s: function Low.add_task *)
+(*s: function [[Low.add_task]] *)
 let add_task f = tasks := f :: !tasks
-(*e: function Low.add_task *)
+(*e: function [[Low.add_task]] *)
 
-(*s: function Low.init *)
+(*s: function [[Low.init]] *)
 let init () = refresh ()
-(*e: function Low.init *)
+(*e: function [[Low.init]] *)
 
 let update_idletasks_backend = 
   ref (fun _ -> failwith "no update_idletasks defined")
 
 
-(*s: constant Low.last_update *)
+(*s: constant [[Low.last_update]] *)
 (* We need manual refresh for progressive display (?), but we don't
    want to do it too frequently *)
 let last_update = ref !global_time
-(*e: constant Low.last_update *)
-(*s: function Low.update_idletasks *)
+(*e: constant [[Low.last_update]] *)
+(*s: function [[Low.update_idletasks]] *)
 let update_idletasks () =
   if !global_time <> !last_update then begin
     !update_idletasks_backend ();
     last_update := !global_time
   end
-(*e: function Low.update_idletasks *)
-(*e: ./commons/low.ml *)
+(*e: function [[Low.update_idletasks]] *)
+(*e: commons/low.ml *)

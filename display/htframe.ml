@@ -1,19 +1,19 @@
-(*s: ./display/htframe.ml *)
+(*s: display/htframe.ml *)
 open Tk
 open Html
 open Htmlfmt
 
 (* Frames *)
 
-(*s: constant Htframe.geom_sep *)
+(*s: constant [[Htframe.geom_sep]] *)
 (* geometry specs *)
-let geom_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
-(*e: constant Htframe.geom_sep *)
-(*s: function Htframe.parse_geom *)
+let geom_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
+(*e: constant [[Htframe.geom_sep]] *)
+(*s: function [[Htframe.parse_geom]] *)
 let parse_geom s = List.map Html.length_of_string (Str.split geom_sep s)
-(*e: function Htframe.parse_geom *)
+(*e: function [[Htframe.parse_geom]] *)
 
-(*s: function Htframe.figure_geom *)
+(*s: function [[Htframe.figure_geom]] *)
 (* to deal with relative length n*, we have to combine relD and absD
  *   n* is n fragments of Total - Fixed
  *   = (Total - Fixed) * n/Sigma_n
@@ -41,10 +41,10 @@ let figure_geom l =
         opts @ [LengthPixels (- (truncate (float !fixed *. ratio)))]
       |	x -> [x])
       l
-(*e: function Htframe.figure_geom *)
+(*e: function [[Htframe.figure_geom]] *)
 
 (* We build this data structure when parsing FRAMESET *)
-(*s: type Htframe.frame *)
+(*s: type [[Htframe.frame]] *)
 type frame = {
     frame_src : string;
     frame_name : string;
@@ -52,56 +52,56 @@ type frame = {
     frame_opts : Tk.options list;
     frame_params : (string * string) list;
   } 
-(*e: type Htframe.frame *)
+(*e: type [[Htframe.frame]] *)
 
-(*s: type Htframe.frameset *)
+(*s: type [[Htframe.frameset]] *)
 and frameset =
     int ref * int ref * celldesc array array
-(*e: type Htframe.frameset *)
+(*e: type [[Htframe.frameset]] *)
 
-(*s: type Htframe.cell_contents *)
+(*s: type [[Htframe.cell_contents]] *)
 and cell_contents = 
   | Frame of frame
   | Frameset of frameset
-(*e: type Htframe.cell_contents *)
+(*e: type [[Htframe.cell_contents]] *)
 
-(*s: type Htframe.celldesc *)
+(*s: type [[Htframe.celldesc]] *)
 and celldesc = {
     cell_width : Html.length list;
     cell_height : Html.length list;
     mutable cell_contents : cell_contents option
   } 
-(*e: type Htframe.celldesc *)
+(*e: type [[Htframe.celldesc]] *)
 
-(*s: function Htframe.ignore_fo *)
+(*s: function [[Htframe.ignore_fo]] *)
 (* This is morally for the <noframes> section *)
 let ignore_fo f = {
   new_paragraph = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline = (fun _b -> ());
-  print_verbatim = (fun _s -> ());
-  format_string = (fun _s -> ());
-  hr = (fun _l _n _b -> ());
-  bullet = (fun _n -> ());
-  set_defaults = (fun _s _l -> ());
-  push_attr = (fun _l -> ());
-  pop_attr = (fun _l -> ());
-  isindex = (fun _s _s' -> ());
+  print_newline = (fun b -> ());
+  print_verbatim = (fun s -> ());
+  format_string = (fun s -> ());
+  hr = (fun l n b -> ());
+  bullet = (fun n -> ());
+  set_defaults = (fun s l -> ());
+  push_attr = (fun l -> ());
+  pop_attr = (fun l -> ());
+  isindex = (fun s s' -> ());
   start_anchor = (fun () -> ());
-  end_anchor = (fun _h -> ());
+  end_anchor = (fun h -> ());
   add_mark = (fun _ -> ());
-  create_embedded = (fun _a _w _h -> Frame.create f []);
+  create_embedded = (fun a w h -> Frame.create f []);
   see_frag = (fun _ -> ());
   flush = (fun () -> ());
   } 
-(*e: function Htframe.ignore_fo *)
+(*e: function [[Htframe.ignore_fo]] *)
 
-(*s: constant Htframe.ignore_close *)
+(*s: constant [[Htframe.ignore_close]] *)
 let ignore_close = fun _ -> ()
-(*e: constant Htframe.ignore_close *)
+(*e: constant [[Htframe.ignore_close]] *)
 
 
-(*s: function Htframe.add_frames *)
+(*s: function [[Htframe.add_frames]] *)
 let add_frames load_frames kill_body top mach =
   (* we start from an initial cell of "full size" *)
   let initial_cell = { 
@@ -216,11 +216,11 @@ let add_frames load_frames kill_body top mach =
        if it was already created *)
     kill_body();
     mach#add_tag "body"
-      (fun _fo _t -> mach#look_for EOF) ignore_close
+      (fun fo t -> mach#look_for EOF) ignore_close
 
   in
   mach#add_tag "frameset"
-      (fun _fo t ->
+      (fun fo t ->
     let rows = get_attribute t "rows"
     and cols = get_attribute t "cols" in
     let newset =
@@ -244,7 +244,7 @@ let add_frames load_frames kill_body top mach =
           initial_cell.cell_contents <- Some (Frameset newset);
           framesets := newset :: !framesets
         end
-    | (ri, rj, set)::_l ->
+    | (ri, rj, set)::l ->
         if !ri >= Array.length set then
           raise (Invalid_Html "no room for <frameset> in this <frameset>")
         else begin
@@ -252,18 +252,18 @@ let add_frames load_frames kill_body top mach =
           next_cell set ri rj;
           framesets := newset :: !framesets
         end)
-      (fun _t -> 
+      (fun t -> 
     match !framesets with
     | [] -> 
         raise (Invalid_Html "unmatched </frameset>")
-    | [_x] -> (* the last one *)
+    | [x] -> (* the last one *)
         framesets := [];
         doit()
-    | _x::l ->
+    | x::l ->
         framesets := l);
 
   mach#add_tag "frame"  
-    (fun _fo t ->
+    (fun fo t ->
       match !framesets with
       | [] -> raise (Invalid_Html "<frame> outside <frameset>")
       |	(ri, rj, set) :: _ ->
@@ -277,9 +277,9 @@ let add_frames load_frames kill_body top mach =
            try int_of_string (get_attribute t "frameborder")
            with Failure "int_of_string" -> 
         (* compatibility ? *)
-          if String.lowercase_ascii (get_attribute t "frameborder") = "no"
+          if String.lowercase (get_attribute t "frameborder") = "no"
           then 0 else 1
-          and scrolling = String.lowercase_ascii (get_attribute t "scrolling")
+          and scrolling = String.lowercase (get_attribute t "scrolling")
           in
           let borderopts = 
            if border = 0 then [BorderWidth (Pixels 0)]
@@ -306,11 +306,11 @@ let add_frames load_frames kill_body top mach =
    * know that, do we ?
    *)
   mach#add_tag "noframes"
-    (fun _fo _t -> 
+    (fun fo t -> 
       mach#push_formatter (ignore_fo top);
       mach#look_for (CloseTag "noframes"))
 
-    (fun _t -> mach#pop_formatter |> ignore; ())
-(*e: function Htframe.add_frames *)
+    (fun t -> mach#pop_formatter; ())
+(*e: function [[Htframe.add_frames]] *)
 
-(*e: ./display/htframe.ml *)
+(*e: display/htframe.ml *)

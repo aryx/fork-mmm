@@ -1,4 +1,4 @@
-(*s: ./extensions/tachy_aftermmm.ml *)
+(*s: extensions/tachy_aftermmm.ml *)
 open Safe418mmm
 open Tk
 
@@ -11,7 +11,7 @@ module Mmm = Get(Provide)
 (* Tachymeter *)
 
 (* gif is 58x60 *)
-(*s: constant Tachy_aftermmm.tachy_data *)
+(*s: constant [[Tachy_aftermmm.tachy_data]] *)
 (* inside bitmap, circle is in +10+6 +47+43, radius 18.5 *)
 
 let tachy_data = "GIF\056\055a\058\000\060\000\165\000\000\168\168\168\
@@ -100,9 +100,9 @@ V\010\130\165\126r\161\147\038\020\152D\146\124\020p\
 \148\135\140\184\218\229\163\095\242\146W\002\018\004\001\000\
 \059\
 "
-(*e: constant Tachy_aftermmm.tachy_data *)
+(*e: constant [[Tachy_aftermmm.tachy_data]] *)
 
-(*s: constant Tachy_aftermmm.park_data *)
+(*s: constant [[Tachy_aftermmm.park_data]] *)
 let park_data =
 "#define break_width 15
 #define break_height 11
@@ -110,15 +110,15 @@ static char break_bits[] = {
    0x0c, 0x18, 0xf4, 0x17, 0x3a, 0x2e, 0xba, 0x2d, 0xb9, 0x4d, 0x3d, 0x5e,
    0xb9, 0x4f, 0xba, 0x2f, 0xba, 0x2f, 0xf4, 0x17, 0x08, 0x08};
 "
-(*e: constant Tachy_aftermmm.park_data *)
+(*e: constant [[Tachy_aftermmm.park_data]] *)
 
 
-(*s: constant Tachy_aftermmm.pi *)
+(*s: constant [[Tachy_aftermmm.pi]] *)
 let pi = 3.1415926 
-(*e: constant Tachy_aftermmm.pi *)
-(*s: constant Tachy_aftermmm.log10 *)
+(*e: constant [[Tachy_aftermmm.pi]] *)
+(*s: constant [[Tachy_aftermmm.log10]] *)
 let log10 = log 10.0 
-(*e: constant Tachy_aftermmm.log10 *)
+(*e: constant [[Tachy_aftermmm.log10]] *)
 
 class default_tachy (top : Widget.widget) =
  object (self)
@@ -269,14 +269,14 @@ class default_tachy (top : Widget.widget) =
 
 end
 
-(*s: function Tachy_aftermmm.create_tachy *)
+(*s: function [[Tachy_aftermmm.create_tachy]] *)
 let create_tachy top = 
   let o = new default_tachy top in
   o#start;
-(*e: function Tachy_aftermmm.create_tachy *)
+(*e: function [[Tachy_aftermmm.create_tachy]] *)
   (o :> Mmm.tachymeter)
 
-(*s: toplevel Tachy_aftermmm._1 *)
+(*s: toplevel [[Tachy_aftermmm._1]] *)
 let _ = 
   let top = Applets.get_toplevel_widget [] in
   Wm.withdraw top;
@@ -287,6 +287,6 @@ let _ =
   | _ -> ()
   end;
   destroy top
-(*e: toplevel Tachy_aftermmm._1 *)
+(*e: toplevel [[Tachy_aftermmm._1]] *)
 
-(*e: ./extensions/tachy_aftermmm.ml *)
+(*e: extensions/tachy_aftermmm.ml *)

@@ -1,13 +1,13 @@
-(*s: ./display/html_disp.mli *)
+(*s: display/html_disp.mli *)
 
-(*s: signature Html_disp.verbose *)
+(*s: signature [[Html_disp.verbose]] *)
 val verbose : bool ref
-(*e: signature Html_disp.verbose *)
-(*s: signature Html_disp.attempt_tables *)
+(*e: signature [[Html_disp.verbose]] *)
+(*s: signature [[Html_disp.attempt_tables]] *)
 val attempt_tables : bool ref
-(*e: signature Html_disp.attempt_tables *)
+(*e: signature [[Html_disp.attempt_tables]] *)
 
-(*s: signature class Html_disp.imgloader *)
+(*s: signature class [[Html_disp.imgloader]] *)
 class  virtual imgloader : (unit) -> object
   (*s: [[Html_disp.imgloader]] virtual fields signatures *)
   method virtual add_image : Embed.embobject -> unit	 (* add one image *)
@@ -16,9 +16,9 @@ class  virtual imgloader : (unit) -> object
   method virtual update_images : unit
   (*e: [[Html_disp.imgloader]] virtual fields signatures *)
 end
-(*e: signature class Html_disp.imgloader *)
+(*e: signature class [[Html_disp.imgloader]] *)
 
-(*s: signature class Html_disp.machine *)
+(*s: signature class [[Html_disp.machine]] *)
 class  virtual machine : (unit) -> object
   (*s: [[Html_disp.machine]] virtual fields signatures *)
   (* context *)
@@ -87,13 +87,13 @@ class  virtual machine : (unit) -> object
   (*e: [[Html_disp.machine]] other fields *)
   (*e: [[Html_disp.machine]] virtual fields signatures *)
 end
-(*e: signature class Html_disp.machine *)
+(*e: signature class [[Html_disp.machine]] *)
 
-(*s: signature Html_disp.add_hook *)
+(*s: signature [[Html_disp.add_hook]] *)
 val add_hook: (machine -> unit) -> unit
-(*e: signature Html_disp.add_hook *)
+(*e: signature [[Html_disp.add_hook]] *)
 
-(*s: signature functor Html_disp.Make *)
+(*s: signature functor [[Html_disp.Make]] *)
 (*module Make 
   (G: Htmlfmt.GfxHTML) 
   (F: Htmlfmt.FormDisplay) 
@@ -105,5 +105,5 @@ val add_hook: (machine -> unit) -> unit
 *)
 val create : Viewers.context * imgloader -> machine
 (*end*)
-(*e: signature functor Html_disp.Make *)
-(*e: ./display/html_disp.mli *)
+(*e: signature functor [[Html_disp.Make]] *)
+(*e: display/html_disp.mli *)

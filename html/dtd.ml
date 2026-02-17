@@ -1,11 +1,11 @@
-(*s: ./html/dtd.ml *)
+(*s: html/dtd.ml *)
 open Printf
 
 (*s: module Dtd.elements *)
 module Elements = Set.Make(struct type t = string let compare = compare end)
 (*e: module Dtd.elements *)
 
-(*s: type Dtd.t *)
+(*s: type [[Dtd.t]] *)
 type t = {
   dtd_name : string;
   contents : (string, Elements.t) Hashtbl.t;
@@ -16,25 +16,25 @@ type t = {
   mutable close_omitted : Elements.t
     (* set of elements for which closing tag may be omitted *)
  } 
-(*e: type Dtd.t *)
+(*e: type [[Dtd.t]] *)
 
-(*s: function Dtd.name *)
+(*s: function [[Dtd.name]] *)
 let name t = 
   t.dtd_name
-(*e: function Dtd.name *)
+(*e: function [[Dtd.name]] *)
 
 
-(*s: function Dtd.sol *)
+(*s: function [[Dtd.sol]] *)
 (* Utils *)
 let sol l =
   List.fold_right Elements.add l Elements.empty
-(*e: function Dtd.sol *)
-(*s: function Dtd.sos *)
+(*e: function [[Dtd.sol]] *)
+(*s: function [[Dtd.sos]] *)
 let sos l =
   List.fold_right Elements.union l Elements.empty
-(*e: function Dtd.sos *)
+(*e: function [[Dtd.sos]] *)
 
-(*s: constant Dtd.dtd20 *)
+(*s: constant [[Dtd.dtd20]] *)
 (* #PCDATA and #CDATA are considered as elements, but they will never
    be pushed on the stack during evaluation. Moreover, since they are
    not in open_omitted/close_omitted, minimization algorithm will not
@@ -235,10 +235,10 @@ let dtd20 =
   omit_close "embed";
   
   dtd
-(*e: constant Dtd.dtd20 *)
+(*e: constant [[Dtd.dtd20]] *)
 
 
-(*s: function Dtd.dump *)
+(*s: function [[Dtd.dump]] *)
 let dump dtd =
   dtd.contents |> Hashtbl.iter (fun s contents -> 
       printf "Element %s %s %s\n" s 
@@ -248,11 +248,11 @@ let dump dtd =
       contents |> Elements.iter (fun e -> printf " %s" e);
       printf "\n"
   )
-(*e: function Dtd.dump *)
+(*e: function [[Dtd.dump]] *)
 
 
 
-(*s: constant Dtd.dtd32 *)
+(*s: constant [[Dtd.dtd32]] *)
 let dtd32 =
   let dtd = {
     dtd_name = "HTML 3.2";
@@ -398,37 +398,37 @@ let dtd32 =
   omit_close "embed";
 
   dtd
-(*e: constant Dtd.dtd32 *)
+(*e: constant [[Dtd.dtd32]] *)
 
-(*s: constant Dtd.current *)
+(*s: constant [[Dtd.current]] *)
 let current = ref dtd32
-(*e: constant Dtd.current *)
+(*e: constant [[Dtd.current]] *)
 
-(*s: constant Dtd.table *)
+(*s: constant [[Dtd.table]] *)
 let table = Hashtbl.create 11
-(*e: constant Dtd.table *)
+(*e: constant [[Dtd.table]] *)
 
-(*s: function Dtd.add *)
+(*s: function [[Dtd.add]] *)
 let add t = 
   Hashtbl.add table t.dtd_name t
-(*e: function Dtd.add *)
-(*s: constant Dtd.get *)
+(*e: function [[Dtd.add]] *)
+(*s: constant [[Dtd.get]] *)
 let get = 
   Hashtbl.find table
-(*e: constant Dtd.get *)
+(*e: constant [[Dtd.get]] *)
 
-(*s: function Dtd.names *)
+(*s: function [[Dtd.names]] *)
 let names () =
   let names = ref [] in
    Hashtbl.iter (fun name _ -> names := name :: !names) table;
    !names
-(*e: function Dtd.names *)
+(*e: function [[Dtd.names]] *)
 
-(*s: toplevel Dtd._1 *)
+(*s: toplevel [[Dtd._1]] *)
 let _ = add dtd20; add dtd32
-(*e: toplevel Dtd._1 *)
+(*e: toplevel [[Dtd._1]] *)
 
-(*s: constant Dtd.dtd32f *)
+(*s: constant [[Dtd.dtd32f]] *)
 (* Add frames somwhere to dtd32.
  * Luckily we chose sets, and they are functional
  *)
@@ -439,7 +439,7 @@ let dtd32f =
     open_omitted = dtd32.open_omitted;
     close_omitted = dtd32.close_omitted;
   } in
-  let _omit_open el =
+  let omit_open el =
     dtd.open_omitted <- Elements.add el dtd.open_omitted in
   let omit_close el =
     dtd.close_omitted <- Elements.add el dtd.close_omitted in
@@ -461,9 +461,9 @@ let dtd32f =
   add_elem "html" (Elements.add "frameset" 
              (Elements.add "noframes" html_contents));
   dtd
-(*e: constant Dtd.dtd32f *)
+(*e: constant [[Dtd.dtd32f]] *)
 
-(*s: toplevel Dtd._2 *)
+(*s: toplevel [[Dtd._2]] *)
 let _ = add dtd32f
-(*e: toplevel Dtd._2 *)
-(*e: ./html/dtd.ml *)
+(*e: toplevel [[Dtd._2]] *)
+(*e: html/dtd.ml *)

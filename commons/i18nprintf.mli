@@ -1,4 +1,4 @@
-(*s: ./commons/i18nprintf.mli *)
+(*s: commons/i18nprintf.mli *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Objective Caml                            *)
@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(*s: signature I18nprintf.fprintf *)
+(*s: signature [[I18nprintf.fprintf]] *)
 (* Module [Printf]: formatting printing functions *)
 
 val fprintf: out_channel -> ('a, out_channel, unit) format -> 'a
@@ -54,21 +54,21 @@ val fprintf: out_channel -> ('a, out_channel, unit) format -> 'a
 
            If too few arguments are provided, printing stops just
            before converting the first missing argument. *)
-(*e: signature I18nprintf.fprintf *)
+(*e: signature [[I18nprintf.fprintf]] *)
 
-(*s: signature I18nprintf.printf *)
+(*s: signature [[I18nprintf.printf]] *)
 val printf: ('a, out_channel, unit) format -> 'a
         (* Same as [fprintf], but output on [stdout]. *)
-(*e: signature I18nprintf.printf *)
+(*e: signature [[I18nprintf.printf]] *)
 
-(*s: signature I18nprintf.eprintf *)
+(*s: signature [[I18nprintf.eprintf]] *)
 val eprintf: ('a, out_channel, unit) format -> 'a
         (* Same as [fprintf], but output on [stderr]. *)
-(*e: signature I18nprintf.eprintf *)
+(*e: signature [[I18nprintf.eprintf]] *)
 
-(*s: signature I18nprintf.sprintf *)
+(*s: signature [[I18nprintf.sprintf]] *)
 val sprintf: ('a, unit, string) format -> 'a
         (* Same as [printf], but return the result of formatting in a
            string. *)
-(*e: signature I18nprintf.sprintf *)
-(*e: ./commons/i18nprintf.mli *)
+(*e: signature [[I18nprintf.sprintf]] *)
+(*e: commons/i18nprintf.mli *)

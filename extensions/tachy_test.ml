@@ -1,4 +1,4 @@
-(*s: ./extensions/tachy_test.ml *)
+(*s: extensions/tachy_test.ml *)
 open Safe418mmm
 open Tk
 
@@ -11,7 +11,7 @@ module Mmm = Get(Provide)
 (* Tachymeter *)
 
 (* gif is 80x65 *)
-(*s: constant Tachy_test.tachy_data *)
+(*s: constant [[Tachy_test.tachy_data]] *)
 (* inside bitmap, circle is in +16+7 +66+57, radius 25 *)
 
 let tachy_data = "GIF\056\057aP\000A\000\227\000\000\000\000\000\
@@ -55,8 +55,8 @@ i\211\148Z\215y\189\026\140l\052\170a\127\186M\
 \130\048\012HA\131\009\244\007a\056\060\024\232\223\133\
 \024\158\192\030\135\032\134\040\226\136\036\194\016\001\000\059\
 "
-(*e: constant Tachy_test.tachy_data *)
-(*s: constant Tachy_test.park_data *)
+(*e: constant [[Tachy_test.tachy_data]] *)
+(*s: constant [[Tachy_test.park_data]] *)
 let park_data =
 "#define break_width 15
 #define break_height 11
@@ -64,15 +64,15 @@ static char break_bits[] = {
    0x0c, 0x18, 0xf4, 0x17, 0x3a, 0x2e, 0xba, 0x2d, 0xb9, 0x4d, 0x3d, 0x5e,
    0xb9, 0x4f, 0xba, 0x2f, 0xba, 0x2f, 0xf4, 0x17, 0x08, 0x08};
 "
-(*e: constant Tachy_test.park_data *)
+(*e: constant [[Tachy_test.park_data]] *)
 
 
-(*s: constant Tachy_test.pi *)
+(*s: constant [[Tachy_test.pi]] *)
 let pi = 3.1415926 
-(*e: constant Tachy_test.pi *)
-(*s: constant Tachy_test.log10 *)
+(*e: constant [[Tachy_test.pi]] *)
+(*s: constant [[Tachy_test.log10]] *)
 let log10 = log 10.0 
-(*e: constant Tachy_test.log10 *)
+(*e: constant [[Tachy_test.log10]] *)
 
 class default_tachy (top : Widget.widget) =
  object (self)
@@ -223,14 +223,14 @@ class default_tachy (top : Widget.widget) =
 
 end
 
-(*s: function Tachy_test.create_tachy *)
+(*s: function [[Tachy_test.create_tachy]] *)
 let create_tachy top = 
   let o = new default_tachy top in
   o#start;
-(*e: function Tachy_test.create_tachy *)
+(*e: function [[Tachy_test.create_tachy]] *)
   (o :> Mmm.tachymeter)
 
-(*s: toplevel Tachy_test._1 *)
+(*s: toplevel [[Tachy_test._1]] *)
 let _ = 
   let top = Applets.get_toplevel_widget [] in
   Wm.withdraw top;
@@ -241,6 +241,6 @@ let _ =
   | _ -> ()
   end;
   destroy top
-(*e: toplevel Tachy_test._1 *)
+(*e: toplevel [[Tachy_test._1]] *)
 
-(*e: ./extensions/tachy_test.ml *)
+(*e: extensions/tachy_test.ml *)

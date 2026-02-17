@@ -1,16 +1,16 @@
-(*s: ./commons/hotlist.ml *)
+(*s: commons/hotlist.ml *)
 open I18n
-(*s: constant Hotlist.program *)
+(*s: constant [[Hotlist.program]] *)
 (* A cool module *)
 let program = ref ""
-(*e: constant Hotlist.program *)
+(*e: constant [[Hotlist.program]] *)
 
-(*s: function Hotlist.f *)
+(*s: function [[Hotlist.f]] *)
 let f url title =
   match !program with 
   | "" -> Error.f (s_ "No hotlist command defined")
   | s -> 
       let _ = Munix.system_eval s ["URL", url; "TITLE", title] true in
       Error.ok (s_ "%s\nadded to hotlist with title\n%s" url title)
-(*e: function Hotlist.f *)
-(*e: ./commons/hotlist.ml *)
+(*e: function [[Hotlist.f]] *)
+(*e: commons/hotlist.ml *)

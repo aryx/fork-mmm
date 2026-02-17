@@ -1,6 +1,6 @@
-(*s: ./commons/lang.mli *)
-(*s: signature Lang.lang *)
+(*s: commons/lang.mli *)
+(*s: signature [[Lang.lang]] *)
 val lang : unit -> string
-(*e: signature Lang.lang *)
+(*e: signature [[Lang.lang]] *)
 
-(*e: ./commons/lang.mli *)
+(*e: commons/lang.mli *)

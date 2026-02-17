@@ -1,10 +1,10 @@
-(*s: ./display/table.ml *)
+(*s: display/table.ml *)
 open Printf
 open Tk
 open Html
 open Htmlfmt
 
-(*s: constant Table.debug *)
+(*s: constant [[Table.debug]] *)
 (* Table support using the grid manager and a gross hack to obtain 
    resizing of a text widget to show its entire content.
 
@@ -24,20 +24,20 @@ open Htmlfmt
  *)
 
 let debug = ref false
-(*e: constant Table.debug *)
-(*s: constant Table.strict_32 *)
+(*e: constant [[Table.debug]] *)
+(*s: constant [[Table.strict_32]] *)
 let strict_32 = ref true
     (* in this mode, we ignore WIDTH of TD defined with %
        This is also better for pages written for MSIE where you find
        either TD WIDTH=100% or TD WIDTH=NN
        *)
-(*e: constant Table.strict_32 *)
+(*e: constant [[Table.strict_32]] *)
 
-(*s: type Table.cell_type (./display/table.ml) *)
+(*s: type [[Table.cell_type]] ([[display/table.ml]]) *)
 (* a manager for a single TABLE *)
 type cell_type = HeaderCell | DataCell
-(*e: type Table.cell_type (./display/table.ml) *)
-(*s: type Table.t (./display/table.ml) *)
+(*e: type [[Table.cell_type]] ([[display/table.ml]]) *)
+(*s: type [[Table.t]] ([[display/table.ml]]) *)
 type t = {
   table_master : Widget.widget;
   add_col : Html.tag -> unit;
@@ -47,13 +47,13 @@ type t = {
   new_cell : cell_type -> Html.tag -> Widget.widget -> string -> width_constraint;
   bound : unit -> bool
   }
-(*e: type Table.t (./display/table.ml) *)
+(*e: type [[Table.t]] ([[display/table.ml]]) *)
 
-(*s: type Table.table *)
+(*s: type [[Table.table]] *)
 (* Internal structure of tables *)
 type table = {
   master_widget : Widget.widget;
-  _width : length;
+  width : length;
   mutable slaves :
       (Widget.widget * (int*int*int*int*width_constraint*length*string)) list;
   mutable cur_col : int;
@@ -63,9 +63,9 @@ type table = {
   cellpadding : int;
   cellspacing : int
   }
-(*e: type Table.table *)
+(*e: type [[Table.table]] *)
 
-(*s: function Table.topwidth *)
+(*s: function [[Table.topwidth]] *)
 (* Get up to the widget that has HFrame class, or to toplevel *)
 let topwidth wid =
   let f = ref wid in
@@ -79,10 +79,10 @@ let topwidth wid =
   with
     Exit ->    
       truncate (float (Winfo.width !f) *. 0.95)
-(*e: function Table.topwidth *)
+(*e: function [[Table.topwidth]] *)
 
 
-(*s: function Table.text_align *)
+(*s: function [[Table.text_align]] *)
 let text_align cell align =
   Text.tag_add cell "align" Frx_text.textBegin Frx_text.textEnd;
   Text.tag_configure cell "align"
@@ -90,9 +90,9 @@ let text_align cell align =
       "right" -> [Justify Justify_Right]
     | "center" -> [Justify Justify_Center]
     | _ -> [Justify Justify_Left])
-(*e: function Table.text_align *)
+(*e: function [[Table.text_align]] *)
 
-(*s: function Table.dynamic_fight *)
+(*s: function [[Table.dynamic_fight]] *)
 (* Fight for your life ! *)
 let dynamic_fight cell nowrap gameover align =
   match Winfo.class_name cell with
@@ -104,7 +104,7 @@ let dynamic_fight cell nowrap gameover align =
       Log.f (sprintf "Switching %s to vertical resize"
                      (Widget.name cell));
         (* in all cases, we have to grow vertically *)
-       let scroll, _check = Fit.vert cell in
+       let scroll, check = Fit.vert cell in
        Text.configure cell [YScrollCommand scroll];
         (* A posteriori updates for embedded windows
        List.iter 
@@ -132,11 +132,11 @@ let dynamic_fight cell nowrap gameover align =
   | s ->
       if !debug then
     Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
-(*e: function Table.dynamic_fight *)
+(*e: function [[Table.dynamic_fight]] *)
       assert false
 
 
-(*s: function Table.fixed_size *)
+(*s: function [[Table.fixed_size]] *)
 (* We know the size in pixels *)
 let fixed_size cell width nowrap align =
   match Winfo.class_name cell with
@@ -164,18 +164,18 @@ let fixed_size cell width nowrap align =
   | s ->
       if !debug then
     Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
-(*e: function Table.fixed_size *)
+(*e: function [[Table.fixed_size]] *)
       assert false
 
-(*s: function Table.sizing *)
+(*s: function [[Table.sizing]] *)
 (*
  * Determine how we should set resizing for our cells
  *  table.width contains the specified width for the table
  *  contextwidth was the width computed the context of the table
  *)
-let sizing table nowrap _width =
+let sizing table nowrap width =
   (* For cells of given width and colspan 1, set a col minsize *)
-  let colwidths = Array.make (Array.length table.slots) 0 in
+  let colwidths = Array.create (Array.length table.slots) 0 in
   let setcolwidth col n =
     if n > colwidths.(col) then begin
       colwidths.(col) <- n;
@@ -193,7 +193,7 @@ let sizing table nowrap _width =
   (* Set initial size and dynamic resizing *)
   List.iter (function w,(_,col,_,cspan,cellwidth,_,align) -> 
     (* set initial width from images *)
-    let _initw = Fit.set_initial_width w
+    let initw = Fit.set_initial_width w
     (* set initial height from line number *)
     and _ = Fit.set_initial_height w in
     match cellwidth with
@@ -218,9 +218,9 @@ let sizing table nowrap _width =
     if not !unknown_col then fixed_size w (adjust !width) nowrap align
     else dynamic_fight w nowrap f align)
     !dynamic
-(*e: function Table.sizing *)
+(*e: function [[Table.sizing]] *)
 
-(*s: function Table.packem *)
+(*s: function [[Table.packem]] *)
 (* TODO: alignment *)
 let packem table =
   let default_opts = [Sticky "nswe";
@@ -233,10 +233,10 @@ let packem table =
        grid [w] ([Row row; Column col; RowSpan rspan; ColumnSpan cspan]
                  @default_opts))
     table.slaves
-(*e: function Table.packem *)
+(*e: function [[Table.packem]] *)
 
 
-(*s: function Table.get_slot *)
+(*s: function [[Table.get_slot]] *)
 (* 
  * Slots represent, by column, the number of "pending" row-spanning cells 
  * If this number is zero, the slot is empty. When we allocate slots for
@@ -257,7 +257,7 @@ let get_slot table needed_cols rspan =
     if first + needed_cols > Array.length table.slots then
       table.slots <- 
          Array.append table.slots 
-           (Array.make (first + needed_cols - (Array.length table.slots)) 
+           (Array.create (first + needed_cols - (Array.length table.slots)) 
                          rspan);
     (* Mark used *)
     for i = first to first + needed_cols - 1 do
@@ -268,13 +268,13 @@ let get_slot table needed_cols rspan =
   with
     Not_found -> (* Grow *)
       let first = Array.length table.slots in
-      table.slots <- Array.append table.slots (Array.make needed_cols rspan);
+      table.slots <- Array.append table.slots (Array.create needed_cols rspan);
       table.cur_col <- Array.length table.slots;
       first
-(*e: function Table.get_slot *)
+(*e: function [[Table.get_slot]] *)
       
 
-(*s: function Table.next_row *)
+(*s: function [[Table.next_row]] *)
 let next_row table =
   for i = 0 to Array.length table.slots - 1 do
     table.slots.(i) <- 
@@ -282,10 +282,10 @@ let next_row table =
       0|1 -> 0
     | n -> n-1
   done
-(*e: function Table.next_row *)
+(*e: function [[Table.next_row]] *)
 
 
-(*s: function Table.create *)
+(*s: function [[Table.create]] *)
 (*
  * The table manager 
  * [top] is the frame that will be embedded in the text widget
@@ -313,7 +313,7 @@ let create top tag contextwidth =
  let tab = {
     master_widget = top;
     slaves = [];
-    _width = width;
+    width = width;
     cur_col = 0;
     cur_row = -1; (* Start with TR *)
     slots = [||];
@@ -391,11 +391,11 @@ let create top tag contextwidth =
        try Some (int_of_string (get_attribute tag "width"))
        with Not_found | Failure "int_of_string" -> None
       in 
-      for _i = 1 to span do
+      for i = 1 to span do
     tab.cols <- width :: tab.cols 
       done);
 
-    open_row = (fun _t ->
+    open_row = (fun t ->
     tab.cur_col <- 0;
     tab.cur_row <- 1 + tab.cur_row;
         in_row := true;
@@ -464,5 +464,5 @@ let create top tag contextwidth =
          :: tab.slaves;
        wconstraint
        )}
-(*e: function Table.create *)
-(*e: ./display/table.ml *)
+(*e: function [[Table.create]] *)
+(*e: display/table.ml *)

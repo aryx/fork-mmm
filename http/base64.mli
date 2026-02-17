@@ -1,4 +1,4 @@
-(*s: ./http/base64.mli *)
+(*s: http/base64.mli *)
 (*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
@@ -12,11 +12,11 @@
 (***********************************************************************)
 (*e: copyright header v6 *)
 
-(*s: signature Base64.encode *)
+(*s: signature [[Base64.encode]] *)
 (* Base64 encoding (ONLY for Basic authentication) *)
 val encode : string -> string
-(*e: signature Base64.encode *)
-(*s: signature Base64.decode *)
+(*e: signature [[Base64.encode]] *)
+(*s: signature [[Base64.decode]] *)
 val decode : string -> string
-(*e: signature Base64.decode *)
-(*e: ./http/base64.mli *)
+(*e: signature [[Base64.decode]] *)
+(*e: http/base64.mli *)

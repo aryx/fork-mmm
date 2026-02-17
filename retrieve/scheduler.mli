@@ -1,4 +1,4 @@
-(*s: ./retrieve/scheduler.mli *)
+(*s: retrieve/scheduler.mli *)
 (*
  * Certain kind of documents need to be shared, such as in-lined images.
  * In this case, instead of working with Retrieve.f and the normal
@@ -10,13 +10,13 @@
  *)
 
 
-(*s: signature Scheduler.debug *)
+(*s: signature [[Scheduler.debug]] *)
 val debug : bool ref
-(*e: signature Scheduler.debug *)
+(*e: signature [[Scheduler.debug]] *)
 
-(*s: type Scheduler.progress_func *)
+(*s: type [[Scheduler.progress_func]] *)
 type progress_func = int option -> int -> unit
-(*e: type Scheduler.progress_func *)
+(*e: type [[Scheduler.progress_func]] *)
 
 module type Data =
   sig
@@ -74,4 +74,4 @@ module type S =
 
 
 module Make(J : Data):(S with type shared_data = J.t)
-(*e: ./retrieve/scheduler.mli *)
+(*e: retrieve/scheduler.mli *)

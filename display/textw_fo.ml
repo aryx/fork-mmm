@@ -1,10 +1,10 @@
-(*s: ./display/textw_fo.ml *)
+(*s: display/textw_fo.ml *)
 open Printf
 open Tk
 open Frx_text
 open Hyper
-
-
+open Viewers
+open Html
 open Htmlfmt
 open Fonts
 
@@ -16,23 +16,23 @@ open Fonts
  *    3- 
  *)
 
-(*s: constant Textw_fo.html_bg *)
+(*s: constant [[Textw_fo.html_bg]] *)
 (* Default background and foreground colors *)
 let html_bg = ref "white"
-(*e: constant Textw_fo.html_bg *)
-(*s: constant Textw_fo.html_fg *)
+(*e: constant [[Textw_fo.html_bg]] *)
+(*s: constant [[Textw_fo.html_fg]] *)
 let html_fg = ref "black"
-(*e: constant Textw_fo.html_fg *)
+(*e: constant [[Textw_fo.html_fg]] *)
 
-(*s: constant Textw_fo.usecolors *)
+(*s: constant [[Textw_fo.usecolors]] *)
 (* Preference settings *)
 let usecolors = ref true     (* use colors (fg/bg) specified in document *)
-(*e: constant Textw_fo.usecolors *)
-(*s: constant Textw_fo.internal_buffer *)
+(*e: constant [[Textw_fo.usecolors]] *)
+(*s: constant [[Textw_fo.internal_buffer]] *)
 let internal_buffer = ref 4000
-(*e: constant Textw_fo.internal_buffer *)
+(*e: constant [[Textw_fo.internal_buffer]] *)
 
-(*s: function Textw_fo.create *)
+(*s: function [[Textw_fo.create]] *)
 (* Build a formatter, as required by html_disp *)
 let create namer spec top ctx =
   (*s: [[Textw_fo.create]] locals *)
@@ -212,7 +212,7 @@ let create namer spec top ctx =
 
   in
   let put_embedded w align =
-    let opts = match String.lowercase_ascii align with
+    let opts = match String.lowercase align with
       "top" -> [Align Align_Top]
     | "middle" -> [Align Align_Center] (* not exactly *)
     | "bottom" -> [Align Align_Baseline] 
@@ -232,22 +232,22 @@ let create namer spec top ctx =
   (*e: [[Textw_fo.create]] locals *)
   let formatter =           
   { 
-    (*s: function Textfw_fo.create.new_paragraph *)
+    (*s: function [[Textfw_fo.create.new_paragraph]] *)
     new_paragraph = (fun () -> 
       break(); 
       spacing#push (cur()) 5; 
       paropen := cur()
     );
-    (*e: function Textfw_fo.create.new_paragraph *)
-    (*s: function Textfw_fo.create.close_paragraph *)
+    (*e: function [[Textfw_fo.create.new_paragraph]] *)
+    (*s: function [[Textfw_fo.create.close_paragraph]] *)
     close_paragraph = (fun () -> 
       spacing#pop (cur()) 5; 
       if (cur() = !paropen) 
       then prev_is_newline := false;
       break()
     );
-    (*e: function Textfw_fo.create.close_paragraph *)
-    (*s: function Textfw_fo.create.print_newline *)
+    (*e: function [[Textfw_fo.create.close_paragraph]] *)
+    (*s: function [[Textfw_fo.create.print_newline]] *)
     print_newline = (fun force -> 
      if force then begin
        put_text "\n"; 
@@ -255,14 +255,14 @@ let create namer spec top ctx =
      end
      else break()
     );
-    (*e: function Textfw_fo.create.print_newline *)
-    (*s: function Textfw_fo.create.print_verbatim *)
+    (*e: function [[Textfw_fo.create.print_newline]] *)
+    (*s: function [[Textfw_fo.create.print_verbatim]] *)
     print_verbatim = (fun s -> 
       put_text s; 
       prev_is_newline := false
     );
-    (*e: function Textfw_fo.create.print_verbatim *)
-    (*s: function Textfw_fo.create.format_string *)
+    (*e: function [[Textfw_fo.create.print_verbatim]] *)
+    (*s: function [[Textfw_fo.create.format_string]] *)
     format_string = (fun s -> 
       if not !prev_is_newline 
       then (* we are in text *)
@@ -276,16 +276,16 @@ let create namer spec top ctx =
           prev_is_newline := false
         end
     );
-    (*e: function Textfw_fo.create.format_string *)
+    (*e: function [[Textfw_fo.create.format_string]] *)
 
-    (*s: function Textfw_fo.create.flush *)
+    (*s: function [[Textfw_fo.create.flush]] *)
     flush = (fun () -> 
       fonts#pop_all (cur());	(* basefont lossage *)
       internal_flush true
     );
-    (*e: function Textfw_fo.create.flush *)
+    (*e: function [[Textfw_fo.create.flush]] *)
 
-    (*s: function Textfw_fo.create.hr *)
+    (*s: function [[Textfw_fo.create.hr]] *)
     hr = begin
       let hrsym = Mstring.egensym "hr" in
       (fun width height solid ->
@@ -294,8 +294,8 @@ let create namer spec top ctx =
         put_embedded fr ""
       )
     end;
-    (*e: function Textfw_fo.create.hr *)
-    (*s: function Textfw_fo.create.bullet *)
+    (*e: function [[Textfw_fo.create.hr]] *)
+    (*s: function [[Textfw_fo.create.bullet]] *)
     (* TODO *)
     bullet = begin
      let bulletsym = Mstring.egensym "bullet" in
@@ -308,10 +308,10 @@ let create namer spec top ctx =
        with Not_found  -> put_text "*"
       )
     end;
-    (*e: function Textfw_fo.create.bullet *)
+    (*e: function [[Textfw_fo.create.bullet]] *)
 
 
-    (*s: function Textfw_fo.create.set_defaults *)
+    (*s: function [[Textfw_fo.create.set_defaults]] *)
     (* TODO : vlink *)
     set_defaults = (fun name attrs -> 
       inherited := (name, attrs) :: !inherited;
@@ -371,9 +371,9 @@ let create namer spec top ctx =
 
       | _ -> ()
     );
-    (*e: function Textfw_fo.create.set_defaults *)
+    (*e: function [[Textfw_fo.create.set_defaults]] *)
 
-    (*s: function Textfw_fo.create.push_attr *)
+    (*s: function [[Textfw_fo.create.push_attr]] *)
     push_attr = (fun l ->
       let fis = ref [] in
       l |> List.iter (function
@@ -405,8 +405,8 @@ let create namer spec top ctx =
       if !fis <> [] 
       then fonts#push (cur()) !fis;
     );
-    (*e: function Textfw_fo.create.push_attr *)
-    (*s: function Textfw_fo.create.pop_attr *)
+    (*e: function [[Textfw_fo.create.push_attr]] *)
+    (*s: function [[Textfw_fo.create.pop_attr]] *)
     pop_attr = (fun l ->
       let fis = ref [] in
       l |> List.iter (function
@@ -430,9 +430,9 @@ let create namer spec top ctx =
       if !fis <> [] 
       then fonts#pop (cur()) !fis;
     );
-    (*e: function Textfw_fo.create.pop_attr *)
+    (*e: function [[Textfw_fo.create.pop_attr]] *)
 
-    (*s: function Textfw_fo.create.isindex *)
+    (*s: function [[Textfw_fo.create.isindex]] *)
     (* Compliance: text is not part of document ? *)
     isindex = (fun prompt base ->
       let f,e = Frx_entry.new_label_entry thtml prompt
@@ -447,28 +447,28 @@ let create namer spec top ctx =
       put_embedded f "";
       put_text "\n"
     );
-    (*e: function Textfw_fo.create.isindex *)
+    (*e: function [[Textfw_fo.create.isindex]] *)
     
-    (*s: function Textfw_fo.create.start_anchor *)
+    (*s: function [[Textfw_fo.create.start_anchor]] *)
     start_anchor = (fun () -> anchor_start := (cur()));
-    (*e: function Textfw_fo.create.start_anchor *)
-    (*s: function Textfw_fo.create.end_anchor *)
+    (*e: function [[Textfw_fo.create.start_anchor]] *)
+    (*s: function [[Textfw_fo.create.end_anchor]] *)
     (* set the tag for the anchor *)
     end_anchor = (fun link -> anchors#add_anchor !anchor_start (cur()) link);
-    (*e: function Textfw_fo.create.end_anchor *)
+    (*e: function [[Textfw_fo.create.end_anchor]] *)
 
-    (*s: function Textfw_fo.create.add_mark *)
+    (*s: function [[Textfw_fo.create.add_mark]] *)
     (* WARNING: if anchor name is a standard tk name, such as end,
        we're f*cked, so we force # *)
     add_mark = (fun s -> marks := ("#"^s, !position) :: !marks );
-    (*e: function Textfw_fo.create.add_mark *)
+    (*e: function [[Textfw_fo.create.add_mark]] *)
 
-    (*s: function Textfw_fo.create.create_embedded *)
+    (*s: function [[Textfw_fo.create.create_embedded]] *)
     create_embedded = begin
       (* avoid space leak in Tk hash table : reuse the same names *)
       let embsym = Mstring.egensym "emb" in
 
-      (fun _a w h ->
+      (fun a w h ->
          let f = Frame.create_named thtml (embsym()) [Class "HtmlEmbedded"] in
          if !usecolors 
          then Frame.configure f [Background (NamedColor !bg)];
@@ -489,9 +489,9 @@ let create namer spec top ctx =
          f
       )
     end;
-    (*e: function Textfw_fo.create.create_embedded *)
+    (*e: function [[Textfw_fo.create.create_embedded]] *)
 
-    (*s: function Textfw_fo.create.see_frag *)
+    (*s: function [[Textfw_fo.create.see_frag]] *)
     (* we try to remember the last "reading" position, so you can easily
      * switch back from a goto to some particular place in the document
      *)
@@ -545,9 +545,9 @@ let create namer spec top ctx =
               with Protocol.TkError _ -> ()
         )
     end
-    (*e: function Textfw_fo.create.see_frag *)
+    (*e: function [[Textfw_fo.create.see_frag]] *)
     } in
 
   formatter, fhtml
-(*e: function Textw_fo.create *)
-(*e: ./display/textw_fo.ml *)
+(*e: function [[Textw_fo.create]] *)
+(*e: display/textw_fo.ml *)

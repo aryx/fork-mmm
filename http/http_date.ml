@@ -1,4 +1,4 @@
-(*s: ./http/http_date.ml *)
+(*s: http/http_date.ml *)
 (*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
@@ -14,9 +14,10 @@
 
 open Printf
 open Unix
+open Mstring
 open Date
 
-(*s: type Http_date.http_time *)
+(*s: type [[Http_date.http_time]] *)
 (* Based on Unix.tm *)
 type http_time =
   { ht_sec : int;                       (* Seconds 0..59 *)
@@ -26,9 +27,9 @@ type http_time =
     ht_mon : int;                       (* Month of year 0..11 *)
     ht_year : int;                      (* Year - 1900 *)
     ht_wday : int }                     (* Day of week (Sunday is 0) *)
-(*e: type Http_date.http_time *)
+(*e: type [[Http_date.http_time]] *)
 
-(*s: function Http_date.expired *)
+(*s: function [[Http_date.expired]] *)
 let expired ht =
   let now = gmtime(time()) in
   let lht = 
@@ -37,16 +38,16 @@ let expired ht =
     [now.tm_year; now.tm_mon; now.tm_mday; now.tm_hour; now.tm_min; now.tm_sec]
   in
     compare_time (lht, lnow) <= 0
-(*e: function Http_date.expired *)
+(*e: function [[Http_date.expired]] *)
 
-(*s: function Http_date.compare *)
+(*s: function [[Http_date.compare]] *)
 let compare ht1 ht2 =
  compare_time
   ([ht1.ht_year; ht1.ht_mon; ht1.ht_mday; ht1.ht_hour; ht1.ht_min; ht1.ht_sec],
    [ht2.ht_year; ht2.ht_mon; ht2.ht_mday; ht2.ht_hour; ht2.ht_min; ht2.ht_sec])
-(*e: function Http_date.compare *)
+(*e: function [[Http_date.compare]] *)
 
-(*s: function Http_date.string_of_ht *)
+(*s: function [[Http_date.string_of_ht]] *)
 let string_of_ht ht =
   sprintf "%s, %02d %s %d %02d:%02d:%02d GMT"
       (asc_wkday ht.ht_wday)
@@ -56,9 +57,9 @@ let string_of_ht ht =
       ht.ht_hour
       ht.ht_min
       ht.ht_sec
-(*e: function Http_date.string_of_ht *)
+(*e: function [[Http_date.string_of_ht]] *)
 
-(*s: function Http_date.tm_of_ht *)
+(*s: function [[Http_date.tm_of_ht]] *)
 (* 
 let has_dst = localtime(time()).tm_isdst
 *)
@@ -73,15 +74,15 @@ let tm_of_ht ht = {
     tm_yday = 0;
     tm_isdst = false        (* I don't have a clue here *)
    }
-(*e: function Http_date.tm_of_ht *)
+(*e: function [[Http_date.tm_of_ht]] *)
 
-(*s: function Http_date.stamp_of_ht *)
+(*s: function [[Http_date.stamp_of_ht]] *)
 let stamp_of_ht ht =
    fst (mktime (tm_of_ht ht))
-(*e: function Http_date.stamp_of_ht *)
+(*e: function [[Http_date.stamp_of_ht]] *)
 
 
-(*s: function Http_date.ht_of_stamp *)
+(*s: function [[Http_date.ht_of_stamp]] *)
 let ht_of_stamp ut =
   let tm = gmtime ut in {
     ht_sec = tm.tm_sec;
@@ -92,5 +93,5 @@ let ht_of_stamp ut =
     ht_year = tm.tm_year;
     ht_wday = tm.tm_wday
      }
-(*e: function Http_date.ht_of_stamp *)
-(*e: ./http/http_date.ml *)
+(*e: function [[Http_date.ht_of_stamp]] *)
+(*e: http/http_date.ml *)

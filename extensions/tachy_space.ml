@@ -1,4 +1,4 @@
-(*s: ./extensions/tachy_space.ml *)
+(*s: extensions/tachy_space.ml *)
 open Safe418mmm
 open Tk
 
@@ -10,7 +10,7 @@ module Provide = struct
 module Mmm = Get(Provide)
 
 
-(*s: constant Tachy_space.mpoly_data *)
+(*s: constant [[Tachy_space.mpoly_data]] *)
 (* Tachymeter *)
 
 let mpoly_data = 
@@ -27,40 +27,40 @@ let mpoly_data =
 26.000000, -20.463692;
 21.760086, -5.200000;
 14.239914, -5.200000]
-(*e: constant Tachy_space.mpoly_data *)
+(*e: constant [[Tachy_space.mpoly_data]] *)
 
-(*s: type Tachy_space.vector *)
+(*s: type [[Tachy_space.vector]] *)
 type vector = float * float * float
-(*e: type Tachy_space.vector *)
-(*s: type Tachy_space.matrix *)
+(*e: type [[Tachy_space.vector]] *)
+(*s: type [[Tachy_space.matrix]] *)
 type matrix = vector * vector * vector
-(*e: type Tachy_space.matrix *)
+(*e: type [[Tachy_space.matrix]] *)
 
 let x_rotation a = let c = cos a and s = sin a in
     ((1.0,0.0,0.0), (0.0,c,s), (0.0,-.s,c))
 and y_rotation a = let c = cos a and s = sin a in
     ((c,0.0,-.s), (0.0,1.0,0.0), (s,0.0,c))
 
-(*s: function Tachy_space.matrix_vector *)
+(*s: function [[Tachy_space.matrix_vector]] *)
 let matrix_vector ((a11,a21,a31), (a12,a22,a32), (a13,a23,a33)) (x,y,z) =
   (a11*.x+.a12*.y+.a13*.z, a21*.x+.a22*.y+.a23*.z, a31*.x+.a32*.y+.a33*.z)
-(*e: function Tachy_space.matrix_vector *)
+(*e: function [[Tachy_space.matrix_vector]] *)
 
-(*s: constant Tachy_space.pi *)
+(*s: constant [[Tachy_space.pi]] *)
 let pi = 3.1415926 
-(*e: constant Tachy_space.pi *)
-(*s: constant Tachy_space.log10 *)
+(*e: constant [[Tachy_space.pi]] *)
+(*s: constant [[Tachy_space.log10]] *)
 let log10 = log 10.0 
-(*e: constant Tachy_space.log10 *)
+(*e: constant [[Tachy_space.log10]] *)
 
-(*s: type Tachy_space.ball *)
+(*s: type [[Tachy_space.ball]] *)
 type ball = {
   tag : Tk.tagOrId;
   mutable x : float;
   mutable y : float;
   mutable z : float
  }
-(*e: type Tachy_space.ball *)
+(*e: type [[Tachy_space.ball]] *)
 
 class space_tachy (top : Widget.widget) =
  object (self)
@@ -259,14 +259,14 @@ class space_tachy (top : Widget.widget) =
 
 end
 
-(*s: function Tachy_space.create_tachy *)
+(*s: function [[Tachy_space.create_tachy]] *)
 let create_tachy top = 
   let o = new space_tachy top in
   o#start;
-(*e: function Tachy_space.create_tachy *)
+(*e: function [[Tachy_space.create_tachy]] *)
   (o :> Mmm.tachymeter)
 
-(*s: toplevel Tachy_space._1 *)
+(*s: toplevel [[Tachy_space._1]] *)
 let _ = 
   let top = Applets.get_toplevel_widget [] in
   Wm.withdraw top;
@@ -277,6 +277,6 @@ let _ =
   | _ -> ()
   end;
   destroy top
-(*e: toplevel Tachy_space._1 *)
+(*e: toplevel [[Tachy_space._1]] *)
 
-(*e: ./extensions/tachy_space.ml *)
+(*e: extensions/tachy_space.ml *)

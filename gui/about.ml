@@ -1,7 +1,7 @@
-(*s: ./gui/about.ml *)
+(*s: gui/about.ml *)
 open Tk
 
-(*s: function About.f *)
+(*s: function [[About.f]] *)
 let f () =
   Frx_dialog.f Widget.default_toplevel 
     (Mstring.gensym "about") "About MMM" 
@@ -9,13 +9,13 @@ let f () =
     (Tk.Predefined "info") 
     0 
     ["Thanks"] |> ignore
-(*e: function About.f *)
+(*e: function [[About.f]] *)
 
 
 (* Tachymeter *)
 
 (* gif is 80x65 *)
-(*s: constant About.tachy_data *)
+(*s: constant [[About.tachy_data]] *)
 (* inside bitmap, circle is in +16+7 +66+57, radius 25 *)
 
 let tachy_data = "GIF\056\057aP\000A\000\227\000\000\000\000\000\
@@ -59,8 +59,8 @@ i\211\148Z\215y\189\026\140l\052\170a\127\186M\
 \130\048\012HA\131\009\244\007a\056\060\024\232\223\133\
 \024\158\192\030\135\032\134\040\226\136\036\194\016\001\000\059\
 "
-(*e: constant About.tachy_data *)
-(*s: constant About.park_data *)
+(*e: constant [[About.tachy_data]] *)
+(*s: constant [[About.park_data]] *)
 let park_data =
 "#define break_width 15
 #define break_height 11
@@ -68,15 +68,15 @@ static char break_bits[] = {
    0x0c, 0x18, 0xf4, 0x17, 0x3a, 0x2e, 0xba, 0x2d, 0xb9, 0x4d, 0x3d, 0x5e,
    0xb9, 0x4f, 0xba, 0x2f, 0xba, 0x2f, 0xf4, 0x17, 0x08, 0x08};
 "
-(*e: constant About.park_data *)
+(*e: constant [[About.park_data]] *)
 
 
-(*s: constant About.pi *)
+(*s: constant [[About.pi]] *)
 let pi = 3.1415926 
-(*e: constant About.pi *)
-(*s: constant About.log10 *)
+(*e: constant [[About.pi]] *)
+(*s: constant [[About.log10]] *)
 let log10 = log 10.0 
-(*e: constant About.log10 *)
+(*e: constant [[About.log10]] *)
 
 class default_tachy (top : Widget.widget) =
  object (self)
@@ -118,7 +118,7 @@ class default_tachy (top : Widget.widget) =
       let img = Imagephoto.create [File file] in
       Msys.rm file;
       img
-    and _park_image =
+    and park_image =
       Imagebitmap.create [Data park_data; Foreground Red] in
 
     i_park <-
@@ -229,11 +229,11 @@ class default_tachy (top : Widget.widget) =
 
 end
 
-(*s: function About.create_tachy *)
+(*s: function [[About.create_tachy]] *)
 let create_tachy top = 
   let o = new default_tachy top in
   o#start;
-(*e: function About.create_tachy *)
+(*e: function [[About.create_tachy]] *)
   (o :> Low.tachymeter)
 
-(*e: ./gui/about.ml *)
+(*e: gui/about.ml *)

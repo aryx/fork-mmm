@@ -1,6 +1,7 @@
-(*s: ./www/url.ml *)
+(*s: www/url.ml *)
+open Printf
 
-(*s: type Url.protocol *)
+(*s: type [[Url.protocol]] *)
 type protocol =
  | HTTP 
  | FILE | FTP
@@ -8,9 +9,9 @@ type protocol =
  | GOPHER | NEWS | WAIS | PROSPERO
  | TELNET 
  | OtherProtocol of string
-(*e: type Url.protocol *)
+(*e: type [[Url.protocol]] *)
 
-(*s: function Url.string_of_protocol *)
+(*s: function [[Url.string_of_protocol]] *)
 let string_of_protocol = function
    FTP -> "ftp"
  | HTTP -> "http"
@@ -23,10 +24,10 @@ let string_of_protocol = function
  | FILE -> "file"
  | PROSPERO -> "prospero"
  | OtherProtocol s -> s
-(*e: function Url.string_of_protocol *)
+(*e: function [[Url.string_of_protocol]] *)
 
 
-(*s: type Url.t *)
+(*s: type [[Url.t]] *)
 (* URLs as defined by RFC 1738 *)
 
 (* Not all components are used for all protocols. See RFC. *)
@@ -42,16 +43,16 @@ type t =
     mutable path : string option;
     mutable search: string option
   }
-(*e: type Url.t *)
+(*e: type [[Url.t]] *)
 
-(*s: exception Url.Url_Lexing *)
+(*s: exception [[Url.Url_Lexing]] *)
 exception Url_Lexing of string * int
-(*e: exception Url.Url_Lexing *)
-(*s: exception Url.Invalid_url *)
-(*exception Invalid_url of t * string*)
-(*e: exception Url.Invalid_url *)
+(*e: exception [[Url.Url_Lexing]] *)
+(*s: exception [[Url.Invalid_url]] *)
+exception Invalid_url of t * string
+(*e: exception [[Url.Invalid_url]] *)
 
-(*s: function Url.string_of *)
+(*s: function [[Url.string_of]] *)
 let string_of p =
   let buf = Ebuffer.create 128 in
   let ws x = Ebuffer.output_string buf x in
@@ -67,10 +68,10 @@ let string_of p =
   let write_hostport def =
       match p.host, p.port with
          None, None -> ()
-       | Some h, None -> ws (String.lowercase_ascii h)
-       | Some h, Some p when p = def -> ws (String.lowercase_ascii h)
+       | Some h, None -> ws (String.lowercase h)
+       | Some h, Some p when p = def -> ws (String.lowercase h)
        | Some h, Some p -> 
-           ws (String.lowercase_ascii h); wc ':'; ws (string_of_int p)
+           ws (String.lowercase h); wc ':'; ws (string_of_int p)
        | None, Some _ -> failwith "url_of_parsed"	    
   in
   let write_pathsearch () =
@@ -93,7 +94,7 @@ let string_of p =
   let write_fhost () =
       match p.host with
        None -> ws "localhost"
-      | Some h -> ws (String.lowercase_ascii h)
+      | Some h -> ws (String.lowercase h)
   in
   begin match p.protocol with
     FTP ->
@@ -112,7 +113,7 @@ let string_of p =
     begin match p.host with
       None | Some "localhost" ->
         ws "file://"; write_fhost(); write_slashpath()
-    | Some _h ->
+    | Some h ->
        p.protocol <- FTP;
         ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
     end
@@ -120,9 +121,9 @@ let string_of p =
   | OtherProtocol s -> ws s; ws ":"; write_path()
   end;
   Ebuffer.get buf
-(*e: function Url.string_of *)
+(*e: function [[Url.string_of]] *)
 
-(*s: function Url.distant_path *)
+(*s: function [[Url.distant_path]] *)
 (* For http only *)
 let distant_path urlp =
   match urlp.path, urlp.search with
@@ -130,6 +131,6 @@ let distant_path urlp =
    | Some p, None -> "/"^p
    | Some p, Some s -> "/" ^ p ^ "?" ^ s
    | None, Some s -> "/?" ^ s (* ??? *)
-(*e: function Url.distant_path *)
+(*e: function [[Url.distant_path]] *)
 
-(*e: ./www/url.ml *)
+(*e: www/url.ml *)

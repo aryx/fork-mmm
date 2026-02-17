@@ -1,4 +1,4 @@
-(*s: ./http/messages.mli *)
+(*s: http/messages.mli *)
 (*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
@@ -14,7 +14,7 @@
 
 (* HTTP Messages *)
 
-(*s: type Messages.request *)
+(*s: type [[Messages.request]] *)
 (* Request-Line of a Request *)
 type request = {
   request_version: string;	(* HTTP/1.0 *)
@@ -22,21 +22,21 @@ type request = {
 
   request_uri : string		(* the uri *)
 }
-(*e: type Messages.request *)
+(*e: type [[Messages.request]] *)
 
-(*s: type Messages.status *)
+(*s: type [[Messages.status]] *)
 (* Status-Line of a Response *)
 type status =  { 
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
 }
-(*e: type Messages.status *)
+(*e: type [[Messages.status]] *)
 
-(*s: type Messages.header *)
+(*s: type [[Messages.header]] *)
 (* Other headers *)
 type header = string
-(*e: type Messages.header *)
+(*e: type [[Messages.header]] *)
 
 
 (* HTTP messages: requests and responses
@@ -44,7 +44,7 @@ type header = string
  *  What a server answers is called a response
  *)
 
-(*s: type Messages.request_message *)
+(*s: type [[Messages.request_message]] *)
 (* HTTP-Message *)
 type request_message = {
   request : request;
@@ -55,15 +55,15 @@ type request_message = {
            (* have we authentified the emitter (authtype, authuser) *)
   (*e: [[Messages.request_message]] other fields *)
 }
-(*e: type Messages.request_message *)
+(*e: type [[Messages.request_message]] *)
 
-(*s: type Messages.response_message *)
+(*s: type [[Messages.response_message]] *)
 type response_message = {
   status : status;
 
   response_headers : header list;
   response_body : string;        (* responde body is *not* the document body *)
 }
-(*e: type Messages.response_message *)
+(*e: type [[Messages.response_message]] *)
 
-(*e: ./http/messages.mli *)
+(*e: http/messages.mli *)

@@ -1,10 +1,13 @@
-(*s: ./http/auth.ml *)
+(*s: http/auth.ml *)
 (* HTTP Basic Authentication *)
 open I18n
+open Printf
 open Unix
 open Http_headers
+open Url
+open Www
 
-(*s: type Auth.authSpace *)
+(*s: type [[Auth.authSpace]] *)
 (* Authorizations are remembered on the base of the directory url and realm
  * They are kept during the whole MMM session, with expiration
  *)
@@ -15,34 +18,34 @@ type authSpace = {
    auth_dir : string;
    auth_realm : string
   }
-(*e: type Auth.authSpace *)
+(*e: type [[Auth.authSpace]] *)
 
-(*s: type Auth.authEntry *)
+(*s: type [[Auth.authEntry]] *)
 type authEntry = {
    auth_cookie : string;
    mutable auth_lastused : float
    }
-(*e: type Auth.authEntry *)
+(*e: type [[Auth.authEntry]] *)
 
-(*s: constant Auth.authorizations *)
+(*s: constant [[Auth.authorizations]] *)
 let authorizations = Hashtbl.create 37
-(*e: constant Auth.authorizations *)
+(*e: constant [[Auth.authorizations]] *)
 
 
-(*s: function Auth.get *)
+(*s: function [[Auth.get]] *)
 let get space = 
   let entry = Hashtbl.find authorizations space in
     entry.auth_lastused <- Unix.time();
     entry.auth_cookie
-(*e: function Auth.get *)
+(*e: function [[Auth.get]] *)
 
-(*s: constant Auth.lifetime *)
+(*s: constant [[Auth.lifetime]] *)
 (* Lifetime, in minutes. Default is one hour *)
 let lifetime = ref 60
-(*e: constant Auth.lifetime *)
+(*e: constant [[Auth.lifetime]] *)
 
 
-(*s: function Auth.lookup *)
+(*s: function [[Auth.lookup]] *)
 let rec lookup space = 
   (* Printf.eprintf "%s\n" space.auth_dir; flush Pervasives.stderr; *)
   try
@@ -58,10 +61,10 @@ let rec lookup space =
             auth_port = space.auth_port;
         auth_dir = newdir;
         auth_realm = space.auth_realm}
-(*e: function Auth.lookup *)
+(*e: function [[Auth.lookup]] *)
 
 let open_passwd_ref = ref (fun _ -> failwith "no Auth.open_passswd defined")
-(*s: function Auth.ask_cookie *)
+(*s: function [[Auth.ask_cookie]] *)
 let ask_cookie forwhere =
   try
     let u,p = !open_passwd_ref forwhere in
@@ -72,29 +75,29 @@ let ask_cookie forwhere =
   | _ -> 
       Error.f (s_ "Error in base 64 encoding");
       failwith "cancelled"
-(*e: function Auth.ask_cookie *)
+(*e: function [[Auth.ask_cookie]] *)
 
-(*s: function Auth.replace *)
+(*s: function [[Auth.replace]] *)
 let replace kind cookie l =
   let rec repl acc = function
     [] -> (kind,cookie)::acc
   | (k,_)::l when k = kind -> repl (acc) l
   | p::l -> repl (p::acc) l in
   repl [] l
-(*e: function Auth.replace *)
+(*e: function [[Auth.replace]] *)
   
 
-(*s: function Auth.add *)
+(*s: function [[Auth.add]] *)
 let add space cookie =
   Log.debug "adding cookie";
   Hashtbl.add authorizations 
       space 
       {auth_cookie = cookie; auth_lastused = Unix.time()}
-(*e: function Auth.add *)
+(*e: function [[Auth.add]] *)
 
-(*s: function Auth.check *)
+(*s: function [[Auth.check]] *)
 (* Kind is either: realm or proxy *)
-let check (wwwr : Www.request) challenge authspace =
+let check wwwr challenge authspace =
   let kind = if authspace.auth_proxy then "proxy" else "realm" in
   match challenge.challenge_scheme with
     AuthExtend _ -> (* we don't know how to do this *) 
@@ -137,23 +140,23 @@ let check (wwwr : Www.request) challenge authspace =
       Some (cookie, isnew, authspace)
      with
       Failure "cancelled" -> None
-(*e: function Auth.check *)
+(*e: function [[Auth.check]] *)
 
 let edit_backend = ref (fun _ -> failwith "no Auth.edit defined") 
 
 (* Authorisation control *)
-(*s: function Auth.edit *)
+(*s: function [[Auth.edit]] *)
 (* needs to be refined *)
 let edit () =
   !edit_backend ()
-(*e: function Auth.edit *)
+(*e: function [[Auth.edit]] *)
 
-(*s: constant Auth.auth_file *)
+(*s: constant [[Auth.auth_file]] *)
 (* Saving authorizations to file *)
 let auth_file = ref ""
-(*e: constant Auth.auth_file *)
+(*e: constant [[Auth.auth_file]] *)
 
-(*s: function Auth.save *)
+(*s: function [[Auth.save]] *)
 let save () =
  if !auth_file <> "" then
   let auth_file = Msys.tilde_subst !auth_file in
@@ -170,9 +173,9 @@ let save () =
       Error.f (s_ "Error in authorisation save\n%s" s)
  else 
    Error.f (s_ "No authorisation file defined")
-(*e: function Auth.save *)
+(*e: function [[Auth.save]] *)
 
-(*s: function Auth.load *)
+(*s: function [[Auth.load]] *)
 let load () =
   if !auth_file <> "" then
     let auth_file = Msys.tilde_subst !auth_file in
@@ -190,10 +193,10 @@ let load () =
       Error.f (s_ "Error in authorisation load\n%s" s)
  else 
    Error.f (s_ "No authorisation file defined")
-(*e: function Auth.load *)
+(*e: function [[Auth.load]] *)
 
 
-(*s: function Auth.init *)
+(*s: function [[Auth.init]] *)
 let init () =
   let check () =
     let remove = ref []
@@ -210,6 +213,6 @@ let init () =
     Timer_.set (!lifetime * 30000) (fun () -> check(); tim ())
   in
   tim ()
-(*e: function Auth.init *)
+(*e: function [[Auth.init]] *)
        
-(*e: ./http/auth.ml *)
+(*e: http/auth.ml *)

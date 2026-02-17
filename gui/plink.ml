@@ -1,9 +1,9 @@
-(*s: ./gui/plink.ml *)
+(*s: gui/plink.ml *)
 open I18n
 open Tk
 open Hyper
 
-(*s: function Plink.dial *)
+(*s: function [[Plink.dial]] *)
 let dial hlink err =
   let t = Toplevel.create Widget.default_toplevel [Class "Dialog"] in
   Focus.set t;
@@ -22,7 +22,7 @@ let dial hlink err =
    |  UrlLexing (s,_) -> s in
 
   let tit = Label.create t [Text (s_ "Malformed link error")]
-  and fc,_ec = Frx_entry.new_labelm_entry t "Context" vcontext
+  and fc,ec = Frx_entry.new_labelm_entry t "Context" vcontext
   and fu,eu = Frx_entry.new_labelm_entry t "Relative" vuri
   and lmsg = Label.create t [Text msg]
   in
@@ -51,9 +51,9 @@ let dial hlink err =
                 | s -> Some s);
           h_method = hlink.h_method;
       h_params = hlink.h_params}
-(*e: function Plink.dial *)
+(*e: function [[Plink.dial]] *)
 
-(*s: function Plink.make *)
+(*s: function [[Plink.make]] *)
 (* Utility for catching link resolving errors *)
 let rec make hlink =
   try
@@ -63,7 +63,7 @@ let rec make hlink =
       match dial hlink msg with
     None -> raise (Invalid_link msg)
       | Some hlink -> make hlink
-(*e: function Plink.make *)
+(*e: function [[Plink.make]] *)
 
         
-(*e: ./gui/plink.ml *)
+(*e: gui/plink.ml *)

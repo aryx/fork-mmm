@@ -1,4 +1,4 @@
-(*s: ./display/html_form.mli *)
+(*s: display/html_form.mli *)
 
 class behaviour :
   string * Html.tag * string option * (string -> string) ->
@@ -46,4 +46,4 @@ val init:
           remove_tag : string -> unit; target : string option; .. > ->
         unit
 
-(*e: ./display/html_form.mli *)
+(*e: display/html_form.mli *)

@@ -1,5 +1,6 @@
-(*s: ./viewers/save.ml *)
+(*s: viewers/save.ml *)
 open I18n
+open Lexing
 open Unix
 open Document
 open Url
@@ -7,7 +8,7 @@ open Www
 open Feed
 
 (* Save to file fname, and apply continuation cont to this file *)
-(*s: function Save.f *)
+(*s: function [[Save.f]] *)
 (* unprotected against Sys_error *)
 let f cont dh fname endmsg =
   let oc = open_out_bin fname in
@@ -41,9 +42,9 @@ let f cont dh fname endmsg =
       Error.f (s_ "Error during retrieval of %s" 
                      (Url.string_of dh.document_id.document_url))
      )
-(*e: function Save.f *)
+(*e: function [[Save.f]] *)
 
-(*s: function Save.tofile *)
+(*s: function [[Save.tofile]] *)
 (* Used for external viewers in batch mode. Deprecated *)
 let tofile cont dh fname endmsg =
   try
@@ -52,9 +53,9 @@ let tofile cont dh fname endmsg =
     dclose true dh;
     Document.destroy_log dh false;
     Error.f (s_ "Cannot save to %s\n(%s)" fname msg)
-(*e: function Save.tofile *)
+(*e: function [[Save.tofile]] *)
 
-(*s: function Save.interactive *)
+(*s: function [[Save.interactive]] *)
 let rec interactive cont dh =
   (* The initial content of the requester *)
   let url = Url.string_of dh.document_id.document_url in
@@ -77,19 +78,19 @@ let rec interactive cont dh =
           Error.f (s_ "Cannot save to %s\n(%s)" fname msg);
           interactive cont dh
         end
-    | _l -> raise (Failure "multiple selection")
+    | l -> raise (Failure "multiple selection")
     )
     "*"
     (Filename.basename path)
     false false
-(*e: function Save.interactive *)
+(*e: function [[Save.interactive]] *)
 
 
-(*s: function Save.transfer *)
+(*s: function [[Save.transfer]] *)
 let transfer wr dh dest =
   wr.www_logging (s_ "Saving...");
   match dest with
-    None -> interactive (fun _s -> wr.www_logging "") dh
+    None -> interactive (fun s -> wr.www_logging "") dh
   | Some (fd, flag) ->
       (* if flag we should output the headers as well *)
       if flag then begin
@@ -115,9 +116,9 @@ let transfer wr dh dest =
        Error.f (s_"Error during retrieval of %s" 
                     (Url.string_of dh.document_id.document_url))
        )
-(*e: function Save.transfer *)
+(*e: function [[Save.transfer]] *)
 
-(*s: function Save.save_from_string *)
+(*s: function [[Save.save_from_string]] *)
 let save_from_string url s f =
   try
     let oc = open_out_bin f in
@@ -130,9 +131,9 @@ let save_from_string url s f =
    close_out oc
   with Sys_error e ->
     Error.f (s_ "Cannot save to %s\n(%s)" f e)
-(*e: function Save.save_from_string *)
+(*e: function [[Save.save_from_string]] *)
 
-(*s: function Save.copy_file *)
+(*s: function [[Save.copy_file]] *)
 let copy_file url src dst =
   try
     let ic = open_in_bin src
@@ -152,10 +153,10 @@ let copy_file url src dst =
     close_out oc
   with Sys_error e ->
     Error.f (s_ "Cannot save to %s\n(%s)" dst e)
-(*e: function Save.copy_file *)
+(*e: function [[Save.copy_file]] *)
 
 
-(*s: function Save.pipe_from_string *)
+(*s: function [[Save.pipe_from_string]] *)
 (* Cmd can be composite. We add the URL at the end *)
 let pipe_from_string url data cmd =
   let urls = Url.string_of url in
@@ -169,7 +170,7 @@ let pipe_from_string url data cmd =
     dup2 fd_in stdin; close fd_in; close fd_out;
     ignore (Munix.system_eval cmd ["URL", urls] false);
     exit 0
-    | _n ->
+    | n ->
     close fd_in;
        Fileevent.add_fileoutput fd_out (fun () ->
       if !pos < len then begin
@@ -189,10 +190,10 @@ let pipe_from_string url data cmd =
   with
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
       Error.f (s_ "Can't execute command %s for %s" cmd urls)
-(*e: function Save.pipe_from_string *)
+(*e: function [[Save.pipe_from_string]] *)
 
 
-(*s: function Save.pipe_from_file *)
+(*s: function [[Save.pipe_from_file]] *)
 let pipe_from_file url f cmd =
   let urls = Url.string_of url in
   try
@@ -203,19 +204,19 @@ let pipe_from_file url f cmd =
     dup2 fd stdin; close fd;
     ignore (Munix.system_eval cmd ["URL", urls] false);
     exit 0
-    | _n ->
+    | n ->
     ()
   with Unix_error(_,_,_) -> (* pipe failed, fork failed *)
     Error.f (s_ "Can't execute command %s for %s" cmd urls)
-(*e: function Save.pipe_from_file *)
+(*e: function [[Save.pipe_from_file]] *)
 
-(*s: function Save.document *)
+(*s: function [[Save.document]] *)
 let document did arg =
   let open_selection_box act =
     Fileselect.f (s_ "Save or pipe to file")
       (function [] -> ()
              | [s] -> act s
-          | _l -> raise (Failure "multiple selection"))
+          | l -> raise (Failure "multiple selection"))
       "*" (* should be better *)
       (Filename.basename (Url.string_of did.document_url))
       false
@@ -227,7 +228,7 @@ let document did arg =
   in
   try
     match Cache.find did with
-      {document_data = MemoryData buf; _} ->
+      {document_data = MemoryData buf} ->
         proceed
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
@@ -236,7 +237,7 @@ let document did arg =
         else
           save_from_string did.document_url (Ebuffer.get buf) s)
       
-    |  {document_data = FileData (f, _); _} ->
+    |  {document_data = FileData (f, _)} ->
         proceed 
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
@@ -246,9 +247,9 @@ let document did arg =
           copy_file did.document_url f s)
   with Not_found ->
     Error.f ("Document is not in cache.")
-(*e: function Save.document *)
+(*e: function [[Save.document]] *)
     
-(*s: constant Save.print_command *)
+(*s: constant [[Save.print_command]] *)
 let print_command = ref ""
-(*e: constant Save.print_command *)
-(*e: ./viewers/save.ml *)
+(*e: constant [[Save.print_command]] *)
+(*e: viewers/save.ml *)

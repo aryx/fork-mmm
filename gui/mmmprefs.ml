@@ -1,4 +1,4 @@
-(*s: ./gui/mmmprefs.ml *)
+(*s: gui/mmmprefs.ml *)
 open I18n
 
 open Tk
@@ -6,7 +6,7 @@ open Prefs
 
 (* MMM Preferences *)
 
-(*s: function Mmmprefs.font_pref *)
+(*s: function [[Mmmprefs.font_pref]] *)
 (*
  * Font preference
  *)
@@ -30,10 +30,10 @@ let font_pref title name top =
     pref_name = title;
     resource_name = resource_name title} in
   p
-(*e: function Mmmprefs.font_pref *)
+(*e: function [[Mmmprefs.font_pref]] *)
 
 
-(*s: constant Mmmprefs.image_loading *)
+(*s: constant [[Mmmprefs.image_loading]] *)
 (*
  * Image loading mode
  *)
@@ -44,7 +44,7 @@ let image_loading =
       Imgload.DuringDoc, "During document loading"]
     (fun () -> !Imgload.mode)
     (fun v -> Imgload.mode := v)
-(*e: constant Mmmprefs.image_loading *)
+(*e: constant [[Mmmprefs.image_loading]] *)
 
 
 (*
@@ -61,7 +61,7 @@ and dtd_s v =
 and dtd_p = Dtd.names()
 
 
-(*s: function Mmmprefs.network *)
+(*s: function [[Mmmprefs.network]] *)
 let network top = 
   family top (s_ "Protocols") [
     string_pref "Proxy host" Http.proxy;
@@ -75,9 +75,9 @@ let network top =
     abstract_string_pref "Local binaries path" 
       Tk_file.pref_init Tk_file.pref_set
     ]
-(*e: function Mmmprefs.network *)
+(*e: function [[Mmmprefs.network]] *)
 
-(*s: function Mmmprefs.internal *)
+(*s: function [[Mmmprefs.internal]] *)
 let internal top =
   family top (s_ "Internal settings and debugging") [
     bool_pref "Strict encoding of Form field names" Urlenc.strict_form_standard;
@@ -93,9 +93,9 @@ let internal top =
     bool_pref "Image loading debug" Img.ImageData.verbose;
     bool_pref "CamlTk Debug" Protocol.debug;
     ]
-(*e: function Mmmprefs.internal *)
+(*e: function [[Mmmprefs.internal]] *)
 
-(*s: function Mmmprefs.html *)
+(*s: function [[Mmmprefs.html]] *)
 let html top = 
   family top (s_ "HTML parsing and display") [
     option_pref "DTD" (dtd_i, dtd_s, dtd_p);
@@ -135,16 +135,16 @@ let html top =
     font_pref "Italic" "italic";
     font_pref "Fixed" "verbatim"
     ]
-(*e: function Mmmprefs.html *)
+(*e: function [[Mmmprefs.html]] *)
 
-(*s: function Mmmprefs.i18n *)
+(*s: function [[Mmmprefs.i18n]] *)
 let i18n top =
   family top (s_ "Internationalization (Japanese)") [
     bool_pref "Ignore META charset" Htmlw.ignore_meta_charset
   ] 
-(*e: function Mmmprefs.i18n *)
+(*e: function [[Mmmprefs.i18n]] *)
 
-(*s: function Mmmprefs.images *)
+(*s: function [[Mmmprefs.images]] *)
 let images top =
   family top (s_ "Images") [
     bool_pref "No images at all" Imgload.no_images;
@@ -155,10 +155,10 @@ let images top =
     float_pref "Gamma correction" Img.ImageData.gamma;
     string_pref "JPEG converter"  Img.ImageData.jpeg_converter
     ]
-(*e: function Mmmprefs.images *)
+(*e: function [[Mmmprefs.images]] *)
     
 
-(*s: function Mmmprefs.cache *)
+(*s: function [[Mmmprefs.cache]] *)
 let cache top =
   family top (s_ "Cache settings") [
     int_pref "Max number of documents"  Cache.max_documents;
@@ -166,27 +166,27 @@ let cache top =
     bool_pref "Keep only history" Cache.history_mode;
     int_pref "Max cached widgets per window" Gcache.max_keep
     ]
-(*e: function Mmmprefs.cache *)
+(*e: function [[Mmmprefs.cache]] *)
 
-(*s: function Mmmprefs.progs *)
+(*s: function [[Mmmprefs.progs]] *)
 let progs top =
   family top (s_ "External programs") [
     string_pref "Mailto program" Mailto.mailer;
     string_pref "Hotlist program" Hotlist.program;
     string_pref "Printing program" Save.print_command;
     ]
-(*e: function Mmmprefs.progs *)
+(*e: function [[Mmmprefs.progs]] *)
 
-(*s: function Mmmprefs.misc *)
+(*s: function [[Mmmprefs.misc]] *)
 let misc top =
   family top (s_ "Misc. settings") [
     bool_pref "Use balloon helps" Balloon.flag;
     bool_pref "Use GIF animation" Img.gif_anim_load;
     bool_pref "Automatic GIF animation display" Imgload.gif_anim_auto
     ]
-(*e: function Mmmprefs.misc *)
+(*e: function [[Mmmprefs.misc]] *)
 
-(*s: constant Mmmprefs.appsys_plug *)
+(*s: constant [[Mmmprefs.appsys_plug]] *)
 (* The default appsys preference only keeps track of
    the preference values, but does not allow changes
  *)
@@ -222,31 +222,31 @@ let appsys_plug = ref (fun top ->
   {family_widget = f; family_init = init;
    family_save = save; family_load = load;
    family_title = s_ "Applets"})
-(*e: constant Mmmprefs.appsys_plug *)
+(*e: constant [[Mmmprefs.appsys_plug]] *)
 
-(*s: function Mmmprefs.plug_applets *)
+(*s: function [[Mmmprefs.plug_applets]] *)
 let plug_applets f =
   appsys_plug := f
-(*e: function Mmmprefs.plug_applets *)
+(*e: function [[Mmmprefs.plug_applets]] *)
 
-(*s: function Mmmprefs.applets *)
+(*s: function [[Mmmprefs.applets]] *)
 let applets w = !appsys_plug w
-(*e: function Mmmprefs.applets *)
+(*e: function [[Mmmprefs.applets]] *)
 
 
-(*s: constant Mmmprefs.home *)
+(*s: constant [[Mmmprefs.home]] *)
 (* There is no right place for this *)
 let home = ref ""
-(*e: constant Mmmprefs.home *)
-(*s: function Mmmprefs.reset_home *)
+(*e: constant [[Mmmprefs.home]] *)
+(*s: function [[Mmmprefs.reset_home]] *)
 let reset_home () =
   home :=  Tkresource.string "wwwHome" 
        (try Sys.getenv "WWW_HOME"
        with Not_found -> (Version.initurl (Lang.lang ())))
-(*e: function Mmmprefs.reset_home *)
+(*e: function [[Mmmprefs.reset_home]] *)
 
 
-(*s: constant Mmmprefs.mute *)
+(*s: constant [[Mmmprefs.mute]] *)
 (* Internal preferences *)
 let mute = [
   reset_home;
@@ -254,16 +254,16 @@ let mute = [
   Viewers.reset;			(* viewers definition *)
   Glevents.reset;			(* bindings *)
   ]
-(*e: constant Mmmprefs.mute *)
+(*e: constant [[Mmmprefs.mute]] *)
 
-(*s: constant Mmmprefs.families *)
+(*s: constant [[Mmmprefs.families]] *)
 (* Interactive preferences *)
 let families = [ network; html; i18n; images; progs; cache; applets;
          misc; internal ]
-(*e: constant Mmmprefs.families *)
+(*e: constant [[Mmmprefs.families]] *)
 
-(*s: function Mmmprefs.f *)
+(*s: function [[Mmmprefs.f]] *)
 let f preffile = 
   Prefs.define preffile families mute
-(*e: function Mmmprefs.f *)
-(*e: ./gui/mmmprefs.ml *)
+(*e: function [[Mmmprefs.f]] *)
+(*e: gui/mmmprefs.ml *)

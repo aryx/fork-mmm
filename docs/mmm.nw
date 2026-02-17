@@ -1429,7 +1429,7 @@ Frx_text.init ();
 (* Initialisations in jpf's balloon library *)
 Balloon.init ();
 (* Initialisations in jpf's GIF ANIMATION library *)
-Tkaniminit.f ();
+(* TODO  Tkaniminit.f (); *)
 @
 % Frx = francois rouaix extensions
 

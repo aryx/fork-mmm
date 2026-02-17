@@ -1,5 +1,5 @@
-(*s: ./www/www.mli *)
-(*s: type Www.request *)
+(*s: www/www.mli *)
+(*s: type [[Www.request]] *)
 (*
  * Requests
  *)
@@ -22,32 +22,32 @@ type request =  {
     mutable www_error : Error.t;
     (*e: [[Www.request]] error managment method *)
   }
-(*e: type Www.request *)
+(*e: type [[Www.request]] *)
 
-(*s: exception Www.Invalid_request *)
+(*s: exception [[Www.Invalid_request]] *)
 exception Invalid_request of request * string
-(*e: exception Www.Invalid_request *)
+(*e: exception [[Www.Invalid_request]] *)
 
-(*s: signature Www.make *)
+(*s: signature [[Www.make]] *)
 val make : Hyper.link -> request
   (* raises: Url_Lexing | Invalid_link *)
-(*e: signature Www.make *)
+(*e: signature [[Www.make]] *)
 
 (* Table of unresolved active connexions *)
 module UrlSet : Set.S with type elt = Url.t
 
-(*s: signature Www.is_active_cnx *)
+(*s: signature [[Www.is_active_cnx]] *)
 val is_active_cnx : Url.t -> bool
-(*e: signature Www.is_active_cnx *)
-(*s: signature Www.add_active_cnx *)
+(*e: signature [[Www.is_active_cnx]] *)
+(*s: signature [[Www.add_active_cnx]] *)
 val add_active_cnx : Url.t -> unit
-(*e: signature Www.add_active_cnx *)
-(*s: signature Www.rem_active_cnx *)
+(*e: signature [[Www.add_active_cnx]] *)
+(*s: signature [[Www.rem_active_cnx]] *)
 val rem_active_cnx : Url.t -> unit
-(*e: signature Www.rem_active_cnx *)
+(*e: signature [[Www.rem_active_cnx]] *)
 
-(*s: type Www.aborter *)
+(*s: type [[Www.aborter]] *)
 type aborter = unit -> unit
-(*e: type Www.aborter *)
+(*e: type [[Www.aborter]] *)
 
-(*e: ./www/www.mli *)
+(*e: www/www.mli *)

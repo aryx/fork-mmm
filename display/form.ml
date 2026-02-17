@@ -1,19 +1,19 @@
-(*s: ./display/form.ml *)
+(*s: display/form.ml *)
 (* Tk based FormDisplay  *)
 open I18n
 open Printf
 open Tk
 open Hyper
-
+open Www
 open Html
 open Htmlfmt
 open Maps
 open Embed
+open Viewers
 
-
-(*s: constant Form.form_bg *)
+(*s: constant [[Form.form_bg]] *)
 let form_bg = ref "#d9d9d9"
-(*e: constant Form.form_bg *)
+(*e: constant [[Form.form_bg]] *)
 
 (*s: type Form.t (./display/form.ml) *)
 type t = {
@@ -49,29 +49,29 @@ type t = {
  *)
 
 
-(*s: function Form.mapi *)
+(*s: function [[Form.mapi]] *)
 (* mapi (fun n x -> ...) n0 l *)
 let rec mapi f n l =
   match l with
     [] -> [] 
   | x::l -> let v = f n x in v::(mapi f (succ n) l)
-(*e: function Form.mapi *)
+(*e: function [[Form.mapi]] *)
 
-(*s: function Form.focus_link *)
+(*s: function [[Form.focus_link]] *)
 (* Do our own Tab/Shift-Tab : don't call it for Text widgets ! *)
 let focus_link prev w =
   match !prev with
     None -> prev := Some w;
   | Some old ->
       bind old [[], KeyPressDetail "Tab"]
-       (BindSetBreakable ([], fun _ei -> try Focus.set w with _ -> ()));
+       (BindSetBreakable ([], fun ei -> try Focus.set w with _ -> ()));
       bind w [[Shift], KeyPressDetail "Tab"]
-       (BindSetBreakable ([], fun _ei -> try Focus.set old with _ -> ()));
+       (BindSetBreakable ([], fun ei -> try Focus.set old with _ -> ()));
       prev := Some w
-(*e: function Form.focus_link *)
+(*e: function [[Form.focus_link]] *)
 
 (* A TEXT or PASSWORD input *)
-(*s: function Form.text_input *)
+(*s: function [[Form.text_input]] *)
 (* TODO: MAXLENGTH *)
 let text_input prev_widget ctx behav top tag =
   try
@@ -89,7 +89,7 @@ let text_input prev_widget ctx behav top tag =
     with Not_found -> ()
     end;
     (* Check for passwd *)
-    if String.lowercase_ascii inputtype = "password" then 
+    if String.lowercase inputtype = "password" then 
       Entry.configure e [Show '*'];
     (* The behaviours *)
     let reset = 
@@ -116,10 +116,10 @@ let text_input prev_widget ctx behav top tag =
   with
     Not_found ->
       raise (Invalid_Html "Missing NAME in TEXT or PASSWORD")
-(*e: function Form.text_input *)
+(*e: function [[Form.text_input]] *)
 
 
-(*s: function Form.checkbox_input *)
+(*s: function [[Form.checkbox_input]] *)
 (* A CHECKBOX input *)
 let checkbox_input prev_widget behav top tag =
   try
@@ -153,11 +153,11 @@ let checkbox_input prev_widget behav top tag =
   with
     Not_found ->
       raise (Invalid_Html "Missing NAME in CHECKBOX")
-(*e: function Form.checkbox_input *)
+(*e: function [[Form.checkbox_input]] *)
 
 
 (* A RADIO input *)
-(*s: function Form.radio_input *)
+(*s: function [[Form.radio_input]] *)
 (* ONLY THE FIRST BUTTON RESET/GET_VALUE IS USED *)
 let radio_input prev_widget behav = 
   (* Table of radio names *)
@@ -201,14 +201,14 @@ let radio_input prev_widget behav =
     with
       Not_found ->
     raise (Invalid_Html "Missing NAME in RADIO"))
-(*e: function Form.radio_input *)
+(*e: function [[Form.radio_input]] *)
 
 
-(*s: function Form.image_input *)
+(*s: function [[Form.image_input]] *)
 (* An IMAGE input 
  * Q: no target here ?
  *)
-let image_input _prev_widget ctx base behav top tag =
+let image_input prev_widget ctx base behav top tag =
   try
     let n = get_attribute tag "name" in
     let src = get_attribute tag "src" in
@@ -230,12 +230,12 @@ let image_input _prev_widget ctx base behav top tag =
   with
   Not_found ->
     raise (Invalid_Html "missing NAME or SRC in input IMAGE")
-(*e: function Form.image_input *)
+(*e: function [[Form.image_input]] *)
 
 
-(*s: function Form.submit_input *)
+(*s: function [[Form.submit_input]] *)
 (* A Submit button *)
-let submit_input _prev_widget ctx behav top tag = 
+let submit_input prev_widget ctx behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> s_ "Submit"
@@ -251,18 +251,18 @@ let submit_input _prev_widget ctx behav top tag =
      pack [Button.create top [Text l; TakeFocus false;
           Command (fun () -> ctx#goto (behav#submit []))]]
       []
-(*e: function Form.submit_input *)
+(*e: function [[Form.submit_input]] *)
 
 
-(*s: function Form.reset_input *)
-let reset_input _prev_widget behav top tag = 
+(*s: function [[Form.reset_input]] *)
+let reset_input prev_widget behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> s_ "Reset" in
   let b = Button.create top [Text l; TakeFocus false;
                  Command (fun () -> behav#reset)] in
     pack[b][]
-(*e: function Form.reset_input *)
+(*e: function [[Form.reset_input]] *)
 
 
 
@@ -271,7 +271,7 @@ let reset_input _prev_widget behav top tag =
 
 
 (* A SELECT list *)
-(*s: function Form.select *)
+(*s: function [[Form.select]] *)
 (* options is: (val, displayed thing, selected) list *)    
 let select prev_widget behav top options tag =
   let name = get_attribute tag "name" in
@@ -354,10 +354,10 @@ let select prev_widget behav top options tag =
       behav#add_reset reset;
       behav#add_get OtherInput get_value
     end
-(*e: function Form.select *)
+(*e: function [[Form.select]] *)
 
-(*s: function Form.textarea *)
-let textarea _prev_widget behav top initial tag = 
+(*s: function [[Form.textarea]] *)
+let textarea prev_widget behav top initial tag = 
   try 
     let name = get_attribute tag "name" in
     let f,t = 
@@ -391,10 +391,10 @@ let textarea _prev_widget behav top initial tag =
        behav#add_get EntryInput get_value
   with
     Not_found -> raise (Invalid_Html "Missing NAME in TEXTAREA")
-(*e: function Form.textarea *)
+(*e: function [[Form.textarea]] *)
 
 
-(*s: function Form.create *)
+(*s: function [[Form.create]] *)
 let create base behav ctx =
   let prev_widget = ref None in
   { text_input = text_input prev_widget ctx behav;
@@ -406,5 +406,5 @@ let create base behav ctx =
     select = select prev_widget behav;
     textarea = textarea prev_widget behav
   }
-(*e: function Form.create *)
-(*e: ./display/form.ml *)
+(*e: function [[Form.create]] *)
+(*e: display/form.ml *)

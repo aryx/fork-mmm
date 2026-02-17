@@ -1,19 +1,21 @@
-(*s: ./commons/log.ml *)
-(*s: constant Log.debug_mode *)
-let debug_mode = ref true
-(*e: constant Log.debug_mode *)
+(*s: commons/log.ml *)
+open Printf
 
-(*s: function Log.f *)
+(*s: constant [[Log.debug_mode]] *)
+let debug_mode = ref true
+(*e: constant [[Log.debug_mode]] *)
+
+(*s: function [[Log.f]] *)
 (* flushes ! *)
 let f s = 
   try prerr_endline s 
   with _ -> ()
-(*e: function Log.f *)
+(*e: function [[Log.f]] *)
 
-(*s: function Log.debug *)
+(*s: function [[Log.debug]] *)
 let debug s = 
   if !debug_mode 
   then f s
-(*e: function Log.debug *)
+(*e: function [[Log.debug]] *)
 
-(*e: ./commons/log.ml *)
+(*e: commons/log.ml *)

@@ -1,8 +1,8 @@
-(*s: ./commons/error.ml *)
+(*s: commons/error.ml *)
 open Common
 
-(*s: class Error.t *)
-(*e: class Error.t *)
+(*s: class [[Error.t]] *)
+(*e: class [[Error.t]] *)
 
 class virtual t = object
  method virtual f : string -> unit
@@ -19,12 +19,12 @@ class x = object
   method ari _ = failwith "TODO: Error.x.ari"
 end
 
-(*s: constant Error.default *)
+(*s: constant [[Error.default]] *)
 let default = ref (new x)
-(*e: constant Error.default *)
+(*e: constant [[Error.default]] *)
 
 (* backward compatibility *)
-(*s: functions Error.xxx *)
+(*s: functions [[Error.xxx]] *)
 let f msg = 
   !default#f msg
 let ok msg = 
@@ -33,5 +33,5 @@ let choose msg =
   !default#choose msg
 let ari msg = 
   !default#ari msg
-(*e: functions Error.xxx *)
-(*e: ./commons/error.ml *)
+(*e: functions [[Error.xxx]] *)
+(*e: commons/error.ml *)

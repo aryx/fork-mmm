@@ -1,4 +1,4 @@
-(*s: ./http/base64.ml *)
+(*s: http/base64.ml *)
 (*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
@@ -12,14 +12,14 @@
 (***********************************************************************)
 (*e: copyright header v6 *)
 
-(*s: constant Base64.index64 *)
+(*s: constant [[Base64.index64]] *)
 (* For basic credentials only *)
 (* Encoding is [A-Z][a-z][0-9]+/= *)
 (* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
 
 let index64 = Array.make 128 0
-(*e: constant Base64.index64 *)
-(*s: toplevel Base64._1 *)
+(*e: constant [[Base64.index64]] *)
+(*s: toplevel [[Base64._1]] *)
 (* Init the index *)
 let _ =
   for i = 0 to 25 do index64.(i + Char.code 'A') <- i done;
@@ -27,9 +27,9 @@ let _ =
   for i = 0 to 9 do  index64.(i + Char.code '0') <- i + 52 done;
   index64.(Char.code '+') <- 62;
   index64.(Char.code '/') <- 63
-(*e: toplevel Base64._1 *)
+(*e: toplevel [[Base64._1]] *)
 
-(*s: function Base64.decode *)
+(*s: function [[Base64.decode]] *)
 let decode s =
   let rpos = ref 0
   and wpos = ref 0
@@ -55,22 +55,22 @@ let decode s =
     else 0 
   in
   Bytes.sub_string res 0 (Bytes.length res - cut)
-(*e: function Base64.decode *)
+(*e: function [[Base64.decode]] *)
 
 
-(*s: constant Base64.char64 *)
+(*s: constant [[Base64.char64]] *)
 let char64 = Array.make 64 'a'
-(*e: constant Base64.char64 *)
-(*s: toplevel Base64._2 *)
+(*e: constant [[Base64.char64]] *)
+(*s: toplevel [[Base64._2]] *)
 let _ =
   for i = 0 to 25 do char64.(i) <- Char.chr (Char.code 'A' + i) done;
   for i = 0 to 25 do char64.(i+26) <- Char.chr (Char.code 'a' + i) done;
   for i = 0 to 9 do char64.(i+52) <- Char.chr (Char.code '0' + i) done;
   char64.(62) <- '+';
   char64.(63) <- '/'
-(*e: toplevel Base64._2 *)
+(*e: toplevel [[Base64._2]] *)
 
-(*s: function Base64.encode *)
+(*s: function [[Base64.encode]] *)
 (* Encoding *)
 let encode s =
   let rpos = ref 0 
@@ -88,7 +88,7 @@ let encode s =
       let i2 = Char.code s.[!rpos+1] in
       let i3 = Char.code s.[!rpos+2] in
       let i = (i1 lsl 16) lor (i2 lsl 8) lor i3 in
-      Bytes.set res !wpos (char64.((i lsr 18) land 0x3f));
+      Bytes.set res (!wpos)  (char64.((i lsr 18) land 0x3f));
       Bytes.set res (!wpos+1) (char64.((i lsr 12) land 0x3f));
       Bytes.set res (!wpos+2) (char64.((i lsr 6) land 0x3f));
       Bytes.set res (!wpos+3) (char64.(i land 0x3f));
@@ -96,10 +96,8 @@ let encode s =
       wpos := !wpos + 4
       done;
   (* Correct padding *)
-  for i = 1 to len - origlen do 
-    Bytes.set res (Bytes.length res - i) '=' 
-  done;
+  for i = 1 to len - origlen do Bytes.set res (Bytes.length res - i) '=' done;
   Bytes.to_string res
-(*e: function Base64.encode *)
+(*e: function [[Base64.encode]] *)
 
-(*e: ./http/base64.ml *)
+(*e: http/base64.ml *)

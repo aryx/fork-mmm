@@ -1,4 +1,4 @@
-(*s: ./retrieve/retrieve.ml *)
+(*s: retrieve/retrieve.ml *)
 (* Document retrieval *)
 open I18n
 open Printf
@@ -10,13 +10,13 @@ open Http
 open Http_headers
 open Auth
 
-(*s: type Retrieve.retrievalStatus *)
+(*s: type [[Retrieve.retrievalStatus]] *)
 type retrievalStatus =
  | Started of Www.aborter
  | InUse
-(*e: type Retrieve.retrievalStatus *)
+(*e: type [[Retrieve.retrievalStatus]] *)
 
-(*s: type Retrieve.behaviour *)
+(*s: type [[Retrieve.behaviour]] *)
 (* We should implement the proper behaviours for all return codes
  * defined in the HTTP/1.0 protocol draft. 
  * Return codes are HTTP specific, but since all protocols are more or
@@ -29,21 +29,21 @@ type behaviour =
  | Error of string            (* same as stop, but it's an error *)
  | Restart of (Document.handle -> Document.handle) 
    (* restart the same request, but apply transformation on the continuation *)
-(*e: type Retrieve.behaviour *)
+(*e: type [[Retrieve.behaviour]] *)
 
-(*s: constant Retrieve.http_process *)
+(*s: constant [[Retrieve.http_process]] *)
 (*
  * Provision for user (re)definition of behaviours.
  *)
 let http_process = (Hashtbl.create 37: 
    (int, Www.request -> Document.handle -> behaviour) Hashtbl.t)
-(*e: constant Retrieve.http_process *)
+(*e: constant [[Retrieve.http_process]] *)
 
-(*s: constant Retrieve.add_http_processor *)
+(*s: constant [[Retrieve.add_http_processor]] *)
 let add_http_processor = Hashtbl.add http_process
-(*e: constant Retrieve.add_http_processor *)
+(*e: constant [[Retrieve.add_http_processor]] *)
 
-(*s: function Retrieve.wrap_cache *)
+(*s: function [[Retrieve.wrap_cache]] *)
 (* What do we cache ? : text/html and text/plain in memory *)
 let wrap_cache cache dh =
   Log.debug (sprintf "Wrapping cache for %s(%d)"
@@ -66,9 +66,9 @@ let wrap_cache cache dh =
       end
     | _ -> dh
   with Not_found -> dh
-(*e: function Retrieve.wrap_cache *)
+(*e: function [[Retrieve.wrap_cache]] *)
 
-(*s: function Retrieve.http_check *)
+(*s: function [[Retrieve.http_check]] *)
 (* 
  * Dispatch according to status code
  *  retry: how to re-emit a request
@@ -108,9 +108,9 @@ let rec http_check cache retry cont wwwr dh =
       * e.g. 404 Not found, 500, ...
       *)
       cont.document_process dh
-(*e: function Retrieve.http_check *)
+(*e: function [[Retrieve.http_check]] *)
 
-(*s: function Retrieve.f *)
+(*s: function [[Retrieve.f]] *)
 (*
  * Emitting a request:
  *   we must catch here all errors due to protocols and remove the
@@ -139,7 +139,7 @@ and f request retry cont =
        Www.rem_active_cnx request.www_url;
        raise (Invalid_request (request, s))
    end
-(*e: function Retrieve.f *)
+(*e: function [[Retrieve.f]] *)
 
 
 (* In all the following, we avoid popping up dialog boxes, and use
@@ -147,20 +147,20 @@ and f request retry cont =
  * in-lined images...
  *)
 
-(*s: function Retrieve.code200 *)
+(*s: function [[Retrieve.code200]] *)
 (* 200 OK *)
 let code200 _wwwr _dh = Ok
 (* 201 Created (same as 200) *)
 (* 202 Accepted (same as 200) *)
-(*e: function Retrieve.code200 *)
+(*e: function [[Retrieve.code200]] *)
 
-(*s: function Retrieve.code204 *)
+(*s: function [[Retrieve.code204]] *)
 (* 204 No Content: we should modify the headers of the referer ? *)
 let code204 _wwwr dh =
   Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
-(*e: function Retrieve.code204 *)
+(*e: function [[Retrieve.code204]] *)
 
-(*s: function Retrieve.forward *)
+(*s: function [[Retrieve.forward]] *)
 (* 302 Moved temporarily *)
 let forward wr dh =
   try 
@@ -183,9 +183,9 @@ let forward wr dh =
        Ok
   with Not_found -> 
     Error (s_ "No Location: in forwarding header")
-(*e: function Retrieve.forward *)
+(*e: function [[Retrieve.forward]] *)
 
-(*s: function Retrieve.forward_permanent *)
+(*s: function [[Retrieve.forward_permanent]] *)
 (* 301 Moved permanently *)
 let forward_permanent wr dh =
   try
@@ -194,7 +194,7 @@ let forward_permanent wr dh =
     forward wr dh
   with Not_found -> 
     Error (s_ "No Location: in forwarding header")
-(*e: function Retrieve.forward_permanent *)
+(*e: function [[Retrieve.forward_permanent]] *)
 
 (* 304 : Response to a conditional GET, the document is not modified
 let update wr dh =
@@ -203,12 +203,12 @@ let update wr dh =
 Because of recursive update, this has moved elsewhere.
 *)
 
-(*s: function Retrieve.code400 *)
+(*s: function [[Retrieve.code400]] *)
 (* 400 Bad request *)
-let _code400 _wr _dh = Error (s_ "Bad Request")
-(*e: function Retrieve.code400 *)
+let code400 _wr _dh = Error (s_ "Bad Request")
+(*e: function [[Retrieve.code400]] *)
 
-(*s: function Retrieve.ask_auth *)
+(*s: function [[Retrieve.ask_auth]] *)
 (* 401 Unauthorized *)
 let ask_auth wr dh =
   wr.www_logging (s_ "Checking authentication");
@@ -232,9 +232,9 @@ let ask_auth wr dh =
        auth_port = port;
        auth_dir = dir;
        auth_realm = challenge.challenge_realm}
-(*e: function Retrieve.ask_auth *)
+(*e: function [[Retrieve.ask_auth]] *)
 
-(*s: function Retrieve.unauthorized *)
+(*s: function [[Retrieve.unauthorized]] *)
 let unauthorized wr dh =
   match ask_auth wr dh with
     None -> (* no attempt to answer challenge, display the message *)
@@ -254,9 +254,9 @@ let unauthorized wr dh =
           Not_found -> ()
         end;
                 newdh)
-(*e: function Retrieve.unauthorized *)
+(*e: function [[Retrieve.unauthorized]] *)
 
-(*s: function Retrieve.ask_proxy_auth *)
+(*s: function [[Retrieve.ask_proxy_auth]] *)
 (* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
 let ask_proxy_auth wr dh =
@@ -270,9 +270,9 @@ let ask_proxy_auth wr dh =
        auth_port = !proxy_port;
        auth_dir = "";
        auth_realm = ""}
-(*e: function Retrieve.ask_proxy_auth *)
+(*e: function [[Retrieve.ask_proxy_auth]] *)
 
-(*s: function Retrieve.proxy_unauthorized *)
+(*s: function [[Retrieve.proxy_unauthorized]] *)
 let proxy_unauthorized wr dh =
   Log.debug "proxy_unauthorized handler";
   match ask_proxy_auth wr dh with
@@ -295,9 +295,9 @@ let proxy_unauthorized wr dh =
            Not_found -> ()
          end;
                  newdh)
-(*e: function Retrieve.proxy_unauthorized *)
+(*e: function [[Retrieve.proxy_unauthorized]] *)
 
-(*s: toplevel Retrieve._1 *)
+(*s: toplevel [[Retrieve._1]] *)
 (* 400 : proxies do return this code when they can satisfy the request,
  *       so we keep it as default (displayed)
  *)
@@ -317,5 +317,5 @@ let _ =
   ] |> List.iter (function (code, behave) -> 
      Hashtbl.add http_process code behave
   )
-(*e: toplevel Retrieve._1 *)
-(*e: ./retrieve/retrieve.ml *)
+(*e: toplevel [[Retrieve._1]] *)
+(*e: retrieve/retrieve.ml *)

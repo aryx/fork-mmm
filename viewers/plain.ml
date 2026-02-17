@@ -1,16 +1,17 @@
-(*s: ./viewers/plain.ml *)
+(*s: viewers/plain.ml *)
 open Tk
 open Unix
 open Frx_text
 open Document
+open Viewers
 open Feed
 
-(*s: class Plain.plain *)
+(*s: class [[Plain.plain]] *)
 class display_plain ((top : Widget.widget),
                      (ctx : Viewers.context),
                      (dh : Document.handle)) =
  object (self)
-  inherit Viewers.display_info () as _di  (* gives us basic features *)
+  inherit Viewers.display_info () as di  (* gives us basic features *)
 (*
   inherit Htmlw.viewer_globs (ctx, dh)
 *)
@@ -79,7 +80,7 @@ class display_plain ((top : Widget.widget),
     tw <- text;
 
     (*s: [[Plain.plain#init]] locals *)
-    let buffer : bytes = Bytes.create 2048 in
+    let buffer = Bytes.create 2048 in
     let size = 
       try Some (Http_headers.contentlength dh.dh_headers)
       with Not_found -> None (* duh *) 
@@ -174,19 +175,19 @@ class display_plain ((top : Widget.widget),
   method di_source = ()
   (*e: [[Plain.plain]] other methods or fields *)
 end
-(*e: class Plain.plain *)
+(*e: class [[Plain.plain]] *)
 
-(*s: function Plain.display_plain *)
+(*s: function [[Plain.display_plain]] *)
 (* Viewing text/plain *)
 
 let display_plain _mediapars top vcontext dh =
   let viewer = new display_plain (top,vcontext,dh) in
   viewer#init;
   Some (viewer :> Viewers.display_info)
-(*e: function Plain.display_plain *)
+(*e: function [[Plain.display_plain]] *)
 
-(*s: toplevel Plain._1 *)
+(*s: toplevel [[Plain._1]] *)
 let _ =
   Viewers.add_builtin ("text","plain") display_plain
-(*e: toplevel Plain._1 *)
-(*e: ./viewers/plain.ml *)
+(*e: toplevel [[Plain._1]] *)
+(*e: viewers/plain.ml *)

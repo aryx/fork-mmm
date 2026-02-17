@@ -1,9 +1,9 @@
-(*s: ./extensions/remove_simple_table.ml *)
+(*s: extensions/remove_simple_table.ml *)
 open Safe418mmm
 
-(*s: function Remove_simple_table.log *)
+(*s: function [[Remove_simple_table.log]] *)
 let log s = try prerr_endline s with _ -> () 
-(*e: function Remove_simple_table.log *)
+(*e: function [[Remove_simple_table.log]] *)
 
 (* an example of html filter *)
 
@@ -18,21 +18,21 @@ module Mmm = Get(Provide)
 
 open Html
 
-(*s: type Remove_simple_table.table_token *)
+(*s: type [[Remove_simple_table.table_token]] *)
 type table_token =
     ChildTable of Html.token list
   | Token of Html.token 
-(*e: type Remove_simple_table.table_token *)
+(*e: type [[Remove_simple_table.table_token]] *)
 
-(*s: type Remove_simple_table.rst_env *)
+(*s: type [[Remove_simple_table.rst_env]] *)
 type rst_env = {
     mutable tokens : table_token list;
     mutable trs : int;
     mutable tds : int 
   } 
-(*e: type Remove_simple_table.rst_env *)
+(*e: type [[Remove_simple_table.rst_env]] *)
 
-(*s: function Remove_simple_table.remove_simple_table *)
+(*s: function [[Remove_simple_table.remove_simple_table]] *)
 let remove_simple_table parentf = 
   let stack = ref [] in
 
@@ -119,10 +119,10 @@ let remove_simple_table parentf =
       tbl.tokens <- tbl.tokens @ [Token tkn]
   | _ ->  (* !stack = [] *)
       parentf tkn
-(*e: function Remove_simple_table.remove_simple_table *)
+(*e: function [[Remove_simple_table.remove_simple_table]] *)
 
-(*s: toplevel Remove_simple_table._1 *)
+(*s: toplevel [[Remove_simple_table._1]] *)
 let _ =
   Mmm.add_html_filter remove_simple_table
-(*e: toplevel Remove_simple_table._1 *)
-(*e: ./extensions/remove_simple_table.ml *)
+(*e: toplevel [[Remove_simple_table._1]] *)
+(*e: extensions/remove_simple_table.ml *)

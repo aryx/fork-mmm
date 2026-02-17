@@ -1,30 +1,33 @@
 (*s: www/lexurl.mll *)
 {
+open Lexing
+
+open Mstring
 open Mlist
 
 open Url
 
-(*s: function Lexurl.normalize_port *)
+(*s: function [[Lexurl.normalize_port]] *)
 let normalize_port = function
   | HTTP, Some 80 -> None
   | FTP, Some 21 -> None
   (* incomplete, but we don't care yet *)
   | _, p -> p
-(*e: function Lexurl.normalize_port *)
+(*e: function [[Lexurl.normalize_port]] *)
 
-(*s: function Lexurl.normalize_host *)
+(*s: function [[Lexurl.normalize_host]] *)
 (* lowercase, don't use final . in FQDN *)
 let normalize_host s = 
-  let s = String.lowercase_ascii s in
+  let s = String.lowercase s in
   let l = String.length s in
   if s.[l-1] = '.' 
   then String.sub s 0 (l-1)
   else s
-(*e: function Lexurl.normalize_host *)
+(*e: function [[Lexurl.normalize_host]] *)
 
 }
 
-(*s: function Lexurl.f *)
+(*s: function [[Lexurl.f]] *)
 (* We don't actually need all of this *)
 rule f = parse
   [ 'a'-'z' 'A'-'Z' '0'-'9' '+' '.' '-' ]+ ":" 	(* absolute url *)
@@ -37,7 +40,7 @@ rule f = parse
          } 
       in
       let protocol =
-        String.uppercase_ascii (String.sub lexeme 0 (String.length lexeme - 1)) in
+        String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
       (match protocol with
       (*s: [[Lexurl.f]] protocol cases *)
       | "HTTP" ->
@@ -137,15 +140,15 @@ rule f = parse
       result
     }
  | _ { raise (Url_Lexing ("not an URL", Lexing.lexeme_start lexbuf)) }
-(*e: function Lexurl.f *)
+(*e: function [[Lexurl.f]] *)
 
-(*s: function Lexurl.slashslash *)
+(*s: function [[Lexurl.slashslash]] *)
 and slashslash =  parse
   "//" { () } 
 | ""   { raise (Url_Lexing ("// expected", Lexing.lexeme_start lexbuf)) }
-(*e: function Lexurl.slashslash *)
+(*e: function [[Lexurl.slashslash]] *)
 	
-(*s: function Lexurl.userpass *)
+(*s: function [[Lexurl.userpass]] *)
 and userpass = parse
   (* foo:bar@, foo:@ *)
   [^ ':' '/' '@']+ ':' [^ ':' '/' '@']* '@'
@@ -162,9 +165,9 @@ and userpass = parse
       
 | ""
    { None, None }
-(*e: function Lexurl.userpass *)
+(*e: function [[Lexurl.userpass]] *)
 
-(*s: function Lexurl.hostport *)
+(*s: function [[Lexurl.hostport]] *)
 (* _ is not legal in hostnames, but some people use it. *)
 and hostport = parse
 | ['A'-'Z' 'a'-'z' '0'-'9' '.' '-' '_']+ ':' ['0'-'9']+
@@ -179,9 +182,9 @@ and hostport = parse
     { Some (normalize_host (Lexing.lexeme lexbuf)), None }
 | "" (* file:///home/... *)
     { None, None }
-(*e: function Lexurl.hostport *)
+(*e: function [[Lexurl.hostport]] *)
 
-(*s: function Lexurl.pathsearch *)
+(*s: function [[Lexurl.pathsearch]] *)
 (* /<path>?<search> *)
 and pathsearch = parse
 | "/" [^ '?']* '?' 
@@ -195,12 +198,12 @@ and pathsearch = parse
     }
 | "" 
     { None, None }
-(*e: function Lexurl.pathsearch *)
+(*e: function [[Lexurl.pathsearch]] *)
 
-(*s: functions Lexurl.xxx *)
+(*s: functions [[Lexurl.xxx]] *)
 and any = parse
   [^ '\n']*  { Some (Lexing.lexeme lexbuf) }    (* in fact any char *)
-(*x: functions Lexurl.xxx *)
+(*x: functions [[Lexurl.xxx]] *)
 and pathcomponents = parse
   [ ^ '/']* '/'
     { (fun l ->
@@ -221,37 +224,37 @@ and pathcomponents = parse
        )
     }
 | "" { (fun l -> l) }
-(*x: functions Lexurl.xxx *)
+(*x: functions [[Lexurl.xxx]] *)
 and fhost = parse
   ['A'-'Z' 'a'-'z' '0'-'9' '.' '-']+
      { Some (normalize_host (Lexing.lexeme lexbuf)) }
 | ""
      { Some "localhost" }
-(*x: functions Lexurl.xxx *)
+(*x: functions [[Lexurl.xxx]] *)
 and slashpath = parse
   "/" { any lexbuf }
 | ""  { None }
-(*e: functions Lexurl.xxx *)
+(*e: functions [[Lexurl.xxx]] *)
 
 {
 
-(*s: function Lexurl.make *)
+(*s: function [[Lexurl.make]] *)
 let make s = 
   f (Lexing.from_string s)
-(*e: function Lexurl.make *)
+(*e: function [[Lexurl.make]] *)
 
 
 
-(*s: function Lexurl.remove_dots *)
+(*s: function [[Lexurl.remove_dots]] *)
 let remove_dots s =
   let b = Ebuffer.create 32 in
   rev_do_list 
     (Ebuffer.output_string b)
     (pathcomponents (Lexing.from_string s) []);
   Ebuffer.get b
-(*e: function Lexurl.remove_dots *)
+(*e: function [[Lexurl.remove_dots]] *)
 
-(*s: function Lexurl.maken *)
+(*s: function [[Lexurl.maken]] *)
 (* Extra normalisation at lexing time 
  *  remove ../ and /. as in RFC 1630
  *  unquote %
@@ -267,13 +270,13 @@ let maken s =
   | _ -> ()
   );
   url
-(*e: function Lexurl.maken *)
+(*e: function [[Lexurl.maken]] *)
 
-(*s: function Lexurl.normalize *)
+(*s: function [[Lexurl.normalize]] *)
 let normalize url =
   let urlp = make url in
   Url.string_of urlp
-(*e: function Lexurl.normalize *)
+(*e: function [[Lexurl.normalize]] *)
 
 }
 (*e: www/lexurl.mll *)

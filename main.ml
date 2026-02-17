@@ -1,4 +1,4 @@
-(*s: ./main.ml *)
+(*s: main.ml *)
 open Common
 
 (*****************************************************************************)
@@ -13,7 +13,7 @@ open Common
 (* Helpers *)
 (*****************************************************************************)
 
-(*s: function Main.safe_loop *)
+(*s: function [[Main.safe_loop]] *)
 let rec safe_loop() =
   try
     Printexc.print Tk.mainLoop () (* prints and reraises *)
@@ -21,18 +21,18 @@ let rec safe_loop() =
   | Out_of_memory -> raise Out_of_memory
   | Sys.Break -> raise Sys.Break
   | Stack_overflow -> raise Stack_overflow
-  | _e -> 
-      flush Stdlib.stderr; 
+  | e -> 
+      flush Pervasives.stderr; 
       safe_loop()
-(*e: function Main.safe_loop *)
+(*e: function [[Main.safe_loop]] *)
        
-(*s: function Main.localize *)
+(*s: function [[Main.localize]] *)
 let localize file =
   let localized = spf "%s.%s" file !I18n.language in
   if Sys.file_exists localized 
   then localized 
   else file
-(*e: function Main.localize *)
+(*e: function [[Main.localize]] *)
 
 (*****************************************************************************)
 (* The options *)
@@ -42,12 +42,12 @@ let localize file =
 (* Main entry point *)
 (*****************************************************************************)
 
-(*s: constant Main.usage_str *)
+(*s: constant [[Main.usage_str]] *)
 let usage_str =
   "Usage: meuh <opts> <initial url>"
-(*e: constant Main.usage_str *)
+(*e: constant [[Main.usage_str]] *)
 
-(*s: function Main.main *)
+(*s: function [[Main.main]] *)
 let main () =
   (*s: [[Main.main()]] tk backends setup *)
   Error.default                    := new Tk_error.t Widget.default_toplevel;
@@ -167,9 +167,9 @@ let main () =
    * No prerequisite except Tk *)
   Frx_text.init ();
   (* Initialisations in jpf's balloon library *)
-(*  Balloon.init (); *)
+  Balloon.init ();
   (* Initialisations in jpf's GIF ANIMATION library *)
-(*  Tkaniminit.f (); *)
+  (* TODO: Tkaniminit.f (); linking problem *)
   (*e: [[Main.main()]] tk libs initialisation *)
   (*s: [[Main.main()]] local initialisation *)
   (* Local initialisations *)
@@ -229,9 +229,9 @@ let main () =
   end;
   (*e: [[Main.main()]] after event loop, if debug mode *)
   ()
-(*e: function Main.main *)
+(*e: function [[Main.main]] *)
       
-(*s: function Main.postmortem *)
+(*s: function [[Main.postmortem]] *)
 let postmortem () =
   try 
     main ()
@@ -246,10 +246,10 @@ let postmortem () =
       end;
       (*e: [[Main.main()]] after event loop, if debug mode *)
       raise e
-(*e: function Main.postmortem *)
+(*e: function [[Main.postmortem]] *)
 
-(*s: toplevel Main._1 *)
+(*s: toplevel [[Main._1]] *)
 let _ = 
   Printexc.catch postmortem ()
-(*e: toplevel Main._1 *)
-(*e: ./main.ml *)
+(*e: toplevel [[Main._1]] *)
+(*e: main.ml *)

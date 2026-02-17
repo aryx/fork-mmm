@@ -1,10 +1,10 @@
-(*s: ./gui/cci.ml *)
+(*s: gui/cci.ml *)
 open I18n
 open Tk
 open Unix
 open Hyper
 
-(*s: function Cci.handler *)
+(*s: function [[Cci.handler]] *)
 (* CCI was cool, but nobody implements it anymore. More over,
  * it's trivial to fork mmm_remote and let the protocol be managed
  * by it *)
@@ -46,9 +46,9 @@ let handler fd line =
     close fd;
     ignore (Mmm.navigator false (Lexurl.make line))
   end
-(*e: function Cci.handler *)
+(*e: function [[Cci.handler]] *)
 
-(*s: function Cci.init *)
+(*s: function [[Cci.init]] *)
 (* External requests *)
 let init () =
  let file = Mmm.user_file "remote" in
@@ -84,6 +84,6 @@ let init () =
     at_exit (fun () -> Msys.rm file)
  with e ->
    Error.f (s_ "Can't initialize %s\n%s" file (Printexc.to_string e))
-(*e: function Cci.init *)
+(*e: function [[Cci.init]] *)
 
-(*e: ./gui/cci.ml *)
+(*e: gui/cci.ml *)

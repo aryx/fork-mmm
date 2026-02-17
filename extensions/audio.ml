@@ -1,4 +1,4 @@
-(*s: ./extensions/audio.ml *)
+(*s: extensions/audio.ml *)
 open Safe418mmm
 open Tk
 open Hyper
@@ -11,7 +11,7 @@ module Provide = struct
 module Mmm = Get(Provide)
 
 
-(*s: function Audio.fake_embed *)
+(*s: function [[Audio.fake_embed]] *)
 (* Defines embedded viewer for audio types as re-running the document *)
 let fake_embed media_pars w ctx dh =
   Document.dclose true dh;
@@ -24,9 +24,9 @@ let fake_embed media_pars w ctx dh =
       pack [Label.create w [Text "No navigation given to us"]][]
   | e ->
       pack [Label.create w [Text (Printexc.to_string e)]][]
-(*e: function Audio.fake_embed *)
-(*s: toplevel Audio._1 *)
+(*e: function [[Audio.fake_embed]] *)
+(*s: toplevel [[Audio._1]] *)
 let _ =
   Mmm.add_embedded_viewer ("audio", "*") fake_embed
-(*e: toplevel Audio._1 *)
-(*e: ./extensions/audio.ml *)
+(*e: toplevel [[Audio._1]] *)
+(*e: extensions/audio.ml *)

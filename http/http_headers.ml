@@ -1,14 +1,14 @@
-(*s: ./http/http_headers.ml *)
+(*s: http/http_headers.ml *)
 open Printf
 open Str
 open Mstring
 open Messages
 
-(*s: exception Http_headers.Invalid_HTTP_header *)
+(*s: exception [[Http_headers.Invalid_HTTP_header]] *)
 exception Invalid_HTTP_header of string
-(*e: exception Http_headers.Invalid_HTTP_header *)
+(*e: exception [[Http_headers.Invalid_HTTP_header]] *)
 
-(*s: function Http_headers.parse_status *)
+(*s: function [[Http_headers.parse_status]] *)
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
 let parse_status s =
  if String.length s > 5 && String.sub s 0 5 = "HTTP/" 
@@ -29,10 +29,10 @@ let parse_status s =
    with Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
  else (* 0.9, dammit *)
    raise Not_found
-(*e: function Http_headers.parse_status *)
+(*e: function [[Http_headers.parse_status]] *)
 
 (* Request-Line = Method SP Request-URI SP HTTP-Version CRLF *)
-(*s: function Http_headers.parse_request *)
+(*s: function [[Http_headers.parse_request]] *)
 (* CHECK: Normally the URI should be encoded (no spaces ?) *)
 let parse_request s =
  try
@@ -52,10 +52,10 @@ let parse_request s =
   | _ -> raise (Invalid_HTTP_header "Request-Line")
  with
    Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
-(*e: function Http_headers.parse_request *)
+(*e: function [[Http_headers.parse_request]] *)
 
 
-(*s: function Http_headers.get_header *)
+(*s: function [[Http_headers.get_header]] *)
 (* [get_header field-name headers]
  *   returns, if it exists the field value of the header field-name
  * This is a bit costly though, but we keep headers as plain strings.
@@ -73,9 +73,9 @@ let get_header field_name =
       else search l 
   in
   search
-(*e: function Http_headers.get_header *)
+(*e: function [[Http_headers.get_header]] *)
 
-(*s: function Http_headers.get_multi_header *)
+(*s: function [[Http_headers.get_multi_header]] *)
 (* [get_multi_header field_name headers]
  *   get all values of the header
  *)
@@ -89,16 +89,16 @@ let get_multi_header field_name =
     then (String.sub s (size + 2) (String.length s - size - 2)) :: search l
     else search l in
   search
-(*e: function Http_headers.get_multi_header *)
+(*e: function [[Http_headers.get_multi_header]] *)
 
-(*s: function Http_headers.header_type *)
+(*s: function [[Http_headers.header_type]] *)
 let header_type s =
   match Str.bounded_split (regexp "[:]") s 2 with
   | [t;_] -> String.lowercase_ascii t
   | _ -> raise (Invalid_HTTP_header s)
-(*e: function Http_headers.header_type *)
+(*e: function [[Http_headers.header_type]] *)
 
-(*s: function Http_headers.merge_headers *)
+(*s: function [[Http_headers.merge_headers]] *)
 (* Keep only unmodified headers *)
 let merge_headers oldh newh =
   let rec filter acc = function
@@ -109,7 +109,7 @@ let merge_headers oldh newh =
       else
        try
         let t = header_type s in
-        let _dTODO = get_header t newh in
+        let d = get_header t newh in
       filter acc l
        with
           Invalid_HTTP_header _ -> 
@@ -117,9 +117,9 @@ let merge_headers oldh newh =
               filter acc l
         | Not_found -> filter (s::acc) l in
   (filter [] oldh) @ newh
-(*e: function Http_headers.merge_headers *)
+(*e: function [[Http_headers.merge_headers]] *)
 
-(*s: function Http_headers.remove_headers *)
+(*s: function [[Http_headers.remove_headers]] *)
 let remove_headers hs names =
   Log.debug "remove headers";
   let rec rem acc = function
@@ -135,30 +135,30 @@ let remove_headers hs names =
           rem acc l
 
    in rem [] hs
-(*e: function Http_headers.remove_headers *)
+(*e: function [[Http_headers.remove_headers]] *)
 
-(*s: function Http_headers.status_msg *)
+(*s: function [[Http_headers.status_msg]] *)
 let rec status_msg = function
     [] -> raise Not_found
   | s::l -> if String.length s >= 5 (* "HTTP/" *)
           && (String.sub s 0 5) = "HTTP/"
          then (parse_status s).status_message
          else status_msg l
-(*e: function Http_headers.status_msg *)
+(*e: function [[Http_headers.status_msg]] *)
 
 
-(*s: functions Http_headers.xxx get_header applications *)
+(*s: functions [[Http_headers.xxx]] [[get_header]] applications *)
 let contenttype = 
   get_header "content-type"
-(*x: functions Http_headers.xxx get_header applications *)
+(*x: functions [[Http_headers.xxx]] [[get_header]] applications *)
 let contentlength l = 
   let h = get_header "content-length" l in
   try int_of_string h 
   with _ -> raise Not_found
-(*x: functions Http_headers.xxx get_header applications *)
+(*x: functions [[Http_headers.xxx]] [[get_header]] applications *)
 let contentencoding = 
   get_header "content-encoding"
-(*e: functions Http_headers.xxx get_header applications *)
+(*e: functions [[Http_headers.xxx]] [[get_header]] applications *)
 let location = 
   get_header "location"
 let challenge = 
@@ -173,20 +173,20 @@ let expires hs =
    | _ -> Log.f ("warning: Can't parse Expires header ");
       None 
 
-(*s: constant Http_headers.is_contentencoding *)
+(*s: constant [[Http_headers.is_contentencoding]] *)
 let is_contentencoding =
   let l = String.length "Content-Encoding" in
   (fun s ->
        String.length s >= l + 2
     && String.lowercase_ascii (String.sub s 0 (l+2)) = "content-encoding: ")
-(*e: constant Http_headers.is_contentencoding *)
+(*e: constant [[Http_headers.is_contentencoding]] *)
 
-(*s: function Http_headers.rem_contentencoding *)
+(*s: function [[Http_headers.rem_contentencoding]] *)
 let rec rem_contentencoding = function
    [] -> []
  | h::l when is_contentencoding h -> l
  | x::l -> x :: rem_contentencoding l
-(*e: function Http_headers.rem_contentencoding *)
+(*e: function [[Http_headers.rem_contentencoding]] *)
 
 
 
@@ -194,42 +194,42 @@ let rec rem_contentencoding = function
  * Details for specific headers
  *)
 
-(*s: type Http_headers.authScheme *)
+(*s: type [[Http_headers.authScheme]] *)
 (* Authorisation headers *)
 type authScheme =
     AuthBasic
   | AuthExtend of string
-(*e: type Http_headers.authScheme *)
+(*e: type [[Http_headers.authScheme]] *)
 
-(*s: type Http_headers.authChallenge *)
+(*s: type [[Http_headers.authChallenge]] *)
 type authChallenge =
     { challenge_scheme : authScheme;
       challenge_realm : string;
       challenge_params: (string * string) list
     }
-(*e: type Http_headers.authChallenge *)
+(*e: type [[Http_headers.authChallenge]] *)
 
-(*s: type Http_headers.media_parameter *)
+(*s: type [[Http_headers.media_parameter]] *)
 (* Media types *)
 type media_parameter = string * string
-(*e: type Http_headers.media_parameter *)
-(*s: type Http_headers.media_type *)
+(*e: type [[Http_headers.media_parameter]] *)
+(*s: type [[Http_headers.media_type]] *)
 type media_type = string * string
-(*e: type Http_headers.media_type *)
+(*e: type [[Http_headers.media_type]] *)
 
-(*s: type Http_headers.hint *)
+(*s: type [[Http_headers.hint]] *)
 (* Associating MIME type or Content-Encoding with file/URI suffix *)
 type hint =
   | ContentType     of Messages.header
   | ContentEncoding of Messages.header
-(*e: type Http_headers.hint *)
+(*e: type [[Http_headers.hint]] *)
 
-(*s: constant Http_headers.suffixes *)
+(*s: constant [[Http_headers.suffixes]] *)
 let suffixes =
    (Hashtbl.create 101 : (string, hint) Hashtbl.t)
-(*e: constant Http_headers.suffixes *)
+(*e: constant [[Http_headers.suffixes]] *)
 
-(*s: function Http_headers.read_suffix_file *)
+(*s: function [[Http_headers.read_suffix_file]] *)
 (* In the file, we select ContentType if there is a slash,
    ContentEncoding otherwise *)
 let read_suffix_file f =
@@ -257,9 +257,9 @@ let read_suffix_file f =
      done
    with End_of_file -> close_in ic
  with Sys_error _ ->  ()
-(*e: function Http_headers.read_suffix_file *)
+(*e: function [[Http_headers.read_suffix_file]] *)
 
-(*s: constant Http_headers.default_hints *)
+(*s: constant [[Http_headers.default_hints]] *)
 let default_hints = [ 
   "html",	ContentType  "Content-Type: text/html";
   "htm",	ContentType  "Content-Type: text/html";
@@ -296,16 +296,16 @@ let default_hints = [
    "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
    (*e: [[Http_headers.suffixes]] elements *)
 ]
-(*e: constant Http_headers.default_hints *)
+(*e: constant [[Http_headers.default_hints]] *)
 
 (* Even if we don't have a suffix file... *)
-(*s: toplevel Http_headers._1 *)
+(*s: toplevel [[Http_headers._1]] *)
 (* If the suffix file says otherwise, it will have priority *)
 let _ = 
   default_hints |> List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
-(*e: toplevel Http_headers._1 *)
+(*e: toplevel [[Http_headers._1]] *)
 
-(*s: function Http_headers.hints *)
+(*s: function [[Http_headers.hints]] *)
 let hints path =
   (* Get the url suffix *)
   let sufx = Mstring.get_suffix path in
@@ -330,15 +330,15 @@ let hints path =
         with Not_found -> [e] (* no type *)
       end
   with Not_found -> [] (* no hint ... *)
-(*e: function Http_headers.hints *)
+(*e: function [[Http_headers.hints]] *)
 
 
 
-(*s: constant Http_headers.status_messages *)
+(*s: constant [[Http_headers.status_messages]] *)
 (* Messages in Status-Line *)
 let status_messages = Hashtbl.create 101
-(*e: constant Http_headers.status_messages *)
-(*s: toplevel Http_headers._2 *)
+(*e: constant [[Http_headers.status_messages]] *)
+(*s: toplevel [[Http_headers._2]] *)
 let _ = 
   [ 200, "OK";
 
@@ -363,15 +363,15 @@ let _ =
     (* These are proposed for HTTP1.1 *)
     407, "Proxy Authentication Required"
   ] |> List.iter (function (code, msg) -> Hashtbl.add status_messages code msg)
-(*e: toplevel Http_headers._2 *)
+(*e: toplevel [[Http_headers._2]] *)
 
-(*s: function Http_headers.status_message *)
+(*s: function [[Http_headers.status_message]] *)
 let status_message code =  
   try Hashtbl.find status_messages code
   with Not_found -> " "
-(*e: function Http_headers.status_message *)
+(*e: function [[Http_headers.status_message]] *)
 
-(*s: function Http_headers.http_status *)
+(*s: function [[Http_headers.http_status]] *)
 (* A typical status line *)
 let http_status code =
   {
@@ -379,7 +379,7 @@ let http_status code =
    status_code = code;
    status_message = status_message code
   }
-(*e: function Http_headers.http_status *)
+(*e: function [[Http_headers.http_status]] *)
 
 
-(*e: ./http/http_headers.ml *)
+(*e: http/http_headers.ml *)

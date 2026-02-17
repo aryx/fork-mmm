@@ -1,18 +1,18 @@
-(*s: ./viewers/decoders.ml *)
+(*s: viewers/decoders.ml *)
 open Unix
 open Document
 open Feed
 open Http_headers
 
-(*s: constant Decoders.decoders *)
+(*s: constant [[Decoders.decoders]] *)
 (* Insert a decoding if necessary.
  * We don't do it in http, since we don't want do decompress when we
  * save for example.
  *)
 let decoders = Hashtbl.create 37
-(*e: constant Decoders.decoders *)
+(*e: constant [[Decoders.decoders]] *)
 
-(*s: function Decoders.gzip *)
+(*s: function [[Decoders.gzip]] *)
 (* Note: we must use the feed interface to read from the old dh,
  * and not read directly from the feed_internal file descriptor, because
  * the feed might implement side effects (such as caching).
@@ -31,7 +31,7 @@ let gzip dh =
       dup2 gread stdin; dup2 gwrite stdout;
       Munix.execvp "gunzip" [| "gunzip"; "-c" |]
       (* dh (* fake *) *)
-  | _n ->  
+  | n ->  
       close gread; close gwrite;
      (* it is safe to close feed because the son has a copy *)
       let newdh =
@@ -40,7 +40,7 @@ let gzip dh =
          document_feed = Feed.of_fd mread;
        }
       in
-      let buffer : bytes = Bytes.create 4096 in
+      let buffer = String.create 4096 in
       let rec copy () =
       try
         let n = dh.document_feed.feed_read buffer 0 4096 in
@@ -54,35 +54,35 @@ let gzip dh =
           dh.document_feed.feed_schedule copy)
         end
       with
-        Unix_error(_e,_,_) -> dclose true dh; close mwrite
+        Unix_error(e,_,_) -> dclose true dh; close mwrite
       in
       dh.document_feed.feed_schedule copy;
       newdh
-(*e: function Decoders.gzip *)
+(*e: function [[Decoders.gzip]] *)
   
 
-(*s: toplevel Decoders._1 *)
+(*s: toplevel [[Decoders._1]] *)
 let _ =  
   [ "COMPRESS"   , gzip;
     "X-COMPRESS" , gzip;
     "GZIP"       , gzip;
     "X-GZIP"     , gzip
   ] |> List.iter (fun (s,t) -> Hashtbl.add decoders s t)
-(*e: toplevel Decoders._1 *)
+(*e: toplevel [[Decoders._1]] *)
 
-(*s: constant Decoders.add *)
+(*s: constant [[Decoders.add]] *)
 let add = Hashtbl.add decoders
-(*e: constant Decoders.add *)
+(*e: constant [[Decoders.add]] *)
 
-(*s: function Decoders.insert *)
+(*s: function [[Decoders.insert]] *)
 let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
   if dh.document_status >= 400 then dh else
   try
-    Hashtbl.find decoders (String.uppercase_ascii (contentencoding dh.dh_headers)) dh
+    Hashtbl.find decoders (String.uppercase (contentencoding dh.dh_headers)) dh
   with
     Not_found -> dh
   | Unix_error(_,_,_) -> dh
-(*e: function Decoders.insert *)
+(*e: function [[Decoders.insert]] *)
 
-(*e: ./viewers/decoders.ml *)
+(*e: viewers/decoders.ml *)

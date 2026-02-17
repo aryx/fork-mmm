@@ -1,6 +1,8 @@
-(*s: ./http/lexheaders.mll *)
+(*s: http/lexheaders.mll *)
 {
 open Http_headers
+open Www
+open Lexing
 (* 
     CHAR = ['\000'-'\126']
     CTL  = ['\000'-'\031' '\127']
@@ -13,7 +15,7 @@ open Http_headers
 
 rule challenge = parse
  | [^ ' ' '\t' '\r' '\n']+
-    { let scheme_name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
+    { let scheme_name = String.lowercase (Lexing.lexeme lexbuf) in
       let scheme = 
     match scheme_name with
       "basic" -> AuthBasic
@@ -37,16 +39,16 @@ and quotedstring = parse
  
  | _ { raise (Invalid_HTTP_header "quotedstring expected") }
 
-(*s: function Lexheaders.token *)
+(*s: function [[Lexheaders.token]] *)
 and token = parse
    [^ '\127'-'\255' 
       '\000'-'\031'
       '(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' ' ' '\t']+
       { Lexing.lexeme lexbuf }
   | _ { raise (Invalid_HTTP_header "token expected") }
-(*e: function Lexheaders.token *)
+(*e: function [[Lexheaders.token]] *)
 
-(*s: function Lexheaders.value *)
+(*s: function [[Lexheaders.value]] *)
 (* value = token | quoted-string *)
 and value = parse
 | '"' [^ '"' '\000'-'\031' '\127'-'\255' ]* '"'
@@ -58,19 +60,19 @@ and value = parse
       '(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' ' ' '\t']+
    { Lexing.lexeme lexbuf }
 | _ { raise (Invalid_HTTP_header "value expected") }
-(*e: function Lexheaders.value *)
+(*e: function [[Lexheaders.value]] *)
  
 (* LWS *)
 and lws = parse
    ("\r\n")? [' ' '\t']+ { () }
   | _ { raise (Invalid_HTTP_header "LWS expected")}
 
-(*s: function Lexheaders.starlws *)
+(*s: function [[Lexheaders.starlws]] *)
 (* *LWS *)
 and starlws = parse
    ("\r\n")? [' ' '\t']+ { starlws lexbuf }
   | "" { () }   
-(*e: function Lexheaders.starlws *)
+(*e: function [[Lexheaders.starlws]] *)
 
 and realm = parse
    ['R' 'r']['E' 'e']['A' 'a']['L' 'l']['M' 'm']'='
@@ -89,62 +91,62 @@ and authparam = parse
     }
  | "" { [] }
 
-(*s: function Lexheaders.lit_equal *)
+(*s: function [[Lexheaders.lit_equal]] *)
 and lit_equal = parse
 | '=' { () }
 |  _  { raise (Invalid_HTTP_header "= expected") }
-(*e: function Lexheaders.lit_equal *)
+(*e: function [[Lexheaders.lit_equal]] *)
 
 and lit_slash = parse
     '/' { () }
  |  _  { raise (Invalid_HTTP_header "= expected") }
 
 
-(*s: function Lexheaders.media_parameters *)
+(*s: function [[Lexheaders.media_parameters]] *)
 and media_parameters = parse
 | "" { [] }
 | ";" { 
      let _ = starlws lexbuf in
-     let attr = String.lowercase_ascii (token lexbuf) in
+     let attr = String.lowercase (token lexbuf) in
      let _ = lit_equal lexbuf in (* no space allowed *)
      let v = value lexbuf in
      let _ = starlws lexbuf in
      let rest = media_parameters lexbuf in
      (attr,v)::rest
  }
-(*e: function Lexheaders.media_parameters *)
+(*e: function [[Lexheaders.media_parameters]] *)
 
-(*s: function Lexheaders.media_type lexer *)
+(*s: function [[Lexheaders.media_type]] lexer *)
 (* ex: token/token *)
 and media_type = parse
 | [' ' '\t']+ {
       let _ = starlws lexbuf in
-      let typ = String.lowercase_ascii (token lexbuf) in
+      let typ = String.lowercase (token lexbuf) in
       let _ = lit_slash lexbuf in
-      let subtyp = String.lowercase_ascii (token lexbuf) in
+      let subtyp = String.lowercase (token lexbuf) in
       let _ = starlws lexbuf in (* word based *)
       typ, subtyp
     }
 
 | "" {
       let _ = starlws lexbuf in
-      let typ = String.lowercase_ascii (token lexbuf) in
+      let typ = String.lowercase (token lexbuf) in
       let _ = lit_slash lexbuf in
-      let subtyp = String.lowercase_ascii (token lexbuf) in
+      let subtyp = String.lowercase (token lexbuf) in
       let _ = starlws lexbuf in (* word based *)
         typ, subtyp
       }
-(*e: function Lexheaders.media_type lexer *)
+(*e: function [[Lexheaders.media_type]] lexer *)
 
 {
 
-(*s: function Lexheaders.media_type *)
+(*s: function [[Lexheaders.media_type]] *)
 let media_type s =
   let lexbuf = Lexing.from_string s in
   let mtyp = media_type lexbuf in
   let l = media_parameters lexbuf in
   mtyp, l 
-(*e: function Lexheaders.media_type *)
+(*e: function [[Lexheaders.media_type]] *)
 
 }
-(*e: ./http/lexheaders.mll *)
+(*e: http/lexheaders.mll *)

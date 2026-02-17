@@ -1,20 +1,24 @@
-(*s: ./retrieve/img.ml *)
+(*s: retrieve/img.ml *)
 (* Image cache and scheduled image downloading *)
 open Printf
+open Unix
 open Tk
 open Tkanim
+open Mstring
 open Document
 open Www
+open Hyper
+open Url
 open Http_headers
 
-(*s: constant Img.gif_anim_load *)
+(*s: constant [[Img.gif_anim_load]] *)
 (* Images are a special case of embedded data, because Tk caches them
    internally. Thus, we attempt to maintain our own cache logic above
    Tk's one 
  *)
 
 let gif_anim_load = ref false
-(*e: constant Img.gif_anim_load *)
+(*e: constant [[Img.gif_anim_load]] *)
 
 module ImageData =
   struct
@@ -82,7 +86,7 @@ module ImageData =
              referer.document_stamp);
       let delete_them = ref [] in
       Hashtbl.iter
-    (fun img (_o, refs, _) ->
+    (fun img (o, refs, _) ->
         refs := DocumentIDSet.remove referer !refs;
         if DocumentIDSet.is_empty !refs then
          delete_them := img :: !delete_them)
@@ -179,20 +183,20 @@ module ImageData =
 module ImageScheduler = Scheduler.Make(ImageData)
 
 
-(*s: toplevel Img._1 *)
+(*s: toplevel [[Img._1]] *)
 (* Advertise ourselfs to the internal cache *)
 let _ =
  Cache.cutlinks := ImageData.remove_reference :: !Cache.cutlinks
-(*e: toplevel Img._1 *)
+(*e: toplevel [[Img._1]] *)
 
-(*s: function Img.get *)
+(*s: function [[Img.get]] *)
 let get did link cont prog =
   let wr = Www.make link in
   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
   ImageScheduler.add_request wr did cont prog
-(*e: function Img.get *)
+(*e: function [[Img.get]] *)
 
-(*s: function Img.update *)
+(*s: function [[Img.update]] *)
 let update url =
   try
     let (oldi,refs,headers) = ImageData.direct_cache_access url in
@@ -205,7 +209,7 @@ let update url =
        :: wr.www_headers;
 
     ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
-      (fun _url i -> 
+      (fun url i -> 
     match oldi, i with
       Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
         Imagephoto.copy oldn newn []
@@ -215,6 +219,6 @@ let update url =
   with
     Not_found ->  (* either not in cache (bogus) or no date *)
       ()
-(*e: function Img.update *)
+(*e: function [[Img.update]] *)
 
-(*e: ./retrieve/img.ml *)
+(*e: retrieve/img.ml *)

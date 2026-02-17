@@ -1,10 +1,10 @@
-(*s: ./commons/condition.ml *)
+(*s: commons/condition.ml *)
 (* Conditions *)
 open Common
 
-(*s: type Condition.t *)
+(*s: type [[Condition.t]] *)
 type t = string
-(*e: type Condition.t *)
+(*e: type [[Condition.t]] *)
 
 type condition_backend = {
   create: t -> unit;
@@ -14,10 +14,10 @@ type condition_backend = {
 }
 
 let default_backend () = {
-  create = (fun _s -> ());
-  set = (fun _s -> ());
-  wait = (fun _s -> ());
-  free = (fun _s -> ());
+  create = (fun s -> ());
+  set = (fun s -> ());
+  wait = (fun s -> ());
+  free = (fun s -> ());
 }
 let backend = ref (default_backend ())
   
@@ -37,4 +37,4 @@ let wait s =
 
 let free s = 
   !backend.free s
-(*e: ./commons/condition.ml *)
+(*e: commons/condition.ml *)

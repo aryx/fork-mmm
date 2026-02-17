@@ -1,6 +1,6 @@
-(*s: ./display/fonts.ml *)
+(*s: display/fonts.ml *)
 open I18n
-
+open Tk80
 open Tk
 open Jpf_font
 
@@ -26,12 +26,12 @@ type fontInfo =
 type fontAttrs = fontInfo list
 (*e: type Fonts.fontAttrs (./display/fonts.ml) *)
 
-(*s: function Fonts.copy *)
+(*s: function [[Fonts.copy]] *)
 let copy fd = { pattern= Jpf_font.copy fd.pattern;
         pxlsz= fd.pxlsz }
-(*e: function Fonts.copy *)
+(*e: function [[Fonts.copy]] *)
 
-(*s: function Fonts.print_fontAttrs *)
+(*s: function [[Fonts.print_fontAttrs]] *)
 let print_fontAttrs attrs =
   List.iter (function 
     Family s -> prerr_string ("family: " ^ s ^ " ")
@@ -40,10 +40,10 @@ let print_fontAttrs attrs =
   | FontIndex i -> prerr_string ("index: " ^ string_of_int i ^ " ")
   | FontDelta i -> prerr_string ("delta: " ^ string_of_int i ^ " ")) attrs;
   prerr_endline "";
-(*e: function Fonts.print_fontAttrs *)
+(*e: function [[Fonts.print_fontAttrs]] *)
 ;;
 
-(*s: function Fonts.merge *)
+(*s: function [[Fonts.merge]] *)
 (* Merge font attributes in a fontDesc *)
 let merge fd fil =
   let newfd = copy fd in
@@ -56,7 +56,7 @@ let merge fd fil =
     )
     fil;
   newfd
-(*e: function Fonts.merge *)
+(*e: function [[Fonts.merge]] *)
 
 (* HTML3.2 specifies that absolute font size are ranging from 1 to 7, 
    the default basefont, used for "normal" text, being 3.
@@ -74,15 +74,15 @@ let merge fd fil =
    mapping the base. The lowest reasonable font is 8
  *)
 
-(*s: constant Fonts.default_sizes *)
+(*s: constant [[Fonts.default_sizes]] *)
 (* List of authorized pixel sizes *)
 let default_sizes = ["8"; "10"; "12"; "14"; "15"; "16"; "18"; "20"; "24"; "26"; "28"]
-(*e: constant Fonts.default_sizes *)
-(*s: constant Fonts.sizes *)
+(*e: constant [[Fonts.default_sizes]] *)
+(*s: constant [[Fonts.sizes]] *)
 let sizes = ref (Array.of_list (List.map int_of_string default_sizes))
-(*e: constant Fonts.sizes *)
+(*e: constant [[Fonts.sizes]] *)
 
-(*s: function Fonts.get_index *)
+(*s: function [[Fonts.get_index]] *)
 (* Given a size in pixels, find out the corresponding index array 
    (which is the max of defined sized lower than argument)
  *)
@@ -95,23 +95,23 @@ let get_index size =
   in 
   let idx = walk 0 in
   if idx < 0 then 0 else idx
-(*e: function Fonts.get_index *)
+(*e: function [[Fonts.get_index]] *)
 
 
-(*s: constant Fonts.base_index *)
+(*s: constant [[Fonts.base_index]] *)
 let base_index = ref (get_index 15)
-(*e: constant Fonts.base_index *)
+(*e: constant [[Fonts.base_index]] *)
 
-(*s: function Fonts.font_index *)
+(*s: function [[Fonts.font_index]] *)
 (* Convert a pxlsz to an absolute font 
  * (the base_index is always the absolute font 3 byte defintion of HTML)
  *)
 let font_index pxlsz =
   (get_index pxlsz) - (!base_index - 3)
-(*e: function Fonts.font_index *)
+(*e: function [[Fonts.font_index]] *)
 
 
-(*s: function Fonts.pxlsz *)
+(*s: function [[Fonts.pxlsz]] *)
 (* Convert an absolute font to a pxlsz *)
 let pxlsz absfont =
   let font_idx = absfont + (!base_index - 3) in
@@ -119,10 +119,10 @@ let pxlsz absfont =
     if font_idx < 0 then 0
     else if font_idx >= Array.length !sizes then Array.length !sizes - 1
     else font_idx in
-(*e: function Fonts.pxlsz *)
+(*e: function [[Fonts.pxlsz]] *)
    !sizes.(safe_idx)
 
-(*s: constant Fonts.tags *)
+(*s: constant [[Fonts.tags]] *)
 (*
  * Tag names for fonts (this table is shared by all widgets)
  * We share tags for fonts, but this requires combinations of all
@@ -133,15 +133,15 @@ let pxlsz absfont =
 
 
 let tags = Hashtbl.create 37
-(*e: constant Fonts.tags *)
+(*e: constant [[Fonts.tags]] *)
 
-(*s: constant Fonts.default *)
+(*s: constant [[Fonts.default]] *)
 let default = ref 
     { pattern= Jpf_font.copy Jpf_font.empty_pattern;
       pxlsz = 3 }
-(*e: constant Fonts.default *)
+(*e: constant [[Fonts.default]] *)
 
-(*s: function Fonts.compute_tag *)
+(*s: function [[Fonts.compute_tag]] *)
 (* For a given fontDesc, return the name of the tags and its attributes *)
 let rec compute_tag fd =
   let font_key = 
@@ -175,11 +175,11 @@ let rec compute_tag fd =
      in
      Hashtbl.add tags font_key tagdesc;
      tagdesc
-(*e: function Fonts.compute_tag *)
+(*e: function [[Fonts.compute_tag]] *)
 
 
 
-(*s: function Fonts.reset *)
+(*s: function [[Fonts.reset]] *)
 (* Mapping with preferences : *fontPixels is also used to define our array 
  * We use a mute preference handler to synchronize : this handler is called
  * after the loading of the resource file.
@@ -202,5 +202,5 @@ let reset () =
     base_index := get_index (
        try int_of_string (List.nth tokens 6)
        with Failure "int_of_string" | Failure "nth" -> 15)
-(*e: function Fonts.reset *)
-(*e: ./display/fonts.ml *)
+(*e: function [[Fonts.reset]] *)
+(*e: display/fonts.ml *)

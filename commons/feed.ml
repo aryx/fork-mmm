@@ -1,10 +1,10 @@
-(*s: ./commons/feed.ml *)
-(*s: type Feed.internal *)
+(*s: commons/feed.ml *)
+(*s: type [[Feed.internal]] *)
 (* An abstract notion of connection *)
 type internal = Unix.file_descr
-(*e: type Feed.internal *)
+(*e: type [[Feed.internal]] *)
 
-(*s: type Feed.t *)
+(*s: type [[Feed.t]] *)
 type t = {
   feed_read : bytes -> int -> int -> int;
 
@@ -15,9 +15,9 @@ type t = {
 
   feed_internal : internal  
 }
-(*e: type Feed.t *)
+(*e: type [[Feed.t]] *)
 
-(*s: function Feed.of_fd *)
+(*s: function [[Feed.of_fd]] *)
 (* We should distinguish internal/external connections *)
 let of_fd fd =
   let is_open = ref true in
@@ -73,7 +73,7 @@ let of_fd fd =
       then Log.f "ERROR: feed is closed, can't schedule"
       else 
        (match !action with
-        | Some _f -> (* we are already scheduled ! *)
+        | Some f -> (* we are already scheduled ! *)
             Log.f "Warning: feed already scheduled"
         | None ->
             action := Some f;
@@ -83,7 +83,7 @@ let of_fd fd =
 
    feed_unschedule = (fun () -> 
      match !action with
-     | Some _f -> 
+     | Some f -> 
          Low.remove_fileinput fd; 
          action := None
      | None -> 
@@ -105,7 +105,7 @@ let of_fd fd =
       if !is_open 
       then
         (match !action with 
-        | Some _f -> Log.f "ERROR: feed is scheduled, can't close"
+        | Some f -> Log.f "ERROR: feed is scheduled, can't close"
         | None -> 
             Unix.close fd;
             is_open := false;
@@ -115,11 +115,11 @@ let of_fd fd =
 
     feed_internal = fd
    }
-(*e: function Feed.of_fd *)
+(*e: function [[Feed.of_fd]] *)
  
-(*s: function Feed.internal *)
+(*s: function [[Feed.internal]] *)
 let internal feed = 
   feed.feed_internal
-(*e: function Feed.internal *)
+(*e: function [[Feed.internal]] *)
 
-(*e: ./commons/feed.ml *)
+(*e: commons/feed.ml *)

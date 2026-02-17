@@ -1,25 +1,25 @@
-(*s: ./display/html_disp.ml *)
+(*s: display/html_disp.ml *)
 (* HTML Display Machine *)
 open Printf
 open Html
 open Htmlfmt
 open Hyper
-
+open Www
 open Document
 open Maps
 open Embed
-
+open Viewers
 open Fonts
 
-(*s: constant Html_disp.verbose *)
+(*s: constant [[Html_disp.verbose]] *)
 let verbose = ref false
-(*e: constant Html_disp.verbose *)
-(*s: constant Html_disp.attempt_tables *)
+(*e: constant [[Html_disp.verbose]] *)
+(*s: constant [[Html_disp.attempt_tables]] *)
 (* Preference settings *)
 let attempt_tables = ref false
-(*e: constant Html_disp.attempt_tables *)
+(*e: constant [[Html_disp.attempt_tables]] *)
 
-(*s: function Html_disp.lowernumber *)
+(*s: function [[Html_disp.lowernumber]] *)
 (* SMOP Utilities for OL numbering *)
 let lowernumber n =
   let rec f cur n = 
@@ -27,37 +27,37 @@ let lowernumber n =
     else  f (String.make 1 (Char.chr (97 + n mod 26)) ^ cur) (n / 26 - 1)
   in 
   if n <= 0 then "*" else f "" (n-1)
-(*e: function Html_disp.lowernumber *)
+(*e: function [[Html_disp.lowernumber]] *)
 
-(*s: function Html_disp.uppernumber *)
+(*s: function [[Html_disp.uppernumber]] *)
 let uppernumber n =
   let rec f cur n = 
     if n < 0 then cur
     else  f (String.make 1 (Char.chr (64 + n mod 26)) ^ cur) (n / 26 - 1)
   in
   if n <= 0 then "*" else f "" (n-1)
-(*e: function Html_disp.uppernumber *)
+(*e: function [[Html_disp.uppernumber]] *)
 
-(*s: constant Html_disp.romans *)
+(*s: constant [[Html_disp.romans]] *)
 let romans = [|
   [| ""; "I"; "II"; "III"; "IV"; "V"; "VI"; "VII"; "VIII"; "IX" |];
   [| ""; "X"; "XX"; "XXX"; "XL"; "L"; "LX"; "LXX"; "LXXX"; "XC" |];
   [| ""; "C"; "CC"; "CCC"; "CD"; "D"; "DC"; "DCC"; "DCCC"; "CM" |];
   [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
   |]
-(*e: constant Html_disp.romans *)
+(*e: constant [[Html_disp.romans]] *)
 
-(*s: function Html_disp.roman *)
+(*s: function [[Html_disp.roman]] *)
 let roman n =
   let rec r cur level n =
     if n = 0 then cur
     else if level > 3 then "*" ^ cur
     else r (romans.(level).(n mod 10) ^ cur) (succ level)  (n / 10)
   in if n <= 0 then "*" else r "" 0 n
-(*e: function Html_disp.roman *)
+(*e: function [[Html_disp.roman]] *)
 
-(*s: class Html_disp.imgloader *)
-class  virtual imgloader (_unit : unit) =
+(*s: class [[Html_disp.imgloader]] *)
+class  virtual imgloader (unit : unit) =
  object
   (*s: [[Html_disp.imgloader]] virtual fields signatures *)
   method virtual add_image : Embed.embobject -> unit	 (* add one image *)
@@ -66,10 +66,10 @@ class  virtual imgloader (_unit : unit) =
   method virtual update_images : unit
   (*e: [[Html_disp.imgloader]] virtual fields signatures *)
 end
-(*e: class Html_disp.imgloader *)
+(*e: class [[Html_disp.imgloader]] *)
 
-(*s: class Html_disp.machine *)
-class  virtual machine (_unit : unit) =
+(*s: class [[Html_disp.machine]] *)
+class  virtual machine (unit : unit) =
  object
    (*s: [[Html_disp.machine]] virtual fields signatures *)
    (* context *)
@@ -138,67 +138,67 @@ class  virtual machine (_unit : unit) =
    (*e: [[Html_disp.machine]] other fields *)
    (*e: [[Html_disp.machine]] virtual fields signatures *)
 end
-(*e: class Html_disp.machine *)
+(*e: class [[Html_disp.machine]] *)
 
-(*s: constant Html_disp.user_hooks *)
+(*s: constant [[Html_disp.user_hooks]] *)
 (* Hooks for applets/modules. Control is made elsewhere *)
 let user_hooks = ref []
-(*e: constant Html_disp.user_hooks *)
-(*s: function Html_disp.add_hook *)
+(*e: constant [[Html_disp.user_hooks]] *)
+(*s: function [[Html_disp.add_hook]] *)
 let add_hook f = 
   user_hooks := f :: !user_hooks
-(*e: function Html_disp.add_hook *)
+(*e: function [[Html_disp.add_hook]] *)
 
-(*s: constant Html_disp.default_fo *)
+(*s: constant [[Html_disp.default_fo]] *)
 (* This is the default formatter *)
 let default_fo = {
   (* Text primitives of the device *)
   new_paragraph   = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline   = (fun _b -> ());
-  print_verbatim  = (fun _s -> ());
-  format_string   = (fun _s -> ());
+  print_newline   = (fun b -> ());
+  print_verbatim  = (fun s -> ());
+  format_string   = (fun s -> ());
 
   (* Graphical attributes *)
-  push_attr       = (fun _l -> ());
-  pop_attr        = (fun _l -> ());
-  set_defaults    = (fun _s _l -> ());
+  push_attr       = (fun l -> ());
+  pop_attr        = (fun l -> ());
+  set_defaults    = (fun s l -> ());
 
   (* misc *)
 
-  hr              = (fun _l _n _b -> ());
-  bullet          = (fun _n -> ());
+  hr              = (fun l n b -> ());
+  bullet          = (fun n -> ());
 
 
-  isindex         = (fun _s _s' -> ());
+  isindex         = (fun s s' -> ());
   start_anchor    = (fun () -> ());
-  end_anchor      = (fun _h -> ());
+  end_anchor      = (fun h -> ());
   add_mark        = (fun _ -> ());
 
-  create_embedded = (fun _a _w _h -> assert false);
+  create_embedded = (fun a w h -> assert false);
 
   see_frag        = (fun _ -> ());
 
   flush           = (fun () -> ());
 } 
-(*e: constant Html_disp.default_fo *)
+(*e: constant [[Html_disp.default_fo]] *)
 
-(*s: function Html_disp.push_style *)
+(*s: function [[Html_disp.push_style]] *)
 (* Style abbreviation 
  * TODO?: check stack.
  *)
 let push_style fo s =
   try fo.push_attr (Styles.get s)
   with Not_found -> Log.f (sprintf "Missing style : %s" s)
-(*e: function Html_disp.push_style *)
+(*e: function [[Html_disp.push_style]] *)
 
-(*s: function Html_disp.pop_style *)
+(*s: function [[Html_disp.pop_style]] *)
 let pop_style fo s =
   try fo.pop_attr (Styles.get s)
   with Not_found -> Log.f (sprintf "Missing style : %s" s)
-(*e: function Html_disp.pop_style *)
+(*e: function [[Html_disp.pop_style]] *)
 
-(*s: functor Html_disp.Make *)
+(*s: functor [[Html_disp.Make]] *)
 (*module Make (G : GfxHTML) (F: FormDisplay) (T: TableDisplay) = struct 
   module FormLogic = Html_form.Make(F)
   module TableLogic = Html_table.Make(T)
@@ -207,24 +207,24 @@ module G = Textw_fo
 module FormLogic = Html_form
 module TableLogic = Html_table
 
-  (*s: type Html_disp.Make.anchor_type *)
+  (*s: type [[Html_disp.Make.anchor_type]] *)
   type anchor_type = HREF | NAME
-  (*e: type Html_disp.Make.anchor_type *)
+  (*e: type [[Html_disp.Make.anchor_type]] *)
 
   (* Tag machinery *)
-  (*s: type Html_disp.Make.html_behavior *)
+  (*s: type [[Html_disp.Make.html_behavior]] *)
   type html_behavior = {
     tag_open  : Htmlfmt.formatter -> Html.tag -> unit;
     tag_close : Htmlfmt.formatter -> unit
   }
-  (*e: type Html_disp.Make.html_behavior *)
+  (*e: type [[Html_disp.Make.html_behavior]] *)
     
-  (*s: functions Html_disp.Make.ignore_xxx *)
+  (*s: functions [[Html_disp.Make.ignore_xxx]] *)
   let ignore_open = fun _ _ -> ()
   let ignore_close = fun _ -> ()
-  (*e: functions Html_disp.Make.ignore_xxx *)
+  (*e: functions [[Html_disp.Make.ignore_xxx]] *)
 
-  (*s: class Html_disp.Make.display_machine *)
+  (*s: class [[Html_disp.Make.display_machine]] *)
   class display_machine (ctx, imgmanager) =
    object (self) 
       inherit machine ()
@@ -249,7 +249,7 @@ module TableLogic = Html_table
       (*s: [[Html_disp.display_machine]] private fields *)
       val (*private*) tags = (Hashtbl.create 101 : (string, html_behavior) Hashtbl.t)
       (*x: [[Html_disp.display_machine]] private fields *)
-      val mutable (*private*) action = (fun _s -> ())
+      val mutable (*private*) action = (fun s -> ())
       val mutable (*private*) action_stack = []
       (*x: [[Html_disp.display_machine]] private fields *)
       val mutable (*private*) formatter = default_fo
@@ -313,9 +313,9 @@ module TableLogic = Html_table
       method pop_action =
         match action_stack with
         | [] -> Log.f "Warning: empty action stack"
-        |	_old::l ->
+        |	old::l ->
         action_stack <- l;
-        action <- match l with [] -> (fun _s ->()) | newa::_ -> newa
+        action <- match l with [] -> (fun s ->()) | newa::_ -> newa
       (*e: [[Html_disp.display_machine]] action stack methods *)
       (*s: [[Html_disp.display_machine]] formatter methods *)
       (* Accessing the variables *)
@@ -375,9 +375,9 @@ module TableLogic = Html_table
      (*e: [[Html_disp.display_machine]] i18n methods *)
      
   end
-  (*e: class Html_disp.Make.display_machine *)
+  (*e: class [[Html_disp.Make.display_machine]] *)
 
-  (*s: function Html_disp.Make.init *)
+  (*s: function [[Html_disp.Make.init]] *)
   (* Standard initialisation for HTML 2.0 (+bits of 3.2) *)
   let init mach =
     (*s: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -406,7 +406,7 @@ module TableLogic = Html_table
      * TARGET is from PR-HTML4.0
      *)
     mach#add_tag "base"
-        (fun _fo tag ->
+        (fun fo tag ->
           begin 
             try mach#set_target (get_attribute tag "target")
             with Not_found -> ()
@@ -466,7 +466,7 @@ module TableLogic = Html_table
     let header_size = ref 0 in
     let header_align = ref None in
     (*e: [[Html_disp.Make.init()]] headings private variables *)
-    (*s: function Html_disp.Make.init.open_header *)
+    (*s: function [[Html_disp.Make.init.open_header]] *)
     let open_header size = 
      fun fo tag ->
       fo.new_paragraph() ;
@@ -478,8 +478,8 @@ module TableLogic = Html_table
         header_align := Some align
       with Not_found -> header_align := None
     in
-    (*e: function Html_disp.Make.init.open_header *)
-    (*s: function Html_disp.Make.init.close_header *)
+    (*e: function [[Html_disp.Make.init.open_header]] *)
+    (*s: function [[Html_disp.Make.init.close_header]] *)
     let close_header fo =
       pop_style fo (sprintf "header%d" !header_size);
       fo.close_paragraph();
@@ -487,7 +487,7 @@ module TableLogic = Html_table
       | None -> ()
       | Some a -> fo.pop_attr [Justification a]
     in
-    (*e: function Html_disp.Make.init.close_header *)
+    (*e: function [[Html_disp.Make.init.close_header]] *)
     [1;2;3;4;5;6] |> List.iter (fun headnum ->
       mach#add_tag (sprintf "h%d" headnum) (open_header headnum) close_header
     );
@@ -534,7 +534,7 @@ module TableLogic = Html_table
 
     ["pre"; "listing"; "xmp"] |> List.iter (fun s -> 
       mach#add_tag s 
-        (fun fo _tag ->
+        (fun fo tag ->
            fo.new_paragraph();
            push_style fo "verbatim";
            mach#push_action fo.print_verbatim)
@@ -548,7 +548,7 @@ module TableLogic = Html_table
      * 5.5.3 Address: <ADDRESS>
      *)
     mach#add_tag "address" 
-       (fun fo _tag -> fo.new_paragraph(); push_style fo "italic")
+       (fun fo tag -> fo.new_paragraph(); push_style fo "italic")
        (fun fo -> pop_style fo "italic"; fo.close_paragraph())
     ;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -556,7 +556,7 @@ module TableLogic = Html_table
      * 5.5.4 Block Quote: <BLOCKQUOTE>
      *)
     mach#add_tag "blockquote"
-       (fun fo _tag ->
+       (fun fo tag ->
           fo.new_paragraph();
           push_style fo "italic";
           fo.push_attr [Margin 10])
@@ -579,17 +579,17 @@ module TableLogic = Html_table
     (* Different typographic styles, shared *)
     let italic_style t = 
       mach#add_tag t 
-         (fun fo _tag -> push_style fo "italic")
+         (fun fo tag -> push_style fo "italic")
          (fun fo -> pop_style fo "italic")
     in
     let fixed_style t =
       mach#add_tag t 
-        (fun fo _tag -> push_style fo "fixed")
+        (fun fo tag -> push_style fo "fixed")
         (fun fo -> pop_style fo "fixed")
     in
     let bold_style t =
       mach#add_tag t 
-        (fun fo _tag -> push_style fo "bold")
+        (fun fo tag -> push_style fo "bold")
         (fun fo -> pop_style fo "bold")
     in
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -610,24 +610,24 @@ module TableLogic = Html_table
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
     mach#add_tag "u"
-      (fun fo _t -> fo.push_attr [Underlined])
+      (fun fo t -> fo.push_attr [Underlined])
       (fun fo  -> fo.pop_attr [Underlined]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     mach#add_tag "strike"
-      (fun fo _t -> fo.push_attr [Striked])
+      (fun fo t -> fo.push_attr [Striked])
       (fun fo  -> fo.pop_attr [Striked]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     mach#add_tag "sup"
-      (fun fo _t -> fo.push_attr [Superscript])
+      (fun fo t -> fo.push_attr [Superscript])
       (fun fo  -> fo.pop_attr [Superscript]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     mach#add_tag "sub"
-      (fun fo _t -> fo.push_attr [Lowerscript])
+      (fun fo t -> fo.push_attr [Lowerscript])
       (fun fo  -> fo.pop_attr [Lowerscript]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
     mach#add_tag "center"
-        (fun fo _t -> fo.push_attr [Justification "center"])
+        (fun fo t -> fo.push_attr [Justification "center"])
         (fun fo -> fo.pop_attr [Justification "center"]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
@@ -637,12 +637,12 @@ module TableLogic = Html_table
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
       mach#add_tag "big"
-          (fun fo _t -> fo.push_attr [Font (FontDelta 2)])
+          (fun fo t -> fo.push_attr [Font (FontDelta 2)])
           (fun fo  -> fo.pop_attr [Font (FontDelta 2)]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
       mach#add_tag "small"
-          (fun fo _t -> fo.push_attr [Font (FontDelta (-2))])
+          (fun fo t -> fo.push_attr [Font (FontDelta (-2))])
           (fun fo  -> fo.pop_attr [Font (FontDelta (-2))]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (*
@@ -722,7 +722,7 @@ module TableLogic = Html_table
       ["1", string_of_int;
        "a", lowernumber;
        "A", uppernumber;
-       "i", (function i -> String.lowercase_ascii (roman i));
+       "i", (function i -> String.lowercase (roman i));
        "I", roman
       ]
     in
@@ -772,7 +772,7 @@ module TableLogic = Html_table
       nesting := 
         (match !nesting with
         | [] -> [] 
-        | _x::l -> l 
+        | x::l -> l 
         );
       mach#remove_tag "li"
     in
@@ -799,7 +799,7 @@ module TableLogic = Html_table
         let prev_is_dt = ref false in
 
         mach#add_tag "dt"
-          (fun fo _tag -> 
+          (fun fo tag -> 
              if not !prev_is_dt then begin
                fo.new_paragraph();
                prev_is_dt := true
@@ -809,7 +809,7 @@ module TableLogic = Html_table
           (fun fo -> pop_style fo "bold");
 
         mach#add_tag "dd"
-          (fun fo _tag ->
+          (fun fo tag ->
              if !prev_is_dt then begin
                fo.close_paragraph();
                prev_is_dt := false
@@ -825,7 +825,7 @@ module TableLogic = Html_table
           let first_item = ref true in
 
           mach#add_tag "dt"
-            (fun fo _tag -> 
+            (fun fo tag -> 
                if not !first_item 
                then fo.print_newline false
                else first_item := false;
@@ -833,7 +833,7 @@ module TableLogic = Html_table
             (fun fo -> pop_style fo "bold");
 
           mach#add_tag "dd"
-            (fun fo _tag ->
+            (fun fo tag ->
                if not !first_item 
                then fo.print_newline false
                else first_item := false;
@@ -929,7 +929,7 @@ module TableLogic = Html_table
      * 5.8 Line break: <BR> 
      *)
     mach#add_tag "br" 
-      (fun fo _tag -> fo.print_newline true)
+      (fun fo tag -> fo.print_newline true)
       ignore_close
     ;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -1046,8 +1046,8 @@ module TableLogic = Html_table
     else begin
       let behave_as oldtag newtag =
          mach#add_tag newtag
-           (fun _fo _t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
-           (fun _fo ->   mach#send (CloseTag oldtag))
+           (fun fo t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
+           (fun fo ->   mach#send (CloseTag oldtag))
       in
       (* use DL for tables *)
       behave_as "dl" "table";
@@ -1095,7 +1095,7 @@ module TableLogic = Html_table
     let mapname = ref "" in
 
     mach#add_tag "map"
-      (fun _fo t ->
+      (fun fo t ->
            (* the name of the map *)
            let absname = 
              try 
@@ -1110,8 +1110,8 @@ module TableLogic = Html_table
            mapname := absname;
            areas := [];
            mach#add_tag "area" 
-          (fun _fo tag -> 
-             let shape = String.lowercase_ascii (get_attribute tag "shape")
+          (fun fo tag -> 
+             let shape = String.lowercase (get_attribute tag "shape")
              and href = 
            try Some (get_attribute tag "href") with Not_found -> None
                  and coords =
@@ -1148,7 +1148,7 @@ module TableLogic = Html_table
                     areas := area :: !areas)
               ignore_close)
 
-      (fun _fo -> 
+      (fun fo -> 
         mach#remove_tag "area";
         Maps.add !mapname !areas)
     ;
@@ -1211,18 +1211,18 @@ module TableLogic = Html_table
        We do the same for style, just in case people dont respect the DTD
      *)
     mach#add_tag "style"
-      (fun _fo _t -> mach#push_action (fun _s -> ()))
-      (fun _fo -> mach#pop_action);
+      (fun fo t -> mach#push_action (fun s -> ()))
+      (fun fo -> mach#pop_action);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 obnoxious features *)
     mach#add_tag "script"
-      (fun _fo _t -> mach#push_action (fun _s -> ()))
-      (fun _fo -> mach#pop_action);
+      (fun fo t -> mach#push_action (fun s -> ()))
+      (fun fo -> mach#pop_action);
     (*e: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
   ()
-  (*e: function Html_disp.Make.init *)
+  (*e: function [[Html_disp.Make.init]] *)
 
-  (*s: function Html_disp.Make.create *)
+  (*s: function [[Html_disp.Make.create]] *)
   let create (ctx, imgmanager) =
     let mach = new display_machine (ctx, imgmanager) in
     init mach;
@@ -1230,7 +1230,7 @@ module TableLogic = Html_table
     !user_hooks |> List.iter (fun f -> f (mach :> machine));
     (*e: [[Html_disp.Make.create()]] run user hooks *)
     (mach :> machine)
-  (*e: function Html_disp.Make.create *)
+  (*e: function [[Html_disp.Make.create]] *)
 (* end *)
-(*e: functor Html_disp.Make *)
-(*e: ./display/html_disp.ml *)
+(*e: functor [[Html_disp.Make]] *)
+(*e: display/html_disp.ml *)

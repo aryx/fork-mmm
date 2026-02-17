@@ -1,14 +1,14 @@
-(*s: ./display/htmlw.mli *)
+(*s: display/htmlw.mli *)
 
-(*s: signature Htmlw.frames_as_links *)
+(*s: signature [[Htmlw.frames_as_links]] *)
 val frames_as_links : bool ref
-(*e: signature Htmlw.frames_as_links *)
-(*s: signature Htmlw.pscrolling *)
+(*e: signature [[Htmlw.frames_as_links]] *)
+(*s: signature [[Htmlw.pscrolling]] *)
 val pscrolling : bool ref
-(*e: signature Htmlw.pscrolling *)
-(*s: signature Htmlw.ignore_meta_charset *)
+(*e: signature [[Htmlw.pscrolling]] *)
+(*s: signature [[Htmlw.ignore_meta_charset]] *)
 val ignore_meta_charset : bool ref
-(*e: signature Htmlw.ignore_meta_charset *)
+(*e: signature [[Htmlw.ignore_meta_charset]] *)
 
 class  virtual viewer_globs : (Viewers.context * Document.handle) -> object
   (* val ctx : Viewers.context *)
@@ -20,12 +20,12 @@ class  virtual viewer_globs : (Viewers.context * Document.handle) -> object
 end
 (*pad: seems mostly boilerplate getters of params *)
 
-(*s: signature Htmlw.progress_report *)
+(*s: signature [[Htmlw.progress_report]] *)
 val progress_report : 
     Widget.widget -> Viewers.context -> Widget.widget * Scheduler.progress_func
-(*e: signature Htmlw.progress_report *)
+(*e: signature [[Htmlw.progress_report]] *)
 
-(*s: signature Htmlw.html_head_ui *)
+(*s: signature [[Htmlw.html_head_ui]] *)
 val html_head_ui :
     string list -> (unit -> unit) -> bool ref -> Widget.widget ->
       Viewers.context ->
@@ -35,13 +35,13 @@ val html_head_ui :
    returns 
    hgroup, set_title, add_link, add_header, add_extra_header
 *)
-(*e: signature Htmlw.html_head_ui *)
-(*s: signature Htmlw.display_html *)
+(*e: signature [[Htmlw.html_head_ui]] *)
+(*s: signature [[Htmlw.display_html]] *)
 (* [html_head_ui headers redisplay scrollmode top ctx]
    returns 
    hgroup, set_title, add_link, add_header, add_extra_header
 *)
 
 val display_html : Viewers.t
-(*e: signature Htmlw.display_html *)
-(*e: ./display/htmlw.mli *)
+(*e: signature [[Htmlw.display_html]] *)
+(*e: display/htmlw.mli *)

@@ -1,9 +1,9 @@
-(*s: ./main_remote.ml *)
+(*s: main_remote.ml *)
 (* Talk to an mmm master *)
 open Unix
 
-(*s: function Main_remote.request *)
-let request sock cmd url =
+(*s: function [[Main_remote.request]] *)
+let request sock (cmd : string) (url : string) =
   if cmd <> "" 
   then write sock (Bytes.of_string cmd) 0 (String.length cmd) |> ignore;
 
@@ -18,9 +18,9 @@ let request sock cmd url =
       else ignore (write stdout buf 0 n)
     done
   with End_of_file -> close sock
-(*e: function Main_remote.request *)
+(*e: function [[Main_remote.request]] *)
     
-(*s: function Main_remote.main *)
+(*s: function [[Main_remote.main]] *)
 let main () =
   let file = 
     Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
@@ -37,9 +37,9 @@ let main () =
     (fun url -> request s !cmd url)
     "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
      The default is -show."
-(*e: function Main_remote.main *)
+(*e: function [[Main_remote.main]] *)
 
-(*s: toplevel Main_remote._1 *)
+(*s: toplevel [[Main_remote._1]] *)
 let _ = Printexc.catch main ()
-(*e: toplevel Main_remote._1 *)
-(*e: ./main_remote.ml *)
+(*e: toplevel [[Main_remote._1]] *)
+(*e: main_remote.ml *)

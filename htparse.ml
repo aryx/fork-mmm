@@ -1,36 +1,36 @@
-(*s: ./html/htparse.ml *)
+(*s: html/htparse.ml *)
 (* Testing the HTML Lexer/evaluator *)
 open Html
 open Printf
 
-(*s: toplevel Htparse._1 *)
+(*s: toplevel [[Htparse._1]] *)
 let _ = 
   Html.verbose := false (* we do our own error report *)
-(*e: toplevel Htparse._1 *)
+(*e: toplevel [[Htparse._1]] *)
 
-(*s: type Htparse.mode *)
+(*s: type [[Htparse.mode]] *)
 type mode =
  | Check 
  | Indent of int 
  | Nesting
-(*e: type Htparse.mode *)
+(*e: type [[Htparse.mode]] *)
 
-(*s: constant Htparse.verbose *)
+(*s: constant [[Htparse.verbose]] *)
 let verbose = ref false
-(*e: constant Htparse.verbose *)
-(*s: constant Htparse.mode *)
+(*e: constant [[Htparse.verbose]] *)
+(*s: constant [[Htparse.mode]] *)
 let mode = ref Check
-(*e: constant Htparse.mode *)
+(*e: constant [[Htparse.mode]] *)
 
-(*s: function Htparse.error *)
+(*s: function [[Htparse.error]] *)
 let error name find_line (Loc(n,n')) msg =
   let linenum, linestart = find_line n in
   printf "File \"%s\", line %d, characters %d-%d:\n%s\n"
          name linenum (n - linestart) (n' - linestart) msg
-(*e: function Htparse.error *)
+(*e: function [[Htparse.error]] *)
 
 
-(*s: function Htparse.line_reporting *)
+(*s: function [[Htparse.line_reporting]] *)
 (* lines: start at 1 *)
 (* pos: start at 0 as in caml *)
 let line_reporting ic =
@@ -38,7 +38,7 @@ let line_reporting ic =
   let current_line = ref 1 in
   let current_pos = ref 0 in
   let read = input ic in
-  Lexing.from_function (fun (buf : bytes) (len : int) ->
+  Lexing.from_function (fun buf len ->
      let n = read buf 0 len in
        for i = 0 to n - 1 do
      match Bytes.get buf i with
@@ -50,18 +50,18 @@ let line_reporting ic =
   (fun pos ->
     let rec find_line = function
       [] -> 1, 0
-    | (linestart, _linenum)::l when pos < linestart -> find_line l
-    | (linestart, linenum)::_l -> linenum, linestart
+    | (linestart, linenum)::l when pos < linestart -> find_line l
+    | (linestart, linenum)::l -> linenum, linestart
     in
      find_line !lines)
-(*e: function Htparse.line_reporting *)
+(*e: function [[Htparse.line_reporting]] *)
 
-(*s: function Htparse.html_lex *)
+(*s: function [[Htparse.html_lex]] *)
 let html_lex name =
   let ic = open_in name in
   let lexbuf, find_line = line_reporting ic in
   Html_eval.automat Dtd.dtd32f lexbuf
-     (fun _loc token ->
+     (fun loc token ->
         match token with
         | EOF -> close_in ic
         | t -> 
@@ -74,9 +74,9 @@ let html_lex name =
             (*e: [[Htparse.html_lex()]] print token t if verbose *)
      )
      (error name find_line)
-(*e: function Htparse.html_lex *)
+(*e: function [[Htparse.html_lex]] *)
 
-(*s: function Htparse.html_nest *)
+(*s: function [[Htparse.html_nest]] *)
 let html_nest name =
   let ic = open_in name in
   let lexbuf = Lexing.from_channel ic in
@@ -90,7 +90,7 @@ let html_nest name =
        | CloseTag t ->
            (match !stack with
             | hd::tl when hd = t -> stack := tl
-            | hd::_tl -> eprintf "Unmatched closing tag %s (expected %s) at 
+            | hd::tl -> eprintf "Unmatched closing tag %s (expected %s) at 
                             pos %d - %d" t hd n n'
             | [] -> eprintf "Unmatched closing tag %s (Empty stack) at
                             pos %d - %d" t n n'
@@ -98,21 +98,21 @@ let html_nest name =
        | _ -> ()
      )
      (fun _ _ -> ())
-(*e: function Htparse.html_nest *)
+(*e: function [[Htparse.html_nest]] *)
 
-(*s: function Htparse.html_indent *)
+(*s: function [[Htparse.html_indent]] *)
 let html_indent name level =
   let box = 
     match level with
     | 0 -> Format.open_box
     | 1 -> Format.open_hvbox
-    | _n -> Format.open_vbox 
+    | n -> Format.open_vbox 
   in
   let ic = open_in name in
   let lexbuf  = Lexing.from_channel ic in
   box 0;
   Html_eval.automat Dtd.dtd32f lexbuf
-    (fun _loc token ->
+    (fun loc token ->
       match token with
       | EOF -> 
           Format.print_newline();
@@ -132,13 +132,13 @@ let html_indent name level =
       | _ -> ()
       )
       (fun _ msg -> Format.print_string (sprintf "ERROR(%s)" msg))
-(*e: function Htparse.html_indent *)
+(*e: function [[Htparse.html_indent]] *)
 
-(*s: function Htparse.main *)
+(*s: function [[Htparse.main]] *)
 let main () =
   Html.init (Lang.lang());
 
-  let options = [
+  Arg.parse [
      "-struct", Arg.Int   (function n -> mode := Indent n), "Parse Tree";
      "-nesting", Arg.Unit (function () -> mode := Nesting), "Check nesting";
 
@@ -148,8 +148,7 @@ let main () =
 
      "-dtd", Arg.Unit (function () -> Dtd.dump Dtd.dtd32f), "Dump DTD";
      "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
-     ] |> Arg.align in
-    Arg.parse options
+     ]
      (fun s -> 
        match !mode with
        | Check -> html_lex s
@@ -157,9 +156,9 @@ let main () =
        | Nesting -> html_nest s
        )
      "Usage: htparse <opts> file1.html ... filen.html"
-(*e: function Htparse.main *)
+(*e: function [[Htparse.main]] *)
 
-(*s: toplevel Htparse._2 *)
+(*s: toplevel [[Htparse._2]] *)
 let _ = Printexc.catch main ()
-(*e: toplevel Htparse._2 *)
-(*e: ./html/htparse.ml *)
+(*e: toplevel [[Htparse._2]] *)
+(*e: html/htparse.ml *)

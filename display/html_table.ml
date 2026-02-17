@@ -1,4 +1,4 @@
-(*s: ./display/html_table.ml *)
+(*s: display/html_table.ml *)
 open Html
 open Htmlfmt
 
@@ -28,10 +28,10 @@ let init mach =
       tm::_ -> tm
     | [] -> raise (Invalid_Html "Table element outside <TABLE></TABLE>")
   and pop_table () = match !table_stack with
-    | _tm::l -> table_stack := l
+    | tm::l -> table_stack := l
     | [] -> raise (Invalid_Html "Unmatched </TABLE>")
   and push_table tm = table_stack := tm :: !table_stack
-  and _is_nested () = 
+  and is_nested () = 
     match !table_stack with
       [] -> false
     | _ -> true
@@ -43,13 +43,13 @@ let init mach =
   let current_width () = 
     match !widths with
       [] -> TopWidth
-    | x::_l -> x
+    | x::l -> x
   and push_width w =
     widths := w :: !widths
   and pop_width () = 
     match !widths with
       [] -> ()
-    | _x::l -> widths := l
+    | x::l -> widths := l
   in
   (* <TABLE> starts a table *)
   let open_table fo t =
@@ -67,29 +67,29 @@ let init mach =
     in
     let change_aligns t =
       current_row_align := 
-     (try Some (String.lowercase_ascii (get_attribute t "align"))
+     (try Some (String.lowercase (get_attribute t "align"))
       with Not_found -> None);
       current_row_valign := 
-     (try Some (String.lowercase_ascii (get_attribute t "valign"))
+     (try Some (String.lowercase (get_attribute t "valign"))
       with Not_found -> None)
     in 
 
    let cell_aligns attrs =
-     begin try Some (String.lowercase_ascii (get_attribute attrs "align"))
+     begin try Some (String.lowercase (get_attribute attrs "align"))
        with Not_found -> !current_row_align
      end,
-     begin try Some (String.lowercase_ascii (get_attribute attrs "valign"))
+     begin try Some (String.lowercase (get_attribute attrs "valign"))
        with Not_found -> !current_row_valign
      end
    in
     (* <TR> : starts a row *)
-    let open_tr _fo t = change_aligns t; tm.open_row t
-    and close_tr _fo = tm.close_row() in
+    let open_tr fo t = change_aligns t; tm.open_row t
+    and close_tr fo = tm.close_row() in
     mach#add_tag "tr" open_tr close_tr;
 
     (* A new cell *)
-    let open_cell kind _fo t =
-      let align,_valign = cell_aligns t in
+    let open_cell kind fo t =
+      let align,valign = cell_aligns t in
       let align = match align with 
     Some align -> align
       |	None -> match kind with 
@@ -106,12 +106,12 @@ let init mach =
       (* fo is the formatter that was open for *this* cell *)
       fo.flush();
       (* pop it *)
-      mach#pop_formatter |> ignore;
+      mach#pop_formatter;
       pop_width()
     in
     mach#add_tag "th" (open_cell HeaderCell) close_cell;
     mach#add_tag "td" (open_cell DataCell) close_cell;
-    mach#add_tag "col" (fun _fo t -> tm.add_col t) (fun _ -> ());
+    mach#add_tag "col" (fun fo t -> tm.add_col t) (fun _ -> ());
 
   and close_table fo = 
     (* close the table manager *)
@@ -128,4 +128,4 @@ let init mach =
   mach#add_tag "table" open_table close_table;
 
 (* end *)
-(*e: ./display/html_table.ml *)
+(*e: display/html_table.ml *)

@@ -1,11 +1,13 @@
-(*s: ./www/hyper.ml *)
+(*s: www/hyper.ml *)
 open I18n
 open Printf
+open Mstring
+open Uri
 open Url
 
 (* An hypertext(media) link on the Web *)
 
-(*s: type Hyper.link_method *)
+(*s: type [[Hyper.link_method]] *)
 (* This is currently for HTTP and derived, but ... *)
 (* Contains only the one we support *)
 type link_method =
@@ -14,18 +16,18 @@ type link_method =
  (*s: [[Hyper.link_method]] other cases *)
  | HEAD
  (*e: [[Hyper.link_method]] other cases *)
-(*e: type Hyper.link_method *)
+(*e: type [[Hyper.link_method]] *)
 
-(*s: function Hyper.parse_method *)
+(*s: function [[Hyper.parse_method]] *)
 let parse_method = function
  | "GET" -> GET
  | "POST" -> POST ""
  | "HEAD" -> HEAD
  | _ -> raise Not_found (* other cases should be caught by caller ! *)
-(*e: function Hyper.parse_method *)
+(*e: function [[Hyper.parse_method]] *)
 
 
-(*s: type Hyper.link *)
+(*s: type [[Hyper.link]] *)
 (* An hypertext(media) link on the Web *)
 type link = {
   h_uri : string;
@@ -34,28 +36,28 @@ type link = {
   h_method : link_method;		(* default is GET *)
   h_params : (string * string) list
 }
-(*e: type Hyper.link *)
+(*e: type [[Hyper.link]] *)
 
-(*s: type Hyper.link_error *)
+(*s: type [[Hyper.link_error]] *)
 type link_error =
     LinkResolve of string
   | UrlLexing of string * int
-(*e: type Hyper.link_error *)
+(*e: type [[Hyper.link_error]] *)
 
-(*s: function Hyper.default_link *)
+(*s: function [[Hyper.default_link]] *)
 let default_link uri = {
  h_uri = uri;
  h_context = None;
  h_method = GET;
  h_params = [];
 }
-(*e: function Hyper.default_link *)
+(*e: function [[Hyper.default_link]] *)
 
-(*s: exception Hyper.Invalid_link *)
+(*s: exception [[Hyper.Invalid_link]] *)
 exception Invalid_link of link_error
-(*e: exception Hyper.Invalid_link *)
+(*e: exception [[Hyper.Invalid_link]] *)
 
-(*s: function Hyper.urlconcat *)
+(*s: function [[Hyper.urlconcat]] *)
 (* parsed Absolute URL + URL -> Absolute URL *)
 (* NO FRAGMENT HANDLING *)
 
@@ -102,9 +104,9 @@ let urlconcat contextp newuri =
             string_of { contextp with
                         path = Some (Urlenc.unquote reduced);
                         search = searchpart }
-(*e: function Hyper.urlconcat *)
+(*e: function [[Hyper.urlconcat]] *)
           
-(*s: function Hyper.resolve *)
+(*s: function [[Hyper.resolve]] *)
 (* Produces an URI *)
 let resolve link =
   (* First remove the possible fragment of the uri *)
@@ -119,7 +121,7 @@ let resolve link =
   if Uri.is_absolute newuri 
   then
     try
-      Uri.{ uri_url = Lexurl.normalize newuri;
+      { uri_url = Lexurl.normalize newuri;
         uri_fragment = frag 
       }
     with Url_Lexing _ ->
@@ -142,13 +144,13 @@ let resolve link =
       uri_fragment = frag
     }
   end
-(*e: function Hyper.resolve *)
+(*e: function [[Hyper.resolve]] *)
 
-(*s: function Hyper.string_of *)
+(*s: function [[Hyper.string_of]] *)
 let string_of link =
   let uri = resolve link in
    match uri.uri_fragment with 
       None -> uri.uri_url
     | Some f -> Printf.sprintf "%s#%s" uri.uri_url f
-(*e: function Hyper.string_of *)
-(*e: ./www/hyper.ml *)
+(*e: function [[Hyper.string_of]] *)
+(*e: www/hyper.ml *)

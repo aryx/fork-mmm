@@ -1,4 +1,4 @@
-(*s: ./www/urlenc.ml *)
+(*s: www/urlenc.ml *)
 (*s: copyright header v6 *)
 (***********************************************************************)
 (*                                                                     *)
@@ -14,16 +14,16 @@
 
 open Mstring
 
-(*s: function Urlenc.hexchar *)
+(*s: function [[Urlenc.hexchar]] *)
 let hexchar c = 
   let s = Bytes.make 3 '%'
   and i = Char.code c in
   Bytes.set s 1 (dec_to_hex (i/16));
   Bytes.set s 2 (dec_to_hex (i mod 16));
   Bytes.to_string s
-(*e: function Urlenc.hexchar *)
+(*e: function [[Urlenc.hexchar]] *)
 
-(*s: function Urlenc.decode *)
+(*s: function [[Urlenc.decode]] *)
 (* Decode escaped characters *)
 (* Note: beware of order of splitting wrt '&' and decoding *)
 let decode s =
@@ -31,7 +31,7 @@ let decode s =
   let target = Ebuffer.create l in
   let pos = ref 0 in
   while !pos < l do
-    if s.[!pos] = '%' && !pos + 2 < l  then begin
+    if s.[!pos] = '%' & !pos + 2 < l  then begin
        let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
        Ebuffer.output_char target (Char.chr c);
     pos := !pos + 3
@@ -44,17 +44,17 @@ let decode s =
       end
   done;
   Ebuffer.get target
-(*e: function Urlenc.decode *)
+(*e: function [[Urlenc.decode]] *)
 
-(*s: constant Urlenc.keep_quoted *)
+(*s: constant [[Urlenc.keep_quoted]] *)
 (* Unquote an url path:
    We decode all % except those corresponding to significative
    characters for parsing: /, ?, #, sp, :
  *)
 let keep_quoted = 
   ['/'; '?'; '#'; ' '; '\t'; '\r'; '\n'; ':'; '%'; '&'; '='; '+']
-(*e: constant Urlenc.keep_quoted *)
-(*s: function Urlenc.unquote *)
+(*e: constant [[Urlenc.keep_quoted]] *)
+(*s: function [[Urlenc.unquote]] *)
 let unquote s =
   try
     (* optim *)
@@ -68,13 +68,13 @@ let unquote s =
        if perpos > !pos 
        then Ebuffer.output target s !pos (perpos - !pos);
        pos := perpos;
-       if s.[!pos] = '%' && !pos + 2 < l  
+       if s.[!pos] = '%' & !pos + 2 < l  
        then begin
          let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
          let substc = Char.chr c in
          if List.mem substc keep_quoted 
          then
-           for _i = 0 to 2 do
+           for i = 0 to 2 do
              Ebuffer.output_char target s.[!pos];
              incr pos
            done
@@ -93,9 +93,9 @@ let unquote s =
      Ebuffer.get target
    )
   with Not_found -> s
-(*e: function Urlenc.unquote *)
+(*e: function [[Urlenc.unquote]] *)
 
-(*s: function Urlenc.encode *)
+(*s: function [[Urlenc.encode]] *)
 let encode s =
   let target = Ebuffer.create (String.length s) in
   for pos = 0 to String.length s - 1 do
@@ -106,14 +106,14 @@ let encode s =
     | c -> Ebuffer.output_string target (hexchar c)
     done;
   Ebuffer.get target
-(*e: function Urlenc.encode *)
+(*e: function [[Urlenc.encode]] *)
 
 
-(*s: constant Urlenc.strict_form_standard *)
+(*s: constant [[Urlenc.strict_form_standard]] *)
 let strict_form_standard = ref true
-(*e: constant Urlenc.strict_form_standard *)
+(*e: constant [[Urlenc.strict_form_standard]] *)
 
-(*s: function Urlenc.form_encode *)
+(*s: function [[Urlenc.form_encode]] *)
 let form_encode = function 
  | [] -> ""
  | (e,v)::l ->
@@ -133,9 +133,9 @@ let form_encode = function
          Ebuffer.output_string b (encode v)
     ) ;
     Ebuffer.get b
-(*e: function Urlenc.form_encode *)
+(*e: function [[Urlenc.form_encode]] *)
 
-(*s: constant Urlenc.form_decode *)
+(*s: constant [[Urlenc.form_decode]] *)
 let form_decode =
   let ampersand c = c = '&' and equals c = c = '=' in
   (function  s ->
@@ -145,6 +145,6 @@ let form_decode =
      | [x] -> (decode x, "")
      | _ -> invalid_arg "form_decode")
        (split_str ampersand s))
-(*e: constant Urlenc.form_decode *)
+(*e: constant [[Urlenc.form_decode]] *)
          
-(*e: ./www/urlenc.ml *)
+(*e: www/urlenc.ml *)

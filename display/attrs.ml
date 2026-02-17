@@ -1,15 +1,15 @@
-(*s: ./display/attrs.ml *)
-
+(*s: display/attrs.ml *)
+open Common
 
 (* Utilities for tags and attributes *)
 
 open Printf
 open Protocol
 open Tk
-
+open Frx_text
 open Fonts
 
-
+open Htmlfmt
 
 (* Delayed and shared configuration of tags *)
 
@@ -54,7 +54,7 @@ module LocMap = Ibtree.Make(struct
   end)
 
 class anchortags (thtml) =
- object (_self)
+ object (self)
   inherit tags (thtml) as tags
   inherit Htbind.hypertext (thtml)
 
@@ -65,7 +65,7 @@ class anchortags (thtml) =
     tags#add ("anchor", s, e);
     mappings <- (s,e,h) :: mappings
 
-  method! flush =
+  method flush =
     tags#flush;
     mappings |> List.iter (fun (s,e,h) ->
       let loc1 = Text.index wid s
@@ -113,7 +113,7 @@ class  virtual ['a] nested (tagdef) =
        [] -> 
         (* no current definition, don't issue a put *)
         last_change <- current_pos
-     | curtag::_l ->
+     | curtag::l ->
         self#put current_pos curtag
     end;
     stack <- tag :: stack;
@@ -136,11 +136,11 @@ class align (tagdef) =
  object
   inherit [string] nested tagdef
   method push_convert ad =
-    match String.lowercase_ascii ad with
+    match String.lowercase ad with
      "right" -> "right", [Justify Justify_Right]
        | "center" -> "center", [Justify Justify_Center]
        | _ -> "left", [Justify Justify_Left]
-  method pop_convert _ad = ()
+  method pop_convert ad = ()
 end
 
 (*
@@ -171,7 +171,7 @@ class font (tagdef) =
   method push_convert fil = 
     let curfd = match font_stack with
       [] -> basefont
-    | x::_l -> x in
+    | x::l -> x in
     let newfd = Fonts.merge curfd fil in
       font_stack <- newfd :: font_stack;
       Fonts.compute_tag newfd
@@ -179,7 +179,7 @@ class font (tagdef) =
   method pop_convert _ = 
     match font_stack with
       [] -> ()
-    | _x::l -> font_stack <- l
+    | x::l -> font_stack <- l
 
   (* by changing the base, we should be changing both the current default size 
      and the behaviour of subsequent FONT SIZE tags. The size changes is easy.
@@ -201,11 +201,11 @@ class font (tagdef) =
 end
 
 
-(*s: constant Attrs.color_mappings *)
+(*s: constant [[Attrs.color_mappings]] *)
 (* Special mapping of pre-defined HTML3.2 colors *)
 let color_mappings = Hashtbl.create 37
-(*e: constant Attrs.color_mappings *)
-(*s: toplevel Attrs._1 *)
+(*e: constant [[Attrs.color_mappings]] *)
+(*s: toplevel [[Attrs._1]] *)
 let _ = List.iter (fun (name, value) -> Hashtbl.add color_mappings name value)
   [ "black",   "#000000";
     "silver",  "#c0c0c0";
@@ -223,13 +223,13 @@ let _ = List.iter (fun (name, value) -> Hashtbl.add color_mappings name value)
     "blue",    "#0000ff";
     "teal",    "#008080";
     "aqua",    "#00ffff" ]
-(*e: toplevel Attrs._1 *)
+(*e: toplevel [[Attrs._1]] *)
 
-(*s: function Attrs.html_color *)
+(*s: function [[Attrs.html_color]] *)
 let html_color s =
-  try Hashtbl.find color_mappings (String.lowercase_ascii s)
+  try Hashtbl.find color_mappings (String.lowercase s)
   with Not_found -> s
-(*e: function Attrs.html_color *)
+(*e: function [[Attrs.html_color]] *)
 
 (*
  * Foreground color
@@ -244,7 +244,7 @@ class fgcolor (tagdef) =
       s, [Foreground (NamedColor colordef)]
     else
       s, []
-  method pop_convert _s = 
+  method pop_convert s = 
     ()
 end
 
@@ -261,7 +261,7 @@ class bgcolor (tagdef) =
       s, [Background (NamedColor colordef)]
     else 
       s, []
-  method pop_convert _s = 
+  method pop_convert s = 
     ()
 end
 
@@ -283,7 +283,7 @@ end
  * Other stuff where nesting is not important
 *)
 class misc (tagdef, tagname, attr) =
- object (_self)
+ object (self)
   
   val mutable start_pos = TextIndex(LineChar(0,0),[])
   (* val tagdef = tagdef *)
@@ -332,7 +332,7 @@ class spacing (tagdef) =
      | _ -> assert false
 end
 
-(*s: constant Attrs.circle_data *)
+(*s: constant [[Attrs.circle_data]] *)
 (* Bullet images *)
 let circle_data = 
 "#define circle_width 9
@@ -340,30 +340,30 @@ let circle_data =
 static unsigned char circle_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x44, 0x00, 0x44, 0x00, 0x44, 0x00,
    0x38, 0x00, 0x00, 0x00, 0x00, 0x00};"
-(*e: constant Attrs.circle_data *)
+(*e: constant [[Attrs.circle_data]] *)
 
-(*s: constant Attrs.disc_data *)
+(*s: constant [[Attrs.disc_data]] *)
 let disc_data =
 "#define disc_width 9
 #define disc_height 9
 static unsigned char disc_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x7c, 0x00,
    0x38, 0x00, 0x00, 0x00, 0x00, 0x00};"
-(*e: constant Attrs.disc_data *)
+(*e: constant [[Attrs.disc_data]] *)
 
-(*s: constant Attrs.square_data *)
+(*s: constant [[Attrs.square_data]] *)
 let square_data = 
 "#define square_width 9
 #define square_height 9
 static unsigned char square_bits[] = {
    0x00, 0x00, 0x00, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x7c, 0x00,
    0x7c, 0x00, 0x00, 0x00, 0x00, 0x00};"
-(*e: constant Attrs.square_data *)
+(*e: constant [[Attrs.square_data]] *)
 
-(*s: constant Attrs.bullet_table *)
+(*s: constant [[Attrs.bullet_table]] *)
 let bullet_table = Hashtbl.create 11
-(*e: constant Attrs.bullet_table *)
-(*s: function Attrs.init *)
+(*e: constant [[Attrs.bullet_table]] *)
+(*s: function [[Attrs.init]] *)
 let init bg =
   let _bgTODO = Background (NamedColor bg) in
   Hashtbl.add bullet_table
@@ -372,5 +372,5 @@ let init bg =
      "disc" (ImageBitmap(Imagebitmap.create [Data disc_data]));
   Hashtbl.add bullet_table
      "square" (ImageBitmap(Imagebitmap.create [Data square_data]))
-(*e: function Attrs.init *)
-(*e: ./display/attrs.ml *)
+(*e: function [[Attrs.init]] *)
+(*e: display/attrs.ml *)

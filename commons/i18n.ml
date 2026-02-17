@@ -1,25 +1,25 @@
-(*s: ./commons/i18n.ml *)
+(*s: commons/i18n.ml *)
 
-(*s: function I18n.fprintf *)
+(*s: function [[I18n.fprintf]] *)
 (* Internationalization (translation of error messages) *)
 
 let fprintf x = 
   Printf.fprintf x
-(*e: function I18n.fprintf *)
-(*s: function I18n.sprintf *)
+(*e: function [[I18n.fprintf]] *)
+(*s: function [[I18n.sprintf]] *)
 let sprintf x = 
   Printf.sprintf x
-(*e: function I18n.sprintf *)
+(*e: function [[I18n.sprintf]] *)
 
-(*s: constant I18n.language *)
+(*s: constant [[I18n.language]] *)
 let language = ref ""
-(*e: constant I18n.language *)
-(*s: constant I18n.message_file *)
+(*e: constant [[I18n.language]] *)
+(*s: constant [[I18n.message_file]] *)
 let message_file = ref ""
-(*e: constant I18n.message_file *)
+(*e: constant [[I18n.message_file]] *)
 
-(*s: function I18n.read_transl_file *)
-let read_transl_file (msgfile : string) : (string, string) Hashtbl.t =
+(*s: function [[I18n.read_transl_file]] *)
+let read_transl_file msgfile =
   let ic = open_in msgfile in
   let tag_buffer = Bytes.create 16
   and msg_buffer = Bytes.create 1024 in
@@ -61,20 +61,20 @@ let read_transl_file (msgfile : string) : (string, string) Hashtbl.t =
     close_in ic
   end;
   transl_tbl
-(*e: function I18n.read_transl_file *)
+(*e: function [[I18n.read_transl_file]] *)
 
-(*s: type I18n.translation_table *)
+(*s: type [[I18n.translation_table]] *)
 type translation_table =
     Unknown
   | NoTranslation
   | Transl of (string, string) Hashtbl.t
-(*e: type I18n.translation_table *)
+(*e: type [[I18n.translation_table]] *)
 
-(*s: constant I18n.transl_table *)
+(*s: constant [[I18n.transl_table]] *)
 let transl_table = ref Unknown
-(*e: constant I18n.transl_table *)
+(*e: constant [[I18n.transl_table]] *)
 
-(*s: function I18n.translate *)
+(*s: function [[I18n.translate]] *)
 let rec translate msg =
   match !transl_table with
     NoTranslation ->
@@ -94,7 +94,7 @@ let rec translate msg =
             NoTranslation
         end;
       translate msg
-(*e: function I18n.translate *)
+(*e: function [[I18n.translate]] *)
 
 (*s: function I18n.fprintf (./commons/i18n.ml) *)
 let fprintf oc (fmt : ('a, out_channel, unit) format) =
@@ -113,15 +113,15 @@ let sprintf (fmt : ('a, unit, string) format) =
 
 let s_ fmt = sprintf fmt
 
-let _printf fmt = fprintf stdout fmt
-and _eprintf fmt = fprintf stderr fmt
+let printf fmt = fprintf stdout fmt
+and eprintf fmt = fprintf stderr fmt
 
-(*s: function I18n.menu_option *)
-(*e: function I18n.menu_option *)
+(*s: function [[I18n.menu_option]] *)
+(*e: function [[I18n.menu_option]] *)
 
-(*s: exception I18n.Found *)
-(*e: exception I18n.Found *)
+(*s: exception [[I18n.Found]] *)
+(*e: exception [[I18n.Found]] *)
 
-(*s: function I18n.menu_pattern *)
-(*e: function I18n.menu_pattern *)
-(*e: ./commons/i18n.ml *)
+(*s: function [[I18n.menu_pattern]] *)
+(*e: function [[I18n.menu_pattern]] *)
+(*e: commons/i18n.ml *)

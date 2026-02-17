@@ -1,4 +1,4 @@
-(*s: ./display/attrs.mli *)
+(*s: display/attrs.mli *)
 module TagSet : Set.S with type elt = string
 
 class tags :
@@ -49,8 +49,8 @@ class anchortags :
   end
 
 class virtual ['a] nested :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'b;
+    define : string -> Tk.options list -> 'c; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -62,8 +62,8 @@ class virtual ['a] nested :
   end
 
 class align :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -75,8 +75,8 @@ class align :
   end
 
 class margin :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     val mutable current : int
     val mutable last_change : Tk.textIndex
@@ -89,8 +89,8 @@ class margin :
   end
 
 class font :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     val mutable basefont : Fonts.fontDesc
     val mutable font_stack : Fonts.fontDesc list
@@ -105,16 +105,16 @@ class font :
     method set_base : Tk.textIndex -> int -> unit
   end
 
-(*s: signature Attrs.color_mappings *)
+(*s: signature [[Attrs.color_mappings]] *)
 val color_mappings : (string, string) Hashtbl.t
-(*e: signature Attrs.color_mappings *)
-(*s: signature Attrs.html_color *)
+(*e: signature [[Attrs.color_mappings]] *)
+(*s: signature [[Attrs.html_color]] *)
 val html_color : string -> string
-(*e: signature Attrs.html_color *)
+(*e: signature [[Attrs.html_color]] *)
 
 class fgcolor :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -126,8 +126,8 @@ class fgcolor :
   end
 
 class bgcolor :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -139,8 +139,8 @@ class bgcolor :
   end
 
 class offset :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     val mutable cur_offset : int
     val mutable last_change : Tk.textIndex
@@ -153,8 +153,7 @@ class offset :
   end
 
 class misc :
-  < add : 'a * Tk.textIndex * Tk.textIndex -> unit; 
-    define : 'a -> 'b -> 'c;
+  < add : 'a * Tk.textIndex * Tk.textIndex -> unit; define : 'a -> 'b -> 'c;
     .. > *
   'a * 'b ->
   object
@@ -165,26 +164,26 @@ class misc :
   end
 
 class spacing :
-  < add : string * Tk.textIndex * Tk.textIndex -> unit;
-    define : string -> Tk.options list -> unit; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
+    define : string -> Tk.options list -> 'b; .. > ->
   object
     method pop : Tk.textIndex -> int -> unit
     method push : Tk.textIndex -> int -> unit
   end
 
-(*s: signature Attrs.circle_data *)
+(*s: signature [[Attrs.circle_data]] *)
 val circle_data : string
-(*e: signature Attrs.circle_data *)
-(*s: signature Attrs.disc_data *)
+(*e: signature [[Attrs.circle_data]] *)
+(*s: signature [[Attrs.disc_data]] *)
 val disc_data : string
-(*e: signature Attrs.disc_data *)
-(*s: signature Attrs.square_data *)
+(*e: signature [[Attrs.disc_data]] *)
+(*s: signature [[Attrs.square_data]] *)
 val square_data : string
-(*e: signature Attrs.square_data *)
-(*s: signature Attrs.bullet_table *)
+(*e: signature [[Attrs.square_data]] *)
+(*s: signature [[Attrs.bullet_table]] *)
 val bullet_table : (string, Tk.options) Hashtbl.t
-(*e: signature Attrs.bullet_table *)
-(*s: signature Attrs.init *)
+(*e: signature [[Attrs.bullet_table]] *)
+(*s: signature [[Attrs.init]] *)
 val init : string -> unit
-(*e: signature Attrs.init *)
-(*e: ./display/attrs.mli *)
+(*e: signature [[Attrs.init]] *)
+(*e: display/attrs.mli *)

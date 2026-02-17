@@ -1,23 +1,23 @@
-(*s: ./globals/version.ml *)
+(*s: globals/version.ml *)
 (* To merge FR and JP strings correctly, you have to encode the characters
  * more than 0x7F, for example "Fran\231ois".
  *) 
 
-(*s: constant Version.number *)
+(*s: constant [[Version.number]] *)
 (* Version *)
 let number = 418
-(*e: constant Version.number *)
-(*s: constant Version.version_number *)
+(*e: constant [[Version.number]] *)
+(*s: constant [[Version.version_number]] *)
 let version_number = 
   string_of_int number
-(*e: constant Version.version_number *)
+(*e: constant [[Version.version_number]] *)
 
-(*s: constant Version.http *)
+(*s: constant [[Version.http]] *)
 (* User-Agent field *)
 let http = "MMM/0." ^ string_of_int number
-(*e: constant Version.http *)
+(*e: constant [[Version.http]] *)
 
-(*s: function Version.about *)
+(*s: function [[Version.about]] *)
 (* dialog uses an gigantic font ! *)
 let about = function
   | "iso8859" ->
@@ -37,30 +37,30 @@ Francois.Rouaix@inria.fr
 http://pauillac.inria.fr/~rouaix/
 "
   | s -> failwith (Printf.sprintf "language not supported: %s" s)
-(*e: function Version.about *)
+(*e: function [[Version.about]] *)
 
-(*s: function Version.home *)
+(*s: function [[Version.home]] *)
 let home_mmm = function 
   | "iso8859" -> "http://pauillac.inria.fr/mmm/"
   | _ -> assert false
-(*e: function Version.home *)
+(*e: function [[Version.home]] *)
 
-(*s: function Version.initurl *)
+(*s: function [[Version.initurl]] *)
 (* MUST BE NORMALIZED *)
 let initurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/about.html" number
   | s -> failwith (Printf.sprintf "language not supported: %s" s)
-(*e: function Version.initurl *)
+(*e: function [[Version.initurl]] *)
 
-(*s: function Version.helpurl *)
+(*s: function [[Version.helpurl]] *)
 let helpurl = function
   | "iso8859" -> 
       Printf.sprintf "http://pauillac.inria.fr/mmm/v%d/docindex.html" number
   | _ -> assert false
-(*e: function Version.helpurl *)
+(*e: function [[Version.helpurl]] *)
 
-(*s: function Version.html *)
+(*s: function [[Version.html]] *)
 let inithtml = function
   | "iso8859" ->
 "<HTML>
@@ -102,10 +102,10 @@ get an updated copy.
 </HTML>
 "
   |  s -> failwith (Printf.sprintf "language %s not supported here" s)
-(*e: function Version.html *)
+(*e: function [[Version.html]] *)
 
-(*s: constant Version.applet_init *)
+(*s: constant [[Version.applet_init]] *)
 (* Make it easier to compile both bytecode and native versions *)
 let applet_init = ref (fun _ -> ())
-(*e: constant Version.applet_init *)
-(*e: ./globals/version.ml *)
+(*e: constant [[Version.applet_init]] *)
+(*e: globals/version.ml *)

@@ -1,4 +1,4 @@
-(*s: ./display/htbind.mli *)
+(*s: display/htbind.mli *)
 
 class virtual active :
   unit ->
@@ -63,4 +63,4 @@ class formmap :
     method markused : Tk.eventInfo -> unit
     method widget : Widget.widget
   end
-(*e: ./display/htbind.mli *)
+(*e: display/htbind.mli *)

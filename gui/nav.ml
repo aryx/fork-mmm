@@ -1,4 +1,4 @@
-(*s: ./gui/nav.ml *)
+(*s: gui/nav.ml *)
 open I18n
 open Printf
 open Unix
@@ -6,7 +6,7 @@ open Tk
 open Hyper
 open Www
 open Url
-
+open Uri
 open Document
 open Http_headers
 open Viewers
@@ -14,7 +14,7 @@ open Embed
 
 (* Navigation *)
 
-(*s: type Nav.t *)
+(*s: type [[Nav.t]] *)
 type t = {
   nav_viewer_frame : Widget.widget;
 
@@ -43,11 +43,11 @@ type t = {
   nav_new : Hyper.link -> unit;
   (*e: [[Nav.t]] other fields *)
  }
-(*e: type Nav.t *)
+(*e: type [[Nav.t]] *)
 
-(*s: exception Nav.Duplicate *)
+(*s: exception [[Nav.Duplicate]] *)
 exception Duplicate of Url.t
-(*e: exception Nav.Duplicate *)
+(*e: exception [[Nav.Duplicate]] *)
 
 (* Important note: we assume two requests on the same url are identical
    (when we control emission of requests). This is not the case for 
@@ -56,15 +56,15 @@ exception Duplicate of Url.t
    url. Proper fix: change the equality semantics of active cnx
  *)
 
-(*s: function Nav.dont_check_cache *)
+(*s: function [[Nav.dont_check_cache]] *)
 (* Some requests should not be looked for in the cache *)
 let dont_check_cache wwwr =
   match wwwr.www_link.h_method with
   | POST _ -> true
   | _ -> false
-(*e: function Nav.dont_check_cache *)
+(*e: function [[Nav.dont_check_cache]] *)
 
-(*s: function Nav.request *)
+(*s: function [[Nav.request]] *)
 (* [request nav usecache wrapwr process specific] produces a function that
    takes an hyperlink, and apply the given behavior to it.
    [usecache] : do we look in the cache to see if we have it already
@@ -76,7 +76,7 @@ let dont_check_cache wwwr =
  *)
 let request nav process (usecache, wrapwr, specific) lk =
 
-  (*s: function Nav.request.retrieve_and_handle *)
+  (*s: function [[Nav.request.retrieve_and_handle]] *)
   (* Normally execute the request and process its answer (dh) *)
   let rec retrieve_and_handle wr =
     let cont = 
@@ -94,8 +94,8 @@ let request nav process (usecache, wrapwr, specific) lk =
         nav.nav_add_active wr.www_url aborter
     | Retrieve.InUse -> 
         raise (Duplicate wr.www_url)
-  (*e: function Nav.request.retrieve_and_handle *)
-  (*s: function Nav.request.handle_wr *)
+  (*e: function [[Nav.request.retrieve_and_handle]] *)
+  (*s: function [[Nav.request.handle_wr]] *)
   (* Wrapper to deal with general/specific cache *)
   and handle_wr wr =
     try
@@ -133,31 +133,31 @@ let request nav process (usecache, wrapwr, specific) lk =
            (*e: [[Nav.request.handle_wr()]] if use cache *)
     with Duplicate url ->
       wr.www_error#f (s_ "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
-  (*e: function Nav.request.handle_wr *)
-  (*s: function Nav.request.handle_link *)
+  (*e: function [[Nav.request.handle_wr]] *)
+  (*s: function [[Nav.request.handle_link]] *)
   and handle_link h =
     try (* Convert the link into a request *)
       let wr = Plink.make h in
       wr.www_error <- nav.nav_error;
       wr |> wrapwr |> handle_wr
     with
-    | Hyper.Invalid_link _msg ->
+    | Hyper.Invalid_link msg ->
         nav.nav_error#f (s_ "Invalid link")
     | Www.Invalid_request (wr, msg) ->
         nav.nav_error#f (s_ "Invalid request %s\n%s"(Url.string_of wr.www_url)msg)
   in
-  (*e: function Nav.request.handle_link *)
+  (*e: function [[Nav.request.handle_link]] *)
   handle_link lk
-(*e: function Nav.request *)
+(*e: function [[Nav.request]] *)
 
-(*s: function Nav.nothing_specific *)
+(*s: function [[Nav.nothing_specific]] *)
 (*
  * Three instances of this general mechanism : view, save, head
  *)
-let nothing_specific _nav _did _wr = raise Not_found
-(*e: function Nav.nothing_specific *)
+let nothing_specific nav did wr = raise Not_found
+(*e: function [[Nav.nothing_specific]] *)
 
-(*s: function Nav.process_viewer *)
+(*s: function [[Nav.process_viewer]] *)
 (* Specific handling of "view" requests *)
 let process_viewer addhist make_ctx = 
  fun nav _wr dh ->
@@ -172,21 +172,21 @@ let process_viewer addhist make_ctx =
       Gcache.add nav.nav_id dh.document_id di;
       (*e: [[Nav.process_viewer()]] add in cache and history the document *)
       nav.nav_show_current di dh.document_fragment
-(*e: function Nav.process_viewer *)
+(*e: function [[Nav.process_viewer]] *)
 
-(*s: function Nav.specific_viewer *)
+(*s: function [[Nav.specific_viewer]] *)
 (* check the widget cache *)
 let specific_viewer addhist = fun nav did wr ->
   let di = Gcache.find nav.nav_id did in
   if addhist then nav.nav_add_hist did wr.www_fragment;
   (* make it our current displayed document, since it is available *)
   nav.nav_show_current di wr.www_fragment
-(*e: function Nav.specific_viewer *)
+(*e: function [[Nav.specific_viewer]] *)
 
 
-(*s: function Nav.process_save *)
+(*s: function [[Nav.process_save]] *)
 (* Specific handling of "save" requests *)
-let process_save dest = fun _nav wr dh ->
+let process_save dest = fun nav wr dh ->
   match dh.document_status with
     200 -> Save.transfer wr dh dest
   | n ->
@@ -195,9 +195,9 @@ let process_save dest = fun _nav wr dh ->
               (Url.string_of wr.www_url) n (status_msg dh.dh_headers))
     then Save.transfer wr dh dest
     else dclose true dh
-(*e: function Nav.process_save *)
+(*e: function [[Nav.process_save]] *)
 
-(*s: function Nav.display_headers *)
+(*s: function [[Nav.display_headers]] *)
 (* Simple implementation of HEAD *)
 
 let display_headers dh =
@@ -211,46 +211,46 @@ let display_headers dh =
   let b = Button.create mytop
             [Command (fun _ -> destroy mytop); Text "Dismiss"] in
   pack [b] [Anchor Center]
-(*e: function Nav.display_headers *)
+(*e: function [[Nav.display_headers]] *)
  
-(*s: constant Nav.process_head *)
-let process_head = fun _nav _wr dh ->
+(*s: constant [[Nav.process_head]] *)
+let process_head = fun nav wr dh ->
   dclose true dh;
   display_headers dh
-(*e: constant Nav.process_head *)
+(*e: constant [[Nav.process_head]] *)
 
-(*s: function Nav.make_head *)
+(*s: function [[Nav.make_head]] *)
 (* But for head, we need to change the hlink *)
 let make_head hlink =
   { hlink with h_method = HEAD; }
-(*e: function Nav.make_head *)
+(*e: function [[Nav.make_head]] *)
 
 (*
  *  Other handlers, less general
  *)
 
-(*s: function Nav.copy_link *)
+(*s: function [[Nav.copy_link]] *)
 (* Copying a link to the X Selection *)
 let copy_link nav h =
   try 
     Frx_selection.set (Hyper.string_of h)
-  with Invalid_link _msg ->
+  with Invalid_link msg ->
     nav.nav_error#f (s_ "Invalid link")
-(*e: function Nav.copy_link *)
+(*e: function [[Nav.copy_link]] *)
 
-(*s: constant Nav.user_navigation *)
+(*s: constant [[Nav.user_navigation]] *)
 let user_navigation = ref []
-(*e: constant Nav.user_navigation *)
-(*s: function Nav.add_user_navigation *)
+(*e: constant [[Nav.user_navigation]] *)
+(*s: function [[Nav.add_user_navigation]] *)
 let add_user_navigation (s : string) (f : Viewers.hyper_func) =
   user_navigation := (s,f) :: !user_navigation
-(*e: function Nav.add_user_navigation *)
+(*e: function [[Nav.add_user_navigation]] *)
 
-(*s: function Nav.id_wr *)
+(*s: function [[Nav.id_wr]] *)
 let id_wr wr = wr
-(*e: function Nav.id_wr *)
+(*e: function [[Nav.id_wr]] *)
 
-(*s: class Nav.stdctx *)
+(*s: class [[Nav.stdctx]] *)
 (* WARNING: we take copies of these objects, so "self" must *not* be
  * captured in a closure (it would always point to the old object).
  * A new object is created for each new top viewer (follow_link).
@@ -362,37 +362,37 @@ class stdctx (did, nav) =
     self
 
 end
-(*e: class Nav.stdctx *)
+(*e: class [[Nav.stdctx]] *)
 
-(*s: function Nav.make_ctx *)
+(*s: function [[Nav.make_ctx]] *)
 let make_ctx nav did = 
   ((new stdctx(did, nav))#init :> Viewers.context)
-(*e: function Nav.make_ctx *)
+(*e: function [[Nav.make_ctx]] *)
 
-(*s: function Nav.save_link *)
+(*s: function [[Nav.save_link]] *)
 (* Simple wrappers *)
 let save_link nav whereto =
   request nav (process_save whereto) (true, id_wr, nothing_specific)
-(*e: function Nav.save_link *)
-(*s: function Nav.follow_link *)
+(*e: function [[Nav.save_link]] *)
+(*s: function [[Nav.follow_link]] *)
 let follow_link nav lk =
   lk |> request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
     (*s: [[Nav.follow_link]] extra arguments to Nav.request *)
     (true, id_wr, specific_viewer true)
     (*e: [[Nav.follow_link]] extra arguments to Nav.request *)
-(*e: function Nav.follow_link *)
+(*e: function [[Nav.follow_link]] *)
     
 (*
  * Other navigation functions
  *)
 
-(*s: function Nav.absolutegoto *)
+(*s: function [[Nav.absolutegoto]] *)
 (* Used outside an hyperlink *)
 let absolutegoto nav uri =
   follow_link nav (Hyper.default_link uri)
-(*e: function Nav.absolutegoto *)
+(*e: function [[Nav.absolutegoto]] *)
     
-(*s: function Nav.historygoto *)
+(*s: function [[Nav.historygoto]] *)
 (* Used by navigators for back/forward/reload *)
 let historygoto nav did frag usecache =
   Log.debug "historygoto";
@@ -429,10 +429,10 @@ let historygoto nav did frag usecache =
       nav.nav_error#f (s_ "Document was flushed from cache, and should be reloaded from its url\n(probably a POST request)");
       false
    end
-(*e: function Nav.historygoto *)
+(*e: function [[Nav.historygoto]] *)
 
 
-(*s: function Nav.update *)
+(*s: function [[Nav.update]] *)
 let update nav did nocache =
   (* This gets called if answer is 200 but also 304 *)
   let process_update nav wr dh =
@@ -483,5 +483,5 @@ let update nav did nocache =
   with Not_found ->
    nav.nav_error#f (s_ "Document %s\nhas been flushed from cache"
                         (Url.string_of did.document_url))
-(*e: function Nav.update *)
-(*e: ./gui/nav.ml *)
+(*e: function [[Nav.update]] *)
+(*e: gui/nav.ml *)

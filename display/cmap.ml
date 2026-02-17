@@ -1,12 +1,12 @@
-(*s: ./display/cmap.ml *)
+(*s: display/cmap.ml *)
 open Printf
 open Tk
 open Embed
 open Maps
 open Hyper
+open Viewers
 
-
-(*s: exception Cmap.Syntax *)
+(*s: exception [[Cmap.Syntax]] *)
 (* Client Side Image Maps
    We must have two modes: one when the image has not been loaded.
    In that case, we need something like a popup menu. And then, when
@@ -14,9 +14,9 @@ open Hyper
    *)
 
 exception Syntax of string
-(*e: exception Cmap.Syntax *)
+(*e: exception [[Cmap.Syntax]] *)
 
-(*s: function Cmap.alt_mode *)
+(*s: function [[Cmap.alt_mode]] *)
 let alt_mode emb m l =
   Log.debug (sprintf "Alt mode map for %s" (Widget.name l));
   let menu = Menu.create_named l "map" [] in
@@ -30,13 +30,13 @@ let alt_mode emb m l =
   bind l (Glevents.get "alt_imap")
     (BindSet ([Ev_RootX; Ev_RootY],
           (fun ei -> Menu.popup menu ei.ev_RootX ei.ev_RootY)))
-(*e: function Cmap.alt_mode *)
+(*e: function [[Cmap.alt_mode]] *)
 
-(*s: function Cmap.printTagOrId *)
+(*s: function [[Cmap.printTagOrId]] *)
 let printTagOrId = function
   | Id n -> Log.f (sprintf "Id %d" n)
   | Tag s -> Log.f (sprintf "Tag %s" s)
-(*e: function Cmap.printTagOrId *)
+(*e: function [[Cmap.printTagOrId]] *)
 
 
 (* See Htbind for semantics of this class *)
@@ -58,9 +58,9 @@ class imap (c, items) =
  method binder = Canvas.bind c (Tag "current") 
 
  method highlight _ = ()
- method markused _ei = ()
+ method markused ei = ()
 
- method! init ctx =
+ method init ctx =
    super#init ctx;
    self#binder [[], Motion]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
@@ -75,7 +75,7 @@ end
 
 
 
-(*s: function Cmap.gfx_mode *)
+(*s: function [[Cmap.gfx_mode]] *)
 (* This is called when the image has been loaded *)
 let gfx_mode emb map c =
   Log.debug (sprintf "Gfx mode map for %s" (Widget.name c));
@@ -115,7 +115,7 @@ let gfx_mode emb map c =
         | Poly ->
         let l = List.length area.area_coords in
         (* there must be at least three points, and by pair *)
-        if l < 6 || l mod 2 <> 0 then begin
+        if l < 6 or l mod 2 <> 0 then begin
           Log.f "Invalid coords for polygon shape";
           raise (Syntax "polygon")
         end
@@ -137,7 +137,7 @@ let gfx_mode emb map c =
   Canvas.lower_bot c (Id 1);
   let htobj = new imap(c,items) in
     htobj#init emb.embed_context
-(*e: function Cmap.gfx_mode *)
+(*e: function [[Cmap.gfx_mode]] *)
 
 
-(*e: ./display/cmap.ml *)
+(*e: display/cmap.ml *)

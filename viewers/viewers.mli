@@ -1,26 +1,26 @@
-(*s: ./viewers/viewers.mli *)
+(*s: viewers/viewers.mli *)
 
-(*s: type Viewers.vparams *)
+(*s: type [[Viewers.vparams]] *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
-(*e: type Viewers.vparams *)
-(*s: type Viewers.frame_targets *)
+(*e: type [[Viewers.vparams]] *)
+(*s: type [[Viewers.frame_targets]] *)
 type frame_targets = (string * Widget.widget) list
-(*e: type Viewers.frame_targets *)
+(*e: type [[Viewers.frame_targets]] *)
 
-(*s: type Viewers.hyper_func *)
+(*s: type [[Viewers.hyper_func]] *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
 
   hyper_func : frame_targets -> Hyper.link -> unit
 }
-(*e: type Viewers.hyper_func *)
+(*e: type [[Viewers.hyper_func]] *)
 
 (* list of additionnal parameters for the viewer, according to its
    activation point *)
 
-(*s: signature class Viewers.context *)
+(*s: signature class [[Viewers.context]] *)
 (* The context given to a viewer *)
 class virtual context : (Document.document_id * vparams) -> object ('a)
 
@@ -48,9 +48,9 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
   method params : vparams
   (*e: [[Viewers.context]] other methods signatures *)
 end
-(*e: signature class Viewers.context *)
+(*e: signature class [[Viewers.context]] *)
 
-(*s: signature class Viewers.display_info *)
+(*s: signature class [[Viewers.display_info]] *)
 class  virtual display_info : (unit) -> object ('a)
 
   (*s: [[Viewers.display_info]] virtual methods signatures *)
@@ -87,48 +87,48 @@ class  virtual display_info : (unit) -> object ('a)
   method di_last_used : int
   (*e: [[Viewers.display_info]] graphic cache methods signatures *)
 end
-(*e: signature class Viewers.display_info *)
+(*e: signature class [[Viewers.display_info]] *)
 
 
-(*s: signature Viewers.di_compare *)
+(*s: signature [[Viewers.di_compare]] *)
 val di_compare : display_info -> display_info -> int
-(*e: signature Viewers.di_compare *)
+(*e: signature [[Viewers.di_compare]] *)
 
-(*s: type Viewers.t *)
+(*s: type [[Viewers.t]] *)
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
     (Widget.widget ->  context -> Document.handle -> display_info option)
-(*e: type Viewers.t *)
+(*e: type [[Viewers.t]] *)
 
-(*s: signature Viewers.add_viewer *)
+(*s: signature [[Viewers.add_viewer]] *)
 val add_viewer : Http_headers.media_type -> t -> unit
     (* [add_viewer type viewer] *)
-(*e: signature Viewers.add_viewer *)
-(*s: signature Viewers.rem_viewer *)
+(*e: signature [[Viewers.add_viewer]] *)
+(*s: signature [[Viewers.rem_viewer]] *)
 val rem_viewer : Http_headers.media_type -> unit
-(*e: signature Viewers.rem_viewer *)
-(*s: signature Viewers.add_builtin *)
+(*e: signature [[Viewers.rem_viewer]] *)
+(*s: signature [[Viewers.add_builtin]] *)
 val add_builtin : Http_headers.media_type -> t -> unit
     (* [add_builtin type viewer] makes viewer a builtin for type *)
-(*e: signature Viewers.add_builtin *)
-(*s: signature Viewers.reset *)
+(*e: signature [[Viewers.add_builtin]] *)
+(*s: signature [[Viewers.reset]] *)
 val reset : unit -> unit
-(*e: signature Viewers.reset *)
+(*e: signature [[Viewers.reset]] *)
 
 (* !!! main entry point!!!! *)
-(*s: signature Viewers.view *)
+(*s: signature [[Viewers.view]] *)
 val view : Widget.widget -> context -> Document.handle -> display_info option
-(*e: signature Viewers.view *)
+(*e: signature [[Viewers.view]] *)
 
 
-(*s: signature Viewers.frame_adopt *)
+(*s: signature [[Viewers.frame_adopt]] *)
 val frame_adopt : Widget.widget -> frame_targets -> frame_targets
     (* remap _self and _parent *)
-(*e: signature Viewers.frame_adopt *)
-(*s: signature Viewers.frame_fugue *)
+(*e: signature [[Viewers.frame_adopt]] *)
+(*s: signature [[Viewers.frame_fugue]] *)
 val frame_fugue : frame_targets -> frame_targets
     (* forget about _self and _parents *)
-(*e: signature Viewers.frame_fugue *)
+(*e: signature [[Viewers.frame_fugue]] *)
 
-(*e: ./viewers/viewers.mli *)
+(*e: viewers/viewers.mli *)

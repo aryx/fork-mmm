@@ -1,4 +1,4 @@
-(*s: ./viewers/viewers.ml *)
+(*s: viewers/viewers.ml *)
 (*
  * Multimedia
  *)
@@ -8,15 +8,15 @@ open I18n
 open Document
 
 (* The context given to a viewer *)
-(*s: type Viewers.vparams *)
+(*s: type [[Viewers.vparams]] *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
-(*e: type Viewers.vparams *)
-(*s: type Viewers.frame_targets *)
+(*e: type [[Viewers.vparams]] *)
+(*s: type [[Viewers.frame_targets]] *)
 type frame_targets = (string * Widget.widget) list
-(*e: type Viewers.frame_targets *)
+(*e: type [[Viewers.frame_targets]] *)
 
-(*s: function Viewers.frame_adopt *)
+(*s: function [[Viewers.frame_adopt]] *)
 let frame_adopt w targets = 
   targets |> List.map (function 
     | "_self",_ -> "_self", w
@@ -24,9 +24,9 @@ let frame_adopt w targets =
     | s, f -> s, f
   )
     
-(*e: function Viewers.frame_adopt *)
+(*e: function [[Viewers.frame_adopt]] *)
 
-(*s: function Viewers.frame_fugue *)
+(*s: function [[Viewers.frame_fugue]] *)
 let frame_fugue targets =
   let rec ff accu = function
     | [] -> accu
@@ -35,18 +35,18 @@ let frame_fugue targets =
     | p :: l -> ff (p::accu) l
   in
   ff [] targets
-(*e: function Viewers.frame_fugue *)
+(*e: function [[Viewers.frame_fugue]] *)
 
-(*s: type Viewers.hyper_func *)
+(*s: type [[Viewers.hyper_func]] *)
 type hyper_func = {
   hyper_visible : bool;
   hyper_title : string;
 
   hyper_func : frame_targets -> Hyper.link -> unit
 }
-(*e: type Viewers.hyper_func *)
+(*e: type [[Viewers.hyper_func]] *)
 
-(*s: class Viewers.context *)
+(*s: class [[Viewers.context]] *)
 class virtual context ((did : Document.document_id), 
                        (v : vparams)) =
  object (self : 'a)
@@ -88,7 +88,7 @@ class virtual context ((did : Document.document_id),
 
   method virtual log : string -> unit
 end
-(*e: class Viewers.context *)
+(*e: class [[Viewers.context]] *)
 
 (* The object created/returned by a viewer *)
 class  virtual display_info () =
@@ -132,17 +132,17 @@ class  virtual display_info () =
   (*e: [[Viewers.display_info]] graphic cache methods *)
 end
 
-(*s: function Viewers.di_compare *)
+(*s: function [[Viewers.di_compare]] *)
 let di_compare di di' = 
   (*di#di_last_used > di'#di_last_used*)
-  compare di'#di_last_used di#di_last_used
-(*e: function Viewers.di_compare *)
+  Stdlib.compare di'#di_last_used di#di_last_used
+(*e: function [[Viewers.di_compare]] *)
 
 (* 
  * The default external viewer
  *)
 
-(*s: function Viewers.metamail *)
+(*s: function [[Viewers.metamail]] *)
 (* Metamail options
    -b : not an RFC822 message
    -z : delete when finished 
@@ -150,11 +150,11 @@ let di_compare di di' =
  *)
 let metamail ctype file =
   ignore (Munix.system "metamail -b -z -x -c" [ctype; file] true)
-(*e: function Viewers.metamail *)
+(*e: function [[Viewers.metamail]] *)
 
-(*s: function Viewers.extern_batch *)
+(*s: function [[Viewers.extern_batch]] *)
 (* Batch version: we transfer everything and then run metamail *)
-let _extern_batch dh ctype = 
+let extern_batch dh ctype = 
   let outfile = Msys.mktemp "mmm" in
   Document.add_log dh (
     s_ "Saving %s\nfor external display with MIME type %s"
@@ -163,9 +163,9 @@ let _extern_batch dh ctype =
   let endmsg =
     s_ "Running metamail with MIME media-type: %s" ctype in
     Save.tofile (metamail ctype) (Decoders.insert dh) outfile endmsg
-(*e: function Viewers.extern_batch *)
+(*e: function [[Viewers.extern_batch]] *)
 
-(*s: function Viewers.extern *)
+(*s: function [[Viewers.extern]] *)
 (* "interactive" version: 
  *    send data to metamail as it arrives, but allow abort
  * NOTE: There are sometimes weird errors when the child dumps core
@@ -220,7 +220,7 @@ let extern dh ctype =
             Document.destroy_log dh false;
             Error.f (s_ "Error during retrieval of %s" url)
        )
-(*e: function Viewers.extern *)
+(*e: function [[Viewers.extern]] *)
 
 (*
  * Viewer control
@@ -235,14 +235,14 @@ let extern dh ctype =
  * will be passed to metamail.
  *)
 
-(*s: type Viewers.t *)
+(*s: type [[Viewers.t]] *)
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
     (Widget.widget ->  context -> Document.handle -> display_info option)
-(*e: type Viewers.t *)
+(*e: type [[Viewers.t]] *)
 
-(*s: type Viewers.spec *)
+(*s: type [[Viewers.spec]] *)
 type spec =
   | Internal of t
   | External
@@ -251,24 +251,24 @@ type spec =
   (*x: [[Viewers.spec]] other cases *)
   | Save	     (* always save *)
   (*e: [[Viewers.spec]] other cases *)
-(*e: type Viewers.spec *)
+(*e: type [[Viewers.spec]] *)
 
-(*s: constant Viewers.viewers *)
+(*s: constant [[Viewers.viewers]] *)
 let viewers = (Hashtbl.create 17: (Http_headers.media_type, spec) Hashtbl.t)
-(*e: constant Viewers.viewers *)
+(*e: constant [[Viewers.viewers]] *)
 
-(*s: function Viewers.add_viewer *)
+(*s: function [[Viewers.add_viewer]] *)
 (* That's for internal viewers only *)
 let add_viewer ctype viewer =
   Hashtbl.add viewers ctype (Internal viewer)
-(*e: function Viewers.add_viewer *)
+(*e: function [[Viewers.add_viewer]] *)
 
-(*s: function Viewers.rem_viewer *)
+(*s: function [[Viewers.rem_viewer]] *)
 let rem_viewer ctype =
   Hashtbl.remove viewers ctype
-(*e: function Viewers.rem_viewer *)
+(*e: function [[Viewers.rem_viewer]] *)
 
-(*s: function Viewers.unknown *)
+(*s: function [[Viewers.unknown]] *)
 let rec unknown frame ctx dh =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Warning")
@@ -292,9 +292,9 @@ let rec unknown frame ctx dh =
  | 1 -> Save.interactive (fun _ -> ()) dh; None
  | 2 -> dclose true dh; None
  | _ -> assert false (* property of dialogs *)
-(*e: function Viewers.unknown *)
+(*e: function [[Viewers.unknown]] *)
 
-(*s: function Viewers.interactive *)
+(*s: function [[Viewers.interactive]] *)
 and interactive frame ctx dh ctype =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Viewers")
@@ -325,9 +325,9 @@ and interactive frame ctx dh ctype =
   | 2 -> Save.interactive (fun _ -> ()) dh; None
   | 3 -> dclose true dh; None
   | _ -> assert false (* property of dialogs *)
-(*e: function Viewers.interactive *)
+(*e: function [[Viewers.interactive]] *)
 
-(*s: function Viewers.view *)
+(*s: function [[Viewers.view]] *)
 (* the meat *)
 and view frame ctx dh =
   try 
@@ -381,23 +381,21 @@ and view frame ctx dh =
       (* and could not be computed from url *)
       unknown frame ctx dh
   (*e: [[Viewers.view]] exn handler 2 *)
-(*e: function Viewers.view *)
+(*e: function [[Viewers.view]] *)
 
-(*s: constant Viewers.builtin_viewers *)
+(*s: constant [[Viewers.builtin_viewers]] *)
 let builtin_viewers = ref []
-(*e: constant Viewers.builtin_viewers *)
-(*s: function Viewers.add_builtin *)
+(*e: constant [[Viewers.builtin_viewers]] *)
+(*s: function [[Viewers.add_builtin]] *)
 let add_builtin t v =
   builtin_viewers := (t,v) :: !builtin_viewers
-(*e: function Viewers.add_builtin *)
+(*e: function [[Viewers.add_builtin]] *)
 
-(*s: function Viewers.reset *)
+(*s: function [[Viewers.reset]] *)
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
-  (* pad: to remove warning on Interactive, but probably better to investigate*)
-  let _ = Interactive in
   (*pr2_gen builtin_viewers;*)
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
@@ -406,7 +404,7 @@ let reset () =
   (* Preference settings *)
   Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype -> 
     try
-      let (typ,sub), _pars = Lexheaders.media_type ctype in
+      let (typ,sub), pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
     with Http_headers.Invalid_HTTP_header e ->
       !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
@@ -414,13 +412,13 @@ let reset () =
   (*x: [[Viewers.reset()]] setting other viewers *)
   Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype -> 
     try
-      let (typ,sub),_pars = Lexheaders.media_type ctype in
+      let (typ,sub),pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
     with Http_headers.Invalid_HTTP_header e ->
       Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*e: [[Viewers.reset()]] setting other viewers *)
   ()
-(*e: function Viewers.reset *)
+(*e: function [[Viewers.reset]] *)
     
-(*e: ./viewers/viewers.ml *)
+(*e: viewers/viewers.ml *)

@@ -1,4 +1,4 @@
-(*s: ./display/source.ml *)
+(*s: display/source.ml *)
 open I18n
 open Printf
 open Tk
@@ -6,7 +6,7 @@ open Frx_text
 open Document
 open Html
 
-(*s: function Source.annotate *)
+(*s: function [[Source.annotate]] *)
 (* HTML source viewer/editor *)
 let annotate txt =
   Hashtbl.iter (fun elem _  ->
@@ -19,11 +19,11 @@ let annotate txt =
     and idxe = abs_index e in
     Text.tag_add txt name idxs idxe)
       annotations)
-(*e: function Source.annotate *)
+(*e: function [[Source.annotate]] *)
 
-(*s: function Source.view *)
+(*s: function [[Source.view]] *)
 (* Commit modifies the cache *)
-let view attach did redisplay errors annotations _coding =
+let view attach did redisplay errors annotations coding =
   try 
     let doc = Cache.find did in
     (* load : take document from cache and put it in text widget
@@ -137,7 +137,7 @@ let view attach did redisplay errors annotations _coding =
     match List.length !errors with
       0 ->
        Button.configure err [Text (s_ "No Errors"); State Disabled]
-    | _n ->
+    | n ->
     Button.configure err
         [Text (s_ "%d errors" (List.length !errors));
          State Normal; Command loop_in_errors]
@@ -148,7 +148,7 @@ let view attach did redisplay errors annotations _coding =
      * we can't use the old indexes since the buffer might have changed ! *)
      let rec remall = function
         [] -> ()
-      | [_x] -> ()
+      | [x] -> ()
       | s::e::l ->
        Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
        remall l
@@ -183,7 +183,7 @@ let view attach did redisplay errors annotations _coding =
           with
         Not_found -> ())));
      Text.tag_bind t "errors" [[], Leave]
-       (BindSet ([], (fun _ei -> Textvariable.set errorv "")));
+       (BindSet ([], (fun ei -> Textvariable.set errorv "")));
 
       pack [dismiss;commit;save;err][Side Side_Left];
       pack [err_msg] [Side Side_Left; Expand true; Fill Fill_X];
@@ -196,6 +196,6 @@ let view attach did redisplay errors annotations _coding =
 
   with Not_found ->
     Error.f "document not in cache"
-(*e: function Source.view *)
+(*e: function [[Source.view]] *)
 
-(*e: ./display/source.ml *)
+(*e: display/source.ml *)
