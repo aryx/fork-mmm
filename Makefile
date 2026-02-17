@@ -8,17 +8,17 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
+# for make
 PROGS=mmm htparse mmm_remote
-# mmm2
-#, surfboard
+# mmm2 surfboard
 
+# for make opt
 TARGET=mmm
 
 #TARGET=mmm2
 #GRAPHICSDIR=$(shell ocamlfind query lablgtk2) $(shell ocamlfind query cairo)
 #OTHERSYSLIBS=lablgtk.cma cairo.cma cairo_lablgtk.cma 
 #GTKLOOP=gtkThread.cmo
-
 
 OPTPROGS= $(PROGS:=.opt)
 
@@ -48,8 +48,7 @@ LIBS=$(MAINDIRS:%=%/lib.cma)
 
 # use dynlink for the applet system
 SYSLIBS=unix.cma str.cma  dynlink.cma
-TKLIBS=$(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK)\
-  $(WITH_TK80)
+TKLIBS=$(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) $(WITH_TK80)
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 
@@ -67,12 +66,15 @@ all::
 	$(MAKE) rec 
 	$(MAKE) allbyte 
 
-build-docker:
-	docker build -t "mmm" .
-
 opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
+
+#coupling: see also .github/workflows/docker.yml
+build-docker:
+	docker build -t "mmm" .
+build-docker-ocaml5:
+	docker build -t "mmm" --build-arg OCAML_VERSION=5.3.0 .
 
 allbyte: $(PROGS)
 
@@ -84,12 +86,6 @@ rec:
 rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 
-# OBJS are common for all versions
-OBJS= $(LIBS) $(TXTDISP)
-
-# Entry point
-MAIN=main.cmo
-
 clean::
 	rm -f main.cm*
 clean::
@@ -97,6 +93,14 @@ clean::
 
 depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
+
+
+# OBJS are common for all versions
+OBJS= $(LIBS) $(TXTDISP)
+
+# Entry point
+MAIN=main.cmo
+
 
 # Exported sandbox libraries
 #SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
