@@ -8,11 +8,11 @@ include Makefile.config
 ##############################################################################
 TOP=$(shell pwd)
 
-# for make
+# for 'make'
 PROGS=mmm htparse mmm_remote
 # mmm2 surfboard
 
-# for make opt
+# for 'make opt'
 TARGET=mmm
 
 #TARGET=mmm2
@@ -111,7 +111,6 @@ OBJS= $(LIBS) $(TXTDISP)
 # Entry point
 MAIN=main.cmo
 
-
 # Exported sandbox libraries
 #SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
 #CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
@@ -130,13 +129,11 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 	  $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 
-
 #$(TARGET): $(LIBS) $(OBJS) gui.cmo main_gtk.cmo
 #	$(OCAMLC) -cclib -L/opt/X11/lib  $(BYTECODE_STATIC) -o $@ $(OTHERSYSLIBS) $(SYSLIBS) threads.cma $(GTKLOOP) $(TKLIBS) $^
 
 mmm.opt:
 	echo TODO
-
 
 # The standalone HTML syntax checker
 HTMISC=libs/commons/lang.cmo libs/commons/ebuffer.cmo libs/commons/log.cmo\
@@ -177,10 +174,6 @@ purebytecode:
 distclean:: clean
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i $@; done
 #	rm -f Makefile.config
-
-##############################################################################
-# Build documentation
-##############################################################################
 
 ##############################################################################
 # Install
@@ -260,6 +253,17 @@ distribute:
 # Developer rules
 ##############################################################################
 
+# see https://github.com/semgrep/semgrep
+check:
+	osemgrep --experimental --config semgrep.jsonnet --strict --error
+
+#############################################################################
+# Pad's targets
+#############################################################################
+
+visual:
+	codemap -screen_size 3 -filter semgrep -efuns_client efuns_client -emacs_client /dev/null .
+
 #DIRS=$(filter-out sandbox, $(MAKESUBDIRS))
 DIRS=$(filter-out sandbox, $(MAINDIRS))
 
@@ -285,14 +289,7 @@ tags:
 
 graph:
 	~/pfff/codegraph -lang cmt -build .
-check:
+scheck:
 	~/pfff/scheck -with_graph_code graph_code.marshall -filter 3 .
 
 # 2>&1 | grep -v stdlib | grep Function
-
-#############################################################################
-# Pad's targets
-#############################################################################
-
-visual:
-	codemap -screen_size 3 -filter semgrep -efuns_client efuns_client -emacs_client /dev/null .
