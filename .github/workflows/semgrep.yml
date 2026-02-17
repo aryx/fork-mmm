@@ -1,0 +1,43 @@
+# Run semgrep in CI
+
+# can test locally with:
+# docker run --rm -v .:/src semgrep/semgrep semgrep --experimental --config semgrep.jsonnet --strict --error 
+
+
+jobs:
+  job:
+    runs-on: ubuntu-24.04
+    container:
+      #alt: semgrep/semgrep:develop to live on the edge!
+      image: semgrep/semgrep
+    #TODO: at some point
+    #env:
+    #  SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+    # ...
+    # run: semgrep ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Workaround for rootless containers as git operations may fail due to
+      # dubious ownership of /__w/xix/xix
+      # ugly: needed because osemgrep does not do the git hack done by
+      # pysemgrep
+      - run: |
+          git --version
+          pwd
+          ls
+          git config --global --add safe.directory /__w/xix/xix
+          git -C /__w/mmm/mmm ls-files -z --cached
+      # coupling: with Makefile 'make check' target
+      - run: semgrep scan --experimental --config semgrep.jsonnet --strict --error
+
+name: semgrep
+on:
+  pull_request_target: {}
+  workflow_dispatch: null
+  push:
+    branches:
+      - master
+  #schedule:
+  #  - cron: 50 15 * * *
