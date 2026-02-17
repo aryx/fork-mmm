@@ -1,4 +1,4 @@
-TOP=..
+TOP=../..
 ##############################################################################
 # Variables
 ##############################################################################
@@ -6,14 +6,13 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= retrieve.ml scheduler.ml progress.ml 
+SRC= file.ml mailto.ml cache.ml protos.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals \
- $(TOP)/url $(TOP)/www $(TOP)/http \
- $(TOP)/protocols
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/src/globals \
+ $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http
 
 SYSINCLUDES=
 

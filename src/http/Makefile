@@ -1,4 +1,4 @@
-TOP=..
+TOP=../..
 ##############################################################################
 # Variables
 ##############################################################################
@@ -6,14 +6,15 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= file.ml mailto.ml cache.ml protos.ml
+SRC= base64.ml lexdate.ml http_headers.ml \
+     lexheaders.ml auth.ml \
+     http.ml retype.ml \
+     http_date.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals \
- $(TOP)/url $(TOP)/www $(TOP)/http
-
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/src/url $(TOP)/src/www $(TOP)/src/globals
 SYSINCLUDES=
 
 ##############################################################################
@@ -39,3 +40,12 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+
+lexheaders.ml : lexheaders.mll
+	$(CAMLLEX) lexheaders.mll
+lexdate.ml : lexdate.mll
+	$(CAMLLEX) lexdate.mll
+clean::
+	rm -f lexheaders.ml lexdate.ml
+beforedepend:: lexheaders.ml lexdate.ml

@@ -26,13 +26,10 @@ SRC=main.ml
 
 # for the basic browser
 MAINDIRS= \
-  libs/commons libs/i18n/japan globals \
-  url www http languages/html \
-  protocols retrieve \
-  tk \
-  viewers \
-  display \
-  chrome \
+  libs/commons libs/i18n/japan src/globals \
+  src/url src/www src/http languages/html \
+  src/protocols src/retrieve \
+  gui/tk gui/viewers gui/display gui/chrome \
 
 #  applets \
 #  sandbox \

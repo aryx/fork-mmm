@@ -1,4 +1,4 @@
-TOP=..
+TOP=../..
 ##############################################################################
 # Variables
 ##############################################################################
@@ -6,30 +6,16 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= tkresource.ml\
-  tk_condition.ml\
-  tk_error.ml\
-  tk_i18n.ml\
-  tk_document.ml\
-  tk_auth.ml\
-  tk_file.ml\
-  tk_mailto.ml\
-  tk_progress.ml\
-  glevents.ml\
-  img.ml
+SRC= retrieve.ml scheduler.ml progress.ml 
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
-INCLUDEDIRS=\
- $(TOP)/libs/commons\
- $(TOP)/url\
- $(TOP)/www\
- $(TOP)/http\
- $(TOP)/protocols\
- $(TOP)/retrieve\
 
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/src/globals \
+ $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http \
+ $(TOP)/src/protocols
 
-SYSINCLUDES=$(TKCOMPFLAGS)
+SYSINCLUDES=
 
 ##############################################################################
 # Generic variables
@@ -54,15 +40,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-#old: for tk ressource and its use of the parser extension
-# PP=-pp camlp4o
-#but I switched to raw Stream API without needing the OCaml stream
-# extension
-
-tkresource.cmo: tkresource.cmi
-	$(OCAMLC) $(PP) -c tkresource.ml
-
-tkresource.cmx: tkresource.cmi
-	$(OCAMLOPT) $(PP) -c tkresource.ml

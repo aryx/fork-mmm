@@ -1,4 +1,4 @@
-TOP=..
+TOP=../..
 ##############################################################################
 # Variables
 ##############################################################################
@@ -6,18 +6,13 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= decoders.ml save.ml viewers.ml plain.ml embed.ml 
+SRC= hyper.ml www.ml document.ml maps.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals \
-  $(TOP)/url $(TOP)/www $(TOP)/http $(TOP)/protocols \
-  $(TOP)/retrieve \
-  $(TOP)/tk
-
-SYSINCLUDES=$(TKCOMPFLAGS)
-
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/src/url
+SYSINCLUDES=
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -41,7 +36,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
