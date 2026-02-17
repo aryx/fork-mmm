@@ -32,7 +32,7 @@ MAINDIRS= \
   tk \
   viewers \
   display \
-  gui \
+  chrome \
 
 #  applets \
 #  sandbox \

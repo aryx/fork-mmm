@@ -11,8 +11,8 @@
 - Dockerfile and docker.yml Github Actions CI check
 
 ** internals
-- introduce intermediate libs/, languages/, src/ folders (like in my
-  other projects such as codemap/efuns/osemgrep)
+- introduce intermediate libs/, languages/, src/, and gui/ folders
+  (like in my other projects such as codemap/efuns/osemgrep)
 
 * beta (Q1 2015) (maintenance)
 

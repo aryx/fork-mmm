@@ -54,7 +54,7 @@ external/stdlib/*
 /libs/i18n/japan/lexkanji.ml
 /misc/lexpath.ml
 /libs/commons/lexpath.ml
-/www/lexurl.ml
+/url/lexurl.ml
 
 #binaries
 /htparse

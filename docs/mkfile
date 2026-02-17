@@ -150,25 +150,25 @@ SRC= \
   display/html_disp.mli\
   display/html_disp.ml\
   \
-  gui/about.mli\
-  gui/about.ml\
-  gui/fontprefs.ml\
-  gui/gcache.mli\
-  gui/gcache.ml\
-  gui/plink.mli\
-  gui/plink.ml\
-  gui/prefs.mli\
-  gui/prefs.ml\
-  gui/debug.ml\
-  gui/history.mli\
-  gui/history.ml\
-  gui/nav.mli\
-  gui/nav.ml\
-  gui/mmmprefs.mli\
-  gui/mmmprefs.ml\
-  gui/mmm.mli\
-  gui/mmm.ml\
-  gui/cci.ml\
+  chrome/about.mli\
+  chrome/about.ml\
+  chrome/fontprefs.ml\
+  chrome/gcache.mli\
+  chrome/gcache.ml\
+  chrome/plink.mli\
+  chrome/plink.ml\
+  chrome/prefs.mli\
+  chrome/prefs.ml\
+  chrome/debug.ml\
+  chrome/history.mli\
+  chrome/history.ml\
+  chrome/nav.mli\
+  chrome/nav.ml\
+  chrome/mmmprefs.mli\
+  chrome/mmmprefs.ml\
+  chrome/mmm.mli\
+  chrome/mmm.ml\
+  chrome/cci.ml\
   \
   main.ml\
   main_remote.ml\
