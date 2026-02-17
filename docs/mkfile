@@ -69,7 +69,6 @@ SRC= \
   html/lexhtml.mll\
   html/html_eval.mli\
   html/html_eval.ml\
-  html/htparse.ml\
   \
   http/base64.mli\
   http/base64.ml\
@@ -129,7 +128,7 @@ SRC= \
   display/source.ml\
   display/ctext.mli\
   display/ctext.ml\
-  display/htmlfmt.mli\
+  display/htmlfmt.ml\
   display/imgload.mli\
   display/imgload.ml\
   display/html_form.mli\
@@ -172,6 +171,7 @@ SRC= \
   \
   main.ml\
   main_remote.ml\
+  htparse.ml\
   \
   extensions/audio.ml\
   extensions/images.ml\

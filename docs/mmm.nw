@@ -6759,7 +6759,7 @@ let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
-  pr2_gen builtin_viewers;
+  (*pr2_gen builtin_viewers;*)
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
 
@@ -11613,7 +11613,7 @@ let d2html path d =
      done      	
    with  End_of_file -> closedir d
   end;
-  entries := Sort.list (<=) !entries;
+  entries := List.sort Stdlib.compare !entries;
   !entries |> List.iter (function
     |  "." -> ()
     | ".." ->
@@ -13612,11 +13612,12 @@ method di_touch =
 % default methods, but overriden sometimes?
 
 <<signature [[Viewers.di_compare]]>>=
-val di_compare : display_info -> display_info -> bool
+val di_compare : display_info -> display_info -> int
 @
 <<function [[Viewers.di_compare]]>>=
 let di_compare di di' = 
-  di#di_last_used > di'#di_last_used
+  (*di#di_last_used > di'#di_last_used*)
+  Stdlib.compare di'#di_last_used di#di_last_used
 @
 
 <<[[Nav.process_viewer()]] add in cache and history the document>>=

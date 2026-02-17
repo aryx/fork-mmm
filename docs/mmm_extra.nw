@@ -988,7 +988,7 @@ open Printf
 %todo: replace with unix?
 
 <<signature [[Low.read]]>>=
-val read : file_descr -> string -> int -> int -> int
+val read : file_descr -> bytes -> int -> int -> int
   (* Unix.read wrapper, to be used when data transferred has to
      be counted by the tachymeter
    *)
@@ -3524,8 +3524,8 @@ let internal_kill did e =
 let make_room () =
   if !debug then Log.f "Trying to make room in cache";
   (* Sort.list according to lru *)
-  memory := Sort.list 
-            (fun (_,e) (_,e') -> e.cache_lastused < e'.cache_lastused)
+  memory := List.sort 
+            (fun (_,e) (_,e') -> Stdlib.compare e.cache_lastused e'.cache_lastused)
          !memory;
   (* if the more recent entry has lu max_lastused, then we have to augment 
      the cache, since this means that only pending connexions are
@@ -7861,12 +7861,12 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 @
 
 
-\subsection*{[[display/htmlfmt.mli]]}
+\subsection*{[[display/htmlfmt.ml]]}
 
 
 %-------------------------------------------------------------
 
-<<display/htmlfmt.mli>>=
+<<display/htmlfmt.ml>>=
 (* HTML  "display device" *)
 
 <<type [[Htmlfmt.gattr]]>>
@@ -7877,8 +7877,8 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 
 
 <<type [[Htmlfmt.input_kind]]>>
-    
-class  virtual form_behaviour : (unit) -> object
+
+class  virtual form_behaviour () = object
     method virtual add_get : input_kind -> (unit -> (string * string) list) -> unit
     method virtual add_reset : (unit -> unit) -> unit
     method virtual submit : (string * string) list -> Hyper.link
@@ -11603,7 +11603,7 @@ let add hkey did di =
        not sure that the older are really the older in history. Well.
      *)
     if List.length !r > !max_keep then
-      let l = Sort.list (fun (_,di) (_,di') -> di_compare di di') !r in
+      let l = List.sort (fun (_,di) (_,di') -> di_compare di di') !r in
       let fluff = Mlist.tln l !max_keep in
     List.iter (fun (did,_) -> remove hkey did) fluff
   with
