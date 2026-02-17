@@ -6,17 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-# Miscellaneous additional libraries
-SRC= common.ml simple_color.ml \
-  fileevent_.ml \
-  timer_.ml \
-  low.ml mstring.ml mlist.ml msys.ml \
-  ebuffer.ml munix.ml date.ml \
-  log.ml \
-  condition.ml feed.ml \
-  ibtree.ml \
-  i18nprintf.ml lang.ml i18n.ml \
-  error.ml hotlist.ml \
+SRC= common.ml simple_color.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=

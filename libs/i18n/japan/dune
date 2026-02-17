@@ -3,7 +3,7 @@
  (name mmm_japan)
  (wrapped false)
  (libraries
-   mmm.commons
+   mmm.misc
  )
 )
 

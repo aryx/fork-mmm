@@ -1,8 +1,11 @@
 
 (library
- (public_name mmm.commons)
- (name mmm_commons)
+ (public_name mmm.misc)
+ (name mmm_misc)
  (wrapped false)
+ (libraries
+    mmm.commons
+ )
  ;(inline_tests)
  ;(preprocess
  ; (pps ppx_inline_test))

@@ -6,13 +6,22 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= url.ml uri.ml urlenc.ml lexurl.ml
+# Miscellaneous additional libraries
+SRC= fileevent_.ml \
+  timer_.ml \
+  low.ml mstring.ml mlist.ml msys.ml \
+  ebuffer.ml munix.ml date.ml \
+  log.ml \
+  condition.ml feed.ml \
+  ibtree.ml \
+  i18nprintf.ml lang.ml i18n.ml \
+  error.ml hotlist.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
-
-INCLUDEDIRS=$(TOP)/libs/misc
+INCLUDEDIRS=$(TOP)/libs/commons
 SYSINCLUDES=
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -38,8 +47,6 @@ clean::
 	rm -f $(TARGET).top
 
 
-lexurl.ml : lexurl.mll
-	$(CAMLLEX) lexurl.mll
-clean::
-	rm -f lexurl.ml
-beforedepend:: lexurl.ml
+##############################################################################
+# Literate Programming rules
+##############################################################################

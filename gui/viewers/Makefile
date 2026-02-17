@@ -11,7 +11,7 @@ SRC= decoders.ml save.ml viewers.ml plain.ml embed.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/src/globals \
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/src/globals \
   $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http $(TOP)/src/protocols \
   $(TOP)/src/retrieve \
   $(TOP)/gui/tk

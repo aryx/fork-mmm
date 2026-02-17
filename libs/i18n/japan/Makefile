@@ -19,7 +19,7 @@ SRC= bug.ml \
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons
+INCLUDEDIRS=$(TOP)/libs/misc
 
 ##############################################################################
 # Generic variables

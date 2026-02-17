@@ -3,7 +3,7 @@
  (name mmm_html)
  (wrapped false)
  (libraries
-    mmm.commons
+    mmm.misc
  )
  (preprocess (pps ppx_deriving.show))
 )

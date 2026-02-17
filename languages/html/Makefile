@@ -11,7 +11,7 @@ SRC= dtd.ml html.ml lexhtml.ml html_eval.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/i18n/japan
+INCLUDEDIRS=$(TOP)/libs/misc $(TOP)/libs/i18n/japan
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 
