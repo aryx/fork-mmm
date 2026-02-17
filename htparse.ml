@@ -138,7 +138,7 @@ let html_indent name level =
 let main () =
   Html.init (Lang.lang());
 
-  Arg.parse [
+  let options = [
      "-struct", Arg.Int   (function n -> mode := Indent n), "Parse Tree";
      "-nesting", Arg.Unit (function () -> mode := Nesting), "Check nesting";
 
@@ -148,7 +148,8 @@ let main () =
 
      "-dtd", Arg.Unit (function () -> Dtd.dump Dtd.dtd32f), "Dump DTD";
      "-depth", Arg.Int (function n -> Format.set_max_boxes n), "Max print depth"
-     ]
+     ] |> Arg.align in
+    Arg.parse options
      (fun s -> 
        match !mode with
        | Check -> html_lex s
