@@ -37,6 +37,10 @@ RUN eval $(opam env) && cd external/ocamltk && ./configure --with-config=./site.
 
 # mmm
 RUN eval $(opam env) && make
+RUN eval $(opam env) && make opt
 
 # Test
 #TODO: RUN ./test.sh
+RUN ./mmm --help
+RUN ./htparse --help
+

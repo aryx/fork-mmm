@@ -46,7 +46,3 @@ lexhtml.ml : lexhtml.mll
 clean::
 	rm -rf lexhtml.ml
 beforedepend:: lexhtml.ml
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

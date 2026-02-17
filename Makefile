@@ -12,6 +12,8 @@ PROGS=mmm htparse mmm_remote
 # mmm2
 #, surfboard
 
+TARGET=mmm
+
 #TARGET=mmm2
 #GRAPHICSDIR=$(shell ocamlfind query lablgtk2) $(shell ocamlfind query cairo)
 #OTHERSYSLIBS=lablgtk.cma cairo.cma cairo_lablgtk.cma 
@@ -115,8 +117,11 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 
 
 
-$(TARGET): $(LIBS) $(OBJS) gui.cmo main_gtk.cmo
-	$(OCAMLC) -cclib -L/opt/X11/lib  $(BYTECODE_STATIC) -o $@ $(OTHERSYSLIBS) $(SYSLIBS) threads.cma $(GTKLOOP) $(TKLIBS) $^
+#$(TARGET): $(LIBS) $(OBJS) gui.cmo main_gtk.cmo
+#	$(OCAMLC) -cclib -L/opt/X11/lib  $(BYTECODE_STATIC) -o $@ $(OTHERSYSLIBS) $(SYSLIBS) threads.cma $(GTKLOOP) $(TKLIBS) $^
+
+mmm.opt:
+	echo TODO
 
 
 # The standalone HTML syntax checker

@@ -6,11 +6,11 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= about.cmo gcache.cmo \
-     fontprefs.cmo prefs.cmo mmmprefs.cmo \
-     history.cmo plink.cmo nav.cmo \
-     mmm.cmo cci.cmo \
-     debug.cmo 
+SRC= about.ml gcache.ml \
+     fontprefs.ml prefs.ml mmmprefs.ml \
+     history.ml plink.ml nav.ml \
+     mmm.ml cci.ml \
+     debug.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
@@ -48,7 +48,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# Literate Programming rules
-##############################################################################
