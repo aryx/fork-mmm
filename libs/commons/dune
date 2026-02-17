@@ -3,6 +3,24 @@
  (public_name mmm.commons)
  (name mmm_commons)
  (wrapped false)
+ (modules
+  Set_ Map_
+  Cap CapStdlib CapSys CapUnix
+  Eq Ord
+  Common
+  Dumper OCaml
+  Console
+  Logs Logs_
+  Exit Exception
+  Chan FS IO Tmp
+  Cmd Proc
+  Date Bits Rune
+  ; Fpath included here (different from xix dune file)
+  Fpath Fpath_ ; Ftype
+  Arg_
+  Arch OS Endian
+  ; no Rune
+ )
  ;(inline_tests)
  ;(preprocess
  ; (pps ppx_inline_test))
