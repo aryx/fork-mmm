@@ -13,8 +13,8 @@ end
 
 class x = object
   inherit t
-  method f _ = pr2 "TODO: Error.x.f"
-  method ok _ = pr2 "TODO: Error.x.ok"
+  method f _ = Logs.err (fun m -> m "TODO: Error.x.f")
+  method ok _ = Logs.err (fun m -> m "TODO: Error.x.ok")
   method choose _ = failwith "TODO: Error.x.choose"
   method ari _ = failwith "TODO: Error.x.ari"
 end

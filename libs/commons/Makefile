@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= common.ml
+SRC= Common.ml Console.ml Logs.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=

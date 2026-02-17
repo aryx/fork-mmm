@@ -220,7 +220,7 @@ let rec navigator is_main_window initial_url =
       nav_add_hist = add_hist;
       (*x: [[Mmm.navigator()]] set nav fields *)
       nav_log = (fun s -> 
-        pr2 s;
+        Logs.info (fun m -> m "%s" s);
         Textvariable.set loggingv s
       );
       (*x: [[Mmm.navigator()]] set nav fields *)
