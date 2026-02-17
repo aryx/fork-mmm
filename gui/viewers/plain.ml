@@ -3,7 +3,7 @@ open Tk
 open Unix
 open Frx_text
 open Document
-open Viewers
+
 open Feed
 
 (*s: class [[Plain.plain]] *)
@@ -11,7 +11,7 @@ class display_plain ((top : Widget.widget),
                      (ctx : Viewers.context),
                      (dh : Document.handle)) =
  object (self)
-  inherit Viewers.display_info () as di  (* gives us basic features *)
+  inherit Viewers.display_info () as _di  (* gives us basic features *)
 (*
   inherit Htmlw.viewer_globs (ctx, dh)
 *)

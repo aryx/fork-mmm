@@ -104,7 +104,7 @@ let find did =
  * The caller is responsible for possible removing the document itself
  * from the memory.
  *)
-let internal_kill did e =
+let internal_kill did _e =
    (* Remove pointers to in-lined images and other goodies *)
    List.iter (fun f -> f did) !cutlinks
 (*e: function [[Cache.internal_kill]] *)
@@ -121,7 +121,7 @@ let make_room () =
      in the cache *)
   begin match !memory with
     [] -> ()
-  | (_,e)::l ->
+  | (_,e)::_l ->
      if e.cache_lastused = max_lastused then max_documents := !max_documents + 5
      else (* cleanup the oldests entries *)
        let rec rem1 n l = 
@@ -279,7 +279,7 @@ let init () =
 
 (*s: function [[Cache.tofile]] *)
 (* Cache savers *)
-let tofile dh =
+let tofile _dh =
   let f = Msys.mktemp "mmmcache" in
   let oc = open_out_bin f in
     FileData (f,true), 
@@ -288,7 +288,7 @@ let tofile dh =
 (*e: function [[Cache.tofile]] *)
 
 (*s: function [[Cache.tobuffer]] *)
-let tobuffer dh =
+let tobuffer _dh =
   let b = Ebuffer.create 1024 in
   MemoryData b, {cache_write = Ebuffer.output b;
                  cache_close = (fun () -> ())}
@@ -296,7 +296,7 @@ let tobuffer dh =
 
 (*s: constant [[Cache.discard]] *)
 let discard =
-    {cache_write = (fun buf offs len -> ());
+    {cache_write = (fun _buf _offs _len -> ());
      cache_close = (fun () -> ())}
 (*e: constant [[Cache.discard]] *)
 
@@ -320,7 +320,7 @@ let dummy dh =
 (*e: function [[Cache.dummy]] *)
 
 (*s: function [[Cache.replace]] *)
-let replace = function
+let _replace = function
    MemoryData b ->
     Ebuffer.reset b; 
     {cache_write = Ebuffer.output b; cache_close = (fun () -> ())}
@@ -426,7 +426,7 @@ let make_embed_handle doc =
 (*s: function [[Cache.cleanup]] *)
 let cleanup () =
   List.iter 
-    (fun (did, entry) ->
+    (fun (_did, entry) ->
       match entry.cache_document.document_data with
        FileData (f, true) -> Msys.rm f
       | _ -> ())

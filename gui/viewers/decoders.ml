@@ -31,7 +31,7 @@ let gzip dh =
       dup2 gread stdin; dup2 gwrite stdout;
       Munix.execvp "gunzip" [| "gunzip"; "-c" |]
       (* dh (* fake *) *)
-  | n ->  
+  | _n ->  
       close gread; close gwrite;
      (* it is safe to close feed because the son has a copy *)
       let newdh =
@@ -40,7 +40,7 @@ let gzip dh =
          document_feed = Feed.of_fd mread;
        }
       in
-      let buffer = String.create 4096 in
+      let buffer = Bytes.create 4096 in
       let rec copy () =
       try
         let n = dh.document_feed.feed_read buffer 0 4096 in
@@ -54,7 +54,7 @@ let gzip dh =
           dh.document_feed.feed_schedule copy)
         end
       with
-        Unix_error(e,_,_) -> dclose true dh; close mwrite
+        Unix_error(_e,_,_) -> dclose true dh; close mwrite
       in
       dh.document_feed.feed_schedule copy;
       newdh
@@ -79,7 +79,7 @@ let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
   if dh.document_status >= 400 then dh else
   try
-    Hashtbl.find decoders (String.uppercase (contentencoding dh.dh_headers)) dh
+    Hashtbl.find decoders (String.uppercase_ascii (contentencoding dh.dh_headers)) dh
   with
     Not_found -> dh
   | Unix_error(_,_,_) -> dh

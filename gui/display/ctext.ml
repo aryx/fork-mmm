@@ -68,7 +68,7 @@ let create top opts navigation =
     Scrollbar.configure xscroll [ScrollCommand (Text.xview t)];
     (* But vertical scroll is attached to the canvas *)
     Scrollbar.configure yscroll [ScrollCommand (Canvas.yview c)];
-    let scroll, check = Fit.vert t in
+    let scroll, _check = Fit.vert t in
     Text.configure t [
        XScrollCommand (wrap_scroll has_x putx remx (Scrollbar.set xscroll));
         YScrollCommand (fun first last ->

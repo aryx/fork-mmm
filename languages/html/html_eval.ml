@@ -45,7 +45,7 @@ let ominimize dtd t stack =
   (* Is elem allowed for the given stack ? *)
   let goodpos = function
       [] -> Elements.mem elem initial
-    | (_, cts)::l -> Elements.mem elem cts
+    | (_, cts)::_l -> Elements.mem elem cts
 
   (* Return with inferred and stack.
      The stack has been reduced during the inference, so it is enough
@@ -90,7 +90,7 @@ let ominimize dtd t stack =
       if goodpos newstack then return newaccu newstack
           else attempt_open newaccu newstack
 
-   | ((_, cts)::l ) as stack ->
+   | ((_, cts)::_l ) as stack ->
        (* check if, in contents, there is an element with implicit omission
           that would help *)
        let possible = Elements.inter cts dtd.open_omitted in
@@ -105,7 +105,7 @@ let ominimize dtd t stack =
         if goodpos newstack 
         then return newaccu newstack
         else attempt_open newaccu newstack (* maybe more ? *)
-        | n -> (* since we have the choice, examine all possibilities *)
+        | _n -> (* since we have the choice, examine all possibilities *)
        let elems = Elements.elements possible in
        let rec backtrack = function 
              [] -> raise CantMinimize
@@ -126,7 +126,7 @@ let ominimize dtd t stack =
    with
      CantMinimize ->
        (* what the hell, dammit, open it anyway, who cares, duh *)
-       let _currentTODO = match stack with (x,_)::l -> x | [] -> "" in
+       let _currentTODO = match stack with (x,_)::_l -> x | [] -> "" in
        Illegal (sprintf "illegal <%s> in %a, keep it though"
                 t.tag_name dump_stack stack),
        return [] stack
@@ -141,7 +141,7 @@ let cminimize dtd tagname stack =
   (* Is elem allowed for the given stack ? *)
   let goodpos = function
       [] -> false
-    | (elem, cts)::l -> tagname = elem
+    | (elem, _cts)::_l -> tagname = elem
 
   and return inferred stack =
      List.rev ((CloseTag tagname) :: inferred), stack
@@ -202,7 +202,7 @@ let sgml_lexer dtd =
   let allowed () = 
     match !stack with
     | [] -> initial
-    | (elem, cts)::_ -> cts 
+    | (_elem, cts)::_ -> cts 
   in
   (* whatever the situation (but close), if the previous element is empty
      with an omittable close, close it *)
@@ -255,13 +255,13 @@ let sgml_lexer dtd =
             match !stack with
             | [] -> 
               Illegal(sprintf "Unmatched closing </%s>" t), []
-            | (elem, cts)::l when elem = t -> (* matching close *)
+            | (elem, _cts)::l when elem = t -> (* matching close *)
                  stack := l; (* pop the stack *)
                  (* the lexer has to be "normal" again, because CDATA
                     can't be nested anyway *)
                  current_lex := Lexhtml.html;
                  Legal, [token]
-            | (elem, cts)::l -> (* unmatched close ! *)
+            | (_elem, cts)::_l -> (* unmatched close ! *)
                 (* if we were in cdata, change the token to cdata *)
                  if is_cdata cts 
                  then Legal, [CData (sprintf "</%s>" t)]
@@ -293,7 +293,7 @@ let sgml_lexer dtd =
            end
 
     (* CData never happens with an empty stack *)
-    | CData s ->
+    | CData _s ->
         let extraclose = close_empty() in    
         if Elements.mem "#cdata" (allowed()) 
         then Legal, extraclose @ [token]

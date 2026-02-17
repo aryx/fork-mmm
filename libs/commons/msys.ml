@@ -12,7 +12,7 @@
 (***********************************************************************)
 (*e: copyright header v6 *)
 
-open Printf
+
 open Unix
 
 (* Tilde substitution *)

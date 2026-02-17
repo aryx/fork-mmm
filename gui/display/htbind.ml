@@ -83,7 +83,7 @@ class  virtual active () =
   let fakehlink = Hyper.default_link "" in
   self#binder [[], Leave]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
-          (fun ei ->
+          (fun _ei ->
         self#highlight false;
         ctx#invoke "clearpointsto" fakehlink)))
 end
@@ -125,7 +125,7 @@ class  virtual hypertext (thtml) =
      pointed link displayed in pointsto is no always correct
      Thus, extend initialisation to bind pointsto on motion
    *)
-  method init ctx =
+  method! init ctx =
     super#init ctx;
     self#binder [[], Motion]
       (BindSet ([Ev_MouseX; Ev_MouseY], 
@@ -140,25 +140,25 @@ end
 
 (* embedded objects with direct map *)
 class directmap (frame, link) =
- object (self)
+ object (_self)
   inherit active ()
   (* val frame = frame *)
   method widget = frame
   val link = (link : Hyper.link)
-  method getlink (ei : eventInfo) = link
+  method getlink (_ei : eventInfo) = link
   method binder = bind frame
-  method highlight (flag : bool) = ()  (* we already set up the cursor *)
-  method markused ei =
+  method highlight (_flag : bool) = ()  (* we already set up the cursor *)
+  method markused _ei =
     Frame.configure frame [Relief Sunken]
 end
 
 (* embedded objects with server map (ISMAP) *)
 (* pointsto will get some arbitrary value for x,y... *)
 class servermap (frame,link) =
- object (self)
+ object (_self)
   inherit active ()
-  inherit directmap (frame, link)
-  method getlink ei = 
+  inherit! directmap (frame, link)
+  method! getlink ei = 
     {h_uri = sprintf "%s?%d,%d" link.h_uri
                                 ei.ev_MouseX ei.ev_MouseY;
      h_context = link.h_context;
@@ -168,15 +168,15 @@ end
 
 (* embedded objects with form submission *)
 class formmap (frame,formlink) =
- object (self)
+ object (_self)
   inherit active ()
   (* val frame = frame *)
   method widget = frame
   val formlink = (formlink : int * int -> Hyper.link)
   method getlink ei = formlink (ei.ev_MouseX, ei.ev_MouseY)
   method binder = bind frame
-  method highlight (flag : bool) = ()  (* we already set up the cursor *)
-  method markused ei =
+  method highlight (_flag : bool) = ()  (* we already set up the cursor *)
+  method markused _ei =
     Frame.configure frame [Relief Sunken]
 end
 

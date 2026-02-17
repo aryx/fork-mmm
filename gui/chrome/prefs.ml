@@ -3,7 +3,7 @@
 open I18n
 open Tk
 open Mstring
-open Fontprefs
+
 
 (*s: function [[Prefs.pref_error]] *)
 (* Generic report *)
@@ -47,7 +47,7 @@ let resource_name pref_name =
 (*e: function [[Prefs.resource_name]] *)
 
 (*s: constant [[Prefs.class_name]] *)
-let class_name = resource_name 
+let _class_name = resource_name 
   (* it is not correct but works *)
 (*e: constant [[Prefs.class_name]] *)
 
@@ -86,7 +86,7 @@ type pref = {
  * Init the Tk variables in the pref editor from the internal 
  * value of the preference (usually a reference)
  *)
-let init_pref {pref_type = typ; pref_variable = v} = match typ with
+let init_pref {pref_type = typ; pref_variable = v; _} = match typ with
    Bool r -> Textvariable.set v (if !r then "1" else "0")
  | String r -> Textvariable.set v !r
  | Int r ->  Textvariable.set v (string_of_int !r)
@@ -100,7 +100,7 @@ let init_pref {pref_type = typ; pref_variable = v} = match typ with
  * NOTE: basic predefined types do not allow extra code to run when the
  * value is modified.
  *)
-let set_pref {pref_type = typ; pref_variable = v} = match typ with
+let set_pref {pref_type = typ; pref_variable = v; _} = match typ with
    Bool r -> r := Textvariable.get v = "1"
  | String r -> r := Textvariable.get v
  | Int r ->
@@ -174,7 +174,7 @@ let bool_pref name r top =
 (*s: function [[Prefs.int_pref]] *)
 let int_pref name r top = 
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p =
     { pref_type = Int r;
       pref_variable = v;
@@ -192,7 +192,7 @@ let int_pref name r top =
 (*s: function [[Prefs.float_pref]] *)
 let float_pref name r top = 
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p = 
     { pref_type = Float r;
       pref_variable = v;
@@ -207,7 +207,7 @@ let float_pref name r top =
 (*s: function [[Prefs.string_pref]] *)
 let string_pref name r top = 
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p = 
     { pref_type = String r;
       pref_variable = v;
@@ -266,7 +266,7 @@ let abstract_bool_pref name i s top =
  *)
 let abstract_string_pref name i s top =
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p ={
     pref_type = AbstractType(i,s);
     pref_variable = v;
@@ -295,7 +295,7 @@ let option_handlers mapping read_internal write_internal =
     Not_found ->
       match mapping with
         [] -> "undefined"
-      | (x,v)::l -> v
+      | (_x,v)::_l -> v
     in
     Textvariable.set v s
   and set v =
@@ -307,7 +307,7 @@ let option_handlers mapping read_internal write_internal =
     Not_found ->
       match mapping with
         [] -> assert false
-      | (x,v)::l -> x
+      | (x,_v)::_l -> x
     in
     write_internal value
   in
@@ -477,7 +477,7 @@ let rec init filename status interactive mute =
           end
           else
             pref_error (s_ "%s : no such preference file" s)
-              | l -> raise (Failure "multiple selection"))
+              | _l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
        "*")
       (Filename.basename (Textvariable.get preffilev))
@@ -498,7 +498,7 @@ let rec init filename status interactive mute =
         dismiss()
          with Failure s -> pref_error s
             end
-        | l -> raise (Failure "multiple selection"))
+        | _l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
        "*")
       (Filename.basename (Textvariable.get preffilev))

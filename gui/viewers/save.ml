@@ -1,6 +1,6 @@
 (*s: viewers/save.ml *)
 open I18n
-open Lexing
+
 open Unix
 open Document
 open Url
@@ -78,7 +78,7 @@ let rec interactive cont dh =
           Error.f (s_ "Cannot save to %s\n(%s)" fname msg);
           interactive cont dh
         end
-    | l -> raise (Failure "multiple selection")
+    | _l -> raise (Failure "multiple selection")
     )
     "*"
     (Filename.basename path)
@@ -90,7 +90,7 @@ let rec interactive cont dh =
 let transfer wr dh dest =
   wr.www_logging (s_ "Saving...");
   match dest with
-    None -> interactive (fun s -> wr.www_logging "") dh
+    None -> interactive (fun _s -> wr.www_logging "") dh
   | Some (fd, flag) ->
       (* if flag we should output the headers as well *)
       if flag then begin
@@ -170,7 +170,7 @@ let pipe_from_string url data cmd =
     dup2 fd_in stdin; close fd_in; close fd_out;
     ignore (Munix.system_eval cmd ["URL", urls] false);
     exit 0
-    | n ->
+    | _n ->
     close fd_in;
        Fileevent.add_fileoutput fd_out (fun () ->
       if !pos < len then begin
@@ -204,7 +204,7 @@ let pipe_from_file url f cmd =
     dup2 fd stdin; close fd;
     ignore (Munix.system_eval cmd ["URL", urls] false);
     exit 0
-    | n ->
+    | _n ->
     ()
   with Unix_error(_,_,_) -> (* pipe failed, fork failed *)
     Error.f (s_ "Can't execute command %s for %s" cmd urls)
@@ -216,7 +216,7 @@ let document did arg =
     Fileselect.f (s_ "Save or pipe to file")
       (function [] -> ()
              | [s] -> act s
-          | l -> raise (Failure "multiple selection"))
+          | _l -> raise (Failure "multiple selection"))
       "*" (* should be better *)
       (Filename.basename (Url.string_of did.document_url))
       false
@@ -228,7 +228,7 @@ let document did arg =
   in
   try
     match Cache.find did with
-      {document_data = MemoryData buf} ->
+      {document_data = MemoryData buf; _} ->
         proceed
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
@@ -237,7 +237,7 @@ let document did arg =
         else
           save_from_string did.document_url (Ebuffer.get buf) s)
       
-    |  {document_data = FileData (f, _)} ->
+    |  {document_data = FileData (f, _); _} ->
         proceed 
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then

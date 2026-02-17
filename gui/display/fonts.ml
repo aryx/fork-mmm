@@ -1,6 +1,6 @@
 (*s: display/fonts.ml *)
 open I18n
-open Tk80
+
 open Tk
 open Jpf_font
 

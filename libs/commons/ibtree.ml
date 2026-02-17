@@ -33,7 +33,7 @@ and 'a node =
 
 let height = function
   | Empty -> 0
-  | Node {height = h} -> h
+  | Node {height = h; _} -> h
 
 let create_node l e r =
   let hl = height l in
@@ -60,15 +60,15 @@ let turn_right = function
       Node
        {balance = Eq | Ri;
         left = lle; element = le;
-        right = Node {left = lrle; element = rle; right = rrle}};
-     element = e; right = re} ->
+        right = Node {left = lrle; element = rle; right = rrle; _}; _};
+     element = e; right = re; _} ->
       create_node (create_node lle le lrle) rle (create_node rrle e re)
  | Node
     {left =
       Node
-       {balance = Le | Eq; left = lle; element = le; right = rle};
+       {balance = Le | Eq; left = lle; element = le; right = rle; _};
      element = e;
-     right = re} -> create_node lle le (create_node rle e re)
+     right = re; _} -> create_node lle le (create_node rle e re)
  | _ -> failwith "turn_right"
 
 and turn_left = function
@@ -78,14 +78,14 @@ and turn_left = function
      right =
       Node
        {balance = Eq | Le;
-        left = Node {left = llre; element = lre; right = rlre};
-        element = re; right = rre}} ->
+        left = Node {left = llre; element = lre; right = rlre; _};
+        element = re; right = rre; _}; _} ->
      create_node (create_node le e llre) lre (create_node rlre re rre)
  | Node
     {left = le; element = e;
      right =
       Node
-       {balance = Ri | Eq; left = lre; element = re; right = rre}} ->
+       {balance = Ri | Eq; left = lre; element = re; right = rre; _}; _} ->
      create_node (create_node le e lre) re rre
  | _ -> failwith "turn_left"
 
@@ -107,7 +107,7 @@ let rec insert x t =
  match t with
  | Empty ->
     Node {balance = Eq; height = 1; left = Empty; element = x; right = Empty}
- | Node {balance = b; left = l; element = e; right = r} ->
+ | Node {balance = b; left = l; element = e; right = r; _} ->
     let c = compare_elements x e in
     if c = 0 then t else
     if c > 0 then
@@ -121,7 +121,7 @@ let empty = Empty
 
 let rec find pos = function
 | Empty -> raise Not_found
-| Node {left = l; element = e ; right = r} ->
+| Node {left = l; element = e ; right = r; _} ->
    let c_start = Ord.compare pos (fst e.interval) in
    if c_start < 0 then find pos l else
    let c_stop = Ord.compare pos (snd e.interval) in
@@ -130,7 +130,7 @@ let rec find pos = function
 
 let rec find_interval pos = function
 | Empty -> raise Not_found
-| Node {left = l; element = e ; right = r} ->
+| Node {left = l; element = e ; right = r; _} ->
    let c_start = Ord.compare pos (fst e.interval) in
    if c_start < 0 then find_interval pos l else
    let c_stop = Ord.compare pos (snd e.interval) in

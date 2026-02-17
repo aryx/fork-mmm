@@ -1,7 +1,7 @@
 (*s: display/html_form.ml *)
 open Printf
 open Hyper
-open Www
+
 open Html
 open Htmlfmt
 
@@ -15,7 +15,7 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
  object (self)
   val mutable (*private*) elem_value = ([] : (input_kind * (unit -> (string * string) list)) list)
   val mutable (*private*) elem_reset = ([] : (unit -> unit) list)
-  val (*private*) fmethod = String.uppercase (get_attribute formtag "method")    
+  val (*private*) fmethod = String.uppercase_ascii (get_attribute formtag "method")    
   val (*private*) encoding = get_attribute formtag "enctype"
   (* val i18n_encoder = i18n_encoder *)
   val (*private*) action = try get_attribute formtag "action" with Not_found -> base
@@ -92,7 +92,7 @@ module FormDisplay = Form
 
 let init mach =
 mach#add_tag "form"
- (fun fo tform ->
+ (fun _fo tform ->
   let behav = 
     new behaviour (mach#base, tform, mach#target, mach#i18n_encoder) in
   let fm = 
@@ -100,7 +100,7 @@ mach#add_tag "form"
 
   (* 8.1.2 Input Field : INPUT *)
   let open_input fo t =
-    let inputtype = String.uppercase (get_attribute t "type") in
+    let inputtype = String.uppercase_ascii (get_attribute t "type") in
     (* Special case for hidden, since there is no formatting *)
     (* HTML 3.2 doesn't specify that NAME and VALUE are required, but
        this is stupid *)
@@ -131,11 +131,11 @@ mach#add_tag "form"
   let options = ref []       (* the components from which to select *)
   and tselect = ref {tag_name = "select"; attributes = []}
   in
-  let open_select fo t =
+  let open_select _fo t =
     options := [];
     tselect := t;
     mach#add_tag "option"
-       (fun fo tag ->
+       (fun _fo tag ->
       mach#push_action 
            (fun s ->
            let s = beautify2 s in
@@ -156,7 +156,7 @@ mach#add_tag "form"
   (* 8.1.4 Text Area: TEXTAREA *)
   let textarea_initial = Ebuffer.create 128 
   and ttextarea = ref {tag_name = "textarea"; attributes = []} in
-  let open_textarea fo tag =
+  let open_textarea _fo tag =
     ttextarea := tag;
     Ebuffer.reset textarea_initial;
     mach#push_action (fun s -> Ebuffer.output_string textarea_initial s)
@@ -171,7 +171,7 @@ mach#add_tag "form"
 
   mach#add_tag "textarea" open_textarea  close_textarea
   )
-  (fun fo -> ["input"; "select"; "textarea"] |> List.iter mach#remove_tag )
+  (fun _fo -> ["input"; "select"; "textarea"] |> List.iter mach#remove_tag )
 
 (*end *)
 (*e: display/html_form.ml *)

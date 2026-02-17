@@ -109,7 +109,7 @@ let merge_headers oldh newh =
       else
        try
         let t = header_type s in
-        let d = get_header t newh in
+        let _d = get_header t newh in
       filter acc l
        with
           Invalid_HTTP_header _ -> 

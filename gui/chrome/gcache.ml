@@ -50,7 +50,7 @@ let nocache did =
  if !debug then Log.f
     (sprintf "Removing %s from cache" (Url.string_of did.document_url));
  let shared = ref false in
-  Hashtbl.iter (fun key dis -> if List.mem_assoc did !dis then shared := true)
+  Hashtbl.iter (fun _key dis -> if List.mem_assoc did !dis then shared := true)
     table;
  if not !shared then Cache.kill did
  else  
@@ -118,7 +118,7 @@ let add hkey did di =
 let kill hkey =
  if !debug then Log.f (sprintf "Killing gcache for nav %d" hkey);
  let r = get_nav hkey in
-  List.iter (fun (did, di) -> di#di_abort) !r;
+  List.iter (fun (_did, di) -> di#di_abort) !r;
   if !Cache.history_mode then begin
      let fluff = !r in
        r := []; (* so that we don't find them again *)

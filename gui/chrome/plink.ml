@@ -22,7 +22,7 @@ let dial hlink err =
    |  UrlLexing (s,_) -> s in
 
   let tit = Label.create t [Text (s_ "Malformed link error")]
-  and fc,ec = Frx_entry.new_labelm_entry t "Context" vcontext
+  and fc,_ec = Frx_entry.new_labelm_entry t "Context" vcontext
   and fu,eu = Frx_entry.new_labelm_entry t "Relative" vuri
   and lmsg = Label.create t [Text msg]
   in

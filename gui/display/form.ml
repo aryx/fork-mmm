@@ -4,12 +4,12 @@ open I18n
 open Printf
 open Tk
 open Hyper
-open Www
+
 open Html
 open Htmlfmt
 open Maps
 open Embed
-open Viewers
+
 
 (*s: constant [[Form.form_bg]] *)
 let form_bg = ref "#d9d9d9"
@@ -64,9 +64,9 @@ let focus_link prev w =
     None -> prev := Some w;
   | Some old ->
       bind old [[], KeyPressDetail "Tab"]
-       (BindSetBreakable ([], fun ei -> try Focus.set w with _ -> ()));
+       (BindSetBreakable ([], fun _ei -> try Focus.set w with _ -> ()));
       bind w [[Shift], KeyPressDetail "Tab"]
-       (BindSetBreakable ([], fun ei -> try Focus.set old with _ -> ()));
+       (BindSetBreakable ([], fun _ei -> try Focus.set old with _ -> ()));
       prev := Some w
 (*e: function [[Form.focus_link]] *)
 
@@ -89,7 +89,7 @@ let text_input prev_widget ctx behav top tag =
     with Not_found -> ()
     end;
     (* Check for passwd *)
-    if String.lowercase inputtype = "password" then 
+    if String.lowercase_ascii inputtype = "password" then 
       Entry.configure e [Show '*'];
     (* The behaviours *)
     let reset = 
@@ -208,7 +208,7 @@ let radio_input prev_widget behav =
 (* An IMAGE input 
  * Q: no target here ?
  *)
-let image_input prev_widget ctx base behav top tag =
+let image_input _prev_widget ctx base behav top tag =
   try
     let n = get_attribute tag "name" in
     let src = get_attribute tag "src" in
@@ -235,7 +235,7 @@ let image_input prev_widget ctx base behav top tag =
 
 (*s: function [[Form.submit_input]] *)
 (* A Submit button *)
-let submit_input prev_widget ctx behav top tag = 
+let submit_input _prev_widget ctx behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> s_ "Submit"
@@ -255,7 +255,7 @@ let submit_input prev_widget ctx behav top tag =
 
 
 (*s: function [[Form.reset_input]] *)
-let reset_input prev_widget behav top tag = 
+let reset_input _prev_widget behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> s_ "Reset" in
@@ -357,7 +357,7 @@ let select prev_widget behav top options tag =
 (*e: function [[Form.select]] *)
 
 (*s: function [[Form.textarea]] *)
-let textarea prev_widget behav top initial tag = 
+let textarea _prev_widget behav top initial tag = 
   try 
     let name = get_attribute tag "name" in
     let f,t = 

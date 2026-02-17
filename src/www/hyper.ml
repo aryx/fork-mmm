@@ -1,7 +1,7 @@
 (*s: www/hyper.ml *)
 open I18n
 open Printf
-open Mstring
+
 open Uri
 open Url
 

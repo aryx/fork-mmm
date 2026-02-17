@@ -97,7 +97,7 @@ let rec translate msg =
 (*e: function [[I18n.translate]] *)
 
 (*s: function I18n.fprintf (./commons/i18n.ml) *)
-let fprintf oc (fmt : ('a, out_channel, unit) format) =
+let _fprintf oc (fmt : ('a, out_channel, unit) format) =
   fprintf oc
     (Obj.magic(translate(Obj.magic fmt : string)) :
                                 ('a, out_channel, unit) format)
@@ -113,8 +113,8 @@ let sprintf (fmt : ('a, unit, string) format) =
 
 let s_ fmt = sprintf fmt
 
-let printf fmt = fprintf stdout fmt
-and eprintf fmt = fprintf stderr fmt
+
+
 
 (*s: function [[I18n.menu_option]] *)
 (*e: function [[I18n.menu_option]] *)

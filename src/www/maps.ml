@@ -82,7 +82,7 @@ let add name map =
   Log.debug (sprintf "Adding map : %s" name);
   try
     match Hashtbl.find table name with
-      KnownMap m -> Log.debug "Map already known !"
+      KnownMap _m -> Log.debug "Map already known !"
     | RequestedMap event ->
        Hashtbl.remove table name; (* remove it *)
        Hashtbl.add table name (KnownMap map); (* add its value *)

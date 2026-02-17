@@ -118,7 +118,7 @@ class default_tachy (top : Widget.widget) =
       let img = Imagephoto.create [File file] in
       Msys.rm file;
       img
-    and park_image =
+    and _park_image =
       Imagebitmap.create [Data park_data; Foreground Red] in
 
     i_park <-

@@ -6,7 +6,7 @@ open Tk
 open Hyper
 open Www
 open Url
-open Uri
+
 open Document
 open Http_headers
 open Viewers
@@ -141,7 +141,7 @@ let request nav process (usecache, wrapwr, specific) lk =
       wr.www_error <- nav.nav_error;
       wr |> wrapwr |> handle_wr
     with
-    | Hyper.Invalid_link msg ->
+    | Hyper.Invalid_link _msg ->
         nav.nav_error#f (s_ "Invalid link")
     | Www.Invalid_request (wr, msg) ->
         nav.nav_error#f (s_ "Invalid request %s\n%s"(Url.string_of wr.www_url)msg)
@@ -154,7 +154,7 @@ let request nav process (usecache, wrapwr, specific) lk =
 (*
  * Three instances of this general mechanism : view, save, head
  *)
-let nothing_specific nav did wr = raise Not_found
+let nothing_specific _nav _did _wr = raise Not_found
 (*e: function [[Nav.nothing_specific]] *)
 
 (*s: function [[Nav.process_viewer]] *)
@@ -186,7 +186,7 @@ let specific_viewer addhist = fun nav did wr ->
 
 (*s: function [[Nav.process_save]] *)
 (* Specific handling of "save" requests *)
-let process_save dest = fun nav wr dh ->
+let process_save dest = fun _nav wr dh ->
   match dh.document_status with
     200 -> Save.transfer wr dh dest
   | n ->
@@ -214,7 +214,7 @@ let display_headers dh =
 (*e: function [[Nav.display_headers]] *)
  
 (*s: constant [[Nav.process_head]] *)
-let process_head = fun nav wr dh ->
+let process_head = fun _nav _wr dh ->
   dclose true dh;
   display_headers dh
 (*e: constant [[Nav.process_head]] *)
@@ -234,7 +234,7 @@ let make_head hlink =
 let copy_link nav h =
   try 
     Frx_selection.set (Hyper.string_of h)
-  with Invalid_link msg ->
+  with Invalid_link _msg ->
     nav.nav_error#f (s_ "Invalid link")
 (*e: function [[Nav.copy_link]] *)
 

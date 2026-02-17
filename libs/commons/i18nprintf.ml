@@ -86,7 +86,7 @@ let fprintf outchan format =
             Obj.magic(fun printer ->
               printer outchan;
               doprn(succ j))
-        | c ->
+        | _c ->
             invalid_arg ("I18nprintf.fprintf: unknown format")
       end
     end
@@ -94,7 +94,7 @@ let fprintf outchan format =
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | c -> j
+    | _c -> j
 
   in doprn 0
 (*e: function [[I18nprintf.fprintf]] *)
@@ -172,14 +172,14 @@ let sprintf format =
         | 't' ->
             Obj.magic(fun printer ->
               doprn (succ j) (succ j) (printer () :: accu1))
-        | c ->
+        | _c ->
             invalid_arg ("I18nprintf.sprintf: unknown format")
       end
 
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | c -> j
+    | _c -> j
 
   in doprn 0 0 []
 (*e: function [[I18nprintf.sprintf]] *)

@@ -12,7 +12,7 @@ open Www
 
 (*s: constant [[Mmm.hotlist]] *)
 (* Preference settings *)
-let hotlist = ref ""
+let _hotlist = ref ""
 (*e: constant [[Mmm.hotlist]] *)
 (*s: constant [[Mmm.helpurl]] *)
 let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
@@ -233,7 +233,7 @@ let rec navigator is_main_window initial_url =
          try
            let wwwr = Plink.make link in
            navigator false wwwr.www_url |> ignore
-         with Hyper.Invalid_link msg -> 
+         with Hyper.Invalid_link _msg -> 
            error#f (s_ "Invalid link")
       );
       (*x: [[Mmm.navigator()]] set nav fields *)
@@ -318,7 +318,7 @@ let rec navigator is_main_window initial_url =
         | [s] -> 
             let path = Msys.tilde_subst s in
             absolutegoto nav ("file://localhost/"^path)
-        | l -> raise (Failure "multiple selection")
+        | _l -> raise (Failure "multiple selection")
        )
          "*" 
          ""

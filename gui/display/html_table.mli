@@ -20,7 +20,7 @@ val init:
                     (Htmlfmt.formatter -> unit) -> unit;
           create_formatter : Htmlfmt.formatterSpec ->
                              Widget.widget -> 'a * Widget.widget;
-          pop_formatter : 'b; push_formatter : 'a -> 'c;
+          pop_formatter : 'b; push_formatter : 'a -> unit;
           remove_tag : string -> unit; .. > ->
         unit
 

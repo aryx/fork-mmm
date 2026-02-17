@@ -154,7 +154,7 @@ let metamail ctype file =
 
 (*s: function [[Viewers.extern_batch]] *)
 (* Batch version: we transfer everything and then run metamail *)
-let extern_batch dh ctype = 
+let _extern_batch dh ctype = 
   let outfile = Msys.mktemp "mmm" in
   Document.add_log dh (
     s_ "Saving %s\nfor external display with MIME type %s"
@@ -247,7 +247,7 @@ type spec =
   | Internal of t
   | External
   (*s: [[Viewers.spec]] other cases *)
-  | Interactive  (* ask what to do about it *)
+  (*| Interactive  (* ask what to do about it *)*)
   (*x: [[Viewers.spec]] other cases *)
   | Save	     (* always save *)
   (*e: [[Viewers.spec]] other cases *)
@@ -352,8 +352,8 @@ and view frame ctx dh =
           extern (Decoders.insert dh) (sprintf "%s/%s" typ sub);
           None
       (*x: [[Viewers.view]] match viewer cases *)
-      | Interactive ->
-          interactive frame ctx dh ctype
+      (*| Interactive ->
+          interactive frame ctx dh ctype*)
       (*x: [[Viewers.view]] match viewer cases *)
       | Save ->
           Save.interactive (fun _ -> ()) dh;
@@ -404,7 +404,7 @@ let reset () =
   (* Preference settings *)
   Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype -> 
     try
-      let (typ,sub), pars = Lexheaders.media_type ctype in
+      let (typ,sub), _pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
     with Http_headers.Invalid_HTTP_header e ->
       !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
@@ -412,7 +412,7 @@ let reset () =
   (*x: [[Viewers.reset()]] setting other viewers *)
   Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype -> 
     try
-      let (typ,sub),pars = Lexheaders.media_type ctype in
+      let (typ,sub),_pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
     with Http_headers.Invalid_HTTP_header e ->
       Error.f (s_ "Invalid MIME type %s\n%s" ctype e)

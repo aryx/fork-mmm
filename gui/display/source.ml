@@ -23,7 +23,7 @@ let annotate txt =
 
 (*s: function [[Source.view]] *)
 (* Commit modifies the cache *)
-let view attach did redisplay errors annotations coding =
+let view attach did redisplay errors annotations _coding =
   try 
     let doc = Cache.find did in
     (* load : take document from cache and put it in text widget
@@ -137,7 +137,7 @@ let view attach did redisplay errors annotations coding =
     match List.length !errors with
       0 ->
        Button.configure err [Text (s_ "No Errors"); State Disabled]
-    | n ->
+    | _n ->
     Button.configure err
         [Text (s_ "%d errors" (List.length !errors));
          State Normal; Command loop_in_errors]
@@ -148,7 +148,7 @@ let view attach did redisplay errors annotations coding =
      * we can't use the old indexes since the buffer might have changed ! *)
      let rec remall = function
         [] -> ()
-      | [x] -> ()
+      | [_x] -> ()
       | s::e::l ->
        Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
        remall l
@@ -183,7 +183,7 @@ let view attach did redisplay errors annotations coding =
           with
         Not_found -> ())));
      Text.tag_bind t "errors" [[], Leave]
-       (BindSet ([], (fun ei -> Textvariable.set errorv "")));
+       (BindSet ([], (fun _ei -> Textvariable.set errorv "")));
 
       pack [dismiss;commit;save;err][Side Side_Left];
       pack [err_msg] [Side Side_Left; Expand true; Fill Fill_X];

@@ -21,7 +21,7 @@ type tagtoken =
 type t = {
   buffer : Ebuffer.t;
   mutable start : int;
-  mutable pos_fix : int
+  (*mutable*) pos_fix : int
 }
 (*e: type [[Lexhtml.t]] *)
 
@@ -209,7 +209,7 @@ and text = parse
 (*s: function [[Lexhtml.ampersand]] *)
 and ampersand = parse
 | '#' ['0'-'9']+ ';' 
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 2) in
         try 
@@ -217,7 +217,7 @@ and ampersand = parse
         with (* #350 ... *) Invalid_argument _ -> " "
       )}
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let entity = String.sub lexeme 0 (String.length lexeme - 1) in
         try 
@@ -228,7 +228,7 @@ and ampersand = parse
   (* terminating ; is not required if next character could not be 
      part of the lexeme *)
 | '#' ['0'-'9']+
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 1) in
         try 
@@ -236,7 +236,7 @@ and ampersand = parse
         with Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         try 
           get_entity lexeme
@@ -245,7 +245,7 @@ and ampersand = parse
       )}
   (* Tolerance ... *)
 | ""
-    { (fun lexdata -> "&" )}
+    { (fun _lexdata -> "&" )}
 (*e: function [[Lexhtml.ampersand]] *)
 
 
@@ -257,7 +257,7 @@ and ampersand = parse
 and opentag = parse
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
-       let tagname = String.lowercase (Lexing.lexeme lexbuf) in
+       let tagname = String.lowercase_ascii (Lexing.lexeme lexbuf) in
        let attribs = ref [] in
        let bugs = ref [] in
        let rec read_attribs () =
@@ -293,7 +293,7 @@ and closetag = parse
         let lexeme = Lexing.lexeme lexbuf in
     let e = skip_to_close lexbuf lexdata in
     [],
-    CloseTag (String.lowercase lexeme), Loc(lexdata.start,e))}
+    CloseTag (String.lowercase_ascii lexeme), Loc(lexdata.start,e))}
 (* Tolerance *)
   | ""  
     { (fun lexdata ->
@@ -308,7 +308,7 @@ and attrib = parse
     { (fun lexdata -> attrib lexbuf lexdata )}
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
     { (fun lexdata ->
-        let name = String.lowercase(Lexing.lexeme lexbuf) in
+        let name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
         try
           match tagattrib lexbuf lexdata with
           | Some s -> Attribute (name, s)
@@ -322,7 +322,7 @@ and attrib = parse
       but it should NOT be there *)
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-' '_']+ 
     { (fun lexdata ->
-       let name = String.lowercase(Lexing.lexeme lexbuf) in
+       let name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
        if !strict 
        then raise (Html_Lexing ("illegal attribute name: " ^ name,
                                  mk_start lexbuf lexdata))
@@ -355,7 +355,7 @@ and tagattrib = parse
 | [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
     { (fun lexdata -> Some (attribvalue lexbuf lexdata) )}
 | "" 
-    { (fun lexdata -> None )}
+    { (fun _lexdata -> None )}
 (*e: function [[Lexhtml.tagattrib]] *)
 
 (*s: function [[Lexhtml.attribvalue]] *)
@@ -364,7 +364,7 @@ and tagattrib = parse
 (* but if a quote is not closed, you are dead *)
 and attribvalue = parse
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
-    { (fun lexdata -> Lexing.lexeme lexbuf )}
+    { (fun _lexdata -> Lexing.lexeme lexbuf )}
 | '"' 
     { (fun lexdata ->
        Ebuffer.reset lexdata.buffer; 
@@ -374,7 +374,7 @@ and attribvalue = parse
        Ebuffer.reset lexdata.buffer; 
        insingle lexbuf lexdata )}
 | "" 
-    { (fun lexdata ->
+    { (fun _lexdata ->
         raise (Html_Lexing ("illegal attribute val",
                               Lexing.lexeme_start lexbuf)) )}
 (*e: function [[Lexhtml.attribvalue]] *)
@@ -437,7 +437,7 @@ and cdata = parse
         let lexeme = Lexing.lexeme lexbuf in
         let _eTODO = skip_to_close lexbuf lexdata in
         noerr,
-        CloseTag (String.lowercase 
+        CloseTag (String.lowercase_ascii 
                       (String.sub lexeme 2 (String.length lexeme - 2))),
         mk_loc lexbuf lexdata)}
 | "</" 

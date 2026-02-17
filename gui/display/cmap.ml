@@ -4,7 +4,7 @@ open Tk
 open Embed
 open Maps
 open Hyper
-open Viewers
+
 
 (*s: exception [[Cmap.Syntax]] *)
 (* Client Side Image Maps
@@ -58,9 +58,9 @@ class imap (c, items) =
  method binder = Canvas.bind c (Tag "current") 
 
  method highlight _ = ()
- method markused ei = ()
+ method markused _ei = ()
 
- method init ctx =
+ method! init ctx =
    super#init ctx;
    self#binder [[], Motion]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
@@ -115,7 +115,7 @@ let gfx_mode emb map c =
         | Poly ->
         let l = List.length area.area_coords in
         (* there must be at least three points, and by pair *)
-        if l < 6 or l mod 2 <> 0 then begin
+        if l < 6 || l mod 2 <> 0 then begin
           Log.f "Invalid coords for polygon shape";
           raise (Syntax "polygon")
         end

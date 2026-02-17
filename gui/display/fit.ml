@@ -1,7 +1,7 @@
 (*s: display/fit.ml *)
 open Printf
 open Tk
-open Protocol
+
 
 (*s: constant [[Fit.debug]] *)
 let debug = ref false

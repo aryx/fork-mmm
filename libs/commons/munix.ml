@@ -129,7 +129,7 @@ let vars = Str.regexp "\\$[A-Z]+"
 (*s: function [[Munix.system_eval]] *)
 let system_eval cmd args back =
   let replaced = ref []
-  and qargs = List.map (fun (x, v) -> x, quote_for_shell v) args
+  and _qargs = List.map (fun (x, v) -> x, quote_for_shell v) args
   in
   let replfun s =
     let matched = Str.matched_string s in

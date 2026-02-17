@@ -37,19 +37,19 @@ let attrs2fontspec l =
   let rec family = function
      [] -> "*"
    | (Family s)::_ -> s
-   | x::l -> family l
+   | _x::l -> family l
   and weight = function
      [] -> "*"
    | (Weight s)::_ -> s
-   | x::l -> weight l
+   | _x::l -> weight l
   and slant = function
      [] -> "*"
    | (Slant s)::_ -> s
-   | x::l -> slant l
+   | _x::l -> slant l
   and pxlsz = function
      [] -> "*"
    | (FontIndex s)::_ -> string_of_int (Fonts.pxlsz s)
-   | x::l -> pxlsz l in
+   | _x::l -> pxlsz l in
 
   sprintf "-*-%s-%s-%s-normal-*-%s-*-*-*-*-*-iso8859-1"
           (family l) (weight l) (slant l) (pxlsz l)
@@ -153,7 +153,7 @@ let font_select top getattrs setattrs =
     [familyv; weightv; slantv; pixelsv];
   
   (* initialisation from memory (v=fontspecv) *)
-  let init_pref v =
+  let init_pref _v =
     let attrs = getattrs() in
     (* Set all variables; electric update does the rest *)
     List.iter (function

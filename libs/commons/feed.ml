@@ -73,7 +73,7 @@ let of_fd fd =
       then Log.f "ERROR: feed is closed, can't schedule"
       else 
        (match !action with
-        | Some f -> (* we are already scheduled ! *)
+        | Some _f -> (* we are already scheduled ! *)
             Log.f "Warning: feed already scheduled"
         | None ->
             action := Some f;
@@ -83,7 +83,7 @@ let of_fd fd =
 
    feed_unschedule = (fun () -> 
      match !action with
-     | Some f -> 
+     | Some _f -> 
          Low.remove_fileinput fd; 
          action := None
      | None -> 
@@ -105,7 +105,7 @@ let of_fd fd =
       if !is_open 
       then
         (match !action with 
-        | Some f -> Log.f "ERROR: feed is scheduled, can't close"
+        | Some _f -> Log.f "ERROR: feed is scheduled, can't close"
         | None -> 
             Unix.close fd;
             is_open := false;

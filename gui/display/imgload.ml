@@ -4,11 +4,11 @@ open Tk
 open Tkanim
 open Www
 open Uri
-open Hyper
+
 open Maps
 open Embed
 open Img
-open Viewers
+
 
 (*s: type Imgload.mode (./display/imgload.ml) *)
 (* Images are embedded objects, with a twist *)
@@ -303,7 +303,7 @@ class synchronous () =
  object
   inherit loader () as super
 
-  method add_image emb =
+  method! add_image emb =
     super#add_image emb; super#activate emb
 end
 
@@ -312,7 +312,7 @@ class auto () =
   inherit loader () as super
   val q = ImageScheduler.new_delayed()
 
-  method add_image emb =
+  method! add_image emb =
      super#add_image emb;
      try
        let wr = Www.make emb.embed_hlink in
@@ -326,20 +326,20 @@ class auto () =
        e -> Log.f (sprintf "Can't compute image link (%s)"
                    (Printexc.to_string e))
 
-  method flush_images = ImageScheduler.flush_delayed q
+  method! flush_images = ImageScheduler.flush_delayed q
 end
 
 class manual () =
  object
   inherit auto () as super
 
-  method add_image emb =
+  method! add_image emb =
     super#add_image emb;
     make_auto q emb
  
-  method flush_images = ()
+  method! flush_images = ()
 
-  method load_images = ImageScheduler.flush_delayed q
+  method! load_images = ImageScheduler.flush_delayed q
 end
 
 (*s: function [[Imgload.create]] *)

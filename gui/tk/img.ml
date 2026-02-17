@@ -1,14 +1,14 @@
 (*s: retrieve/img.ml *)
 (* Image cache and scheduled image downloading *)
 open Printf
-open Unix
+
 open Tk
 open Tkanim
-open Mstring
+
 open Document
 open Www
-open Hyper
-open Url
+
+
 open Http_headers
 
 (*s: constant [[Img.gif_anim_load]] *)
@@ -86,7 +86,7 @@ module ImageData =
              referer.document_stamp);
       let delete_them = ref [] in
       Hashtbl.iter
-    (fun img (o, refs, _) ->
+    (fun img (_o, refs, _) ->
         refs := DocumentIDSet.remove referer !refs;
         if DocumentIDSet.is_empty !refs then
          delete_them := img :: !delete_them)
@@ -209,7 +209,7 @@ let update url =
        :: wr.www_headers;
 
     ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
-      (fun url i -> 
+      (fun _url i -> 
     match oldi, i with
       Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
         Imagephoto.copy oldn newn []

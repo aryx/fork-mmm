@@ -1,10 +1,10 @@
 (*s: http/auth.ml *)
 (* HTTP Basic Authentication *)
 open I18n
-open Printf
+
 open Unix
 open Http_headers
-open Url
+
 open Www
 
 (*s: type [[Auth.authSpace]] *)

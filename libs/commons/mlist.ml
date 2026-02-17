@@ -22,7 +22,7 @@ let hdn l =
 let except_assoc x =
   let rec ex acc = function 
       [] -> acc
-    | (y,v)::l when x = y -> ex acc l
+    | (y,_v)::l when x = y -> ex acc l
     | z :: l -> ex (z::acc) l
   in
   ex []

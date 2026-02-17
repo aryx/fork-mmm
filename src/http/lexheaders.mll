@@ -1,8 +1,8 @@
 (*s: http/lexheaders.mll *)
 {
 open Http_headers
-open Www
-open Lexing
+
+
 (* 
     CHAR = ['\000'-'\126']
     CTL  = ['\000'-'\031' '\127']
@@ -15,7 +15,7 @@ open Lexing
 
 rule challenge = parse
  | [^ ' ' '\t' '\r' '\n']+
-    { let scheme_name = String.lowercase (Lexing.lexeme lexbuf) in
+    { let scheme_name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
       let scheme = 
     match scheme_name with
       "basic" -> AuthBasic
@@ -107,7 +107,7 @@ and media_parameters = parse
 | "" { [] }
 | ";" { 
      let _ = starlws lexbuf in
-     let attr = String.lowercase (token lexbuf) in
+     let attr = String.lowercase_ascii (token lexbuf) in
      let _ = lit_equal lexbuf in (* no space allowed *)
      let v = value lexbuf in
      let _ = starlws lexbuf in
@@ -121,18 +121,18 @@ and media_parameters = parse
 and media_type = parse
 | [' ' '\t']+ {
       let _ = starlws lexbuf in
-      let typ = String.lowercase (token lexbuf) in
+      let typ = String.lowercase_ascii (token lexbuf) in
       let _ = lit_slash lexbuf in
-      let subtyp = String.lowercase (token lexbuf) in
+      let subtyp = String.lowercase_ascii (token lexbuf) in
       let _ = starlws lexbuf in (* word based *)
       typ, subtyp
     }
 
 | "" {
       let _ = starlws lexbuf in
-      let typ = String.lowercase (token lexbuf) in
+      let typ = String.lowercase_ascii (token lexbuf) in
       let _ = lit_slash lexbuf in
-      let subtyp = String.lowercase (token lexbuf) in
+      let subtyp = String.lowercase_ascii (token lexbuf) in
       let _ = starlws lexbuf in (* word based *)
         typ, subtyp
       }
