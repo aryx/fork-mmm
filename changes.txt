@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.42 (Q1 2026) (resume with 4.14.2, Dockerfile/GHA, dune)
+* 0.42 (Q1 2026) (resume with 4.14.2, Dockerfile/GHA, dune, osemgrep)
 
 ** build infra
 - resume compilation of mmm with OCaml 4.14, fixed many unused
@@ -11,6 +11,7 @@
 
 ** test infra
 - Dockerfile and docker.yml Github Actions CI check
+- semgrep.jsonnet and semgrep.yml CI check
 
 ** internals
 - introduce intermediate libs/, languages/, src/, and gui/ folders
