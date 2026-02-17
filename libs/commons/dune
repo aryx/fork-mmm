@@ -14,7 +14,7 @@
   Exit Exception
   Chan FS IO Tmp
   Cmd Proc
-  Date Bits Rune
+  ; Date Bits Rune ; Date also in misc/, Rune
   ; Fpath included here (different from xix dune file)
   Fpath Fpath_ ; Ftype
   Arg_
