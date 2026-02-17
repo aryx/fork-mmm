@@ -1429,7 +1429,7 @@ Frx_text.init ();
 (* Initialisations in jpf's balloon library *)
 Balloon.init ();
 (* Initialisations in jpf's GIF ANIMATION library *)
-(* TODO  Tkaniminit.f (); *)
+(* TODO: Tkaniminit.f (); linking problem *)
 @
 % Frx = francois rouaix extensions
 
@@ -2962,11 +2962,11 @@ let encode s =
 
 <<function [[Urlenc.hexchar]]>>=
 let hexchar c = 
-  let s = String.make 3 '%'
+  let s = Bytes.make 3 '%'
   and i = Char.code c in
-  s.[1] <- dec_to_hex (i/16);
-  s.[2] <- dec_to_hex (i mod 16);
-  s
+  Bytes.set s 1 (dec_to_hex (i/16));
+  Bytes.set s 2 (dec_to_hex (i mod 16));
+  Bytes.to_string s
 @
 
 
@@ -3677,7 +3677,8 @@ val beautify: bool -> string -> string
  *   could use String.blit to avoid char copying
  * NOTE: add \0 detection here (we need it for Tk)
  *)
-let beautify remove_leading s =
+let beautify remove_leading (s : string) =
+  let s2 = Bytes.of_string s in
   let j = ref 0 in
   let white = ref remove_leading in
   for i = 0 to String.length s - 1 do
@@ -3685,16 +3686,16 @@ let beautify remove_leading s =
     | ' ' | '\t' | '\r' | '\n' | '\000' -> 
        if not !white 
        then begin
-         s.[!j] <- ' '; 
+         Bytes.set s2 !j ' '; 
          incr j; 
          white := true
        end
     | c -> 
-       s.[!j] <- c; 
+       Bytes.set s2 !j c; 
        white := false; 
        incr j
   done;
-  String.sub s 0 !j
+  Bytes.sub_string s2 0 !j
 @
 
 
@@ -4908,7 +4909,7 @@ let line_reporting ic =
   Lexing.from_function (fun buf len ->
      let n = read buf 0 len in
        for i = 0 to n - 1 do
-     match buf.[i] with
+     match Bytes.get buf i with
        '\n' -> incr current_pos; incr current_line;
                lines := (!current_pos, !current_line) :: !lines
          | _ -> incr current_pos
@@ -5042,7 +5043,7 @@ val parse_status : string -> Messages.status
 <<function [[Http_headers.parse_status]]>>=
 (* Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF *)
 let parse_status s =
- if String.length s > 5 & String.sub s 0 5 = "HTTP/" 
+ if String.length s > 5 && String.sub s 0 5 = "HTTP/" 
  then
    try
     match Str.bounded_split (regexp "[ ]") s 3 with
@@ -5153,7 +5154,7 @@ let get_header field_name =
    | [] -> raise Not_found
    | s::l ->
       if String.length s >= size + 2 (* : SP *) && 
-         String.lowercase (String.sub s 0 size) = field_name
+         String.lowercase_ascii (String.sub s 0 size) = field_name
       then String.sub s (size + 2) (String.length s - size - 2)
       else search l 
   in
@@ -5178,7 +5179,7 @@ let get_multi_header field_name =
      [] -> []
    | s::l ->
     if   String.length s >= size + 2 (* : SP *)
-       & String.lowercase (String.sub s 0 size) = field_name
+       && String.lowercase_ascii (String.sub s 0 size) = field_name
     then (String.sub s (size + 2) (String.length s - size - 2)) :: search l
     else search l in
   search
@@ -5576,7 +5577,7 @@ type internal = Unix.file_descr
 
 <<type [[Feed.t]]>>=
 type t = {
-  feed_read : string -> int -> int -> int;
+  feed_read : bytes -> int -> int -> int;
 
   feed_schedule : (unit -> unit) -> unit;
   feed_unschedule : unit -> unit;
@@ -6122,7 +6123,7 @@ and async_request proxy_mode wwwr cont cnx =
   let curpos = ref 0 in
   wwwr.www_logging (s_ "Writing request...");
   Fileevent_.add_fileoutput cnx#fd (fun _ ->
-    let n = Unix.write cnx#fd req !curpos (len - !curpos) in (* blocking ? *)
+    let n = Unix.write cnx#fd (Bytes.of_string req) !curpos (len - !curpos) in (* blocking ? *)
     curpos := !curpos  + n;
     if !curpos = len then begin
       Fileevent_.remove_fileoutput cnx#fd;
@@ -6471,7 +6472,7 @@ let merge_headers oldh newh =
   let rec filter acc = function
      [] -> acc
    | s::l ->
-      if String.length s > 5 & String.sub s 0 5 = "HTTP/" then
+      if String.length s > 5 && String.sub s 0 5 = "HTTP/" then
        filter acc l
       else
        try
@@ -6494,7 +6495,7 @@ val header_type : string -> string
 <<function [[Http_headers.header_type]]>>=
 let header_type s =
   match Str.bounded_split (regexp "[:]") s 2 with
-  | [t;_] -> String.lowercase t
+  | [t;_] -> String.lowercase_ascii t
   | _ -> raise (Invalid_HTTP_header s)
 @
 
@@ -6921,7 +6922,7 @@ method init =
 
 
 <<[[Plain.plain#init]] locals>>=
-let buffer = String.create 2048 in
+let buffer = Bytes.create 2048 in
 let size = 
   try Some (Http_headers.contentlength dh.dh_headers)
   with Not_found -> None (* duh *) 
@@ -6944,7 +6945,7 @@ try
   end else begin
     read := !read + n;
     self#set_progress size !read;
-    let s,flag = Mstring.norm_crlf !lastwascr buffer 0 n in
+    let s,flag = Mstring.norm_crlf !lastwascr (Bytes.to_string buffer) 0 n in
     lastwascr := flag;
     self#add_text s
   end
@@ -7129,7 +7130,7 @@ let hints path =
     let v = 
       try Hashtbl.find suffixes sufx 
       with Not_found -> 
-        Hashtbl.find suffixes (String.lowercase sufx)
+        Hashtbl.find suffixes (String.lowercase_ascii sufx)
     in
     match v with
     | ContentType t -> [t] (* good, we have a type *)
@@ -7437,7 +7438,7 @@ let extern dh ctype =
         try Http_headers.contentlength dh.dh_headers
         with Not_found -> 40000 (* duh *)
       in
-      let buffer = String.create 4096 in
+      let buffer = Bytes.create 4096 in
       dh.document_feed.feed_schedule
         (fun () ->
           try
@@ -12003,13 +12004,13 @@ then Cci.init();
 \subsection{Client}
 
 <<function [[Main_remote.request]]>>=
-let request sock cmd url =
+let request sock (cmd : string) (url : string) =
   if cmd <> "" 
-  then write sock cmd 0 (String.length cmd) |> ignore;
+  then write sock (Bytes.of_string cmd) 0 (String.length cmd) |> ignore;
 
-  write sock url 0 (String.length url) |> ignore;
-  write sock "\n" 0 1 |> ignore;
-  let buf = String.create 1024 in
+  write sock (Bytes.of_string url) 0 (String.length url) |> ignore;
+  write sock (Bytes.of_string "\n") 0 1 |> ignore;
+  let buf = Bytes.create 1024 in
   try
     while true do
       let n = read sock buf 0 1024 in
@@ -12111,14 +12112,14 @@ let view attach did redisplay errors annotations coding =
           (* load *)
           (fun t ->
              let ic = open_in fname in
-             let buf = String.create 2048 in
+             let buf = Bytes.create 2048 in
              try
                while true do
                  let n = input ic buf 0 2048 in
                  if n = 0 
                  then raise End_of_file
                  else Text.insert t textEnd 
-                        (if n = 2048 then buf else String.sub buf 0 n) []
+                        (if n = 2048 then Bytes.to_string buf else Bytes.sub_string buf 0 n) []
                done
              with End_of_file -> close_in ic
           ),
@@ -12412,7 +12413,7 @@ let decode s =
   let rpos = ref 0
   and wpos = ref 0
   and len = String.length s in
-  let res = String.create (len / 4 * 3) in
+  let res = Bytes.create (len / 4 * 3) in
     while !rpos < len do
       let v1 = index64.(Char.code s.[!rpos]) in
       let v2 = index64.(Char.code s.[!rpos + 1]) in
@@ -12420,9 +12421,9 @@ let decode s =
       let v4 = index64.(Char.code s.[!rpos + 3]) in
       (* each char gives 6 bits *)
       let i = (v1 lsl 18) lor (v2 lsl 12) lor (v3 lsl 6) lor v4 in
-      res.[!wpos] <- Char.chr (i lsr 16);
-      res.[!wpos+1] <- Char.chr ((i lsr 8) land 0xFF);
-      res.[!wpos+2] <- Char.chr (i land 0xFF);
+      Bytes.set res !wpos (Char.chr (i lsr 16));
+      Bytes.set res (!wpos+1) (Char.chr ((i lsr 8) land 0xFF));
+      Bytes.set res (!wpos+2) (Char.chr (i land 0xFF));
       rpos := !rpos + 4;
       wpos := !wpos + 3
       done;
@@ -12432,7 +12433,7 @@ let decode s =
       else 1
     else 0 
   in
-  String.sub res 0 (String.length res - cut)
+  Bytes.sub_string res 0 (Bytes.length res - cut)
 @
 
 <<constant [[Base64.index64]]>>=
@@ -12440,7 +12441,7 @@ let decode s =
 (* Encoding is [A-Z][a-z][0-9]+/= *)
 (* 3 chars = 24 bits = 4 * 6-bit groups -> 4 chars *)
 
-let index64 = Array.create 128 0
+let index64 = Array.make 128 0
 @
 
 <<toplevel [[Base64._1]]>>=
@@ -12471,27 +12472,27 @@ let encode s =
     | 2 -> s ^ "\000", origlen + 1 
     | _ -> assert false
   in
-  let res = String.create (len / 3 * 4) in
+  let res = Bytes.create (len / 3 * 4) in
     while !rpos < len do
       let i1 = Char.code s.[!rpos] in
       let i2 = Char.code s.[!rpos+1] in
       let i3 = Char.code s.[!rpos+2] in
       let i = (i1 lsl 16) lor (i2 lsl 8) lor i3 in
-      res.[!wpos] <- char64.((i lsr 18) land 0x3f);
-      res.[!wpos+1] <- char64.((i lsr 12) land 0x3f);
-      res.[!wpos+2] <- char64.((i lsr 6) land 0x3f);
-      res.[!wpos+3] <- char64.(i land 0x3f);
+      Bytes.set res (!wpos)  (char64.((i lsr 18) land 0x3f));
+      Bytes.set res (!wpos+1) (char64.((i lsr 12) land 0x3f));
+      Bytes.set res (!wpos+2) (char64.((i lsr 6) land 0x3f));
+      Bytes.set res (!wpos+3) (char64.(i land 0x3f));
       rpos := !rpos + 3;
       wpos := !wpos + 4
       done;
   (* Correct padding *)
-  for i = 1 to len - origlen do res.[String.length res - i] <- '=' done;
-  res
+  for i = 1 to len - origlen do Bytes.set res (Bytes.length res - i) '=' done;
+  Bytes.to_string res
 @
 
 
 <<constant [[Base64.char64]]>>=
-let char64 = Array.create 64 'a'
+let char64 = Array.make 64 'a'
 @
 <<toplevel [[Base64._2]]>>=
 let _ =
@@ -12581,12 +12582,12 @@ let sprintf x =
 <<function [[I18n.read_transl_file]]>>=
 let read_transl_file msgfile =
   let ic = open_in msgfile in
-  let tag_buffer = String.create 16
-  and msg_buffer = String.create 1024 in
+  let tag_buffer = Bytes.create 16
+  and msg_buffer = Bytes.create 1024 in
   let rec store_tag c i =
-    if i >= 16 then i else (tag_buffer.[i] <- c; succ i)
+    if i >= 16 then i else (Bytes.set tag_buffer i c; succ i)
   and store_msg c i =
-    if i >= 1024 then i else (msg_buffer.[i] <- c; succ i)
+    if i >= 1024 then i else (Bytes.set msg_buffer i c; succ i)
   and read_line i =
     match input_char ic with
       '\n' -> i
@@ -12611,10 +12612,10 @@ let read_transl_file msgfile =
   begin try
     while true do
       let (tag_len, msg_len) = read_tag 0 in
-      if String.sub tag_buffer 0 tag_len = "src" then
-        currsrc := String.sub msg_buffer 0 msg_len
-      else if String.sub tag_buffer 0 tag_len = !language then
-        Hashtbl.add transl_tbl !currsrc (String.sub msg_buffer 0 msg_len)
+      if Bytes.sub_string tag_buffer 0 tag_len = "src" then
+        currsrc := Bytes.sub_string msg_buffer 0 msg_len
+      else if Bytes.sub_string tag_buffer 0 tag_len = !language then
+        Hashtbl.add transl_tbl !currsrc (Bytes.sub_string msg_buffer 0 msg_len)
       else ()
     done
   with End_of_file ->
@@ -14732,11 +14733,11 @@ let dec_to_hex i =
 (* Converting a hex stored string *)
 let hex_to_string s =
   let len = String.length s / 2 in
-  let res = String.create len in
+  let res = Bytes.create len in
     for i = 0 to len - 1 do
-      res.[i] <- Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1])
+      Bytes.set res i (Char.chr ( 16 * (hex_to_dec s.[i+i]) + hex_to_dec s.[i+i+1]));
       done;
-    res
+    Bytes.to_string res
 @
 
 <<constant [[Mstring.gensym]]>>=
@@ -14784,33 +14785,33 @@ let catenate_sep sep =
 let norm_crlf lastwascr buf offs len =
   let rpos = ref offs
   and wpos = ref 0
-  and dest = String.create (len + 1) (* we need one more char *)
+  and dest = Bytes.create (len + 1) (* we need one more char *)
   and limit = offs + len - 1  
   and lastiscr = ref false in
   if lastwascr then
     if buf.[!rpos] = '\n' then begin
-      dest.[!wpos] <- '\n';
+      Bytes.set dest !wpos '\n';
       incr rpos; incr wpos
     end
     else begin
-      dest.[!wpos] <- '\n'; incr wpos
+      Bytes.set dest !wpos '\n'; incr wpos
     end;
 
   while !rpos < limit do
     match buf.[!rpos] with
-      '\n' -> dest.[!wpos] <- '\n'; incr rpos; incr wpos
+      '\n' -> Bytes.set dest !wpos '\n'; incr rpos; incr wpos
     | '\r' -> 
     if buf.[!rpos + 1] = '\n'
-    then begin dest.[!wpos] <- '\n'; rpos := !rpos + 2; incr wpos end
-    else begin dest.[!wpos] <- '\n'; incr rpos; incr wpos end
-    | c -> dest.[!wpos] <- c; incr rpos; incr wpos 
+    then begin Bytes.set dest !wpos '\n'; rpos := !rpos + 2; incr wpos end
+    else begin Bytes.set dest !wpos '\n'; incr rpos; incr wpos end
+    | c -> Bytes.set dest !wpos c; incr rpos; incr wpos 
   done;
   begin match buf.[offs+len-1] with
-    '\n' -> dest.[!wpos] <- '\n'; incr wpos
+    '\n' -> Bytes.set dest !wpos '\n'; incr wpos
   | '\r' -> lastiscr := true
-  | c -> dest.[!wpos] <- c; incr wpos
+  | c -> Bytes.set dest !wpos c; incr wpos
   end;
-  String.sub dest 0 !wpos, !lastiscr
+  Bytes.sub_string dest 0 !wpos, !lastiscr
 @
 
 \section{Files}
@@ -14837,7 +14838,7 @@ val mktemp : string -> string
 <<function [[Msys.next_slash]]>>=
 (* skip to next / *)
 let rec next_slash s n =
-  if  n >= String.length s or s.[n] = '/' 
+  if  n >= String.length s || s.[n] = '/' 
   then n
   else next_slash s (succ n)
 @
@@ -14845,7 +14846,7 @@ let rec next_slash s n =
 <<function [[Msys.tilde_subst]]>>=
 let tilde_subst s =
  try
-  if s = "" or s.[0] <> '~' then s 
+  if s = "" || s.[0] <> '~' then s 
   else
     let len = String.length s in
     if len = 1 then Sys.getenv "HOME"

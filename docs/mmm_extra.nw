@@ -231,14 +231,14 @@ type t
 <<type [[Ebuffer.t]]>>=
 (* Extensible buffers *)
 type t = {
-    mutable buffer : string;
+    mutable buffer : bytes;
     mutable pos : int;
     mutable len : int}
 @
 
 <<function [[Ebuffer.create]]>>=
 let create n = {
-   buffer = String.create n;
+   buffer = Bytes.create n;
    pos = 0;
    len = n
    }
@@ -260,12 +260,12 @@ let output_string buf s =
   let l = String.length s in
   if buf.pos + l > buf.len then begin
     let size = newsize buf.len l in
-    let news = String.create size in
-      String.unsafe_blit buf.buffer 0 news 0 buf.pos;
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
       buf.buffer <- news;
       buf.len <- size
     end;
-  String.unsafe_blit s 0 buf.buffer buf.pos l;
+  Bytes.unsafe_blit_string s 0 buf.buffer buf.pos l;
   buf.pos <- buf.pos + l
 @
 
@@ -273,12 +273,12 @@ let output_string buf s =
 let output_char buf c =
   if buf.pos >= buf.len then begin
     let size = newsize buf.len 1 in
-    let news = String.create size in
-      String.unsafe_blit buf.buffer 0 news 0 buf.pos;
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
       buf.buffer <- news;
       buf.len <- size
     end;
-  buf.buffer.[buf.pos] <- c;
+  Bytes.set buf.buffer buf.pos c;
   buf.pos <- buf.pos + 1
 @
 
@@ -286,8 +286,8 @@ let output_char buf c =
 let output buf s ofs l =
   if buf.pos + l > buf.len then begin
     let size = newsize buf.len l in
-    let news = String.create size in
-      String.unsafe_blit buf.buffer 0 news 0 buf.pos;
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
       buf.buffer <- news;
       buf.len <- size
     end;
@@ -297,7 +297,7 @@ let output buf s ofs l =
 
 <<function [[Ebuffer.get]]>>=
 let get buf = 
-  String.sub buf.buffer 0 buf.pos
+  Bytes.sub_string buf.buffer 0 buf.pos
 @
 
 <<function [[Ebuffer.used]]>>=
@@ -511,11 +511,11 @@ let fprintf outchan format =
                     int_of_string (String.sub format (i+1) (j-i-1))
                   with _ ->
                     invalid_arg "I18nprintf.fprintf: bad %s format" in
-                if p > 0 & String.length s < p then begin
+                if p > 0 && String.length s < p then begin
                   output_string outchan
                                 (String.make (p - String.length s) ' ');
                   output_string outchan s
-                end else if p < 0 & String.length s < -p then begin
+                end else if p < 0 && String.length s < -p then begin
                   output_string outchan s;
                   output_string outchan
                                 (String.make (-p - String.length s) ' ')
@@ -604,9 +604,9 @@ let sprintf format =
                       int_of_string (String.sub format (i+1) (j-i-1))
                     with _ ->
                       invalid_arg "I18nprintf.fprintf: bad %s format" in
-                  if p > 0 & String.length s < p then
+                  if p > 0 && String.length s < p then
                     s :: String.make (p - String.length s) ' ' :: accu1
-                  else if p < 0 & String.length s < -p then
+                  else if p < 0 && String.length s < -p then
                     String.make (-p - String.length s) ' ' :: s :: accu1
                   else
                     s :: accu1
@@ -1445,7 +1445,7 @@ let execvp s args =
   with
     Unix_error(e, _, _) ->
        Printf.eprintf "%s\n" (Unix.error_message e);
-       flush Pervasives.stderr;
+       flush Stdlib.stderr;
        exit 1
 @
 
@@ -1477,8 +1477,8 @@ let eval_cmd cmd args back =
 @
 
 <<function [[Munix.write_string]]>>=
-let write_string fd s =
-  ignore (write fd s 0 (String.length s))
+let write_string fd (s : string) =
+  ignore (write fd (Bytes.of_string s) 0 (String.length s))
 @
 
 <<function [[Munix.read_line]]>>=
@@ -1487,19 +1487,19 @@ let write_string fd s =
  *   strips terminator !
  *)
 let read_line fd =
-  let rec read_rec buf bufsize offs =
+  let rec read_rec (buf : bytes) bufsize offs =
     let n = Low.read fd buf offs 1 in
       if n = 0 then raise End_of_file
-      else if buf.[offs] = '\n'
+      else if Bytes.get buf offs = '\n'
            then (* strips \n and possibly \r  *)
-             let len = if offs >= 1 & buf.[offs-1] = '\r' then offs-1 
+             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
                        else offs in
-               String.sub buf 0 len
+               Bytes.sub_string buf 0 len
            else let offs = succ offs in
                   if offs = bufsize 
-                  then read_rec (buf ^ String.create 128) (bufsize + 128) offs
+                  then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
                   else read_rec buf bufsize offs in
-  read_rec (String.create 128) 128 0 
+  read_rec (Bytes.create 128) 128 0 
 @
 
 <<function [[Munix.full_random_init]]>>=
@@ -1508,7 +1508,7 @@ let full_random_init () =
     let env = environment () in
     let vect =
       Array.append (Array.map Hashtbl.hash env)
-           [| getpid(); Pervasives.truncate (time()); (* JPF: bogus *)
+           [| getpid(); Stdlib.truncate (time()); (* JPF: bogus *)
               getuid(); getgid();
               Hashtbl.hash (getlogin()) |] in
     Random.full_init vect
@@ -2879,7 +2879,7 @@ val hints : string -> Messages.header list
 let rec status_msg = function
     [] -> raise Not_found
   | s::l -> if String.length s >= 5 (* "HTTP/" *)
-          & (String.sub s 0 5) = "HTTP/"
+          && (String.sub s 0 5) = "HTTP/"
          then (parse_status s).status_message
          else status_msg l
 @
@@ -2889,7 +2889,7 @@ let is_contentencoding =
   let l = String.length "Content-Encoding" in
   (fun s ->
        String.length s >= l + 2
-    && String.lowercase (String.sub s 0 (l+2)) = "content-encoding: ")
+    && String.lowercase_ascii (String.sub s 0 (l+2)) = "content-encoding: ")
 @
 
 <<function [[Http_headers.rem_contentencoding]]>>=
@@ -3633,7 +3633,7 @@ let tofile dh =
   let f = Msys.mktemp "mmmcache" in
   let oc = open_out_bin f in
     FileData (f,true), 
-      {cache_write = output oc;
+      {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
        cache_close = (fun () -> close_out oc)}
 @
 
@@ -3670,7 +3670,7 @@ let replace = function
     {cache_write = Ebuffer.output b; cache_close = (fun () -> ())}
  | FileData (f, _) ->
   let oc = open_out_bin f in
-    {cache_write = output oc;
+    {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
      cache_close = (fun () -> close_out oc)}
 @
 
@@ -3681,7 +3681,7 @@ let wrap c dh =
     feed_read = 
       (fun buf offs len ->
         let r = dh.document_feed.feed_read buf offs len in
-     if r <> 0 then c.cache_write buf offs r;
+     if r <> 0 then c.cache_write (Bytes.to_string buf) offs r;
      r);
     feed_schedule = dh.document_feed.feed_schedule;
     feed_unschedule = dh.document_feed.feed_unschedule;
@@ -5316,7 +5316,7 @@ val print_command : string ref
 (* unprotected against Sys_error *)
 let f cont dh fname endmsg =
   let oc = open_out_bin fname in
-  let buffer = String.create 1024 in
+  let buffer = Bytes.create 1024 in
   let red = ref 0 in
   let size =   
     try Http_headers.contentlength dh.dh_headers
@@ -5373,7 +5373,7 @@ let transfer wr dh dest =
     );
     Munix.write_string fd "\n";
       end;
-      let buffer = String.create 1024 in
+      let buffer = Bytes.create 1024 in
       dh.document_feed.feed_schedule
        (fun () ->
       try
@@ -5412,7 +5412,7 @@ let copy_file url src dst =
   try
     let ic = open_in_bin src
     and oc = open_out_bin dst 
-    and buf = String.create 2048 in
+    and buf = Bytes.create 2048 in
     let rec copy () =
       let n = input ic buf 0 2048 in
       if n <> 0 then begin output oc buf 0 n; copy() end
@@ -5449,7 +5449,7 @@ let pipe_from_string url data cmd =
       if !pos < len then begin
         let n = min 512 (len - !pos) in
         try
-          let w = write fd_out data !pos n in
+          let w = write fd_out (Bytes.of_string data) !pos n in
           pos := !pos + w
         with
           Unix_error (_,_,_) -> (* can't write *)
@@ -11956,26 +11956,26 @@ let resource_name pref_name =
   (* for each words, remove non alpha-numerics *)
   (* in addition, make the each first characters capital *)
   let words' = List.map (fun word ->
-    let buf = String.create (String.length word) in
+    let buf = Bytes.create (String.length word) in
     let pos = ref 0 in
     for i = 0 to String.length word - 1 do
       if ('A' <= word.[i] && word.[i] <= 'Z') ||
          ('a' <= word.[i] && word.[i] <= 'z') ||
          ('0' <= word.[i] && word.[i] <= '9') then begin
-        buf.[!pos] <- word.[i];
+        Bytes.set buf !pos word.[i];
         incr pos
     end;
     done;
-    let x = String.sub buf 0 !pos in
+    let x = Bytes.sub buf 0 !pos in
     begin 
       try
-    if 'a' <= x.[0] && x.[0] <= 'z' then
-      x.[0] <- Char.chr (Char.code x.[0] + Char.code 'A' - Char.code 'a');
+    if 'a' <= Bytes.get x 0 && Bytes.get x 0 <= 'z' then
+      Bytes.set x 0 (Char.chr (Char.code (Bytes.get x 0) + Char.code 'A' - Char.code 'a'));
       with
     Invalid_argument _ -> 
       (* Strangely, x could be "". *) ()
     end;
-    x ) words
+    Bytes.to_string x ) words
   in
     "pref" ^ String.concat "" words'
 @
