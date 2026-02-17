@@ -19,7 +19,6 @@
   Fpath Fpath_ ; Ftype
   Arg_
   Arch OS Endian
-  ; no Rune
  )
  ;(inline_tests)
  ;(preprocess

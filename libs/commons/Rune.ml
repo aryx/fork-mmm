@@ -1,5 +1,3 @@
-open Common
-
 (* This is incomplete and used only for plan9 stuff for now (e.g., windows/) *)
 
 (*
