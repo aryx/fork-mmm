@@ -65,6 +65,9 @@ all::
 	$(MAKE) rec 
 	$(MAKE) allbyte 
 
+build-docker:
+	docker build -t "mmm" .
+
 opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(TARGET).opt
@@ -75,11 +78,9 @@ all.opt: opt
 top: $(TARGET).top
 
 rec:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
-
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
-
 
 # OBJS are common for all versions
 OBJS= $(LIBS) $(TXTDISP)
