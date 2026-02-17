@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= common.ml simple_color.ml
+SRC= common.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
