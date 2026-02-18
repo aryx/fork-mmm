@@ -17,10 +17,11 @@
     mmm.display
     mmm.gui
  )
+ (modules
+   Main
+ )
  (preprocess (pps ppx_deriving.show))
 )
-
-
 
 ;(executable
 ; (name main)

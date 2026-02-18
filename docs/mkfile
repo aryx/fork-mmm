@@ -170,7 +170,7 @@ SRC= \
   gui/chrome/mmm.ml\
   gui/chrome/cci.ml\
   \
-  main.ml\
+  main/main.ml\
   main_remote.ml\
   htparse.ml\
   \
