@@ -7,39 +7,39 @@ DOC=mmm
 SRC_ORIG=mmm.nw mmm_extra.nw
 
 SRC= \
-  libs/commons/condition.mli\
-  libs/commons/condition.ml\
-  libs/commons/date.mli\
-  libs/commons/date.ml\
-  libs/commons/ebuffer.mli\
-  libs/commons/ebuffer.ml\
-  libs/commons/error.mli\
-  libs/commons/error.ml\
-  libs/commons/i18nprintf.mli\
-  libs/commons/i18nprintf.ml\
-  libs/commons/ibtree.mli\
-  libs/commons/ibtree.ml\
-  libs/commons/lang.mli\
-  libs/commons/lang.ml\
-  libs/commons/log.mli\
-  libs/commons/log.ml\
-  libs/commons/low.mli\
-  libs/commons/low.ml\
-  libs/commons/mlist.mli\
-  libs/commons/mlist.ml\
-  libs/commons/mstring.mli\
-  libs/commons/mstring.ml\
-  libs/commons/msys.mli\
-  libs/commons/msys.ml\
-  libs/commons/i18n.mli\
-  libs/commons/i18n.ml\
-  libs/commons/munix.ml\
+  libs/misc/condition.mli\
+  libs/misc/condition.ml\
+  libs/misc/date.mli\
+  libs/misc/date.ml\
+  libs/misc/ebuffer.mli\
+  libs/misc/ebuffer.ml\
+  libs/misc/error.mli\
+  libs/misc/error.ml\
+  libs/misc/i18nprintf.mli\
+  libs/misc/i18nprintf.ml\
+  libs/misc/ibtree.mli\
+  libs/misc/ibtree.ml\
+  libs/misc/lang.mli\
+  libs/misc/lang.ml\
+  libs/misc/log.mli\
+  libs/misc/log.ml\
+  libs/misc/low.mli\
+  libs/misc/low.ml\
+  libs/misc/mlist.mli\
+  libs/misc/mlist.ml\
+  libs/misc/mstring.mli\
+  libs/misc/mstring.ml\
+  libs/misc/msys.mli\
+  libs/misc/msys.ml\
+  libs/misc/i18n.mli\
+  libs/misc/i18n.ml\
+  libs/misc/munix.ml\
   \
-  libs/commons/feed.mli\
-  libs/commons/feed.ml\
+  libs/misc/feed.mli\
+  libs/misc/feed.ml\
   gui/tk/glevents.mli\
   gui/tk/glevents.ml\
-  libs/commons/hotlist.ml\
+  libs/misc/hotlist.ml\
   \
   src/globals/version.mli\
   src/globals/version.ml\

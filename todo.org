@@ -2,24 +2,12 @@
 
 ** TODO changes.txt
 
-X** build infra
-- switch to dune and use of OPAM for dependencies
-  (but very few dependencies as camltk is vendored)
-
 ** Overview
-
 
 ** Later
 
-* Last
-
-** cleanup .gitignore
-
-** compile again fork-mmm without its commons, use opam_lib in
-external/
-
 * Now
-See also Browser.nw section in plan9/todo.txt
+#See also Browser.nw section in plan9/todo.txt
 
 ** bugs (tk prototype)
 
@@ -55,7 +43,6 @@ try to have format/ independent of tk and display?
 htmlfmt.mli, html_form. html_table, attrs?
 
 *** less: try to make class polymorphic? have 'widget at more places?
-
 
 ** stuff in regular browser
 

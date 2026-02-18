@@ -7,9 +7,11 @@
 *.o
 *.cm*
 *.annot
-.depend
 *.so
 *.a
+
+# ocamldep
+.depend
 
 # syncweb
 .md5sum_*
@@ -28,17 +30,14 @@
 *.bbl
 *.blg
 
-# ocamldep
-.depend
-
 # ----------------------------------------------------------------------------
 # Specific files
 # ----------------------------------------------------------------------------
 #dune
 _build
 
-external/ocamltk
-external/stdlib/*
+#external/ocamltk
+#external/stdlib/*
 
 /docs/lineage.dot
 /docs/lineage.pdf
@@ -57,11 +56,14 @@ external/stdlib/*
 /src/url/lexurl.ml
 
 #binaries
+/mmm
 /htparse
 /mmm.bin
 /mmm_remote
 /sboard/surfboard
 /sboard/surfboard_remote
+/demos/sboard/surfboard
+/demos/sboard/surfboard_remote
 
 #Makefile and co
 /external/ocamltk/config.status
@@ -74,6 +76,10 @@ external/stdlib/*
 
 /safe/safe418mmm.ml
 /safe/safe418mmm.mli
+/safe/gen/safe418.ml
+/safe/gen/safe418.mli
+/safe/gen/safe418mmm.ml
+/safe/gen/safe418mmm.mli
 
 /external/ocamltk/Makefile.camltk
 /external/ocamltk/Makefile.config
@@ -91,17 +97,8 @@ external/stdlib/*
 /safe/safetkanim.mli
 
 /ocamldoc.out
-
 /commons/ocamldoc.out
 /viewers/ocamldoc.out
-/mmm
-/safe/gen/safe418.ml
-/safe/gen/safe418.mli
-/safe/gen/safe418mmm.ml
-/safe/gen/safe418mmm.mli
-
-/demos/sboard/surfboard
-/demos/sboard/surfboard_remote
 
 extensions/sandbox/crcs.ml
 extensions/sandbox/crcs.ml.bak
@@ -128,6 +125,5 @@ extensions/sandbox/gen/*.*
 /extensions/crcs/crcs.ml.bak
 /extensions/crcs/crcsmmm.ml.bak
 
-/mmm2
-/TAGS
-/diff
+
+
