@@ -23,6 +23,7 @@ let history_mode = ref false
 (*e: constant [[Cache.history_mode]] *)
 
 (*s: constant [[Cache.max_lastused]] *)
+(* Corresponding Date = year 5138, we should be fine *)
 let max_lastused = 100000000000.0
 (*e: constant [[Cache.max_lastused]] *)
 
@@ -53,7 +54,7 @@ type entry = {
 
   mutable cache_lastused : float
       (* TODO still valid comment in 2026? *)
-      (* cache_lastused is specified as max_int (0x3fffffff) when we don't
+      (* old? cache_lastused is specified as max_int (0x3fffffff) when we don't
        * want the entry to be flushed. This will break around
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
        *) (* JPF: it is now float! max_int -> max_float *)

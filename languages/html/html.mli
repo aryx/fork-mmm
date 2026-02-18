@@ -1,6 +1,7 @@
 (*s: html/html.mli *)
-(*s: type [[Html.attribute_name]] *)
 (* HTML tokens *)
+
+(*s: type [[Html.attribute_name]] *)
 type attribute_name = string 
 (*e: type [[Html.attribute_name]] *)
 (*s: type [[Html.attribute_value]] *)

@@ -709,7 +709,7 @@ type entry = {
 
   mutable cache_lastused : float
       (* TODO still valid comment in 2026? *)
-      (* cache_lastused is specified as max_int (0x3fffffff) when we don't
+      (* old? cache_lastused is specified as max_int (0x3fffffff) when we don't
        * want the entry to be flushed. This will break around
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
        *) (* JPF: it is now float! max_int -> max_float *)
@@ -719,6 +719,7 @@ type entry = {
 %todo: hmm the comment seems to indicate it's a bad thing in 2015 :)
 
 <<constant [[Cache.max_lastused]]>>=
+(* Corresponding Date = year 5138, we should be fine *)
 let max_lastused = 100000000000.0
 @
 
@@ -1096,7 +1097,6 @@ type attributes = (attribute_name * attribute_value) list
 @
 
 <<type [[Html.attribute_name]]>>=
-(* HTML tokens *)
 type attribute_name = string 
 @
 <<type [[Html.attribute_value]]>>=

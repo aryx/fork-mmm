@@ -2364,6 +2364,8 @@ val issp : string -> bool
 %-------------------------------------------------------------
 
 <<html/html.mli>>=
+(* HTML tokens *)
+
 <<type [[Html.attribute_name]]>>
 <<type [[Html.attribute_value]]>>
 <<type [[Html.attributes]]>>
@@ -2437,6 +2439,8 @@ let issp s =
 
 <<html/html.ml>>=
 open Printf
+
+(* HTML tokens *)
 
 <<type [[Html.attribute_name]]>>
 <<type [[Html.attribute_value]]>>
