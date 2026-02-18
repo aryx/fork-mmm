@@ -1,5 +1,8 @@
 (*s: viewers/embed.ml *)
 (* Embedded documents *)
+
+open Fpath_.Operators
+
 open I18n
 open Tk
 open Www
@@ -27,7 +30,7 @@ module EmbeddedData =
        dh is closed; we use only the headers
        NOTE: if we are updating over an old version, fix the cache
      *)
-    let load dh referers file =
+    let load dh referers (file : Fpath.t) =
       Retype.f dh;
       match dh.document_status with
     200 ->
@@ -48,7 +51,7 @@ module EmbeddedData =
       end
       |	304 -> (* return the previous version *)
       begin try 
-        Msys.rm file;
+        Msys.rm !!file;
         cache_access dh.document_id.document_url (List.hd referers)
       with
         Not_found -> failwith "load"

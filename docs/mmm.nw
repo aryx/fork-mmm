@@ -612,7 +612,7 @@ type t = {
  *)
 type data =
  | MemoryData of Ebuffer.t
- | FileData of string * bool (* flag is true if file is temporary *)
+ | FileData of Fpath.t * bool (* flag is true if file is temporary *)
 @
 %less: the comment is enigmatic
 
@@ -708,6 +708,7 @@ type entry = {
   cache_condition : Condition.t;
 
   mutable cache_lastused : float
+      (* TODO still valid comment in 2026? *)
       (* cache_lastused is specified as max_int (0x3fffffff) when we don't
        * want the entry to be flushed. This will break around
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
@@ -12085,7 +12086,7 @@ let view attach did redisplay errors annotations _coding =
           let tmpfile = Msys.mktemp "buf" in
           (* load *)
           (fun t ->
-             let ic = open_in fname in
+             let ic = open_in !!fname in
              let buf = Bytes.create 2048 in
              try
                while true do
@@ -12105,11 +12106,11 @@ let view attach did redisplay errors annotations _coding =
             (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
             close_out oc;
             (* SWITCH CACHE *)
-            doc.document_data <- FileData(tmpfile, true)),
+            doc.document_data <- FileData(Fpath.v tmpfile, true)),
 
         (* save *)
         Some (fun t ->
-          let oc = open_out fname in
+          let oc = open_out !!fname in
           output_string oc
             (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
           close_out oc;
@@ -13486,8 +13487,8 @@ let add did doc =
                         did.document_stamp
                         (match doc.document_data with
                         | MemoryData _ -> "in memory"
-                        | FileData (f,true) -> f
-                        | FileData (f,false) -> "fake " ^f)
+                        | FileData (f,true) -> !!f
+                        | FileData (f,false) -> "fake " ^ !!f)
                         );
 
   (* Kill the previous entry, if any [for update] *)
@@ -14022,8 +14023,8 @@ let postmortem () =
             did.document_stamp
             (match entry.cache_document.document_data with
              | MemoryData _ -> "in memory"
-             | FileData (f,true) -> f
-             | FileData (f,false) -> "fake " ^f)
+             | FileData (f,true) -> !!f
+             | FileData (f,false) -> "fake " ^ !!f)
              );
     entry.cache_document.document_headers
     |> List.rev |> List.iter (fun h -> Log.f (sprintf "%s" h));

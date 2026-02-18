@@ -24,7 +24,7 @@ module type Data =
         (* Type of shared objects
          * The table of objects in managed in this module
          *)
-   val load : Document.handle -> Document.id list -> string -> t
+   val load : Document.handle -> Document.id list -> Fpath.t -> t
         (* [load dh referers file]
          *   is responsible for creating the shared handle
          *)

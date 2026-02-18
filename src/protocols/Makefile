@@ -11,7 +11,7 @@ SRC= file.ml mailto.ml cache.ml protos.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/misc $(TOP)/src/globals \
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/src/globals \
  $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http
 
 SYSINCLUDES=

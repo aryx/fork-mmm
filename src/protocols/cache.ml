@@ -1,5 +1,8 @@
 (*s: protocols/cache.ml *)
 (* Document caching (in memory !) *)
+
+open Fpath_.Operators
+
 open Printf
 open Unix
 open Url
@@ -49,6 +52,7 @@ type entry = {
   cache_condition : Condition.t;
 
   mutable cache_lastused : float
+      (* TODO still valid comment in 2026? *)
       (* cache_lastused is specified as max_int (0x3fffffff) when we don't
        * want the entry to be flushed. This will break around
        * Sat Jan 10, 2004 13:37 GMT on 32 bits machines
@@ -74,8 +78,8 @@ let postmortem () =
             did.document_stamp
             (match entry.cache_document.document_data with
              | MemoryData _ -> "in memory"
-             | FileData (f,true) -> f
-             | FileData (f,false) -> "fake " ^f)
+             | FileData (f,true) -> !!f
+             | FileData (f,false) -> "fake " ^ !!f)
              );
     entry.cache_document.document_headers
     |> List.rev |> List.iter (fun h -> Log.f (sprintf "%s" h));
@@ -146,7 +150,7 @@ let make_room () =
 (*s: function [[Cache.finalize]] *)
 (* Remove the document source. *)
 let finalize = function
-   FileData (f, true) -> Msys.rm f
+   FileData (f, true) -> Msys.rm !!f
  | _ -> () (* gc ! *)
 (*e: function [[Cache.finalize]] *)
 
@@ -184,8 +188,8 @@ let add did doc =
                         did.document_stamp
                         (match doc.document_data with
                         | MemoryData _ -> "in memory"
-                        | FileData (f,true) -> f
-                        | FileData (f,false) -> "fake " ^f)
+                        | FileData (f,true) -> !!f
+                        | FileData (f,false) -> "fake " ^ !!f)
                         );
 
   (* Kill the previous entry, if any [for update] *)
@@ -282,7 +286,7 @@ let init () =
 let tofile _dh =
   let f = Msys.mktemp "mmmcache" in
   let oc = open_out_bin f in
-    FileData (f,true), 
+    FileData (Fpath.v f,true), 
       {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
        cache_close = (fun () -> close_out oc)}
 (*e: function [[Cache.tofile]] *)
@@ -308,13 +312,14 @@ let discard =
 let dummy dh =
   let url = dh.document_id.document_url in
    match url.protocol with
-     FILE -> 
+   | FILE -> 
        begin match url.path with
-     None -> tobuffer dh
+       | None -> tobuffer dh
        | Some "" -> tobuffer dh
        | Some p ->
-      if p.[String.length p - 1] = '/' then tobuffer dh
-      else FileData ("/"^p, false), discard
+         if p.[String.length p - 1] = '/' 
+         then tobuffer dh
+         else FileData (Fpath.v ("/"^p), false), discard
        end
    | _ -> raise DontCache
 (*e: function [[Cache.dummy]] *)
@@ -325,7 +330,7 @@ let _replace = function
     Ebuffer.reset b; 
     {cache_write = Ebuffer.output b; cache_close = (fun () -> ())}
  | FileData (f, _) ->
-  let oc = open_out_bin f in
+  let oc = open_out_bin !!f in
     {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
      cache_close = (fun () -> close_out oc)}
 (*e: function [[Cache.replace]] *)
@@ -368,7 +373,7 @@ let fd_of_doc doc =
       let fd = openfile f [O_RDONLY] 0 in
       Msys.rm f;
       fd
-  | FileData (f,_) -> openfile f [O_RDONLY] 0
+  | FileData (f,_) -> openfile !!f [O_RDONLY] 0
 (*e: function [[Cache.fd_of_doc]] *)
 
 (*s: function [[Cache.make_handle]] *)
@@ -410,7 +415,7 @@ let make_embed_handle doc =
     let fd = openfile f [O_RDONLY] 0 in
       Msys.rm f;
       fd
-    | FileData (f,_) -> openfile f [O_RDONLY] 0
+    | FileData (f,_) -> openfile !!f [O_RDONLY] 0
   in
     {document_id = 
     { document_url = doc.document_address; document_stamp = no_stamp};
@@ -428,7 +433,7 @@ let cleanup () =
   List.iter 
     (fun (_did, entry) ->
       match entry.cache_document.document_data with
-       FileData (f, true) -> Msys.rm f
+       FileData (f, true) -> Msys.rm !!f
       | _ -> ())
     !memory
 (*e: function [[Cache.cleanup]] *)

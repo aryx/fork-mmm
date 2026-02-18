@@ -3554,7 +3554,7 @@ let make_room () =
 <<function [[Cache.finalize]]>>=
 (* Remove the document source. *)
 let finalize = function
-   FileData (f, true) -> Msys.rm f
+   FileData (f, true) -> Msys.rm !!f
  | _ -> () (* gc ! *)
 @
 
@@ -3630,7 +3630,7 @@ let patch did headers =
 let tofile _dh =
   let f = Msys.mktemp "mmmcache" in
   let oc = open_out_bin f in
-    FileData (f,true), 
+    FileData (Fpath.v f,true), 
       {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
        cache_close = (fun () -> close_out oc)}
 @
@@ -3650,13 +3650,14 @@ let discard =
 let dummy dh =
   let url = dh.document_id.document_url in
    match url.protocol with
-     FILE -> 
+   | FILE -> 
        begin match url.path with
-     None -> tobuffer dh
+       | None -> tobuffer dh
        | Some "" -> tobuffer dh
        | Some p ->
-      if p.[String.length p - 1] = '/' then tobuffer dh
-      else FileData ("/"^p, false), discard
+         if p.[String.length p - 1] = '/' 
+         then tobuffer dh
+         else FileData (Fpath.v ("/"^p), false), discard
        end
    | _ -> raise DontCache
 @
@@ -3667,7 +3668,7 @@ let _replace = function
     Ebuffer.reset b; 
     {cache_write = Ebuffer.output b; cache_close = (fun () -> ())}
  | FileData (f, _) ->
-  let oc = open_out_bin f in
+  let oc = open_out_bin !!f in
     {cache_write = (fun s n1 n2 -> output oc (Bytes.of_string s) n1 n2);
      cache_close = (fun () -> close_out oc)}
 @
@@ -3709,7 +3710,7 @@ let fd_of_doc doc =
       let fd = openfile f [O_RDONLY] 0 in
       Msys.rm f;
       fd
-  | FileData (f,_) -> openfile f [O_RDONLY] 0
+  | FileData (f,_) -> openfile !!f [O_RDONLY] 0
 @
 
 <<function [[Cache.make_handle]]>>=
@@ -3750,7 +3751,7 @@ let make_embed_handle doc =
     let fd = openfile f [O_RDONLY] 0 in
       Msys.rm f;
       fd
-    | FileData (f,_) -> openfile f [O_RDONLY] 0
+    | FileData (f,_) -> openfile !!f [O_RDONLY] 0
   in
     {document_id = 
     { document_url = doc.document_address; document_stamp = no_stamp};
@@ -3767,7 +3768,7 @@ let cleanup () =
   List.iter 
     (fun (_did, entry) ->
       match entry.cache_document.document_data with
-       FileData (f, true) -> Msys.rm f
+       FileData (f, true) -> Msys.rm !!f
       | _ -> ())
     !memory
 @
@@ -3781,6 +3782,9 @@ let _ = at_exit cleanup
 
 <<protocols/cache.ml>>=
 (* Document caching (in memory !) *)
+
+open Fpath_.Operators
+
 open Printf
 open Unix
 open Url
@@ -4145,7 +4149,7 @@ module ImageData : sig
   val jpeg_converter : string ref
   val verbose : bool ref
 
-  val load : handle -> Document.id list -> string -> Tkanim.imageType
+  val load : handle -> Document.id list -> Fpath.t -> Tkanim.imageType
   val cache_access : Url.t -> Document.id -> Tkanim.imageType
   val error :
       Url.t -> (Document.id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
@@ -4185,6 +4189,9 @@ let _ =
 
 <<retrieve/img.ml>>=
 (* Image cache and scheduled image downloading *)
+
+open Fpath_.Operators
+
 open Printf
 
 open Tk
@@ -4310,7 +4317,7 @@ module ImageData =
         with
          Protocol.TkError _ -> Bitmap (Predefined "question"))
 
-    let load dh referers file =
+    let load dh referers (file : Fpath.t) =
       Retype.f dh;
       match dh.document_status with
     200 ->
@@ -4319,29 +4326,29 @@ module ImageData =
         try
           let ctype = contenttype dh.dh_headers in
           match Lexheaders.media_type ctype with
-           ("image","jpeg"), _ -> Low.busy tk_load_jpeg file
-          | ("image","gif"), _ -> Low.busy tk_load_gif file
-          | _,_ -> Low.busy tk_load_other file
+           ("image","jpeg"), _ -> Low.busy tk_load_jpeg !!file
+          | ("image","gif"), _ -> Low.busy tk_load_gif !!file
+          | _,_ -> Low.busy tk_load_other !!file
         with
-        | Not_found -> Low.busy tk_load_other file 
-        | Invalid_HTTP_header _ -> Msys.rm file; broken_data
+        | Not_found -> Low.busy tk_load_other !!file 
+        | Invalid_HTTP_header _ -> Msys.rm !!file; broken_data
           in
       if !verbose then
-        Log.f (sprintf "Loaded %s as %s" file (Url.string_of url));
-      Msys.rm file;
+        Log.f (sprintf "Loaded %s as %s" !!file (Url.string_of url));
+      Msys.rm !!file;
       add url img referers dh.dh_headers;
       img
       |	304 -> (* we did an update an a document, and it induced a 
           recursive update. The document didn't change *)
       begin try 
-        Msys.rm file;
+        Msys.rm !!file;
         cache_access dh.document_id.document_url (List.hd referers)
       with
         Not_found -> broken_data
       end
         
       | _ -> (* other cases *)
-      Msys.rm file; broken_data
+      Msys.rm !!file; broken_data
       
       (* error during img downloading *)
     let error url job =
@@ -4399,7 +4406,7 @@ module type Data =
         (* Type of shared objects
          * The table of objects in managed in this module
          *)
-   val load : Document.handle -> Document.id list -> string -> t
+   val load : Document.handle -> Document.id list -> Fpath.t -> t
         (* [load dh referers file]
          *   is responsible for creating the shared handle
          *)
@@ -4477,7 +4484,7 @@ module type Data =
   sig
    type t
 
-   val load : handle -> Document.id list -> string -> t
+   val load : handle -> Document.id list -> Fpath.t -> t
         (* [load dh referers file] *)
    val cache_access : Url.t -> Document.id -> t
         (* [cache_access url referer] *)       	     
@@ -4706,7 +4713,7 @@ module Make(J: Data) = struct
               let referers = List.map fst job.conts in
               begin
             try 
-                         let data = J.load dh referers file in
+                         let data = J.load dh referers (Fpath.v file) in
               List.iter (fun (_referer,(cont,_)) -> 
                 try Printexc.print 
                 (cont dh.document_id.document_url) data
@@ -5182,6 +5189,9 @@ let update frame embed_ctx (doc : Document.t) notchanged =
 
 <<viewers/embed.ml>>=
 (* Embedded documents *)
+
+open Fpath_.Operators
+
 open I18n
 open Tk
 open Www
@@ -5209,7 +5219,7 @@ module EmbeddedData =
        dh is closed; we use only the headers
        NOTE: if we are updating over an old version, fix the cache
      *)
-    let load dh referers file =
+    let load dh referers (file : Fpath.t) =
       Retype.f dh;
       match dh.document_status with
     200 ->
@@ -5230,7 +5240,7 @@ module EmbeddedData =
       end
       |	304 -> (* return the previous version *)
       begin try 
-        Msys.rm file;
+        Msys.rm !!file;
         cache_access dh.document_id.document_url (List.hd referers)
       with
         Not_found -> failwith "load"
@@ -5331,7 +5341,7 @@ let f cont dh fname endmsg =
     else begin
           output oc buffer 0 n;
          red := !red + n;
-      Document.progress_log dh (!red * 100 / size)
+      Document.progress_log dh (! red * 100 / size)
     end
       with
     Unix_error(_,_,_) | Sys_error _ ->
@@ -5509,10 +5519,10 @@ let document did arg =
         proceed 
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
-          pipe_from_file did.document_url f 
+          pipe_from_file did.document_url (Fpath.to_string f)
         (String.sub s 1 (String.length s - 1))
         else
-          copy_file did.document_url f s)
+          copy_file did.document_url (Fpath.to_string f) s)
   with Not_found ->
     Error.f ("Document is not in cache.")
 @
@@ -5525,6 +5535,7 @@ let print_command = ref ""
 %-------------------------------------------------------------
 
 <<viewers/save.ml>>=
+
 open I18n
 
 open Unix
@@ -7617,6 +7628,9 @@ let annotate txt =
 %-------------------------------------------------------------
 
 <<display/source.ml>>=
+
+open Fpath_.Operators
+
 open I18n
 open Printf
 open Tk

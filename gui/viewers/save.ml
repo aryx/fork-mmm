@@ -1,4 +1,5 @@
 (*s: viewers/save.ml *)
+
 open I18n
 
 open Unix
@@ -31,7 +32,7 @@ let f cont dh fname endmsg =
     else begin
           output oc buffer 0 n;
          red := !red + n;
-      Document.progress_log dh (!red * 100 / size)
+      Document.progress_log dh (! red * 100 / size)
     end
       with
     Unix_error(_,_,_) | Sys_error _ ->
@@ -241,10 +242,10 @@ let document did arg =
         proceed 
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
-          pipe_from_file did.document_url f 
+          pipe_from_file did.document_url (Fpath.to_string f)
         (String.sub s 1 (String.length s - 1))
         else
-          copy_file did.document_url f s)
+          copy_file did.document_url (Fpath.to_string f) s)
   with Not_found ->
     Error.f ("Document is not in cache.")
 (*e: function [[Save.document]] *)

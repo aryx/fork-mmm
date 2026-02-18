@@ -1,4 +1,7 @@
 (*s: display/source.ml *)
+
+open Fpath_.Operators
+
 open I18n
 open Printf
 open Tk
@@ -37,7 +40,7 @@ let view attach did redisplay errors annotations _coding =
           let tmpfile = Msys.mktemp "buf" in
           (* load *)
           (fun t ->
-             let ic = open_in fname in
+             let ic = open_in !!fname in
              let buf = Bytes.create 2048 in
              try
                while true do
@@ -57,11 +60,11 @@ let view attach did redisplay errors annotations _coding =
             (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
             close_out oc;
             (* SWITCH CACHE *)
-            doc.document_data <- FileData(tmpfile, true)),
+            doc.document_data <- FileData(Fpath.v tmpfile, true)),
 
         (* save *)
         Some (fun t ->
-          let oc = open_out fname in
+          let oc = open_out !!fname in
           output_string oc
             (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
           close_out oc;

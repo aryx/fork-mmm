@@ -77,7 +77,7 @@ type continuation = {
  *)
 type data =
  | MemoryData of Ebuffer.t
- | FileData of string * bool (* flag is true if file is temporary *)
+ | FileData of Fpath.t * bool (* flag is true if file is temporary *)
 (*e: type [[Document.document_data]] *)
 
 (*s: type [[Document.document]] *)

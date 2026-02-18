@@ -22,7 +22,7 @@ module type Data =
   sig
    type t
 
-   val load : handle -> Document.id list -> string -> t
+   val load : handle -> Document.id list -> Fpath.t -> t
         (* [load dh referers file] *)
    val cache_access : Url.t -> Document.id -> t
         (* [cache_access url referer] *)       	     
@@ -251,7 +251,7 @@ module Make(J: Data) = struct
               let referers = List.map fst job.conts in
               begin
             try 
-                         let data = J.load dh referers file in
+                         let data = J.load dh referers (Fpath.v file) in
               List.iter (fun (_referer,(cont,_)) -> 
                 try Printexc.print 
                 (cont dh.document_id.document_url) data

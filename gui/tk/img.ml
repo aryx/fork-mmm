@@ -1,5 +1,8 @@
 (*s: retrieve/img.ml *)
 (* Image cache and scheduled image downloading *)
+
+open Fpath_.Operators
+
 open Printf
 
 open Tk
@@ -132,7 +135,7 @@ module ImageData =
         with
          Protocol.TkError _ -> Bitmap (Predefined "question"))
 
-    let load dh referers file =
+    let load dh referers (file : Fpath.t) =
       Retype.f dh;
       match dh.document_status with
     200 ->
@@ -141,29 +144,29 @@ module ImageData =
         try
           let ctype = contenttype dh.dh_headers in
           match Lexheaders.media_type ctype with
-           ("image","jpeg"), _ -> Low.busy tk_load_jpeg file
-          | ("image","gif"), _ -> Low.busy tk_load_gif file
-          | _,_ -> Low.busy tk_load_other file
+           ("image","jpeg"), _ -> Low.busy tk_load_jpeg !!file
+          | ("image","gif"), _ -> Low.busy tk_load_gif !!file
+          | _,_ -> Low.busy tk_load_other !!file
         with
-        | Not_found -> Low.busy tk_load_other file 
-        | Invalid_HTTP_header _ -> Msys.rm file; broken_data
+        | Not_found -> Low.busy tk_load_other !!file 
+        | Invalid_HTTP_header _ -> Msys.rm !!file; broken_data
           in
       if !verbose then
-        Log.f (sprintf "Loaded %s as %s" file (Url.string_of url));
-      Msys.rm file;
+        Log.f (sprintf "Loaded %s as %s" !!file (Url.string_of url));
+      Msys.rm !!file;
       add url img referers dh.dh_headers;
       img
       |	304 -> (* we did an update an a document, and it induced a 
           recursive update. The document didn't change *)
       begin try 
-        Msys.rm file;
+        Msys.rm !!file;
         cache_access dh.document_id.document_url (List.hd referers)
       with
         Not_found -> broken_data
       end
         
       | _ -> (* other cases *)
-      Msys.rm file; broken_data
+      Msys.rm !!file; broken_data
       
       (* error during img downloading *)
     let error url job =

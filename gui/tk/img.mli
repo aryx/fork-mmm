@@ -11,7 +11,7 @@ module ImageData : sig
   val jpeg_converter : string ref
   val verbose : bool ref
 
-  val load : handle -> Document.id list -> string -> Tkanim.imageType
+  val load : handle -> Document.id list -> Fpath.t -> Tkanim.imageType
   val cache_access : Url.t -> Document.id -> Tkanim.imageType
   val error :
       Url.t -> (Document.id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
