@@ -86,10 +86,10 @@ type condition_backend = {
 }
 
 let default_backend () = {
-  create = (fun s -> ());
-  set = (fun s -> ());
-  wait = (fun s -> ());
-  free = (fun s -> ());
+  create = (fun _s -> ());
+  set = (fun _s -> ());
+  wait = (fun _s -> ());
+  free = (fun _s -> ());
 }
 let backend = ref (default_backend ())
   
@@ -370,8 +370,8 @@ end
 
 class x = object
   inherit t
-  method f _ = pr2 "TODO: Error.x.f"
-  method ok _ = pr2 "TODO: Error.x.ok"
+  method f _ = Logs.err (fun m -> m "TODO: Error.x.f")
+  method ok _ = Logs.err (fun m -> m "TODO: Error.x.ok")
   method choose _ = failwith "TODO: Error.x.choose"
   method ari _ = failwith "TODO: Error.x.ari"
 end
@@ -549,7 +549,7 @@ let fprintf outchan format =
             Obj.magic(fun printer ->
               printer outchan;
               doprn(succ j))
-        | c ->
+        | _c ->
             invalid_arg ("I18nprintf.fprintf: unknown format")
       end
     end
@@ -557,7 +557,7 @@ let fprintf outchan format =
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | c -> j
+    | _c -> j
 
   in doprn 0
 @
@@ -632,14 +632,14 @@ let sprintf format =
         | 't' ->
             Obj.magic(fun printer ->
               doprn (succ j) (succ j) (printer () :: accu1))
-        | c ->
+        | _c ->
             invalid_arg ("I18nprintf.sprintf: unknown format")
       end
 
   and skip_args j =
     match String.unsafe_get format j with
       '0' .. '9' | ' ' | '.' | '-' -> skip_args (succ j)
-    | c -> j
+    | _c -> j
 
   in doprn 0 0 []
 @
@@ -763,7 +763,7 @@ and 'a node =
 
 let height = function
   | Empty -> 0
-  | Node {height = h} -> h
+  | Node {height = h; _} -> h
 
 let create_node l e r =
   let hl = height l in
@@ -790,15 +790,15 @@ let turn_right = function
       Node
        {balance = Eq | Ri;
         left = lle; element = le;
-        right = Node {left = lrle; element = rle; right = rrle}};
-     element = e; right = re} ->
+        right = Node {left = lrle; element = rle; right = rrle; _}; _};
+     element = e; right = re; _} ->
       create_node (create_node lle le lrle) rle (create_node rrle e re)
  | Node
     {left =
       Node
-       {balance = Le | Eq; left = lle; element = le; right = rle};
+       {balance = Le | Eq; left = lle; element = le; right = rle; _};
      element = e;
-     right = re} -> create_node lle le (create_node rle e re)
+     right = re; _} -> create_node lle le (create_node rle e re)
  | _ -> failwith "turn_right"
 
 and turn_left = function
@@ -808,14 +808,14 @@ and turn_left = function
      right =
       Node
        {balance = Eq | Le;
-        left = Node {left = llre; element = lre; right = rlre};
-        element = re; right = rre}} ->
+        left = Node {left = llre; element = lre; right = rlre; _};
+        element = re; right = rre; _}; _} ->
      create_node (create_node le e llre) lre (create_node rlre re rre)
  | Node
     {left = le; element = e;
      right =
       Node
-       {balance = Ri | Eq; left = lre; element = re; right = rre}} ->
+       {balance = Ri | Eq; left = lre; element = re; right = rre; _}; _} ->
      create_node (create_node le e lre) re rre
  | _ -> failwith "turn_left"
 
@@ -837,7 +837,7 @@ let rec insert x t =
  match t with
  | Empty ->
     Node {balance = Eq; height = 1; left = Empty; element = x; right = Empty}
- | Node {balance = b; left = l; element = e; right = r} ->
+ | Node {balance = b; left = l; element = e; right = r; _} ->
     let c = compare_elements x e in
     if c = 0 then t else
     if c > 0 then
@@ -851,7 +851,7 @@ let empty = Empty
 
 let rec find pos = function
 | Empty -> raise Not_found
-| Node {left = l; element = e ; right = r} ->
+| Node {left = l; element = e ; right = r; _} ->
    let c_start = Ord.compare pos (fst e.interval) in
    if c_start < 0 then find pos l else
    let c_stop = Ord.compare pos (snd e.interval) in
@@ -860,7 +860,7 @@ let rec find pos = function
 
 let rec find_interval pos = function
 | Empty -> raise Not_found
-| Node {left = l; element = e ; right = r} ->
+| Node {left = l; element = e ; right = r; _} ->
    let c_start = Ord.compare pos (fst e.interval) in
    if c_start < 0 then find_interval pos l else
    let c_stop = Ord.compare pos (snd e.interval) in
@@ -972,7 +972,7 @@ end
 %-------------------------------------------------------------
 
 <<commons/log.ml>>=
-open Printf
+
 
 <<constant [[Log.debug_mode]]>>
 
@@ -1087,7 +1087,7 @@ let remove_fileinput fd =
 let fork () =
  begin try
   while 
-    let p, s = Unix.waitpid [Unix.WNOHANG] 0 in 
+    let p, _s = Unix.waitpid [Unix.WNOHANG] 0 in 
       (*
       Printf.eprintf "%d\n" p;
       begin match s with
@@ -1155,9 +1155,9 @@ let pending_read = ref 0
 
 <<commons/low.ml>>=
 (* Wrapping of some low-level functions *)
-open Common
 
-open Unix
+
+
 
 (* Tachymeter support *)
 class  virtual tachymeter = object
@@ -1172,9 +1172,9 @@ class  virtual tachymeter = object
 class no_tachy = object
   inherit tachymeter
 
-  method report_cnx cnx = ()
-  method report_busy flag = ()
-  method report_traffic tick total sample = ()
+  method report_cnx _cnx = ()
+  method report_busy _flag = ()
+  method report_traffic _tick _total _sample = ()
   method quit = ()
 end
 
@@ -1187,7 +1187,7 @@ end
 <<function [[Low.read]]>>
 
 <<global [[Low.pending_read]]>>
-let action = ref (fun _ -> ())
+let _action = ref (fun _ -> ())
 
 <<function [[Low.add_fileinput]]>>
 
@@ -1355,7 +1355,7 @@ let update_idletasks_backend =
 <<commons/msys.ml>>=
 <<copyright header v6>>
 
-open Printf
+
 open Unix
 
 (* Tilde substitution *)
@@ -1423,8 +1423,8 @@ val translate: string -> string
 
 let s_ fmt = sprintf fmt
 
-let printf fmt = fprintf stdout fmt
-and eprintf fmt = fprintf stderr fmt
+
+
 
 <<function [[I18n.menu_option]]>>
 
@@ -1559,7 +1559,7 @@ let vars = Str.regexp "\\$[A-Z]+"
 <<function [[Munix.system_eval]]>>=
 let system_eval cmd args back =
   let replaced = ref []
-  and qargs = List.map (fun (x, v) -> x, quote_for_shell v) args
+  and _qargs = List.map (fun (x, v) -> x, quote_for_shell v) args
   in
   let replfun s =
     let matched = Str.matched_string s in
@@ -1843,8 +1843,8 @@ open I18n
 %-------------------------------------------------------------
 
 <<www/uri.ml>>=
-open Printf
-open Mstring
+
+
 
 <<type [[Uri.abs_uri]]>>
 
@@ -1881,7 +1881,7 @@ open Mstring
 %-------------------------------------------------------------
 
 <<www/url.ml>>=
-open Printf
+
 
 <<type [[Url.protocol]]>>
 
@@ -1970,9 +1970,9 @@ open Mstring
 
 <<www/lexurl.mll>>=
 {
-open Lexing
 
-open Mstring
+
+
 open Mlist
 
 open Url
@@ -2048,7 +2048,7 @@ open Url
 <<www/hyper.ml>>=
 open I18n
 open Printf
-open Mstring
+
 open Uri
 open Url
 
@@ -2736,7 +2736,7 @@ open Printf
 
 open Printf
 open Unix
-open Mstring
+
 open Date
 
 <<type [[Http_date.http_time]]>>
@@ -3043,10 +3043,10 @@ val open_passwd_ref: (string -> string * string) ref
 <<http/auth.ml>>=
 (* HTTP Basic Authentication *)
 open I18n
-open Printf
+
 open Unix
 open Http_headers
-open Url
+
 open Www
 
 <<type [[Auth.authSpace]]>>
@@ -3107,8 +3107,8 @@ let edit_backend = ref (fun _ -> failwith "no Auth.edit defined")
 <<http/lexheaders.mll>>=
 {
 open Http_headers
-open Www
-open Lexing
+
+
 (* 
     CHAR = ['\000'-'\126']
     CTL  = ['\000'-'\031' '\127']
@@ -3121,7 +3121,7 @@ open Lexing
 
 rule challenge = parse
  | [^ ' ' '\t' '\r' '\n']+
-    { let scheme_name = String.lowercase (Lexing.lexeme lexbuf) in
+    { let scheme_name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
       let scheme = 
     match scheme_name with
       "basic" -> AuthBasic
@@ -3515,7 +3515,7 @@ exception DontCache
  * The caller is responsible for possible removing the document itself
  * from the memory.
  *)
-let internal_kill did e =
+let internal_kill did _e =
    (* Remove pointers to in-lined images and other goodies *)
    List.iter (fun f -> f did) !cutlinks
 @
@@ -3532,7 +3532,7 @@ let make_room () =
      in the cache *)
   begin match !memory with
     [] -> ()
-  | (_,e)::l ->
+  | (_,e)::_l ->
      if e.cache_lastused = max_lastused then max_documents := !max_documents + 5
      else (* cleanup the oldests entries *)
        let rec rem1 n l = 
@@ -3629,7 +3629,7 @@ let patch did headers =
 
 <<function [[Cache.tofile]]>>=
 (* Cache savers *)
-let tofile dh =
+let tofile _dh =
   let f = Msys.mktemp "mmmcache" in
   let oc = open_out_bin f in
     FileData (f,true), 
@@ -3640,7 +3640,7 @@ let tofile dh =
 
 <<constant [[Cache.discard]]>>=
 let discard =
-    {cache_write = (fun buf offs len -> ());
+    {cache_write = (fun _buf _offs _len -> ());
      cache_close = (fun () -> ())}
 @
 
@@ -3664,7 +3664,7 @@ let dummy dh =
 @
 
 <<function [[Cache.replace]]>>=
-let replace = function
+let _replace = function
    MemoryData b ->
     Ebuffer.reset b; 
     {cache_write = Ebuffer.output b; cache_close = (fun () -> ())}
@@ -3767,7 +3767,7 @@ let make_embed_handle doc =
 <<function [[Cache.cleanup]]>>=
 let cleanup () =
   List.iter 
-    (fun (did, entry) ->
+    (fun (_did, entry) ->
       match entry.cache_document.document_data with
        FileData (f, true) -> Msys.rm f
       | _ -> ())
@@ -3906,7 +3906,7 @@ val binary_path: string list ref
 @
 
 <<constant [[File.r]]>>=
-let r = Str.regexp ":"
+let _r = Str.regexp ":"
 @
 
 %-------------------------------------------------------------
@@ -3917,7 +3917,7 @@ open I18n
 open Printf
 open Unix
 open Filename
-open Mstring
+
 open Hyper
 open Www
 open Url
@@ -3957,7 +3957,7 @@ open Feed
 <<protocols/mailto.ml>>=
 (* mailto: *)
 open I18n
-open Sys
+
 open Unix
 open Www
 open Hyper
@@ -4188,14 +4188,14 @@ let _ =
 <<retrieve/img.ml>>=
 (* Image cache and scheduled image downloading *)
 open Printf
-open Unix
+
 open Tk
 open Tkanim
-open Mstring
+
 open Document
 open Www
-open Hyper
-open Url
+
+
 open Http_headers
 
 <<constant [[Img.gif_anim_load]]>>
@@ -4266,7 +4266,7 @@ module ImageData =
              referer.document_stamp);
       let delete_them = ref [] in
       Hashtbl.iter
-    (fun img (o, refs, _) ->
+    (fun img (_o, refs, _) ->
         refs := DocumentIDSet.remove referer !refs;
         if DocumentIDSet.is_empty !refs then
          delete_them := img :: !delete_them)
@@ -4467,7 +4467,7 @@ open Www
 open Document
 open Url
 open Feed
-open Retrieve
+
 open Http_headers
 
 <<constant [[Scheduler.debug]]>>
@@ -4679,7 +4679,7 @@ module Make(J: Data) = struct
                 (* open the temporary file in which doc is to be saved *)
                 let file = Msys.mktemp "data" in
                 let oc = open_out file 
-                and buffer = String.create 2048 in
+                and buffer = Bytes.create 2048 in
 
         (* JPF HACK -- for Image retrieval progress meter *)
         begin try 
@@ -4709,10 +4709,10 @@ module Make(J: Data) = struct
               begin
             try 
                          let data = J.load dh referers file in
-              List.iter (fun (referer,(cont,_)) -> 
+              List.iter (fun (_referer,(cont,_)) -> 
                 try Printexc.print 
                 (cont dh.document_id.document_url) data
-                with _ -> flush Pervasives.stderr)
+                with _ -> flush Stdlib.stderr)
                            job.conts
             with (* load failed *)
               e -> 
@@ -4807,7 +4807,7 @@ module Make(J: Data) = struct
        List.map (fun q ->
      let newq = Queue.create () in
      Queue.iter (function
-       | (wr, didr, cont, progress) when did = didr -> ()
+       | (_wr, didr, _cont, _progress) when did = didr -> ()
        | r -> Queue.add r newq)
        q;
      newq)
@@ -4818,7 +4818,7 @@ module Make(J: Data) = struct
     *)
     let rem = ref [] in (* jobs to kill *)
     Hashtbl.iter 
-      (fun url job ->
+      (fun _url job ->
     try 
       job.conts <- Mlist.except_assoc did job.conts;
       if job.conts = [] then rem := job :: !rem
@@ -4838,7 +4838,7 @@ module Make(J: Data) = struct
   let new_delayed = Queue.create
 
   let is_empty q = 
-    try Queue.peek q; false with Queue.Empty -> true
+    try Queue.peek q |> ignore; false with Queue.Empty -> true
 
   (* add a new request in the queue *)
   (* Actually, if the document is already in the cache, then process
@@ -4919,7 +4919,7 @@ let gzip dh =
       dup2 gread stdin; dup2 gwrite stdout;
       Munix.execvp "gunzip" [| "gunzip"; "-c" |]
       (* dh (* fake *) *)
-  | n ->  
+  | _n ->  
       close gread; close gwrite;
      (* it is safe to close feed because the son has a copy *)
       let newdh =
@@ -4928,7 +4928,7 @@ let gzip dh =
          document_feed = Feed.of_fd mread;
        }
       in
-      let buffer = String.create 4096 in
+      let buffer = Bytes.create 4096 in
       let rec copy () =
       try
         let n = dh.document_feed.feed_read buffer 0 4096 in
@@ -4942,7 +4942,7 @@ let gzip dh =
           dh.document_feed.feed_schedule copy)
         end
       with
-        Unix_error(e,_,_) -> dclose true dh; close mwrite
+        Unix_error(_e,_,_) -> dclose true dh; close mwrite
       in
       dh.document_feed.feed_schedule copy;
       newdh
@@ -4958,7 +4958,7 @@ let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
   if dh.document_status >= 400 then dh else
   try
-    Hashtbl.find decoders (String.uppercase (contentencoding dh.dh_headers)) dh
+    Hashtbl.find decoders (String.uppercase_ascii (contentencoding dh.dh_headers)) dh
   with
     Not_found -> dh
   | Unix_error(_,_,_) -> dh
@@ -5042,7 +5042,7 @@ let _ =
 let add ({ embed_hlink = link;
        embed_frame = frame;
        embed_context = embed_ctx;
-       embed_map = m;
+       embed_map = _m;
        embed_alt = alt_txt} as emb) =
   (* Put up the ALT text *)
   List.iter Tk.destroy (Winfo.children frame);
@@ -5060,7 +5060,7 @@ let add ({ embed_hlink = link;
        (Www.make link)
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
-       (fun url doc ->
+       (fun _url doc ->
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
@@ -5080,7 +5080,7 @@ let add ({ embed_hlink = link;
    | Invalid_request (w,msg) ->
        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
-   | Invalid_link err ->
+   | Invalid_link _err ->
        let t = s_ "Embed Error: invalid link" in
        pack [Message.create frame [Text t ]][]
   with
@@ -5092,13 +5092,13 @@ let add ({ embed_hlink = link;
      (embed_ctx#base)
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
-     (fun url doc -> embedded_viewer frame embed_ctx doc)
+     (fun _url doc -> embedded_viewer frame embed_ctx doc)
      (Tk_progress.meter frame)
        with
      Invalid_request (w,msg) ->
        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
        pack [Message.create frame [Text t]][]
-       | Invalid_link err ->
+       | Invalid_link _err ->
        let t = s_ "Embed Error: invalid link" in
        pack [Message.create frame [Text t ]][]
 @
@@ -5137,7 +5137,7 @@ let update frame embed_ctx doc notchanged =
        (rewrite_wr (Www.make link))
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
-       (fun url doc ->
+       (fun _url doc ->
      let doc = {
        document_address = doc.document_address;
        document_data = doc.document_data;
@@ -5153,7 +5153,7 @@ let update frame embed_ctx doc notchanged =
       | Invalid_request (w,msg) ->
       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
       pack [Message.create frame [Text t]][]
-      | Invalid_link err ->
+      | Invalid_link _err ->
       let t = s_ "Embed Error: invalid link" in
       pack [Message.create frame [Text t ]][]
     with
@@ -5165,13 +5165,13 @@ let update frame embed_ctx doc notchanged =
         (embed_ctx#base)
      (* the continuation: it will receive the document *)
      (* In general, we don't know the type before we get the document *)
-        (fun url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
+        (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
         (Tk_progress.meter frame)
         with
       Invalid_request (w,msg) ->
         let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
         pack [Message.create frame [Text t]][]
-        | Invalid_link err ->
+        | Invalid_link _err ->
         let t = s_ "Embed Error: invalid link" in
         pack [Message.create frame [Text t ]][]
   with
@@ -5189,7 +5189,7 @@ open Tk
 open Document
 open Www
 open Hyper
-open Url
+
 open Http_headers
 
 (* Assume any kind of data could be embedded 
@@ -5203,7 +5203,7 @@ module EmbeddedData =
 
     type t = document
 
-    let cache_access url referer =
+    let cache_access url _referer =
       let did =  {document_url = url; document_stamp = no_stamp} in
       (* look in the cache *)
       Cache.find did
@@ -5242,7 +5242,7 @@ module EmbeddedData =
 
       |	_ -> failwith "load"
 
-    let error url jobs = 
+    let error url _jobs = 
       Error.f (s_ "Can't find embedded document %s"  (Url.string_of url))
 
     let error_msg (_,_) = ()
@@ -5364,7 +5364,7 @@ let tofile cont dh fname endmsg =
 let transfer wr dh dest =
   wr.www_logging (s_ "Saving...");
   match dest with
-    None -> interactive (fun s -> wr.www_logging "") dh
+    None -> interactive (fun _s -> wr.www_logging "") dh
   | Some (fd, flag) ->
       (* if flag we should output the headers as well *)
       if flag then begin
@@ -5443,7 +5443,7 @@ let pipe_from_string url data cmd =
     dup2 fd_in stdin; close fd_in; close fd_out;
     ignore (Munix.system_eval cmd ["URL", urls] false);
     exit 0
-    | n ->
+    | _n ->
     close fd_in;
        Fileevent.add_fileoutput fd_out (fun () ->
       if !pos < len then begin
@@ -5476,7 +5476,7 @@ let pipe_from_file url f cmd =
     dup2 fd stdin; close fd;
     ignore (Munix.system_eval cmd ["URL", urls] false);
     exit 0
-    | n ->
+    | _n ->
     ()
   with Unix_error(_,_,_) -> (* pipe failed, fork failed *)
     Error.f (s_ "Can't execute command %s for %s" cmd urls)
@@ -5488,7 +5488,7 @@ let document did arg =
     Fileselect.f (s_ "Save or pipe to file")
       (function [] -> ()
              | [s] -> act s
-          | l -> raise (Failure "multiple selection"))
+          | _l -> raise (Failure "multiple selection"))
       "*" (* should be better *)
       (Filename.basename (Url.string_of did.document_url))
       false
@@ -5500,7 +5500,7 @@ let document did arg =
   in
   try
     match Cache.find did with
-      {document_data = MemoryData buf} ->
+      {document_data = MemoryData buf; _} ->
         proceed
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
@@ -5509,7 +5509,7 @@ let document did arg =
         else
           save_from_string did.document_url (Ebuffer.get buf) s)
       
-    |  {document_data = FileData (f, _)} ->
+    |  {document_data = FileData (f, _); _} ->
         proceed 
       (fun s ->
         if String.length s <> 0 && s.[0] == '|' then
@@ -5530,7 +5530,7 @@ let print_command = ref ""
 
 <<viewers/save.ml>>=
 open I18n
-open Lexing
+
 open Unix
 open Document
 open Url
@@ -5625,7 +5625,7 @@ let metamail ctype file =
 
 <<function [[Viewers.extern_batch]]>>=
 (* Batch version: we transfer everything and then run metamail *)
-let extern_batch dh ctype = 
+let _extern_batch dh ctype = 
   let outfile = Msys.mktemp "mmm" in
   Document.add_log dh (
     s_ "Saving %s\nfor external display with MIME type %s"
@@ -5729,7 +5729,7 @@ open Tk
 open Unix
 open Frx_text
 open Document
-open Viewers
+
 open Feed
 
 <<class [[Plain.plain]]>>
@@ -5826,8 +5826,8 @@ class anchortags :
   end
 
 class virtual ['a] nested :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'b;
-    define : string -> Tk.options list -> 'c; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -5839,8 +5839,8 @@ class virtual ['a] nested :
   end
 
 class align :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -5852,8 +5852,8 @@ class align :
   end
 
 class margin :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable current : int
     val mutable last_change : Tk.textIndex
@@ -5866,8 +5866,8 @@ class margin :
   end
 
 class font :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable basefont : Fonts.fontDesc
     val mutable font_stack : Fonts.fontDesc list
@@ -5886,8 +5886,8 @@ class font :
 <<signature [[Attrs.html_color]]>>
 
 class fgcolor :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -5899,8 +5899,8 @@ class fgcolor :
   end
 
 class bgcolor :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable last_change : Tk.textIndex
     val mutable stack : string list
@@ -5912,8 +5912,8 @@ class bgcolor :
   end
 
 class offset :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     val mutable cur_offset : int
     val mutable last_change : Tk.textIndex
@@ -5926,7 +5926,8 @@ class offset :
   end
 
 class misc :
-  < add : 'a * Tk.textIndex * Tk.textIndex -> unit; define : 'a -> 'b -> 'c;
+  < add : 'a * Tk.textIndex * Tk.textIndex -> unit; 
+    define : 'a -> 'b -> 'c;
     .. > *
   'a * 'b ->
   object
@@ -5937,8 +5938,8 @@ class misc :
   end
 
 class spacing :
-  < add : string * Tk.textIndex * Tk.textIndex -> 'a;
-    define : string -> Tk.options list -> 'b; .. > ->
+  < add : string * Tk.textIndex * Tk.textIndex -> unit;
+    define : string -> Tk.options list -> unit; .. > ->
   object
     method pop : Tk.textIndex -> int -> unit
     method push : Tk.textIndex -> int -> unit
@@ -5981,7 +5982,7 @@ let _ = List.iter (fun (name, value) -> Hashtbl.add color_mappings name value)
 
 <<function [[Attrs.html_color]]>>=
 let html_color s =
-  try Hashtbl.find color_mappings (String.lowercase s)
+  try Hashtbl.find color_mappings (String.lowercase_ascii s)
   with Not_found -> s
 @
 
@@ -6032,17 +6033,17 @@ let init bg =
 %-------------------------------------------------------------
 
 <<display/attrs.ml>>=
-open Common
+
 
 (* Utilities for tags and attributes *)
 
 open Printf
 open Protocol
 open Tk
-open Frx_text
+
 open Fonts
 
-open Htmlfmt
+
 
 (* Delayed and shared configuration of tags *)
 
@@ -6087,7 +6088,7 @@ module LocMap = Ibtree.Make(struct
   end)
 
 class anchortags (thtml) =
- object (self)
+ object (_self)
   inherit tags (thtml) as tags
   inherit Htbind.hypertext (thtml)
 
@@ -6098,7 +6099,7 @@ class anchortags (thtml) =
     tags#add ("anchor", s, e);
     mappings <- (s,e,h) :: mappings
 
-  method flush =
+  method! flush =
     tags#flush;
     mappings |> List.iter (fun (s,e,h) ->
       let loc1 = Text.index wid s
@@ -6146,7 +6147,7 @@ class  virtual ['a] nested (tagdef) =
        [] -> 
         (* no current definition, don't issue a put *)
         last_change <- current_pos
-     | curtag::l ->
+     | curtag::_l ->
         self#put current_pos curtag
     end;
     stack <- tag :: stack;
@@ -6169,11 +6170,11 @@ class align (tagdef) =
  object
   inherit [string] nested tagdef
   method push_convert ad =
-    match String.lowercase ad with
+    match String.lowercase_ascii ad with
      "right" -> "right", [Justify Justify_Right]
        | "center" -> "center", [Justify Justify_Center]
        | _ -> "left", [Justify Justify_Left]
-  method pop_convert ad = ()
+  method pop_convert _ad = ()
 end
 
 (*
@@ -6204,7 +6205,7 @@ class font (tagdef) =
   method push_convert fil = 
     let curfd = match font_stack with
       [] -> basefont
-    | x::l -> x in
+    | x::_l -> x in
     let newfd = Fonts.merge curfd fil in
       font_stack <- newfd :: font_stack;
       Fonts.compute_tag newfd
@@ -6212,7 +6213,7 @@ class font (tagdef) =
   method pop_convert _ = 
     match font_stack with
       [] -> ()
-    | x::l -> font_stack <- l
+    | _x::l -> font_stack <- l
 
   (* by changing the base, we should be changing both the current default size 
      and the behaviour of subsequent FONT SIZE tags. The size changes is easy.
@@ -6252,7 +6253,7 @@ class fgcolor (tagdef) =
       s, [Foreground (NamedColor colordef)]
     else
       s, []
-  method pop_convert s = 
+  method pop_convert _s = 
     ()
 end
 
@@ -6269,7 +6270,7 @@ class bgcolor (tagdef) =
       s, [Background (NamedColor colordef)]
     else 
       s, []
-  method pop_convert s = 
+  method pop_convert _s = 
     ()
 end
 
@@ -6291,7 +6292,7 @@ end
  * Other stuff where nesting is not important
 *)
 class misc (tagdef, tagname, attr) =
- object (self)
+ object (_self)
   
   val mutable start_pos = TextIndex(LineChar(0,0),[])
   (* val tagdef = tagdef *)
@@ -6425,7 +6426,7 @@ let gfx_mode emb map c =
         | Poly ->
         let l = List.length area.area_coords in
         (* there must be at least three points, and by pair *)
-        if l < 6 or l mod 2 <> 0 then begin
+        if l < 6 || l mod 2 <> 0 then begin
           Log.f "Invalid coords for polygon shape";
           raise (Syntax "polygon")
         end
@@ -6458,7 +6459,7 @@ open Tk
 open Embed
 open Maps
 open Hyper
-open Viewers
+
 
 <<exception [[Cmap.Syntax]]>>
 
@@ -6486,9 +6487,9 @@ class imap (c, items) =
  method binder = Canvas.bind c (Tag "current") 
 
  method highlight _ = ()
- method markused ei = ()
+ method markused _ei = ()
 
- method init ctx =
+ method! init ctx =
    super#init ctx;
    self#binder [[], Motion]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
@@ -6822,7 +6823,7 @@ let bound_check wid width =
 <<display/fit.ml>>=
 open Printf
 open Tk
-open Protocol
+
 
 <<constant [[Fit.debug]]>>
 
@@ -7152,7 +7153,7 @@ let reset () =
 
 <<display/fonts.ml>>=
 open I18n
-open Tk80
+
 open Tk
 open Jpf_font
 
@@ -7425,7 +7426,7 @@ class  virtual active () =
   let fakehlink = Hyper.default_link "" in
   self#binder [[], Leave]
     (BindSet ([Ev_MouseX; Ev_MouseY], 
-          (fun ei ->
+          (fun _ei ->
         self#highlight false;
         ctx#invoke "clearpointsto" fakehlink)))
 end
@@ -7467,7 +7468,7 @@ class  virtual hypertext (thtml) =
      pointed link displayed in pointsto is no always correct
      Thus, extend initialisation to bind pointsto on motion
    *)
-  method init ctx =
+  method! init ctx =
     super#init ctx;
     self#binder [[], Motion]
       (BindSet ([Ev_MouseX; Ev_MouseY], 
@@ -7482,25 +7483,25 @@ end
 
 (* embedded objects with direct map *)
 class directmap (frame, link) =
- object (self)
+ object (_self)
   inherit active ()
   (* val frame = frame *)
   method widget = frame
   val link = (link : Hyper.link)
-  method getlink (ei : eventInfo) = link
+  method getlink (_ei : eventInfo) = link
   method binder = bind frame
-  method highlight (flag : bool) = ()  (* we already set up the cursor *)
-  method markused ei =
+  method highlight (_flag : bool) = ()  (* we already set up the cursor *)
+  method markused _ei =
     Frame.configure frame [Relief Sunken]
 end
 
 (* embedded objects with server map (ISMAP) *)
 (* pointsto will get some arbitrary value for x,y... *)
 class servermap (frame,link) =
- object (self)
+ object (_self)
   inherit active ()
-  inherit directmap (frame, link)
-  method getlink ei = 
+  inherit! directmap (frame, link)
+  method! getlink ei = 
     {h_uri = sprintf "%s?%d,%d" link.h_uri
                                 ei.ev_MouseX ei.ev_MouseY;
      h_context = link.h_context;
@@ -7510,15 +7511,15 @@ end
 
 (* embedded objects with form submission *)
 class formmap (frame,formlink) =
- object (self)
+ object (_self)
   inherit active ()
   (* val frame = frame *)
   method widget = frame
   val formlink = (formlink : int * int -> Hyper.link)
   method getlink ei = formlink (ei.ev_MouseX, ei.ev_MouseY)
   method binder = bind frame
-  method highlight (flag : bool) = ()  (* we already set up the cursor *)
-  method markused ei =
+  method highlight (_flag : bool) = ()  (* we already set up the cursor *)
+  method markused _ei =
     Frame.configure frame [Relief Sunken]
 end
 
@@ -7727,7 +7728,7 @@ let create top opts navigation =
     Scrollbar.configure xscroll [ScrollCommand (Text.xview t)];
     (* But vertical scroll is attached to the canvas *)
     Scrollbar.configure yscroll [ScrollCommand (Canvas.yview c)];
-    let scroll, check = Fit.vert t in
+    let scroll, _check = Fit.vert t in
     Text.configure t [
        XScrollCommand (wrap_scroll has_x putx remx (Scrollbar.set xscroll));
         YScrollCommand (fun first last ->
@@ -8255,11 +8256,11 @@ open Tk
 open Tkanim
 open Www
 open Uri
-open Hyper
+
 open Maps
 open Embed
 open Img
-open Viewers
+
 
 <<type Imgload.mode (./display/imgload.ml)>>
 
@@ -8321,7 +8322,7 @@ class synchronous () =
  object
   inherit loader () as super
 
-  method add_image emb =
+  method! add_image emb =
     super#add_image emb; super#activate emb
 end
 
@@ -8330,7 +8331,7 @@ class auto () =
   inherit loader () as super
   val q = ImageScheduler.new_delayed()
 
-  method add_image emb =
+  method! add_image emb =
      super#add_image emb;
      try
        let wr = Www.make emb.embed_hlink in
@@ -8344,20 +8345,20 @@ class auto () =
        e -> Log.f (sprintf "Can't compute image link (%s)"
                    (Printexc.to_string e))
 
-  method flush_images = ImageScheduler.flush_delayed q
+  method! flush_images = ImageScheduler.flush_delayed q
 end
 
 class manual () =
  object
   inherit auto () as super
 
-  method add_image emb =
+  method! add_image emb =
     super#add_image emb;
     make_auto q emb
  
-  method flush_images = ()
+  method! flush_images = ()
 
-  method load_images = ImageScheduler.flush_delayed q
+  method! load_images = ImageScheduler.flush_delayed q
 end
 
 <<function [[Imgload.create]]>>
@@ -8429,7 +8430,7 @@ val init:
 <<display/html_form.ml>>=
 open Printf
 open Hyper
-open Www
+
 open Html
 open Htmlfmt
 
@@ -8443,7 +8444,7 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
  object (self)
   val mutable (*private*) elem_value = ([] : (input_kind * (unit -> (string * string) list)) list)
   val mutable (*private*) elem_reset = ([] : (unit -> unit) list)
-  val (*private*) fmethod = String.uppercase (get_attribute formtag "method")    
+  val (*private*) fmethod = String.uppercase_ascii (get_attribute formtag "method")    
   val (*private*) encoding = get_attribute formtag "enctype"
   (* val i18n_encoder = i18n_encoder *)
   val (*private*) action = try get_attribute formtag "action" with Not_found -> base
@@ -8520,7 +8521,7 @@ module FormDisplay = Form
 
 let init mach =
 mach#add_tag "form"
- (fun fo tform ->
+ (fun _fo tform ->
   let behav = 
     new behaviour (mach#base, tform, mach#target, mach#i18n_encoder) in
   let fm = 
@@ -8528,7 +8529,7 @@ mach#add_tag "form"
 
   (* 8.1.2 Input Field : INPUT *)
   let open_input fo t =
-    let inputtype = String.uppercase (get_attribute t "type") in
+    let inputtype = String.uppercase_ascii (get_attribute t "type") in
     (* Special case for hidden, since there is no formatting *)
     (* HTML 3.2 doesn't specify that NAME and VALUE are required, but
        this is stupid *)
@@ -8559,11 +8560,11 @@ mach#add_tag "form"
   let options = ref []       (* the components from which to select *)
   and tselect = ref {tag_name = "select"; attributes = []}
   in
-  let open_select fo t =
+  let open_select _fo t =
     options := [];
     tselect := t;
     mach#add_tag "option"
-       (fun fo tag ->
+       (fun _fo tag ->
       mach#push_action 
            (fun s ->
            let s = beautify2 s in
@@ -8584,7 +8585,7 @@ mach#add_tag "form"
   (* 8.1.4 Text Area: TEXTAREA *)
   let textarea_initial = Ebuffer.create 128 
   and ttextarea = ref {tag_name = "textarea"; attributes = []} in
-  let open_textarea fo tag =
+  let open_textarea _fo tag =
     ttextarea := tag;
     Ebuffer.reset textarea_initial;
     mach#push_action (fun s -> Ebuffer.output_string textarea_initial s)
@@ -8599,7 +8600,7 @@ mach#add_tag "form"
 
   mach#add_tag "textarea" open_textarea  close_textarea
   )
-  (fun fo -> ["input"; "select"; "textarea"] |> List.iter mach#remove_tag )
+  (fun _fo -> ["input"; "select"; "textarea"] |> List.iter mach#remove_tag )
 
 (*end *)
 @
@@ -8757,12 +8758,12 @@ let html_head_ui headers redisplay pscroll top ctx =
   let add_header h v =
     if not !sep_added then (sep_added := true; Menu.add_separator headersm);
     let txt = sprintf "%s: %s" h v in
-    match String.lowercase h with
+    match String.lowercase_ascii h with
       "refresh" ->
        begin try
           let pos = String.index v ';'
           and pos2 = String.index v '=' in
-          let delay = int_of_string (String.sub v 0 pos)
+          let _delay = int_of_string (String.sub v 0 pos)
           and url = String.sub v (pos2+1) (String.length v - pos2 - 1) in
       Menu.add_command headersm 
         [Label txt;
@@ -8811,7 +8812,7 @@ let ignore_close _ = ()
 <<function [[Htmlw.head_hook]]>>=
 let head_hook (headgroup,set_title,add_link,add_header) mach =
   mach#add_tag "title" 
-    (fun fo t ->
+    (fun _fo _t ->
       mach#push_action
     (fun s -> 
       set_title (Html.beautify2 s);
@@ -8819,19 +8820,19 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     ignore_close;
       
   mach#add_tag "isindex"
-    (fun fo tag ->
+    (fun _fo tag ->
       let prompt = get_attribute tag "prompt" in
       let action s =
     mach#ctx#goto { h_uri = "?" ^ Urlenc.encode s;
                h_context = Some mach#base;
                h_method = GET;
                h_params = []} in
-      let f,e = Frx_entry.new_label_entry headgroup prompt action in
+      let f,_e = Frx_entry.new_label_entry headgroup prompt action in
       pack [f] [Fill Fill_X])
     ignore_close;
 
   mach#add_tag "link"
-    (fun fo tag ->
+    (fun _fo tag ->
       try
         let href = get_attribute tag "href" in
     let name = 
@@ -8858,7 +8859,7 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
   begin
     let old =
       try
-    let oldo, c = mach#get_tag "meta" in oldo
+    let oldo, _c = mach#get_tag "meta" in oldo
       with
     Not_found -> ignore_open in
     mach#add_tag "meta"
@@ -8875,7 +8876,7 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
   (* Non standard extensions *)
   if !frames_as_links  then
     mach#add_tag "frame"
-      (fun fo tag ->
+      (fun _fo tag ->
     try
          let src = get_attribute tag "src" in
          let name =
@@ -8904,7 +8905,7 @@ let embedded_html mediapars top ctx doc =
   pack [viewer#di_widget][Expand true; Fill Fill_Both];
   (* set for events *)
   Frx_synth.bind viewer#di_widget "load_images" 
-    (fun top -> viewer#di_load_images);
+    (fun _top -> viewer#di_load_images);
   Frx_synth.bind viewer#di_widget "update" 
     (fun _ -> Embed.update top ctx doc (fun () -> viewer#di_update))
 @
@@ -8972,12 +8973,16 @@ end
 (* We still need dh at construction for the definition of feed_red *)
 class  virtual html_parse (dh) =
  object (self)
+
+  method virtual dh : Document.handle
+  method virtual set_progress: int option -> int -> unit
+
   (* red tape for progress report *)
   val mutable red = 0
   val mutable size = 
     try Some (Http_headers.contentlength dh.dh_headers)
     with Not_found -> None (* duh *)
-  val mutable feed_read = new Japan.read_i18n (fun s o n -> 0)
+  val mutable feed_read = new Japan.read_i18n (fun _s _o _n -> 0)
 
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
   method lexbuf = lexbuf  
@@ -9005,6 +9010,8 @@ class  virtual html_body () =
  object (self)
 
   method virtual mach : Html_disp.machine
+  method virtual ctx: context
+  method virtual frame : Widget.widget
 
   val current_scroll_mode = ref !pscrolling
   method current_scroll_mode = current_scroll_mode
@@ -9016,7 +9023,7 @@ class  virtual html_body () =
        a formatter and install it *)
     let body_formatter = ref None in
     self#mach#add_tag "body" 
-      (fun fo t ->
+      (fun _fo t ->
     match !body_formatter with
     | None -> (* it's the first body *)
         let format, fhtml = 
@@ -9045,13 +9052,16 @@ class  virtual html_body () =
     | Some f -> (* multiple body... *)
         self#mach#push_formatter f
      )
-      (fun t -> 
+      (fun _t -> 
     ignore self#mach#pop_formatter)
 end
 
 (* geek stuff *)
 class  virtual bored () =
  object (self)
+  method virtual ctx: context
+  method virtual mach: F.machine
+
   method bored_init hgbas =
     let bored = 
       Resource.get Widget.default_toplevel "bored" "bored" = "yes"
@@ -9188,9 +9198,9 @@ let focus_link prev w =
     None -> prev := Some w;
   | Some old ->
       bind old [[], KeyPressDetail "Tab"]
-       (BindSetBreakable ([], fun ei -> try Focus.set w with _ -> ()));
+       (BindSetBreakable ([], fun _ei -> try Focus.set w with _ -> ()));
       bind w [[Shift], KeyPressDetail "Tab"]
-       (BindSetBreakable ([], fun ei -> try Focus.set old with _ -> ()));
+       (BindSetBreakable ([], fun _ei -> try Focus.set old with _ -> ()));
       prev := Some w
 @
 
@@ -9212,7 +9222,7 @@ let text_input prev_widget ctx behav top tag =
     with Not_found -> ()
     end;
     (* Check for passwd *)
-    if String.lowercase inputtype = "password" then 
+    if String.lowercase_ascii inputtype = "password" then 
       Entry.configure e [Show '*'];
     (* The behaviours *)
     let reset = 
@@ -9327,7 +9337,7 @@ let radio_input prev_widget behav =
 (* An IMAGE input 
  * Q: no target here ?
  *)
-let image_input prev_widget ctx base behav top tag =
+let image_input _prev_widget ctx base behav top tag =
   try
     let n = get_attribute tag "name" in
     let src = get_attribute tag "src" in
@@ -9353,7 +9363,7 @@ let image_input prev_widget ctx base behav top tag =
 
 <<function [[Form.submit_input]]>>=
 (* A Submit button *)
-let submit_input prev_widget ctx behav top tag = 
+let submit_input _prev_widget ctx behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> s_ "Submit"
@@ -9372,7 +9382,7 @@ let submit_input prev_widget ctx behav top tag =
 @
 
 <<function [[Form.reset_input]]>>=
-let reset_input prev_widget behav top tag = 
+let reset_input _prev_widget behav top tag = 
   let l = 
     try get_attribute tag "value"
     with Not_found -> s_ "Reset" in
@@ -9467,7 +9477,7 @@ let select prev_widget behav top options tag =
 @
 
 <<function [[Form.textarea]]>>=
-let textarea prev_widget behav top initial tag = 
+let textarea _prev_widget behav top initial tag = 
   try 
     let name = get_attribute tag "name" in
     let f,t = 
@@ -9526,12 +9536,12 @@ open I18n
 open Printf
 open Tk
 open Hyper
-open Www
+
 open Html
 open Htmlfmt
 open Maps
 open Embed
-open Viewers
+
 
 <<constant [[Form.form_bg]]>>
 
@@ -9616,7 +9626,7 @@ val init:
                     (Htmlfmt.formatter -> unit) -> unit;
           create_formatter : Htmlfmt.formatterSpec ->
                              Widget.widget -> 'a * Widget.widget;
-          pop_formatter : 'b; push_formatter : 'a -> 'c;
+          pop_formatter : 'b; push_formatter : 'a -> unit;
           remove_tag : string -> unit; .. > ->
         unit
 
@@ -9658,10 +9668,10 @@ let init mach =
       tm::_ -> tm
     | [] -> raise (Invalid_Html "Table element outside <TABLE></TABLE>")
   and pop_table () = match !table_stack with
-    | tm::l -> table_stack := l
+    | _tm::l -> table_stack := l
     | [] -> raise (Invalid_Html "Unmatched </TABLE>")
   and push_table tm = table_stack := tm :: !table_stack
-  and is_nested () = 
+  and _is_nested () = 
     match !table_stack with
       [] -> false
     | _ -> true
@@ -9673,13 +9683,13 @@ let init mach =
   let current_width () = 
     match !widths with
       [] -> TopWidth
-    | x::l -> x
+    | x::_l -> x
   and push_width w =
     widths := w :: !widths
   and pop_width () = 
     match !widths with
       [] -> ()
-    | x::l -> widths := l
+    | _x::l -> widths := l
   in
   (* <TABLE> starts a table *)
   let open_table fo t =
@@ -9697,29 +9707,29 @@ let init mach =
     in
     let change_aligns t =
       current_row_align := 
-     (try Some (String.lowercase (get_attribute t "align"))
+     (try Some (String.lowercase_ascii (get_attribute t "align"))
       with Not_found -> None);
       current_row_valign := 
-     (try Some (String.lowercase (get_attribute t "valign"))
+     (try Some (String.lowercase_ascii (get_attribute t "valign"))
       with Not_found -> None)
     in 
 
    let cell_aligns attrs =
-     begin try Some (String.lowercase (get_attribute attrs "align"))
+     begin try Some (String.lowercase_ascii (get_attribute attrs "align"))
        with Not_found -> !current_row_align
      end,
-     begin try Some (String.lowercase (get_attribute attrs "valign"))
+     begin try Some (String.lowercase_ascii (get_attribute attrs "valign"))
        with Not_found -> !current_row_valign
      end
    in
     (* <TR> : starts a row *)
-    let open_tr fo t = change_aligns t; tm.open_row t
-    and close_tr fo = tm.close_row() in
+    let open_tr _fo t = change_aligns t; tm.open_row t
+    and close_tr _fo = tm.close_row() in
     mach#add_tag "tr" open_tr close_tr;
 
     (* A new cell *)
-    let open_cell kind fo t =
-      let align,valign = cell_aligns t in
+    let open_cell kind _fo t =
+      let align,_valign = cell_aligns t in
       let align = match align with 
     Some align -> align
       |	None -> match kind with 
@@ -9736,12 +9746,12 @@ let init mach =
       (* fo is the formatter that was open for *this* cell *)
       fo.flush();
       (* pop it *)
-      mach#pop_formatter;
+      mach#pop_formatter |> ignore;
       pop_width()
     in
     mach#add_tag "th" (open_cell HeaderCell) close_cell;
     mach#add_tag "td" (open_cell DataCell) close_cell;
-    mach#add_tag "col" (fun fo t -> tm.add_col t) (fun _ -> ());
+    mach#add_tag "col" (fun _fo t -> tm.add_col t) (fun _ -> ());
 
   and close_table fo = 
     (* close the table manager *)
@@ -10021,7 +10031,7 @@ type t = {
 (* Internal structure of tables *)
 type table = {
   master_widget : Widget.widget;
-  width : length;
+  _width : length;
   mutable slaves :
       (Widget.widget * (int*int*int*int*width_constraint*length*string)) list;
   mutable cur_col : int;
@@ -10071,7 +10081,7 @@ let dynamic_fight cell nowrap gameover align =
       Log.f (sprintf "Switching %s to vertical resize"
                      (Widget.name cell));
         (* in all cases, we have to grow vertically *)
-       let scroll, check = Fit.vert cell in
+       let scroll, _check = Fit.vert cell in
        Text.configure cell [YScrollCommand scroll];
         (* A posteriori updates for embedded windows
        List.iter 
@@ -10137,9 +10147,9 @@ let fixed_size cell width nowrap align =
  *  table.width contains the specified width for the table
  *  contextwidth was the width computed the context of the table
  *)
-let sizing table nowrap width =
+let sizing table nowrap _width =
   (* For cells of given width and colspan 1, set a col minsize *)
-  let colwidths = Array.create (Array.length table.slots) 0 in
+  let colwidths = Array.make (Array.length table.slots) 0 in
   let setcolwidth col n =
     if n > colwidths.(col) then begin
       colwidths.(col) <- n;
@@ -10157,7 +10167,7 @@ let sizing table nowrap width =
   (* Set initial size and dynamic resizing *)
   List.iter (function w,(_,col,_,cspan,cellwidth,_,align) -> 
     (* set initial width from images *)
-    let initw = Fit.set_initial_width w
+    let _initw = Fit.set_initial_width w
     (* set initial height from line number *)
     and _ = Fit.set_initial_height w in
     match cellwidth with
@@ -10220,7 +10230,7 @@ let get_slot table needed_cols rspan =
     if first + needed_cols > Array.length table.slots then
       table.slots <- 
          Array.append table.slots 
-           (Array.create (first + needed_cols - (Array.length table.slots)) 
+           (Array.make (first + needed_cols - (Array.length table.slots)) 
                          rspan);
     (* Mark used *)
     for i = first to first + needed_cols - 1 do
@@ -10231,7 +10241,7 @@ let get_slot table needed_cols rspan =
   with
     Not_found -> (* Grow *)
       let first = Array.length table.slots in
-      table.slots <- Array.append table.slots (Array.create needed_cols rspan);
+      table.slots <- Array.append table.slots (Array.make needed_cols rspan);
       table.cur_col <- Array.length table.slots;
       first
 @
@@ -10274,7 +10284,7 @@ let create top tag contextwidth =
  let tab = {
     master_widget = top;
     slaves = [];
-    width = width;
+    _width = width;
     cur_col = 0;
     cur_row = -1; (* Start with TR *)
     slots = [||];
@@ -10352,11 +10362,11 @@ let create top tag contextwidth =
        try Some (int_of_string (get_attribute tag "width"))
        with Not_found | Failure "int_of_string" -> None
       in 
-      for i = 1 to span do
+      for _i = 1 to span do
     tab.cols <- width :: tab.cols 
       done);
 
-    open_row = (fun t ->
+    open_row = (fun _t ->
     tab.cur_col <- 0;
     tab.cur_row <- 1 + tab.cur_row;
         in_row := true;
@@ -10475,7 +10485,7 @@ open Htmlfmt
 
 <<constant [[Htframe.geom_sep]]>>=
 (* geometry specs *)
-let geom_sep = Str.regexp "[ \t\n]+\|\([ \t\n]*,[ \t\n]*\)"
+let geom_sep = Str.regexp "[ \t\n]+\\|\\([ \t\n]*,[ \t\n]*\\)"
 @
 
 <<function [[Htframe.parse_geom]]>>=
@@ -10546,19 +10556,19 @@ and celldesc = {
 let ignore_fo f = {
   new_paragraph = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline = (fun b -> ());
-  print_verbatim = (fun s -> ());
-  format_string = (fun s -> ());
-  hr = (fun l n b -> ());
-  bullet = (fun n -> ());
-  set_defaults = (fun s l -> ());
-  push_attr = (fun l -> ());
-  pop_attr = (fun l -> ());
-  isindex = (fun s s' -> ());
+  print_newline = (fun _b -> ());
+  print_verbatim = (fun _s -> ());
+  format_string = (fun _s -> ());
+  hr = (fun _l _n _b -> ());
+  bullet = (fun _n -> ());
+  set_defaults = (fun _s _l -> ());
+  push_attr = (fun _l -> ());
+  pop_attr = (fun _l -> ());
+  isindex = (fun _s _s' -> ());
   start_anchor = (fun () -> ());
-  end_anchor = (fun h -> ());
+  end_anchor = (fun _h -> ());
   add_mark = (fun _ -> ());
-  create_embedded = (fun a w h -> Frame.create f []);
+  create_embedded = (fun _a _w _h -> Frame.create f []);
   see_frag = (fun _ -> ());
   flush = (fun () -> ());
   } 
@@ -10683,11 +10693,11 @@ let add_frames load_frames kill_body top mach =
        if it was already created *)
     kill_body();
     mach#add_tag "body"
-      (fun fo t -> mach#look_for EOF) ignore_close
+      (fun _fo _t -> mach#look_for EOF) ignore_close
 
   in
   mach#add_tag "frameset"
-      (fun fo t ->
+      (fun _fo t ->
     let rows = get_attribute t "rows"
     and cols = get_attribute t "cols" in
     let newset =
@@ -10711,7 +10721,7 @@ let add_frames load_frames kill_body top mach =
           initial_cell.cell_contents <- Some (Frameset newset);
           framesets := newset :: !framesets
         end
-    | (ri, rj, set)::l ->
+    | (ri, rj, set)::_l ->
         if !ri >= Array.length set then
           raise (Invalid_Html "no room for <frameset> in this <frameset>")
         else begin
@@ -10719,18 +10729,18 @@ let add_frames load_frames kill_body top mach =
           next_cell set ri rj;
           framesets := newset :: !framesets
         end)
-      (fun t -> 
+      (fun _t -> 
     match !framesets with
     | [] -> 
         raise (Invalid_Html "unmatched </frameset>")
-    | [x] -> (* the last one *)
+    | [_x] -> (* the last one *)
         framesets := [];
         doit()
-    | x::l ->
+    | _x::l ->
         framesets := l);
 
   mach#add_tag "frame"  
-    (fun fo t ->
+    (fun _fo t ->
       match !framesets with
       | [] -> raise (Invalid_Html "<frame> outside <frameset>")
       |	(ri, rj, set) :: _ ->
@@ -10744,9 +10754,9 @@ let add_frames load_frames kill_body top mach =
            try int_of_string (get_attribute t "frameborder")
            with Failure "int_of_string" -> 
         (* compatibility ? *)
-          if String.lowercase (get_attribute t "frameborder") = "no"
+          if String.lowercase_ascii (get_attribute t "frameborder") = "no"
           then 0 else 1
-          and scrolling = String.lowercase (get_attribute t "scrolling")
+          and scrolling = String.lowercase_ascii (get_attribute t "scrolling")
           in
           let borderopts = 
            if border = 0 then [BorderWidth (Pixels 0)]
@@ -10773,11 +10783,11 @@ let add_frames load_frames kill_body top mach =
    * know that, do we ?
    *)
   mach#add_tag "noframes"
-    (fun fo t -> 
+    (fun _fo _t -> 
       mach#push_formatter (ignore_fo top);
       mach#look_for (CloseTag "noframes"))
 
-    (fun t -> mach#pop_formatter; ())
+    (fun _t -> mach#pop_formatter |> ignore; ())
 @
 
 
@@ -10877,8 +10887,8 @@ open Printf
 open Tk
 open Frx_text
 open Hyper
-open Viewers
-open Html
+
+
 open Htmlfmt
 open Fonts
 
@@ -10935,11 +10945,11 @@ open Printf
 open Html
 open Htmlfmt
 open Hyper
-open Www
+
 open Document
 open Maps
 open Embed
-open Viewers
+
 open Fonts
 
 <<constant [[Html_disp.verbose]]>>
@@ -11121,7 +11131,7 @@ class default_tachy (top : Widget.widget) =
       let img = Imagephoto.create [File file] in
       Msys.rm file;
       img
-    and park_image =
+    and _park_image =
       Imagebitmap.create [Data park_data; Foreground Red] in
 
     i_park <-
@@ -11267,19 +11277,19 @@ let attrs2fontspec l =
   let rec family = function
      [] -> "*"
    | (Family s)::_ -> s
-   | x::l -> family l
+   | _x::l -> family l
   and weight = function
      [] -> "*"
    | (Weight s)::_ -> s
-   | x::l -> weight l
+   | _x::l -> weight l
   and slant = function
      [] -> "*"
    | (Slant s)::_ -> s
-   | x::l -> slant l
+   | _x::l -> slant l
   and pxlsz = function
      [] -> "*"
    | (FontIndex s)::_ -> string_of_int (Fonts.pxlsz s)
-   | x::l -> pxlsz l in
+   | _x::l -> pxlsz l in
 
   sprintf "-*-%s-%s-%s-normal-*-%s-*-*-*-*-*-iso8859-1"
           (family l) (weight l) (slant l) (pxlsz l)
@@ -11388,7 +11398,7 @@ let font_select top getattrs setattrs =
     [familyv; weightv; slantv; pixelsv];
   
   (* initialisation from memory (v=fontspecv) *)
-  let init_pref v =
+  let init_pref _v =
     let attrs = getattrs() in
     (* Set all variables; electric update does the rest *)
     List.iter (function
@@ -11570,7 +11580,7 @@ let nocache did =
  if !debug then Log.f
     (sprintf "Removing %s from cache" (Url.string_of did.document_url));
  let shared = ref false in
-  Hashtbl.iter (fun key dis -> if List.mem_assoc did !dis then shared := true)
+  Hashtbl.iter (fun _key dis -> if List.mem_assoc did !dis then shared := true)
     table;
  if not !shared then Cache.kill did
  else  
@@ -11618,7 +11628,7 @@ let add hkey did di =
 let kill hkey =
  if !debug then Log.f (sprintf "Killing gcache for nav %d" hkey);
  let r = get_nav hkey in
-  List.iter (fun (did, di) -> di#di_abort) !r;
+  List.iter (fun (_did, di) -> di#di_abort) !r;
   if !Cache.history_mode then begin
      let fluff = !r in
        r := []; (* so that we don't find them again *)
@@ -11734,7 +11744,7 @@ let dial hlink err =
    |  UrlLexing (s,_) -> s in
 
   let tit = Label.create t [Text (s_ "Malformed link error")]
-  and fc,ec = Frx_entry.new_labelm_entry t "Context" vcontext
+  and fc,_ec = Frx_entry.new_labelm_entry t "Context" vcontext
   and fu,eu = Frx_entry.new_labelm_entry t "Relative" vuri
   and lmsg = Label.create t [Text msg]
   in
@@ -11981,7 +11991,7 @@ let resource_name pref_name =
 @
 
 <<constant [[Prefs.class_name]]>>=
-let class_name = resource_name 
+let _class_name = resource_name 
   (* it is not correct but works *)
 @
 
@@ -12019,7 +12029,7 @@ type pref = {
  * Init the Tk variables in the pref editor from the internal 
  * value of the preference (usually a reference)
  *)
-let init_pref {pref_type = typ; pref_variable = v} = match typ with
+let init_pref {pref_type = typ; pref_variable = v; _} = match typ with
    Bool r -> Textvariable.set v (if !r then "1" else "0")
  | String r -> Textvariable.set v !r
  | Int r ->  Textvariable.set v (string_of_int !r)
@@ -12033,7 +12043,7 @@ let init_pref {pref_type = typ; pref_variable = v} = match typ with
  * NOTE: basic predefined types do not allow extra code to run when the
  * value is modified.
  *)
-let set_pref {pref_type = typ; pref_variable = v} = match typ with
+let set_pref {pref_type = typ; pref_variable = v; _} = match typ with
    Bool r -> r := Textvariable.get v = "1"
  | String r -> r := Textvariable.get v
  | Int r ->
@@ -12106,7 +12116,7 @@ let bool_pref name r top =
 <<function [[Prefs.int_pref]]>>=
 let int_pref name r top = 
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p =
     { pref_type = Int r;
       pref_variable = v;
@@ -12124,7 +12134,7 @@ let int_pref name r top =
 <<function [[Prefs.float_pref]]>>=
 let float_pref name r top = 
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p = 
     { pref_type = Float r;
       pref_variable = v;
@@ -12139,7 +12149,7 @@ let float_pref name r top =
 <<function [[Prefs.string_pref]]>>=
 let string_pref name r top = 
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p = 
     { pref_type = String r;
       pref_variable = v;
@@ -12197,7 +12207,7 @@ let abstract_bool_pref name i s top =
  *)
 let abstract_string_pref name i s top =
   let v = Textvariable.create_temporary top in
-  let f,e = Frx_entry.new_labelm_entry top name v in
+  let f,_e = Frx_entry.new_labelm_entry top name v in
   let p ={
     pref_type = AbstractType(i,s);
     pref_variable = v;
@@ -12225,7 +12235,7 @@ let option_handlers mapping read_internal write_internal =
     Not_found ->
       match mapping with
         [] -> "undefined"
-      | (x,v)::l -> v
+      | (_x,v)::_l -> v
     in
     Textvariable.set v s
   and set v =
@@ -12237,7 +12247,7 @@ let option_handlers mapping read_internal write_internal =
     Not_found ->
       match mapping with
         [] -> assert false
-      | (x,v)::l -> x
+      | (x,_v)::_l -> x
     in
     write_internal value
   in
@@ -12400,7 +12410,7 @@ let rec init filename status interactive mute =
           end
           else
             pref_error (s_ "%s : no such preference file" s)
-              | l -> raise (Failure "multiple selection"))
+              | _l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
        "*")
       (Filename.basename (Textvariable.get preffilev))
@@ -12421,7 +12431,7 @@ let rec init filename status interactive mute =
         dismiss()
          with Failure s -> pref_error s
             end
-        | l -> raise (Failure "multiple selection"))
+        | _l -> raise (Failure "multiple selection"))
       (Filename.concat (Filename.dirname (Textvariable.get preffilev))
        "*")
       (Filename.basename (Textvariable.get preffilev))
@@ -12510,7 +12520,7 @@ let define filename interactive mute =
 open I18n
 open Tk
 open Mstring
-open Fontprefs
+
 
 <<function [[Prefs.pref_error]]>>
 
@@ -12581,7 +12591,7 @@ module PrefMap = Map.Make(struct type t = string let compare = compare end)
 %-------------------------------------------------------------
 
 <<gui/debug.ml>>=
-open Tk
+
 open Protocol
 <<function [[Debug.active_cb]]>>
 
@@ -12788,7 +12798,7 @@ exception Duplicate of Url.t
 (*
  * Three instances of this general mechanism : view, save, head
  *)
-let nothing_specific nav did wr = raise Not_found
+let nothing_specific _nav _did _wr = raise Not_found
 @
 
 
@@ -12803,7 +12813,7 @@ let specific_viewer addhist = fun nav did wr ->
 
 <<function [[Nav.process_save]]>>=
 (* Specific handling of "save" requests *)
-let process_save dest = fun nav wr dh ->
+let process_save dest = fun _nav wr dh ->
   match dh.document_status with
     200 -> Save.transfer wr dh dest
   | n ->
@@ -12831,7 +12841,7 @@ let display_headers dh =
 @
 
 <<constant [[Nav.process_head]]>>=
-let process_head = fun nav wr dh ->
+let process_head = fun _nav _wr dh ->
   dclose true dh;
   display_headers dh
 @
@@ -12847,7 +12857,7 @@ let make_head hlink =
 let copy_link nav h =
   try 
     Frx_selection.set (Hyper.string_of h)
-  with Invalid_link msg ->
+  with Invalid_link _msg ->
     nav.nav_error#f (s_ "Invalid link")
 @
 
@@ -12935,7 +12945,7 @@ open Tk
 open Hyper
 open Www
 open Url
-open Uri
+
 open Document
 open Http_headers
 open Viewers

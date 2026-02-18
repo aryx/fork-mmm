@@ -1200,27 +1200,27 @@ let default_fo = {
   (* Text primitives of the device *)
   new_paragraph   = (fun () -> ());
   close_paragraph = (fun () -> ());
-  print_newline   = (fun b -> ());
-  print_verbatim  = (fun s -> ());
-  format_string   = (fun s -> ());
+  print_newline   = (fun _b -> ());
+  print_verbatim  = (fun _s -> ());
+  format_string   = (fun _s -> ());
 
   (* Graphical attributes *)
-  push_attr       = (fun l -> ());
-  pop_attr        = (fun l -> ());
-  set_defaults    = (fun s l -> ());
+  push_attr       = (fun _l -> ());
+  pop_attr        = (fun _l -> ());
+  set_defaults    = (fun _s _l -> ());
 
   (* misc *)
 
-  hr              = (fun l n b -> ());
-  bullet          = (fun n -> ());
+  hr              = (fun _l _n _b -> ());
+  bullet          = (fun _n -> ());
 
 
-  isindex         = (fun s s' -> ());
+  isindex         = (fun _s _s' -> ());
   start_anchor    = (fun () -> ());
-  end_anchor      = (fun h -> ());
+  end_anchor      = (fun _h -> ());
   add_mark        = (fun _ -> ());
 
-  create_embedded = (fun a w h -> assert false);
+  create_embedded = (fun _a _w _h -> assert false);
 
   see_frag        = (fun _ -> ());
 
@@ -1284,7 +1284,7 @@ method virtual formatter : Htmlfmt.formatter
 
 \ifallcode
 <<class [[Html_disp.machine]]>>=
-class  virtual machine (unit : unit) =
+class  virtual machine (_unit : unit) =
  object
    <<[[Html_disp.machine]] virtual fields signatures>>
 end
@@ -1840,7 +1840,7 @@ and handle_link h =
     wr.www_error <- nav.nav_error;
     wr |> wrapwr |> handle_wr
   with
-  | Hyper.Invalid_link msg ->
+  | Hyper.Invalid_link _msg ->
       nav.nav_error#f (s_ "Invalid link")
   | Www.Invalid_request (wr, msg) ->
       nav.nav_error#f (s_ "Invalid request %s\n%s"(Url.string_of wr.www_url)msg)
@@ -2296,7 +2296,7 @@ let open_file () =
     | [s] -> 
         let path = Msys.tilde_subst s in
         absolutegoto nav ("file://localhost/"^path)
-    | l -> raise (Failure "multiple selection")
+    | _l -> raise (Failure "multiple selection")
    )
      "*" 
      ""
@@ -2515,7 +2515,7 @@ nav_log : string -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_log = (fun s -> 
-  pr2 s;
+  Logs.info (fun m -> m "%s" s);
   Textvariable.set loggingv s
 );
 @
@@ -2662,7 +2662,7 @@ rule f = parse
          } 
       in
       let protocol =
-        String.uppercase (String.sub lexeme 0 (String.length lexeme - 1)) in
+        String.uppercase_ascii (String.sub lexeme 0 (String.length lexeme - 1)) in
       (match protocol with
       <<[[Lexurl.f]] protocol cases>>
       | s ->
@@ -2728,7 +2728,7 @@ and hostport = parse
 <<function [[Lexurl.normalize_host]]>>=
 (* lowercase, don't use final . in FQDN *)
 let normalize_host s = 
-  let s = String.lowercase s in
+  let s = String.lowercase_ascii s in
   let l = String.length s in
   if s.[l-1] = '.' 
   then String.sub s 0 (l-1)
@@ -2869,13 +2869,13 @@ let unquote s =
        if perpos > !pos 
        then Ebuffer.output target s !pos (perpos - !pos);
        pos := perpos;
-       if s.[!pos] = '%' & !pos + 2 < l  
+       if s.[!pos] = '%' && !pos + 2 < l  
        then begin
          let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
          let substc = Char.chr c in
          if List.mem substc keep_quoted 
          then
-           for i = 0 to 2 do
+           for _i = 0 to 2 do
              Ebuffer.output_char target s.[!pos];
              incr pos
            done
@@ -2924,7 +2924,7 @@ let decode s =
   let target = Ebuffer.create l in
   let pos = ref 0 in
   while !pos < l do
-    if s.[!pos] = '%' & !pos + 2 < l  then begin
+    if s.[!pos] = '%' && !pos + 2 < l  then begin
        let c = 16 * hex_to_dec s.[!pos+1] + hex_to_dec s.[!pos+2] in
        Ebuffer.output_char target (Char.chr c);
     pos := !pos + 3
@@ -3205,7 +3205,7 @@ val new_data : unit -> t
 type t = {
   buffer : Ebuffer.t;
   mutable start : int;
-  mutable pos_fix : int
+  (*mutable*) pos_fix : int
 }
 @
 
@@ -3451,7 +3451,7 @@ type tagtoken =
 and opentag = parse
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
     { (fun lexdata ->
-       let tagname = String.lowercase (Lexing.lexeme lexbuf) in
+       let tagname = String.lowercase_ascii (Lexing.lexeme lexbuf) in
        let attribs = ref [] in
        let bugs = ref [] in
        let rec read_attribs () =
@@ -3498,7 +3498,7 @@ and closetag = parse
         let lexeme = Lexing.lexeme lexbuf in
     let e = skip_to_close lexbuf lexdata in
     [],
-    CloseTag (String.lowercase lexeme), Loc(lexdata.start,e))}
+    CloseTag (String.lowercase_ascii lexeme), Loc(lexdata.start,e))}
 (* Tolerance *)
   | ""  
     { (fun lexdata ->
@@ -3524,7 +3524,7 @@ and attrib = parse
     { (fun lexdata -> attrib lexbuf lexdata )}
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
     { (fun lexdata ->
-        let name = String.lowercase(Lexing.lexeme lexbuf) in
+        let name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
         try
           match tagattrib lexbuf lexdata with
           | Some s -> Attribute (name, s)
@@ -3538,7 +3538,7 @@ and attrib = parse
       but it should NOT be there *)
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-' '_']+ 
     { (fun lexdata ->
-       let name = String.lowercase(Lexing.lexeme lexbuf) in
+       let name = String.lowercase_ascii (Lexing.lexeme lexbuf) in
        if !strict 
        then raise (Html_Lexing ("illegal attribute name: " ^ name,
                                  mk_start lexbuf lexdata))
@@ -3572,7 +3572,7 @@ and tagattrib = parse
 | [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
     { (fun lexdata -> Some (attribvalue lexbuf lexdata) )}
 | "" 
-    { (fun lexdata -> None )}
+    { (fun _lexdata -> None )}
 @  
 
 % opentag -> attrib -> tagattrib -> <>
@@ -3582,7 +3582,7 @@ and tagattrib = parse
 (* but if a quote is not closed, you are dead *)
 and attribvalue = parse
 | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+ 
-    { (fun lexdata -> Lexing.lexeme lexbuf )}
+    { (fun _lexdata -> Lexing.lexeme lexbuf )}
 | '"' 
     { (fun lexdata ->
        Ebuffer.reset lexdata.buffer; 
@@ -3592,7 +3592,7 @@ and attribvalue = parse
        Ebuffer.reset lexdata.buffer; 
        insingle lexbuf lexdata )}
 | "" 
-    { (fun lexdata ->
+    { (fun _lexdata ->
         raise (Html_Lexing ("illegal attribute val",
                               Lexing.lexeme_start lexbuf)) )}
 @
@@ -3776,7 +3776,7 @@ and cdata = parse
         let lexeme = Lexing.lexeme lexbuf in
         let _eTODO = skip_to_close lexbuf lexdata in
         noerr,
-        CloseTag (String.lowercase 
+        CloseTag (String.lowercase_ascii 
                       (String.sub lexeme 2 (String.length lexeme - 2))),
         mk_loc lexbuf lexdata)}
 | "</" 
@@ -3804,7 +3804,7 @@ and cdata = parse
 <<function [[Lexhtml.ampersand]]>>=
 and ampersand = parse
 | '#' ['0'-'9']+ ';' 
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 2) in
         try 
@@ -3812,7 +3812,7 @@ and ampersand = parse
         with (* #350 ... *) Invalid_argument _ -> " "
       )}
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let entity = String.sub lexeme 0 (String.length lexeme - 1) in
         try 
@@ -3823,7 +3823,7 @@ and ampersand = parse
   (* terminating ; is not required if next character could not be 
      part of the lexeme *)
 | '#' ['0'-'9']+
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         let code = String.sub lexeme 1 (String.length lexeme - 1) in
         try 
@@ -3831,7 +3831,7 @@ and ampersand = parse
         with Invalid_argument _ -> " "
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
-    { (fun lexdata ->
+    { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
         try 
           get_entity lexeme
@@ -3840,7 +3840,7 @@ and ampersand = parse
       )}
   (* Tolerance ... *)
 | ""
-    { (fun lexdata -> "&" )}
+    { (fun _lexdata -> "&" )}
 @
 %        (*if !Lang.japan then
 %         "\027\040\066" ^ String.make 1 (Char.chr (int_of_string code))
@@ -4463,7 +4463,7 @@ let sgml_lexer dtd =
   let allowed () = 
     match !stack with
     | [] -> initial
-    | (elem, cts)::_ -> cts 
+    | (_elem, cts)::_ -> cts 
   in
   (* whatever the situation (but close), if the previous element is empty
      with an omittable close, close it *)
@@ -4516,13 +4516,13 @@ let sgml_lexer dtd =
             match !stack with
             | [] -> 
               Illegal(sprintf "Unmatched closing </%s>" t), []
-            | (elem, cts)::l when elem = t -> (* matching close *)
+            | (elem, _cts)::l when elem = t -> (* matching close *)
                  stack := l; (* pop the stack *)
                  (* the lexer has to be "normal" again, because CDATA
                     can't be nested anyway *)
                  current_lex := Lexhtml.html;
                  Legal, [token]
-            | (elem, cts)::l -> (* unmatched close ! *)
+            | (_elem, cts)::_l -> (* unmatched close ! *)
                 (* if we were in cdata, change the token to cdata *)
                  if is_cdata cts 
                  then Legal, [CData (sprintf "</%s>" t)]
@@ -4554,7 +4554,7 @@ let sgml_lexer dtd =
            end
 
     (* CData never happens with an empty stack *)
-    | CData s ->
+    | CData _s ->
         let extraclose = close_empty() in    
         if Elements.mem "#cdata" (allowed()) 
         then Legal, extraclose @ [token]
@@ -4628,7 +4628,7 @@ let ominimize dtd t stack =
   (* Is elem allowed for the given stack ? *)
   let goodpos = function
       [] -> Elements.mem elem initial
-    | (_, cts)::l -> Elements.mem elem cts
+    | (_, cts)::_l -> Elements.mem elem cts
 
   (* Return with inferred and stack.
      The stack has been reduced during the inference, so it is enough
@@ -4673,7 +4673,7 @@ let ominimize dtd t stack =
       if goodpos newstack then return newaccu newstack
           else attempt_open newaccu newstack
 
-   | ((_, cts)::l ) as stack ->
+   | ((_, cts)::_l ) as stack ->
        (* check if, in contents, there is an element with implicit omission
           that would help *)
        let possible = Elements.inter cts dtd.open_omitted in
@@ -4688,7 +4688,7 @@ let ominimize dtd t stack =
         if goodpos newstack 
         then return newaccu newstack
         else attempt_open newaccu newstack (* maybe more ? *)
-        | n -> (* since we have the choice, examine all possibilities *)
+        | _n -> (* since we have the choice, examine all possibilities *)
        let elems = Elements.elements possible in
        let rec backtrack = function 
              [] -> raise CantMinimize
@@ -4709,7 +4709,7 @@ let ominimize dtd t stack =
    with
      CantMinimize ->
        (* what the hell, dammit, open it anyway, who cares, duh *)
-       let _currentTODO = match stack with (x,_)::l -> x | [] -> "" in
+       let _currentTODO = match stack with (x,_)::_l -> x | [] -> "" in
        Illegal (sprintf "illegal <%s> in %a, keep it though"
                 t.tag_name dump_stack stack),
        return [] stack
@@ -4724,7 +4724,7 @@ let cminimize dtd tagname stack =
   (* Is elem allowed for the given stack ? *)
   let goodpos = function
       [] -> false
-    | (elem, cts)::l -> tagname = elem
+    | (elem, _cts)::_l -> tagname = elem
 
   and return inferred stack =
      List.rev ((CloseTag tagname) :: inferred), stack
@@ -5219,18 +5219,18 @@ let media_type s =
 and media_type = parse
 | [' ' '\t']+ {
       let _ = starlws lexbuf in
-      let typ = String.lowercase (token lexbuf) in
+      let typ = String.lowercase_ascii (token lexbuf) in
       let _ = lit_slash lexbuf in
-      let subtyp = String.lowercase (token lexbuf) in
+      let subtyp = String.lowercase_ascii (token lexbuf) in
       let _ = starlws lexbuf in (* word based *)
       typ, subtyp
     }
 
 | "" {
       let _ = starlws lexbuf in
-      let typ = String.lowercase (token lexbuf) in
+      let typ = String.lowercase_ascii (token lexbuf) in
       let _ = lit_slash lexbuf in
-      let subtyp = String.lowercase (token lexbuf) in
+      let subtyp = String.lowercase_ascii (token lexbuf) in
       let _ = starlws lexbuf in (* word based *)
         typ, subtyp
       }
@@ -5258,7 +5258,7 @@ and media_parameters = parse
 | "" { [] }
 | ";" { 
      let _ = starlws lexbuf in
-     let attr = String.lowercase (token lexbuf) in
+     let attr = String.lowercase_ascii (token lexbuf) in
      let _ = lit_equal lexbuf in (* no space allowed *)
      let v = value lexbuf in
      let _ = starlws lexbuf in
@@ -5518,7 +5518,7 @@ let code204 _wwwr dh =
 
 <<function [[Retrieve.code400]]>>=
 (* 400 Bad request *)
-let code400 _wr _dh = Error (s_ "Bad Request")
+let _code400 _wr _dh = Error (s_ "Bad Request")
 @
 % dead??
 
@@ -5652,7 +5652,7 @@ let of_fd fd =
       then Log.f "ERROR: feed is closed, can't schedule"
       else 
        (match !action with
-        | Some f -> (* we are already scheduled ! *)
+        | Some _f -> (* we are already scheduled ! *)
             Log.f "Warning: feed already scheduled"
         | None ->
             action := Some f;
@@ -5662,7 +5662,7 @@ let of_fd fd =
 
    feed_unschedule = (fun () -> 
      match !action with
-     | Some f -> 
+     | Some _f -> 
          Low.remove_fileinput fd; 
          action := None
      | None -> 
@@ -5684,7 +5684,7 @@ let of_fd fd =
       if !is_open 
       then
         (match !action with 
-        | Some f -> Log.f "ERROR: feed is scheduled, can't close"
+        | Some _f -> Log.f "ERROR: feed is scheduled, can't close"
         | None -> 
             Unix.close fd;
             is_open := false;
@@ -5804,7 +5804,7 @@ let update url =
        :: wr.www_headers;
 
     ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
-      (fun url i -> 
+      (fun _url i -> 
     match oldi, i with
       Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
         Imagephoto.copy oldn newn []
@@ -6478,7 +6478,7 @@ let merge_headers oldh newh =
       else
        try
         let t = header_type s in
-        let d = get_header t newh in
+        let _d = get_header t newh in
       filter acc l
        with
           Invalid_HTTP_header _ -> 
@@ -6851,7 +6851,7 @@ class display_plain ((top : Widget.widget),
                      (ctx : Viewers.context),
                      (dh : Document.handle)) =
  object (self)
-  inherit Viewers.display_info () as di  (* gives us basic features *)
+  inherit Viewers.display_info () as _di  (* gives us basic features *)
 (*
   inherit Htmlw.viewer_globs (ctx, dh)
 *)
@@ -7391,7 +7391,7 @@ end
 (* Preference settings *)
 Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype -> 
   try
-    let (typ,sub), pars = Lexheaders.media_type ctype in
+    let (typ,sub), _pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) External
   with Http_headers.Invalid_HTTP_header e ->
     !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
@@ -7469,12 +7469,12 @@ let extern dh ctype =
 \section{Interactive viewer}
 
 <<[[Viewers.spec]] other cases>>=
-| Interactive  (* ask what to do about it *)
+(*| Interactive  (* ask what to do about it *)*)
 @
 
 <<[[Viewers.view]] match viewer cases>>=
-| Interactive ->
-    interactive frame ctx dh ctype
+(*| Interactive ->
+    interactive frame ctx dh ctype*)
 @
 
 <<[[Viewers.view]] exn handler 1>>=
@@ -7527,7 +7527,7 @@ and interactive frame ctx dh ctype =
 <<[[Viewers.reset()]] setting other viewers>>=
 Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype -> 
   try
-    let (typ,sub),pars = Lexheaders.media_type ctype in
+    let (typ,sub),_pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) Save
   with Http_headers.Invalid_HTTP_header e ->
     Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
@@ -7567,7 +7567,7 @@ let rec interactive cont dh =
           Error.f (s_ "Cannot save to %s\n(%s)" fname msg);
           interactive cont dh
         end
-    | l -> raise (Failure "multiple selection")
+    | _l -> raise (Failure "multiple selection")
     )
     "*"
     (Filename.basename path)
@@ -7598,14 +7598,14 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 <<class [[Htmlw.display_html]]>>=
 class display_html ((top : Widget.widget),
                     (ctx : Viewers.context),
-                    (mediapars : (string * string) list),
+                    (_mediapars : (string * string) list),
                     (imgmanager: Imgload.loader),
                     (dh': Document.handle)) =
  object (self)
-  inherit Viewers.display_info () as di  (* gives us basic features *)
+  inherit Viewers.display_info () as _di  (* gives us basic features *)
   inherit viewer_globs (ctx, dh')
   inherit html_parse (dh')
-  inherit html_body () as body
+  inherit html_body () as _body
   inherit bored ()
 
   (* val imgmanager = imgmanager *)
@@ -7912,7 +7912,7 @@ method remove_tag = Hashtbl.remove tags
 
 
 <<[[Html_disp.display_machine]] private fields>>=
-val mutable (*private*) action = (fun s -> ())
+val mutable (*private*) action = (fun _s -> ())
 val mutable (*private*) action_stack = []
 @
 <<[[Html_disp.machine]] action stack methods>>=
@@ -7927,9 +7927,9 @@ method push_action f =
 method pop_action =
   match action_stack with
   | [] -> Log.f "Warning: empty action stack"
-  |	old::l ->
+  |	_old::l ->
   action_stack <- l;
-  action <- match l with [] -> (fun s ->()) | newa::_ -> newa
+  action <- match l with [] -> (fun _s ->()) | newa::_ -> newa
 @
 
 
@@ -8291,7 +8291,7 @@ and strike = new Attrs.misc (tagdefs, "strike", [OverStrike true])
 
 in
 let put_embedded w align =
-  let opts = match String.lowercase align with
+  let opts = match String.lowercase_ascii align with
     "top" -> [Align Align_Top]
   | "middle" -> [Align Align_Center] (* not exactly *)
   | "bottom" -> [Align Align_Baseline] 
@@ -8421,7 +8421,7 @@ mach#add_tag "title" ignore_open ignore_close;
  * TARGET is from PR-HTML4.0
  *)
 mach#add_tag "base"
-    (fun fo tag ->
+    (fun _fo tag ->
       begin 
         try mach#set_target (get_attribute tag "target")
         with Not_found -> ()
@@ -8715,7 +8715,7 @@ pop_attr = (fun l ->
 
 ["pre"; "listing"; "xmp"] |> List.iter (fun s -> 
   mach#add_tag s 
-    (fun fo tag ->
+    (fun fo _tag ->
        fo.new_paragraph();
        push_style fo "verbatim";
        mach#push_action fo.print_verbatim)
@@ -8744,7 +8744,7 @@ print_verbatim = (fun s ->
  * 5.5.3 Address: <ADDRESS>
  *)
 mach#add_tag "address" 
-   (fun fo tag -> fo.new_paragraph(); push_style fo "italic")
+   (fun fo _tag -> fo.new_paragraph(); push_style fo "italic")
    (fun fo -> pop_style fo "italic"; fo.close_paragraph())
 ;
 @
@@ -8756,7 +8756,7 @@ mach#add_tag "address"
  * 5.5.4 Block Quote: <BLOCKQUOTE>
  *)
 mach#add_tag "blockquote"
-   (fun fo tag ->
+   (fun fo _tag ->
       fo.new_paragraph();
       push_style fo "italic";
       fo.push_attr [Margin 10])
@@ -8787,17 +8787,17 @@ mach#add_tag "blockquote"
 (* Different typographic styles, shared *)
 let italic_style t = 
   mach#add_tag t 
-     (fun fo tag -> push_style fo "italic")
+     (fun fo _tag -> push_style fo "italic")
      (fun fo -> pop_style fo "italic")
 in
 let fixed_style t =
   mach#add_tag t 
-    (fun fo tag -> push_style fo "fixed")
+    (fun fo _tag -> push_style fo "fixed")
     (fun fo -> pop_style fo "fixed")
 in
 let bold_style t =
   mach#add_tag t 
-    (fun fo tag -> push_style fo "bold")
+    (fun fo _tag -> push_style fo "bold")
     (fun fo -> pop_style fo "bold")
 in
 @
@@ -8846,7 +8846,7 @@ bold_style "strong";
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 flashy features *)
 mach#add_tag "u"
-  (fun fo t -> fo.push_attr [Underlined])
+  (fun fo _t -> fo.push_attr [Underlined])
   (fun fo  -> fo.pop_attr [Underlined]);
 @
 \subsubsection{Strike, [[<strike>]]}
@@ -8857,7 +8857,7 @@ mach#add_tag "u"
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 mach#add_tag "strike"
-  (fun fo t -> fo.push_attr [Striked])
+  (fun fo _t -> fo.push_attr [Striked])
   (fun fo  -> fo.pop_attr [Striked]);
 @
 
@@ -8869,7 +8869,7 @@ mach#add_tag "strike"
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 mach#add_tag "sup"
-  (fun fo t -> fo.push_attr [Superscript])
+  (fun fo _t -> fo.push_attr [Superscript])
   (fun fo  -> fo.pop_attr [Superscript]);
 @
 \subsubsection{Lowerscript, [[<sub>]]}
@@ -8880,7 +8880,7 @@ mach#add_tag "sup"
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 mach#add_tag "sub"
-  (fun fo t -> fo.push_attr [Lowerscript])
+  (fun fo _t -> fo.push_attr [Lowerscript])
   (fun fo  -> fo.pop_attr [Lowerscript]);
 @
 
@@ -8891,7 +8891,7 @@ mach#add_tag "sub"
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 flashy features *)
 mach#add_tag "center"
-    (fun fo t -> fo.push_attr [Justification "center"])
+    (fun fo _t -> fo.push_attr [Justification "center"])
     (fun fo -> fo.pop_attr [Justification "center"]);
 @
 
@@ -8909,7 +8909,7 @@ mach#add_tag "center"
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 flashy features *)
   mach#add_tag "big"
-      (fun fo t -> fo.push_attr [Font (FontDelta 2)])
+      (fun fo _t -> fo.push_attr [Font (FontDelta 2)])
       (fun fo  -> fo.pop_attr [Font (FontDelta 2)]);
 @
 
@@ -8918,7 +8918,7 @@ mach#add_tag "center"
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 flashy features *)
   mach#add_tag "small"
-      (fun fo t -> fo.push_attr [Font (FontDelta (-2))])
+      (fun fo _t -> fo.push_attr [Font (FontDelta (-2))])
       (fun fo  -> fo.pop_attr [Font (FontDelta (-2))]);
 @
 
@@ -9027,7 +9027,7 @@ let numbering_styles =
   ["1", string_of_int;
    "a", lowernumber;
    "A", uppernumber;
-   "i", (function i -> String.lowercase (roman i));
+   "i", (function i -> String.lowercase_ascii (roman i));
    "I", roman
   ]
 in
@@ -9077,7 +9077,7 @@ let close_nlist fo =
   nesting := 
     (match !nesting with
     | [] -> [] 
-    | x::l -> l 
+    | _x::l -> l 
     );
   mach#remove_tag "li"
 in
@@ -9174,7 +9174,7 @@ let open_dl fo tag =
     let prev_is_dt = ref false in
 
     mach#add_tag "dt"
-      (fun fo tag -> 
+      (fun fo _tag -> 
          if not !prev_is_dt then begin
            fo.new_paragraph();
            prev_is_dt := true
@@ -9184,7 +9184,7 @@ let open_dl fo tag =
       (fun fo -> pop_style fo "bold");
 
     mach#add_tag "dd"
-      (fun fo tag ->
+      (fun fo _tag ->
          if !prev_is_dt then begin
            fo.close_paragraph();
            prev_is_dt := false
@@ -9200,7 +9200,7 @@ let open_dl fo tag =
       let first_item = ref true in
 
       mach#add_tag "dt"
-        (fun fo tag -> 
+        (fun fo _tag -> 
            if not !first_item 
            then fo.print_newline false
            else first_item := false;
@@ -9208,7 +9208,7 @@ let open_dl fo tag =
         (fun fo -> pop_style fo "bold");
 
       mach#add_tag "dd"
-        (fun fo tag ->
+        (fun fo _tag ->
            if not !first_item 
            then fo.print_newline false
            else first_item := false;
@@ -9353,7 +9353,7 @@ end_anchor = (fun link -> anchors#add_anchor !anchor_start (cur()) link);
  * 5.8 Line break: <BR> 
  *)
 mach#add_tag "br" 
-  (fun fo tag -> fo.print_newline true)
+  (fun fo _tag -> fo.print_newline true)
   ignore_close
 ;
 @
@@ -9503,7 +9503,7 @@ create_embedded = begin
   (* avoid space leak in Tk hash table : reuse the same names *)
   let embsym = Mstring.egensym "emb" in
 
-  (fun a w h ->
+  (fun _a w h ->
      let f = Frame.create_named thtml (embsym()) [Class "HtmlEmbedded"] in
      if !usecolors 
      then Frame.configure f [Background (NamedColor !bg)];
@@ -9600,8 +9600,8 @@ then TableLogic.init mach
 else begin
   let behave_as oldtag newtag =
      mach#add_tag newtag
-       (fun fo t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
-       (fun fo ->   mach#send (CloseTag oldtag))
+       (fun _fo _t -> mach#send (OpenTag {tag_name = oldtag; attributes = []}))
+       (fun _fo ->   mach#send (CloseTag oldtag))
   in
   (* use DL for tables *)
   behave_as "dl" "table";
@@ -9658,7 +9658,7 @@ let areas = ref [] in
 let mapname = ref "" in
 
 mach#add_tag "map"
-  (fun fo t ->
+  (fun _fo t ->
        (* the name of the map *)
        let absname = 
          try 
@@ -9673,8 +9673,8 @@ mach#add_tag "map"
        mapname := absname;
        areas := [];
        mach#add_tag "area" 
-      (fun fo tag -> 
-         let shape = String.lowercase (get_attribute tag "shape")
+      (fun _fo tag -> 
+         let shape = String.lowercase_ascii (get_attribute tag "shape")
          and href = 
        try Some (get_attribute tag "href") with Not_found -> None
              and coords =
@@ -9711,7 +9711,7 @@ mach#add_tag "map"
                 areas := area :: !areas)
           ignore_close)
 
-  (fun fo -> 
+  (fun _fo -> 
     mach#remove_tag "area";
     Maps.add !mapname !areas)
 ;
@@ -9812,7 +9812,7 @@ let add name map =
   Log.debug (sprintf "Adding map : %s" name);
   try
     match Hashtbl.find table name with
-      KnownMap m -> Log.debug "Map already known !"
+      KnownMap _m -> Log.debug "Map already known !"
     | RequestedMap event ->
        Hashtbl.remove table name; (* remove it *)
        Hashtbl.add table name (KnownMap map); (* add its value *)
@@ -9982,8 +9982,8 @@ mach#add_tag "font"
    We do the same for style, just in case people dont respect the DTD
  *)
 mach#add_tag "style"
-  (fun fo t -> mach#push_action (fun s -> ()))
-  (fun fo -> mach#pop_action);
+  (fun _fo _t -> mach#push_action (fun _s -> ()))
+  (fun _fo -> mach#pop_action);
 @
 
 \subsection{[[<script>]]}
@@ -9991,8 +9991,8 @@ mach#add_tag "style"
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 obnoxious features *)
 mach#add_tag "script"
-  (fun fo t -> mach#push_action (fun s -> ()))
-  (fun fo -> mach#pop_action);
+  (fun _fo _t -> mach#push_action (fun _s -> ()))
+  (fun _fo -> mach#pop_action);
 @
 
 \subsection{Frames}
@@ -10128,23 +10128,23 @@ type width_constraint =
 let meta_charset = ref None in
 (* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
 if not !ignore_meta_charset then begin 
-  mach#add_tag "meta" (fun fo tag ->
+  mach#add_tag "meta" (fun _fo tag ->
    try 
      let h = get_attribute tag "http-equiv" in
      let v = get_attribute tag "content" in
-     match String.lowercase h with
+     match String.lowercase_ascii h with
      | "content-type" ->
           begin try
             let (t,h), l = Lexheaders.media_type v in
-            if String.lowercase t <> "text" ||
-               String.lowercase h <> "html" then begin
+            if String.lowercase_ascii t <> "text" ||
+               String.lowercase_ascii h <> "html" then begin
                  Log.f ("Unknown meta content-type = "^t^"/"^h);
                 raise Exit
             end;
             try 
               List.iter (fun (h,v) ->
-                if String.lowercase h = "charset" then begin
-                  let v = String.lowercase v in
+                if String.lowercase_ascii h = "charset" then begin
+                  let v = String.lowercase_ascii v in
                   Log.f ("MetaCharset detect : " ^ v);
                   begin try
                     let code = 
@@ -10184,7 +10184,7 @@ val (*private*) annotations = ref []
 % ??? -> <>
 <<[[Htmlw.display_html]] other methods or fields>>=
 method annotate loc = function
-  | OpenTag {tag_name=name} ->
+  | OpenTag {tag_name=name; _} ->
       annotations := (name, loc) :: !annotations
   | CloseTag name ->
       annotations := (name, loc) :: !annotations
@@ -10198,7 +10198,7 @@ method annotate loc = function
 let rec annot_last = function
 | [] -> ()
 | [x] -> self#annotate loc x
-| x::l -> annot_last l
+| _x::l -> annot_last l
 in
 annot_last tokens;
 @
@@ -10206,7 +10206,7 @@ annot_last tokens;
 \subsection{Extra headers}
 
 <<[[Htmlw.display_html]] private fields>>=
-val mutable add_extra_header = fun f -> ()
+val mutable add_extra_header = fun _f -> ()
 @
 % ??? -> <>
 <<[[Htmlw.display_html]] other methods or fields>>=
@@ -10349,7 +10349,7 @@ method di_update =
   imgmanager#update_images;
 
   Frx_after.idle (fun () ->
-    mach#embedded |> List.iter (fun {embed_frame = f} ->
+    mach#embedded |> List.iter (fun {embed_frame = f; _} ->
       Winfo.children f |> List.iter (Frx_synth.send "update")
     )
   )
@@ -10449,7 +10449,7 @@ method di_load_images =
    *  event again during the processing of the event... 
    *)
   Frx_after.idle (fun () ->
-    mach#embedded |> List.iter (fun { embed_frame = f} ->
+    mach#embedded |> List.iter (fun { embed_frame = f; _} ->
       Winfo.children f |> List.iter (Frx_synth.send "load_images")
     )
   )
@@ -10472,7 +10472,7 @@ method virtual update_images : unit
 
 \ifallcode
 <<class [[Html_disp.imgloader]]>>=
-class  virtual imgloader (unit : unit) =
+class  virtual imgloader (_unit : unit) =
  object
   <<[[Html_disp.imgloader]] virtual fields signatures>>
 end
@@ -11116,7 +11116,7 @@ let progress_report top ctx =
     Frame.create_named f "fr" [Width (Pixels 200); Height(Pixels 5)]in
 
   (* progress meter requires an alt widget, but we don't have to pack it *)
-  let fakealt = Label.create_named fprog "alt" [] in
+  let _fakealt = Label.create_named fprog "alt" [] in
   pack [fprog][Side Side_Left];
   pack [lpoint][Side Side_Left; Fill Fill_X];
   (* hack to avoid lpoint forcing the navigator to grow like hell *)
@@ -11131,14 +11131,14 @@ let progress_report top ctx =
                   hyper_func = (fun _ h -> 
                     let target = 
                       try Hyper.string_of h
-                      with Invalid_link msg -> "invalid link" 
+                      with Invalid_link _msg -> "invalid link" 
                     in
                     pointsto target
                   )});
   ctx#add_nav ("clearpointsto" ,
                 { hyper_visible = false;
                   hyper_title = "Clear target";
-                  hyper_func = (fun _ h -> pointsto "")
+                  hyper_func = (fun _ _h -> pointsto "")
                 });
   f, Tk_progress.meter fprog
 @
@@ -11156,7 +11156,7 @@ let progress_report top ctx =
 
 <<constant [[Mmm.hotlist]]>>=
 (* Preference settings *)
-let hotlist = ref ""
+let _hotlist = ref ""
 @
 % dead?
 
@@ -11228,7 +11228,7 @@ nav_new = (fun link ->
    try
      let wwwr = Plink.make link in
      navigator false wwwr.www_url |> ignore
-   with Hyper.Invalid_link msg -> 
+   with Hyper.Invalid_link _msg -> 
      error#f (s_ "Invalid link")
 );
 @
@@ -11575,10 +11575,10 @@ let dir path =
           with e ->
             print_endline (Printexc.to_string e)
         end;
-        flush Pervasives.stdout; (* strange bug with our at_exit stuff *)
+        flush Stdlib.stdout; (* strange bug with our at_exit stuff *)
         exit 0
         (*cin (*duh*) *)
-     | n -> closedir d; close cout; cin
+     | _n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
 @
@@ -11641,7 +11641,7 @@ let d2html path d =
 (* 
  * Simulate directory
  *)
-let isdir path f =
+let _isdir path f =
   let fullname = Filename.concat path f in
   (stat fullname).st_kind = S_DIR
 @
@@ -12098,7 +12098,7 @@ val view:
 
 <<function [[Source.view]]>>=
 (* Commit modifies the cache *)
-let view attach did redisplay errors annotations coding =
+let view attach did redisplay errors annotations _coding =
   try 
     let doc = Cache.find did in
     (* load : take document from cache and put it in text widget
@@ -12212,7 +12212,7 @@ let view attach did redisplay errors annotations coding =
     match List.length !errors with
       0 ->
        Button.configure err [Text (s_ "No Errors"); State Disabled]
-    | n ->
+    | _n ->
     Button.configure err
         [Text (s_ "%d errors" (List.length !errors));
          State Normal; Command loop_in_errors]
@@ -12223,7 +12223,7 @@ let view attach did redisplay errors annotations coding =
      * we can't use the old indexes since the buffer might have changed ! *)
      let rec remall = function
         [] -> ()
-      | [x] -> ()
+      | [_x] -> ()
       | s::e::l ->
        Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
        remall l
@@ -12258,7 +12258,7 @@ let view attach did redisplay errors annotations coding =
           with
         Not_found -> ())));
      Text.tag_bind t "errors" [[], Leave]
-       (BindSet ([], (fun ei -> Textvariable.set errorv "")));
+       (BindSet ([], (fun _ei -> Textvariable.set errorv "")));
 
       pack [dismiss;commit;save;err][Side Side_Left];
       pack [err_msg] [Side Side_Left; Expand true; Fill Fill_X];
@@ -12659,7 +12659,7 @@ let rec translate msg =
 @
 
 <<function I18n.fprintf (./commons/i18n.ml)>>=
-let fprintf oc (fmt : ('a, out_channel, unit) format) =
+let _fprintf oc (fmt : ('a, out_channel, unit) format) =
   fprintf oc
     (Obj.magic(translate(Obj.magic fmt : string)) :
                                 ('a, out_channel, unit) format)
@@ -13497,7 +13497,7 @@ val tobuffer: Document.handle -> Document.document_data * cache_fill
 @
 % ?? -> <> (as ?? <-  ...)
 <<function [[Cache.tobuffer]]>>=
-let tobuffer dh =
+let tobuffer _dh =
   let b = Ebuffer.create 1024 in
   MemoryData b, {cache_write = Ebuffer.output b;
                  cache_close = (fun () -> ())}
@@ -13695,7 +13695,7 @@ let dtd32f =
     open_omitted = dtd32.open_omitted;
     close_omitted = dtd32.close_omitted;
   } in
-  let omit_open el =
+  let _omit_open el =
     dtd.open_omitted <- Elements.add el dtd.open_omitted in
   let omit_close el =
     dtd.close_omitted <- Elements.add el dtd.close_omitted in
@@ -13786,7 +13786,7 @@ let fake_cgi wwwr cont path =
             Munix.write_string stdout "\n";
             exit 1
          end
-   | n ->
+   | _n ->
       close cmd_out;
       let dh = {document_id = document_id wwwr;
                 document_referer = wwwr.www_link.h_context;
@@ -14299,10 +14299,10 @@ let string_of p =
   let write_hostport def =
       match p.host, p.port with
          None, None -> ()
-       | Some h, None -> ws (String.lowercase h)
-       | Some h, Some p when p = def -> ws (String.lowercase h)
+       | Some h, None -> ws (String.lowercase_ascii h)
+       | Some h, Some p when p = def -> ws (String.lowercase_ascii h)
        | Some h, Some p -> 
-           ws (String.lowercase h); wc ':'; ws (string_of_int p)
+           ws (String.lowercase_ascii h); wc ':'; ws (string_of_int p)
        | None, Some _ -> failwith "url_of_parsed"	    
   in
   let write_pathsearch () =
@@ -14325,7 +14325,7 @@ let string_of p =
   let write_fhost () =
       match p.host with
        None -> ws "localhost"
-      | Some h -> ws (String.lowercase h)
+      | Some h -> ws (String.lowercase_ascii h)
   in
   begin match p.protocol with
     FTP ->
@@ -14344,7 +14344,7 @@ let string_of p =
     begin match p.host with
       None | Some "localhost" ->
         ws "file://"; write_fhost(); write_slashpath()
-    | Some h ->
+    | Some _h ->
        p.protocol <- FTP;
         ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
     end
@@ -14491,7 +14491,7 @@ exception Url_Lexing of string * int
 @
 
 <<exception [[Url.Invalid_url]]>>=
-exception Invalid_url of t * string
+(*exception Invalid_url of t * string*)
 @
 
 \subsection{Links}
@@ -14602,7 +14602,7 @@ let hdn l =
 let except_assoc x =
   let rec ex acc = function 
       [] -> acc
-    | (y,v)::l when x = y -> ex acc l
+    | (y,_v)::l when x = y -> ex acc l
     | z :: l -> ex (z::acc) l
   in
   ex []
