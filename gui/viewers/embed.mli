@@ -15,7 +15,7 @@ val rem_viewer :  Http_headers.media_type -> unit
 
 (*s: type [[Embed.embobject]] *)
 (* Embedded objects *)
-type embobject = {
+type obj = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
   embed_frame : Widget.widget;  
      (* the frame where the viewers can do their stuff *)
@@ -27,7 +27,7 @@ type embobject = {
 
 (*s: signature [[Embed.add]] *)
 val add : < Cap.network; ..> ->
-  embobject -> unit
+  obj -> unit
 (*e: signature [[Embed.add]] *)
 (*s: signature [[Embed.update]] *)
 val update : < Cap.network; ..> ->

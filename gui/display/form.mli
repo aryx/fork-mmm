@@ -12,7 +12,7 @@ type t = {
       (* [input top tag] *)
   radio_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
-  image_input : Widget.widget ->  Html.tag -> Embed.embobject;
+  image_input : Widget.widget ->  Html.tag -> Embed.obj;
       (* [input top tag] *)
   submit_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)

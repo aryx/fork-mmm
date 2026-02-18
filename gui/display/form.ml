@@ -23,7 +23,7 @@ type t = {
       (* [input top tag] *)
   radio_input : Widget.widget ->  tag -> unit;
       (* [input top tag] *)
-  image_input : Widget.widget ->  tag -> embobject;
+  image_input : Widget.widget ->  tag -> Embed.obj;
       (* [input top tag] *)
   submit_input : Widget.widget ->  tag -> unit;
       (* [input top tag] *)

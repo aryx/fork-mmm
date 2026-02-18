@@ -31,8 +31,7 @@ let gif_anim_auto = ref false
 
 (*s: function [[Imgload.display]] *)
 (* Utilities *)
-let display (caps : < Cap.network; ..>)
-    (emb : Embed.embobject) (i : imageType) =
+let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
   let prop = ref false in
   begin
   if Winfo.exists emb.embed_frame then

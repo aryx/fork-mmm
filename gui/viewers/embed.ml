@@ -111,7 +111,7 @@ let embedded_viewer frame ctx (doc : Document.t) =
 
 (*s: type [[Embed.embobject]] *)
 (* Embedded objects *)
-type embobject = {
+type obj = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
   embed_frame : Widget.widget;  
      (* the frame where the viewers can do their stuff *)
@@ -123,7 +123,7 @@ type embobject = {
 
 (*s: constant [[Embed.embedded]] *)
 (* Remember all current embedded objects by their frame *)
-let embedded = (Hashtbl.create 101 : (string, embobject) Hashtbl.t)
+let embedded = (Hashtbl.create 101 : (string, obj) Hashtbl.t)
 (*e: constant [[Embed.embedded]] *)
 
 (*s: function [[Embed.add_embed]] *)
@@ -145,7 +145,7 @@ let _ =
 
 (*s: function [[Embed.add]] *)
 (* Queueing an embed *)
-let add (caps : < Cap.network; ..>) (emb : embobject) =
+let add (caps : < Cap.network; ..>) (emb : obj) =
   let { embed_hlink = link;
         embed_frame = frame;
         embed_context = embed_ctx;

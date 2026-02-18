@@ -10,7 +10,7 @@ val attempt_tables : bool ref
 (*s: signature class [[Html_disp.imgloader]] *)
 class  virtual imgloader : (unit) -> object
   (*s: [[Html_disp.imgloader]] virtual fields signatures *)
-  method virtual add_image : Embed.embobject -> unit	 (* add one image *)
+  method virtual add_image : Embed.obj -> unit	 (* add one image *)
   method virtual flush_images : unit	         (* flush when document is loaded *)
   method virtual load_images : unit		 (* manual flush *)
   method virtual update_images : unit
@@ -61,8 +61,8 @@ class  virtual machine : (unit) -> object
 
   (* special tags *)
   (*s: [[Html_disp.machine]] embedded fields *)
-  method virtual add_embedded : Embed.embobject -> unit
-  method virtual embedded : Embed.embobject list
+  method virtual add_embedded : Embed.obj -> unit
+  method virtual embedded : Embed.obj list
   (*e: [[Html_disp.machine]] embedded fields *)
   (*s: [[Html_disp.machine]] image methods *)
   method virtual imgmanager : imgloader

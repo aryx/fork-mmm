@@ -41,7 +41,7 @@ val init:
                     (Htmlfmt.formatter -> unit) -> unit;
           base : string; ctx : Viewers.context;
           i18n_encoder : string -> string;
-          imgmanager : < add_image : Embed.embobject -> unit; .. >;
+          imgmanager : < add_image : Embed.obj -> unit; .. >;
           pop_action : unit; push_action : (string -> unit) -> unit;
           remove_tag : string -> unit; target : string option; .. > ->
         unit
