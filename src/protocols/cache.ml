@@ -43,7 +43,7 @@ type cache_fill = {
 (*s: type [[Cache.entry]] *)
 (* A cache entry *)
 type entry = {
-  mutable cache_document : Document.document;
+  mutable cache_document : Document.t;
 
   mutable cache_pending : bool;
   cache_condition : Condition.t;

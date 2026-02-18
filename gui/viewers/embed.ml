@@ -2,10 +2,8 @@
 (* Embedded documents *)
 open I18n
 open Tk
-open Document
 open Www
 open Hyper
-
 open Http_headers
 
 (* Assume any kind of data could be embedded 
@@ -17,10 +15,10 @@ open Http_headers
 module EmbeddedData =
   struct
 
-    type t = document
+    type t = Document.t
 
     let cache_access url _referer =
-      let did =  {document_url = url; document_stamp = no_stamp} in
+      let did =  Document.{document_url = url; document_stamp = no_stamp} in
       (* look in the cache *)
       Cache.find did
 
@@ -41,7 +39,7 @@ module EmbeddedData =
         else doc
       with
         Not_found ->
-          let doc = { document_address = dh.document_id.document_url;
+          let doc = Document.{ document_address = dh.document_id.document_url;
                  document_data = FileData (file, true);
                  document_headers = dh.dh_headers} in
           Cache.add dh.document_id doc;
@@ -79,7 +77,7 @@ and rem_viewer = Hashtbl.remove embedded_viewers
 
 
 (*s: function [[Embed.embedded_viewer]] *)
-let embedded_viewer frame ctx doc =
+let embedded_viewer frame ctx (doc : Document.t) =
   (* Destroy the alt window *)
   List.iter Tk.destroy (Winfo.children frame);
   try
@@ -166,7 +164,7 @@ let add ({ embed_hlink = link;
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
        (fun _url doc ->
-     let doc = {
+     let doc = Document.{
        document_address = doc.document_address;
        document_data = doc.document_data;
        document_headers = Http_headers.merge_headers doc.document_headers
@@ -210,7 +208,7 @@ let add ({ embed_hlink = link;
 
 
 (*s: function [[Embed.update]] *)
-let update frame embed_ctx doc notchanged =
+let update frame embed_ctx (doc : Document.t) notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
     let date_received = get_header "date" doc.document_headers in
@@ -222,7 +220,7 @@ let update frame embed_ctx doc notchanged =
     in
     let link = Hyper.default_link (Url.string_of doc.document_address) in
     (* wrapped viewer : decide if we need to redisplay or not *)
-    let smart_viewer stdviewer frame embed_ctx newdoc =
+    let smart_viewer stdviewer frame embed_ctx (newdoc : Document.t) =
       let newdate = 
     try get_header "date"  newdoc.document_headers with Not_found -> "foo"
       in if newdate <> date_received then begin
@@ -244,7 +242,7 @@ let update frame embed_ctx doc notchanged =
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
        (fun _url doc ->
-     let doc = {
+     let doc = Document.{
        document_address = doc.document_address;
        document_data = doc.document_data;
        document_headers = Http_headers.merge_headers doc.document_headers

@@ -20,10 +20,10 @@ val init : unit -> unit
 (*e: signature [[Cache.init]] *)
 
 (*s: signature [[Cache.add]] *)
-val add : Document.id -> Document.document -> unit
+val add : Document.id -> Document.t -> unit
 (*e: signature [[Cache.add]] *)
 (*s: signature [[Cache.find]] *)
-val find : Document.id -> Document.document
+val find : Document.id -> Document.t
 (*e: signature [[Cache.find]] *)
 (*s: signature [[Cache.finished]] *)
 val finished : Document.id -> unit
@@ -51,13 +51,13 @@ exception DontCache
 (*e: exception [[Cache.DontCache]] *)
 
 (*s: signature [[Cache.tofile]] *)
-val tofile : Document.handle -> Document.document_data * cache_fill
+val tofile : Document.handle -> Document.data * cache_fill
 (*e: signature [[Cache.tofile]] *)
 (*s: signature [[Cache.tobuffer]] *)
-val tobuffer: Document.handle -> Document.document_data * cache_fill
+val tobuffer: Document.handle -> Document.data * cache_fill
 (*e: signature [[Cache.tobuffer]] *)
 (*s: signature [[Cache.dummy]] *)
-val dummy : Document.handle  -> Document.document_data * cache_fill
+val dummy : Document.handle  -> Document.data * cache_fill
 (*e: signature [[Cache.dummy]] *)
 
 (*s: signature [[Cache.discard]] *)
@@ -76,12 +76,12 @@ val cutlinks : (Document.id -> unit) list ref
 (*e: signature [[Cache.cutlinks]] *)
 
 (*s: signature [[Cache.make_handle]] *)
-val make_handle : Www.request -> Document.document -> Document.handle
+val make_handle : Www.request -> Document.t -> Document.handle
 (*e: signature [[Cache.make_handle]] *)
 (*s: signature [[Cache.renew_handle]] *)
 val renew_handle : Document.handle -> Document.handle
 (*e: signature [[Cache.renew_handle]] *)
 (*s: signature [[Cache.make_embed_handle]] *)
-val make_embed_handle : Document.document -> Document.handle
+val make_embed_handle : Document.t -> Document.handle
 (*e: signature [[Cache.make_embed_handle]] *)
 (*e: protocols/cache.mli *)

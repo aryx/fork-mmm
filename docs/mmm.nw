@@ -590,9 +590,9 @@ let sp = Str.regexp "[ \t\n]"
 % seen the request, this is now what we get back!
 
 <<type [[Document.document]]>>=
-type document = {
+type t = {
   document_headers : string list; (* e.g. Content-type: text/html *)
-  mutable document_data : document_data;
+  mutable document_data : data;
 
   document_address : Url.t; (* origin? *)
 }
@@ -610,7 +610,7 @@ type document = {
  * that is clients not directly on the chain of processes dealing with
  * the handle
  *)
-type document_data =
+type data =
  | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
 @
@@ -673,10 +673,10 @@ module DocumentIDSet =
 \subsection{Document cache}
 
 <<signature [[Cache.add]]>>=
-val add : Document.id -> Document.document -> unit
+val add : Document.id -> Document.t -> unit
 @
 <<signature [[Cache.find]]>>=
-val find : Document.id -> Document.document
+val find : Document.id -> Document.t
 @
 % see below
 <<signature [[Cache.finished]]>>=
@@ -702,7 +702,7 @@ let memory = ref ([] : (Document.id * entry) list)
 <<type [[Cache.entry]]>>=
 (* A cache entry *)
 type entry = {
-  mutable cache_document : Document.document;
+  mutable cache_document : Document.t;
 
   mutable cache_pending : bool;
   cache_condition : Condition.t;
@@ -747,9 +747,9 @@ let find did =
 % Nav.request -> Retrieve.f -> <>
 <<signature [[Protos.get]]>>=
 val get: Url.protocol ->
-  (Www.request -> Document.document_continuation -> Www.aborter) 
+  (Www.request -> Document.continuation -> Www.aborter) 
   *
-  (Document.handle -> Document.document_data * Cache.cache_fill)
+  (Document.handle -> Document.data * Cache.cache_fill)
 @
 % will see below what are those Document.xxx
 %less: define a record type?
@@ -777,7 +777,7 @@ let get = Hashtbl.find protos
 
 % used by Protos.get
 <<type [[Document.document_continuation]]>>=
-type document_continuation = {
+type continuation = {
   document_process : handle -> unit;
     (* What to do one we have a dh on the real document *)
 
@@ -5301,7 +5301,7 @@ let contentencoding =
 (* f is supposed to raise only Invalid_url *)
 val f : Www.request ->  (* the request *)
         (Hyper.link -> unit) -> (* the retry function *)
-        Document.document_continuation -> (* the handlers *)
+        Document.continuation -> (* the handlers *)
         retrievalStatus
 @
 
@@ -5862,7 +5862,7 @@ let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 % Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
 %  (as Retrieve.f.req <- Protos.get HTTP wr <- Hashtbl.add protos (<>) <- _top
 <<signature [[Http.req]]>>=
-val req: Www.request -> Document.document_continuation -> Www.aborter
+val req: Www.request -> Document.continuation -> Www.aborter
 @
 %todo: do a Aborted and type aborter = abort -> unit?
 % so here we return an aborter
@@ -10295,7 +10295,7 @@ val add : embobject -> unit
 
 <<signature [[Embed.update]]>>=
 val update : 
-    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
+    Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
     -> unit
 @
 
@@ -10335,7 +10335,7 @@ method di_update =
 val add_viewer : 
   Http_headers.media_type -> 
   (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
-    Document.document -> unit) -> unit
+    Document.t -> unit) -> unit
 @
 
 <<signature [[Embed.rem_viewer]]>>=
@@ -10350,7 +10350,7 @@ let embedded_viewers = Hashtbl.create 11
 @
 
 <<function [[Embed.embedded_viewer]]>>=
-let embedded_viewer frame ctx doc =
+let embedded_viewer frame ctx (doc : Document.t) =
   (* Destroy the alt window *)
   List.iter Tk.destroy (Winfo.children frame);
   try
@@ -11424,7 +11424,7 @@ and fhost = parse
 
 <<signature [[File.request]]>>=
 (* file: protocol *)
-val request : Www.request -> Document.document_continuation -> Www.aborter
+val request : Www.request -> Document.continuation -> Www.aborter
     (* [request wr cont] returns [abort] *)
 @
 % a retriever
@@ -11770,7 +11770,7 @@ let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
 
 
 <<signature [[Http.proxy_req]]>>=
-val proxy_req: Www.request -> Document.document_continuation -> Www.aborter
+val proxy_req: Www.request -> Document.continuation -> Www.aborter
 @
 
 <<function [[Http.prox_req]]>>=
@@ -13466,7 +13466,7 @@ let proxy_unauthorized wr dh =
 %let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
 
 <<signature [[Cache.tobuffer]]>>=
-val tobuffer: Document.handle -> Document.document_data * cache_fill
+val tobuffer: Document.handle -> Document.data * cache_fill
 @
 % ?? -> <> (as ?? <-  ...)
 <<function [[Cache.tobuffer]]>>=

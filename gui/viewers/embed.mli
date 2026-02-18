@@ -1,12 +1,12 @@
 (*s: viewers/embed.mli *)
 module EmbeddedScheduler : Scheduler.S with
-  type shared_data = Document.document
+  type shared_data = Document.t
 
 (*s: signature [[Embed.add_viewer]] *)
 val add_viewer : 
   Http_headers.media_type -> 
   (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
-    Document.document -> unit) -> unit
+    Document.t -> unit) -> unit
 (*e: signature [[Embed.add_viewer]] *)
 
 (*s: signature [[Embed.rem_viewer]] *)
@@ -30,7 +30,7 @@ val add : embobject -> unit
 (*e: signature [[Embed.add]] *)
 (*s: signature [[Embed.update]] *)
 val update : 
-    Widget.widget -> Viewers.context -> Document.document -> (unit -> unit)
+    Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
     -> unit
 (*e: signature [[Embed.update]] *)
 (*e: viewers/embed.mli *)

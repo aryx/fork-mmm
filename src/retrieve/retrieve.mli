@@ -11,7 +11,7 @@ type retrievalStatus =
 (* f is supposed to raise only Invalid_url *)
 val f : Www.request ->  (* the request *)
         (Hyper.link -> unit) -> (* the retry function *)
-        Document.document_continuation -> (* the handlers *)
+        Document.continuation -> (* the handlers *)
         retrievalStatus
 (*e: signature [[Retrieve.f]] *)
 

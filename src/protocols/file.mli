@@ -1,7 +1,7 @@
 (*s: protocols/file.mli *)
 (*s: signature [[File.request]] *)
 (* file: protocol *)
-val request : Www.request -> Document.document_continuation -> Www.aborter
+val request : Www.request -> Document.continuation -> Www.aborter
     (* [request wr cont] returns [abort] *)
 (*e: signature [[File.request]] *)
 (*s: exception [[File.File_error]] *)

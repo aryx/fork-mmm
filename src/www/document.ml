@@ -58,7 +58,7 @@ type handle = {
 (*e: type [[Document.handle]] *)
 
 (*s: type [[Document.document_continuation]] *)
-type document_continuation = {
+type continuation = {
   document_process : handle -> unit;
     (* What to do one we have a dh on the real document *)
 
@@ -73,15 +73,15 @@ type document_continuation = {
  * that is clients not directly on the chain of processes dealing with
  * the handle
  *)
-type document_data =
+type data =
  | MemoryData of Ebuffer.t
  | FileData of string * bool (* flag is true if file is temporary *)
 (*e: type [[Document.document_data]] *)
 
 (*s: type [[Document.document]] *)
-type document = {
+type t = {
   document_headers : string list; (* e.g. Content-type: text/html *)
-  mutable document_data : document_data;
+  mutable document_data : data;
 
   document_address : Url.t; (* origin? *)
 }
