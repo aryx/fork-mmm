@@ -97,7 +97,7 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 
 clean::
-	rm -f main.cm*
+	rm -f main/*.cm*
 clean::
 	set -e; for i in $(MAKESUBDIRS) $(MOREDIRS); do $(MAKE) -C $$i clean; done 
 

@@ -29,7 +29,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 
 #dont use -custom, it makes the bytecode unportable.
 #old: -unsafe-string but disappeared at OCaml 4.12
-OCAMLCFLAGS?=-g -bin-annot -dtypes -thread -absname -w -26  # -w A
+OCAMLCFLAGS?=-g -thread -absname -w -26  # -w A
 
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS?=-thread
