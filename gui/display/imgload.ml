@@ -4,16 +4,14 @@ open Tk
 open Tkanim
 open Www
 open Uri
-
 open Maps
 open Embed
 open Img
 
-
 (*s: type Imgload.mode (./display/imgload.ml) *)
 (* Images are embedded objects, with a twist *)
 type mode =
-    DuringDoc
+  | DuringDoc
   | AfterDocAuto
   | AfterDocManual
 (*e: type Imgload.mode (./display/imgload.ml) *)
@@ -323,11 +321,13 @@ class auto () =
        ImageScheduler.add_delayed q
      wr
      emb.embed_context#base
-     (fun url i -> display caps emb i; self#add_loaded url)
+     (fun url i -> 
+           display caps emb i; 
+           self#add_loaded url)
      (Tk_progress.meter emb.embed_frame)
      with
-       e -> Log.f (sprintf "Can't compute image link (%s)"
-                   (Printexc.to_string e))
+       e -> Logs.warn (fun m -> m "Can't compute image link (%s)"
+                         (Printexc.to_string e))
 
   method! flush_images = ImageScheduler.flush_delayed q
 end

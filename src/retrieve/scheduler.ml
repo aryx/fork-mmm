@@ -6,7 +6,6 @@ open Www
 open Document
 open Url
 open Feed
-
 open Http_headers
 
 (*s: constant [[Scheduler.debug]] *)
@@ -107,7 +106,10 @@ module Make(J: Data) = struct
       if !r <= 0 then Hashtbl.remove samehost s
     with Not_found -> () (* that's an error actually *)
 
-  type queue = (request * Document.id * (Url.t -> shared_data -> unit) * progress_func ) Queue.t
+  type queue = (Www.request *
+                Document.id *
+                (Url.t -> shared_data -> unit) *
+                progress_func ) Queue.t
     (* queue for one batch of docs *)
 
   let queues = (ref [] : queue list ref)
