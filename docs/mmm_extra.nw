@@ -4413,7 +4413,7 @@ module type Data =
          *)       	     
    val error : 
         Url.t -> 
-      (Document.id * ((Url.t -> t -> unit) * progress_func)) list -> unit
+        (Document.id * ((Url.t -> t -> unit) * progress_func)) list -> unit
         (* [error url [(did,(cont,progress))]]
          *  if an error occurs, then each pending continuation is called
          *  (if necessary) as required (e.g. with "default" information)
@@ -4426,8 +4426,9 @@ module type Data =
 module type S =
   sig
     type shared_data
-    val add_request : Www.request -> Document.id ->
-                      (Url.t -> shared_data -> unit) -> progress_func -> unit
+    val add_request : < Cap.network > ->
+        Www.request -> Document.id ->
+        (Url.t -> shared_data -> unit) -> progress_func -> unit
         (* [add_request delayed wr referer cont progress_func]
          *   returns job handle that can subsequently by awakened
          *)
@@ -4440,11 +4441,13 @@ module type S =
     (* Delayed queues for this scheduler *)
     type delayed
     val new_delayed : unit -> delayed
+
     val add_delayed : 
-       delayed -> Www.request -> Document.id -> 
+        delayed -> Www.request -> Document.id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
+   
     val is_empty : delayed -> bool
     val maxactive : int ref
     val maxsamehost : int ref
@@ -4462,13 +4465,13 @@ module Make(J : Data):(S with type shared_data = J.t)
 
 <<retrieve/scheduler.ml>>=
 (* Scheduled downloading *)
+
 open Printf
 open Unix
 open Www
 open Document
 open Url
 open Feed
-
 open Http_headers
 
 <<constant [[Scheduler.debug]]>>
@@ -4495,7 +4498,7 @@ module type Data =
 module type S =
   sig
     type shared_data
-    val add_request : 
+    val add_request : < Cap.network > ->
        Www.request -> Document.id -> (Url.t -> shared_data -> unit) -> 
       progress_func -> unit
         (* [add_request wwwr ref_did cont progress_func] *)
@@ -4565,7 +4568,10 @@ module Make(J: Data) = struct
       if !r <= 0 then Hashtbl.remove samehost s
     with Not_found -> () (* that's an error actually *)
 
-  type queue = (request * Document.id * (Url.t -> shared_data -> unit) * progress_func ) Queue.t
+  type queue = (Www.request *
+                Document.id *
+                (Url.t -> shared_data -> unit) *
+                progress_func ) Queue.t
     (* queue for one batch of docs *)
 
   let queues = (ref [] : queue list ref)
@@ -4608,34 +4614,36 @@ module Make(J: Data) = struct
 
   (* Whenever we add something in the queue, we must call this *)
   (* Whenever a job finished, we must call this *)
-  let rec next_request () =
+  let rec next_request caps =
     if !active < !maxactive then
       try
         let j = pick() in
-        process_request j;
-        next_request() (* check if more can be done *)
+         process_request caps j;
+         next_request caps (* check if more can be done *)
       with
         Busy -> ()
 
   (* when adding a request individually (meant to be treated ASAP), we
      use a new singleton queue *)
-  and add_request wr did cont prog =
+  and add_request (caps : < Cap.network; .. >) 
+      (wr : Www.request) (did : Document.id) cont (prog : progress_func) =
     let q = Queue.create() in
     Queue.add (wr, did, cont, prog) q;
     queues := q :: !queues;
-    next_request()
+    next_request caps
 
   (* error during data downloading *)
-  and error url job =
+  and error (url : Url.t) (job : job) =
     job.stop();
     J.error url job.conts;
     if !debug then 
-      Log.f (sprintf "Retrieval of %s failed\n" (Url.string_of url));
-    next_request()
+      Logs.warn (fun m -> m "Retrieval of %s failed\n" (Url.string_of url));
+    let caps = Cap.network_caps_UNSAFE () in
+    next_request caps
 
   (* process_request always follows pick, thus hostcount has always been
    * incremented for the URL of this request *)
-  and process_request (wr, did, cont, prog) =
+  and process_request (caps : < Cap.network; ..>) (wr, did, cont, prog) =
     try (* if we are in the cache of shared objects, apply continuation *)
       if skip_cache wr then raise Not_found
       else begin
@@ -4691,7 +4699,7 @@ module Make(J: Data) = struct
         end;
 
         (* actually start sucking data *)
-                dh.document_feed.feed_schedule (fun _ ->
+          dh.document_feed.feed_schedule (fun _ ->
           try
             let n = dh.document_feed.feed_read buffer 0 2048 in
 
@@ -4733,7 +4741,7 @@ module Make(J: Data) = struct
             Log.f (sprintf "Finished job for %s" 
                            (Url.string_of url));
               (* proceed with more requests *)
-              next_request()
+              next_request caps
             end
           with (* errors in retrieval *)
             Unix_error(code,s,s') -> 
@@ -4767,14 +4775,13 @@ module Make(J: Data) = struct
         newr.www_error <- wr.www_error;
         newr.www_logging <- wr.www_logging;
         List.iter (fun (did,(cont,prog)) ->
-          add_request newr did cont prog)
+          add_request caps newr did cont prog)
           job.conts
           with (* can't proceed with retry *)
         _ -> error url job
             in
        (* Okay, go for the retrieval now *)
         try 
-         let caps = Cap.network_caps_UNSAFE () in
          match Retrieve.f caps wr retry_data
                {document_process = handle_data;
                 document_finish = (fun f -> if f then error url job)}
@@ -4787,7 +4794,7 @@ module Make(J: Data) = struct
              ourself and try later *)
           job.stop();
           List.iter (fun (did,(cont,prog)) -> 
-            add_request wr did cont prog)
+            add_request caps wr did cont prog)
             job.conts
         with
           Invalid_request(w,msg) -> (* retrieve failed *)
@@ -4802,18 +4809,17 @@ module Make(J: Data) = struct
    *)
 
   (* remove pending requests whose referer is did *)
-  let stop did =
+  let stop (did : Document.id) =
     (* For all queues, for all request in the queue, if the request matches
        the predicate, it is removed from the queue. *)
     queues := 
-       List.map (fun q ->
-     let newq = Queue.create () in
-     Queue.iter (function
-       | (_wr, didr, _cont, _progress) when did = didr -> ()
-       | r -> Queue.add r newq)
-       q;
-     newq)
-     !queues;
+       !queues |> List.map (fun q ->
+         let newq = Queue.create () in
+         q |> Queue.iter (function
+           | (_wr, didr, _cont, _progress) when did = didr -> ()
+           | r -> Queue.add r newq
+          );
+         newq);
 
     (* If the request is active, remove the particular continuation, and if it
        was the only continuation, kill the job
@@ -4821,15 +4827,18 @@ module Make(J: Data) = struct
     let rem = ref [] in (* jobs to kill *)
     Hashtbl.iter 
       (fun _url job ->
-    try 
-      job.conts <- Mlist.except_assoc did job.conts;
-      if job.conts = [] then rem := job :: !rem
-    with
-      Not_found -> ())
+        try 
+          job.conts <- Mlist.except_assoc did job.conts;
+         if job.conts = [] then rem := job :: !rem
+        with
+         Not_found -> ())
       actives;
     (* each stop closes the cnx properly and remove the job from actives *)
     List.iter (fun job -> job.stop()) !rem;
-    if !rem <> [] then next_request()
+    if !rem <> [] 
+    then
+      let caps = Cap.network_caps_UNSAFE () in
+      next_request caps
 
   
   (*
@@ -4839,23 +4848,25 @@ module Make(J: Data) = struct
 
   let new_delayed = Queue.create
 
-  let is_empty q = 
+  let is_empty (q : queue) = 
     try Queue.peek q |> ignore; false with Queue.Empty -> true
 
   (* add a new request in the queue *)
   (* Actually, if the document is already in the cache, then process
      the continuation *)
-  let add_delayed q wr did cont progress =
+  let add_delayed (q : delayed) (wr : Www.request) did cont progress =
     try 
-      if skip_cache wr then raise Not_found
+      if skip_cache wr
+      then raise Not_found
       else cont wr.www_url (J.cache_access wr.www_url did)
     with Not_found -> Queue.add (wr,did,cont,progress) q
 
   (* Put the queue in the list of queues *)
-  let flush_delayed q =
+  let flush_delayed (q : delayed) =
     (* Queue.iter (function (_,_,_,prog) -> prog None 0) q;(* create the gauge *) *)
     queues := !queues @ [q];
-    next_request()
+    let caps = Cap.network_caps_UNSAFE () in
+    next_request caps
 
   (* Flush a particular request from a queue : we do it in place 
      because we don't know if the queue has been put in the list yet
@@ -4866,8 +4877,8 @@ module Make(J: Data) = struct
     (* split in two *)
     Queue.iter (function
       | (wr,did,cont,prog) when wr.www_url = url ->
-      prog None 0; (* create the gauge *)
-      Queue.add (wr,did,cont,prog) flushedqueue
+        prog None 0; (* create the gauge *)
+        Queue.add (wr,did,cont,prog) flushedqueue
       | r -> Queue.add r restqueue)
       l;
     (* the flushed goes at the beginning *)
@@ -4876,7 +4887,8 @@ module Make(J: Data) = struct
     Queue.clear l;
     Queue.iter (fun r -> Queue.add r l) restqueue;
     (* try to process the flushed items *)
-    next_request()
+    let caps = Cap.network_caps_UNSAFE () in
+    next_request caps
 
 end
 @
@@ -5018,7 +5030,7 @@ module EmbeddedScheduler : Scheduler.S with
 
 <<constant [[Embed.embedded]]>>=
 (* Remember all current embedded objects by their frame *)
-let embedded = (Hashtbl.create 101 : (string, embobject) Hashtbl.t)
+let embedded = (Hashtbl.create 101 : (string, obj) Hashtbl.t)
 @
 
 <<function [[Embed.add_embed]]>>=
@@ -5041,11 +5053,13 @@ let _ =
 
 <<function [[Embed.add]]>>=
 (* Queueing an embed *)
-let add ({ embed_hlink = link;
-       embed_frame = frame;
-       embed_context = embed_ctx;
-       embed_map = _m;
-       embed_alt = alt_txt} as emb) =
+let add (caps : < Cap.network; ..>) (emb : obj) =
+  let { embed_hlink = link;
+        embed_frame = frame;
+        embed_context = embed_ctx;
+        embed_map = _m;
+        embed_alt = alt_txt} = emb 
+  in
   (* Put up the ALT text *)
   List.iter Tk.destroy (Winfo.children frame);
   pack [Label.create_named frame "alt" [Text alt_txt]][];
@@ -5058,7 +5072,7 @@ let add ({ embed_hlink = link;
        try Hashtbl.find embedded_viewers (typ,subtyp)
        with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
      in
-       EmbeddedScheduler.add_request
+       EmbeddedScheduler.add_request (caps :> < Cap.network >)
        (Www.make link)
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
@@ -5089,7 +5103,7 @@ let add ({ embed_hlink = link;
      Not_found -> (* not type given, we have to retrieve to know *)
        (* Firing the request *)
        try
-     EmbeddedScheduler.add_request
+     EmbeddedScheduler.add_request (caps :> < Cap.network >)
      (Www.make link)
      (embed_ctx#base)
      (* the continuation: it will receive the document *)
@@ -5106,7 +5120,9 @@ let add ({ embed_hlink = link;
 @
 
 <<function [[Embed.update]]>>=
-let update frame embed_ctx (doc : Document.t) notchanged =
+let update (caps : < Cap.network; ..>)
+    (frame : Widget.widget) (embed_ctx : Viewers.context) (doc : Document.t)
+    notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
     let date_received = get_header "date" doc.document_headers in
@@ -5135,7 +5151,7 @@ let update frame embed_ctx (doc : Document.t) notchanged =
       try Hashtbl.find embedded_viewers (typ,subtyp)
       with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
       in
-       EmbeddedScheduler.add_request
+       EmbeddedScheduler.add_request (caps :> < Cap.network >)
        (rewrite_wr (Www.make link))
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
@@ -5162,7 +5178,7 @@ let update frame embed_ctx (doc : Document.t) notchanged =
       Not_found -> (* not type given, we have to retrieve to know *)
        (* Firing the request *)
         try
-      EmbeddedScheduler.add_request
+      EmbeddedScheduler.add_request (caps :> < Cap.network >)
         (rewrite_wr (Www.make link))
         (embed_ctx#base)
      (* the continuation: it will receive the document *)
@@ -8004,7 +8020,7 @@ val gif_anim_auto : bool ref
 <<type Imgload.mode (./display/imgload.ml)>>=
 (* Images are embedded objects, with a twist *)
 type mode =
-    DuringDoc
+  | DuringDoc
   | AfterDocAuto
   | AfterDocManual
 @
@@ -8024,7 +8040,7 @@ let gif_anim_auto = ref false
 
 <<function [[Imgload.display]]>>=
 (* Utilities *)
-let display emb i =
+let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
   let prop = ref false in
   begin
   if Winfo.exists emb.embed_frame then
@@ -8069,7 +8085,7 @@ let display emb i =
     let uri = Hyper.resolve hlink in
     let name =
       match uri.uri_fragment with 
-        None -> uri.uri_url
+      | None -> uri.uri_url
       | Some frag -> sprintf "%s#%s" uri.uri_url frag
     in
       match Maps.get name with
@@ -8081,9 +8097,9 @@ let display emb i =
               RequestedMap _ ->
              Log.f "INTERNAL ERROR: delayed_client_side"
             | KnownMap m -> Cmap.gfx_mode emb m c)
-      with
-    e -> Log.f (sprintf "INTERNAL ERROR in display (%s)"
-                    (Printexc.to_string e))
+    with
+      e -> Logs.err (fun m -> m "INTERNAL ERROR in display (%s)"
+                               (Printexc.to_string e))
       end
 
   | _ ->
@@ -8112,7 +8128,7 @@ let display emb i =
         let url = 
           Lexurl.make (Hyper.resolve emb.embed_hlink).uri_url in
          bind w (Glevents.get "updateimage")
-          (BindSet ([], (fun _ -> Img.update url)))
+          (BindSet ([], (fun _ -> Img.update caps url)))
           with
         Url.Url_Lexing _ -> ()
         end
@@ -8268,11 +8284,9 @@ open Tk
 open Tkanim
 open Www
 open Uri
-
 open Maps
 open Embed
 open Img
-
 
 <<type Imgload.mode (./display/imgload.ml)>>
 
@@ -8313,21 +8327,23 @@ class loader () =
     make_map emb (* and possible bindings *)
 
   method private activate emb =
-    Log.debug "Activating image";
+    Logs.debug (fun m -> m "Activating image");
     try
-      Img.get emb.embed_context#base
-    emb.embed_hlink
+      let caps = Cap.network_caps_UNSAFE () in
+      Img.get caps emb.embed_context#base
+      emb.embed_hlink
         (fun url i -> 
-      display emb i;
-      self#add_loaded url)
+          display caps emb i;
+          self#add_loaded url)
         (Tk_progress.meter emb.embed_frame)
     with
-      e -> Log.f (sprintf "Can't load image (%s)" (Printexc.to_string e))
+      e -> Logs.warn (fun m -> m "Can't load image (%s)" (Printexc.to_string e))
 
   method flush_images = ()
   method load_images = ()
   method update_images = 
-    UrlSet.iter Img.update loaded
+    let caps = Cap.network_caps_UNSAFE () in
+    UrlSet.iter (Img.update caps) loaded
 end
 
 class synchronous () =
@@ -8345,17 +8361,20 @@ class auto () =
 
   method! add_image emb =
      super#add_image emb;
+     let caps = Cap.network_caps_UNSAFE () in
      try
        let wr = Www.make emb.embed_hlink in
        wr.www_headers <- "Accept: image/*" :: wr.www_headers;
        ImageScheduler.add_delayed q
      wr
      emb.embed_context#base
-     (fun url i -> display emb i; self#add_loaded url)
+     (fun url i -> 
+           display caps emb i; 
+           self#add_loaded url)
      (Tk_progress.meter emb.embed_frame)
      with
-       e -> Log.f (sprintf "Can't compute image link (%s)"
-                   (Printexc.to_string e))
+       e -> Logs.warn (fun m -> m "Can't compute image link (%s)"
+                         (Printexc.to_string e))
 
   method! flush_images = ImageScheduler.flush_delayed q
 end
@@ -8426,7 +8445,7 @@ val init:
                     (Htmlfmt.formatter -> unit) -> unit;
           base : string; ctx : Viewers.context;
           i18n_encoder : string -> string;
-          imgmanager : < add_image : Embed.embobject -> unit; .. >;
+          imgmanager : < add_image : Embed.obj -> unit; .. >;
           pop_action : unit; push_action : (string -> unit) -> unit;
           remove_tag : string -> unit; target : string option; .. > ->
         unit
@@ -8915,11 +8934,12 @@ let embedded_html mediapars top ctx doc =
   let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
   viewer#init false;
   pack [viewer#di_widget][Expand true; Fill Fill_Both];
+  let caps = Cap.network_caps_UNSAFE () in
   (* set for events *)
   Frx_synth.bind viewer#di_widget "load_images" 
     (fun _top -> viewer#di_load_images);
   Frx_synth.bind viewer#di_widget "update" 
-    (fun _ -> Embed.update top ctx doc (fun () -> viewer#di_update))
+    (fun _ -> Embed.update caps top ctx doc (fun () -> viewer#di_update))
 @
 
 
@@ -9135,7 +9155,7 @@ type t = {
       (* [input top tag] *)
   radio_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
-  image_input : Widget.widget ->  Html.tag -> Embed.embobject;
+  image_input : Widget.widget ->  Html.tag -> Embed.obj;
       (* [input top tag] *)
   submit_input : Widget.widget ->  Html.tag -> unit;
       (* [input top tag] *)
@@ -9182,7 +9202,7 @@ type t = {
       (* [input top tag] *)
   radio_input : Widget.widget ->  tag -> unit;
       (* [input top tag] *)
-  image_input : Widget.widget ->  tag -> embobject;
+  image_input : Widget.widget ->  tag -> Embed.obj;
       (* [input top tag] *)
   submit_input : Widget.widget ->  tag -> unit;
       (* [input top tag] *)

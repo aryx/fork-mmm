@@ -5776,29 +5776,31 @@ let progress_log (dh : handle) = dh.document_logger.logger_progress
 \section{Images}
 
 <<signature [[Img.get]]>>=
-val get : Document.id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
-            Scheduler.progress_func -> unit
+val get : <Cap.network; ..> ->
+   Document.id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
+   Scheduler.progress_func -> unit
 @
 
 <<signature [[Img.update]]>>=
-val update : Url.t -> unit
+val update : < Cap.network; ..> ->
+  Url.t -> unit
 @
 
 
 <<function [[Img.get]]>>=
 (* ??? -> <> *)
-let get (did : Document.id) (link : Hyper.link) cont 
+let get (caps : < Cap.network; ..>) (did : Document.id) (link : Hyper.link) cont 
         (prog : Scheduler.progress_func) : unit =
   let wr = Www.make link in
   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-  ImageScheduler.add_request wr did cont prog
+  ImageScheduler.add_request (caps :> < Cap.network >) wr did cont prog
 @
 
 
 <<function [[Img.update]]>>=
-let update (url : Url.t) : unit =
+let update (caps : < Cap.network; ..>) (url : Url.t) : unit =
   try
-    let (oldi,refs,headers) = ImageData.direct_cache_access url in
+    let (oldi, refs, headers) = ImageData.direct_cache_access url in
     let link = Hyper.default_link (Url.string_of url) in
     let wr = Www.make link in
     let date_received = get_header "date" headers in
@@ -5807,7 +5809,7 @@ let update (url : Url.t) : unit =
        :: "Pragma: no-cache"
        :: wr.www_headers;
 
-    ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
+    ImageScheduler.add_request (caps :> < Cap.network >) wr (DocumentIDSet.choose !refs)
       (fun _url i -> 
         match oldi, i with
         | Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
@@ -7253,12 +7255,13 @@ class stdctx (did, nav) =
     and new_link _ = nav.nav_new
     in 
     let frame_goto targets hlink =
+      let caps = Cap.network_caps_UNSAFE () in
       try
       (* target semantics PR-HTML 4.0 16.3.2 *)
        match List.assoc "target" hlink.h_params with
        | "_blank" ->
         let w = Toplevel.create Widget.default_toplevel [] in
-        Embed.add { 
+        Embed.add caps { 
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -7266,7 +7269,7 @@ class stdctx (did, nav) =
         embed_alt = "" }
        | "_self" ->
         let w = List.assoc "_self" targets in
-        Embed.add {
+        Embed.add caps {
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -7275,7 +7278,7 @@ class stdctx (did, nav) =
        | "_top" -> follow_link targets hlink
        | "_parent" ->
         let w = List.assoc "_parent" targets in
-        Embed.add { 
+        Embed.add caps { 
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -7283,7 +7286,7 @@ class stdctx (did, nav) =
         embed_alt = "" }
        | s ->
         let w = List.assoc s targets in
-        Embed.add {
+        Embed.add caps {
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -7293,7 +7296,7 @@ class stdctx (did, nav) =
        Not_found -> (* if we are in a frame, it is available as _self *)
       try
         let w = List.assoc "_self" targets in
-        Embed.add {
+        Embed.add caps {
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -10287,14 +10290,15 @@ warnings |> List.iter (fun (reason, pos) ->
 \section{XXX}
 
 <<[[Html_disp.machine]] embedded fields>>=
-method virtual add_embedded : Embed.embobject -> unit
-method virtual embedded : Embed.embobject list
+method virtual add_embedded : Embed.obj -> unit
+method virtual embedded : Embed.obj list
 @
 <<[[Html_disp.display_machine]] embedded methods>>=
 (* record all embedded objects in this machine *)
 val mutable (*private*) embedded = []
 method add_embedded x = 
-  Embed.add x;
+  let caps = Cap.network_caps_UNSAFE () in
+  Embed.add caps x;
   embedded <- x :: embedded
 method embedded = embedded
 @
@@ -10322,7 +10326,7 @@ type vparams = (string * string) list
 
 <<type [[Embed.embobject]]>>=
 (* Embedded objects *)
-type embobject = {
+type obj = {
   embed_hlink : Hyper.link;               (* hyperlink to the object *)
   embed_frame : Widget.widget;  
      (* the frame where the viewers can do their stuff *)
@@ -10334,12 +10338,13 @@ type embobject = {
 
 
 <<signature [[Embed.add]]>>=
-val add : embobject -> unit
+val add : < Cap.network; ..> ->
+  obj -> unit
 @
 
 <<signature [[Embed.update]]>>=
-val update : 
-    Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
+val update : < Cap.network; ..> ->
+  Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
     -> unit
 @
 
@@ -10481,7 +10486,7 @@ end
 @
 
 <<[[Html_disp.imgloader]] virtual fields signatures>>=
-method virtual add_image : Embed.embobject -> unit	 (* add one image *)
+method virtual add_image : Embed.obj -> unit	 (* add one image *)
 method virtual flush_images : unit	         (* flush when document is loaded *)
 method virtual load_images : unit		 (* manual flush *)
 method virtual update_images : unit
@@ -10502,9 +10507,9 @@ val create : unit -> loader
 @
 <<class [[Imgload.loader]] signature>>=
 class loader : (unit) -> object
-  method add_image : Embed.embobject -> unit	 (* add one image *)
+  method add_image : Embed.obj -> unit       (* add one image *)
   method flush_images : unit	         (* flush when document is loaded *)
-  method load_images : unit		 (* manual flush *)
+  method load_images : unit		(* manual flush *)
   method update_images : unit
 end
 @
