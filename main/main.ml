@@ -89,54 +89,60 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
   (*x: [[Main.main()]] locals *)
   let modules = ref true in
   (*e: [[Main.main()]] locals *)
-  Arg_.parse_argv caps argv [
+  let level = ref (Some Logs.Warning) in
+
+  let options = ([
    (*s: [[Main.main()]] command line options *)
    "-d", Arg.String (fun s -> display := s),
-   "<foo:0>\t\tDisplay";
+   " <foo:0> Display";
    (*x: [[Main.main()]] command line options *)
    "-display", Arg.String (fun s -> display := s),
-   "<foo:0>\tDisplay";
+   " <foo:0> Display";
    (*x: [[Main.main()]] command line options *)
    "-suffixes", Arg.String (fun s -> sufxfile := s),
-   "<file>\tSuffix file";
+   " <file> Suffix file";
    (*x: [[Main.main()]] command line options *)
    "-prefs", Arg.String (fun s -> preffile := s),
-   "<file>\t\tPreference File";
+   " <file> Preference File";
    (*x: [[Main.main()]] command line options *)
    "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-   "<wxh+x+y>\tInitial geometry for the first navigator";
+   " <wxh+x+y> Initial geometry for the first navigator";
    (*x: [[Main.main()]] command line options *)
    "-palette", Arg.String (fun s -> palette := Some s),
-   "<color>\tTk Palette";
+   " <color> Tk Palette";
    (*x: [[Main.main()]] command line options *)
    "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-   "\tClick to Focus mode (default is Focus Follows Mouse)";
+   " Click to Focus mode (default is Focus Follows Mouse)";
    (*x: [[Main.main()]] command line options *)
    "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-   "<url>\tHelp URL";
+   " <url> Help URL";
    (*x: [[Main.main()]] command line options *)
    "-external", Arg.Unit (fun () -> accept_external := true),
-   "\t\tAccept remote command (mmm_remote <url>)";
+   " Accept remote command (mmm_remote <url>)";
    (*x: [[Main.main()]] command line options *)
    "-proxy", Arg.String (fun s -> Http.proxy := s), 
-   "<hostname>\tProxy host";
+   " <hostname> Proxy host";
    (*x: [[Main.main()]] command line options *)
    "-port", Arg.Int (fun i -> Http.proxy_port := i),
-   "<port>\t\tProxy port";
+   " <port> Proxy port";
    (*x: [[Main.main()]] command line options *)
    "-lang", Arg.String (fun s -> I18n.language := s),
-   "<lang>\t\tI18n language";
+   " <lang> I18n language";
    (*x: [[Main.main()]] command line options *)
    "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-   "<file>\tI18n message file";
+   " <file> I18n message file";
    (*x: [[Main.main()]] command line options *)
    "-nomodule", Arg.Unit (fun () -> modules := false),
-   "\t\tDon't load initial modules";
+   " Don't load initial modules";
    (*e: [[Main.main()]] command line options *)
-  ]
+  ] @ Logs_.cli_flags level) |> Arg.align
+  in
+  Arg_.parse_argv caps argv options
     (fun s -> init_urls := s :: !init_urls)
     usage_str
   ;
+  Logs_.setup !level ();
+  Logs.info (fun m -> m "ran as %s from %s" argv.(0) (Sys.getcwd()));
   (*s: [[Main.main()]] signal handling *)
   Sys.catch_break true;
   (* Avoid SIGPIPE completely, in favor of write() errors *)
@@ -163,7 +169,10 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
     localize (Filename.concat (Filename.dirname argv.(0)) "/data/MMM.ad") in
   (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
   if Sys.file_exists site_resfile 
-  then Tkresource.readfile site_resfile Tk.StartupFile;
+  then  begin
+      Logs.info (fun m -> m "loading resource startup file %s" site_resfile);
+      Tkresource.readfile site_resfile Tk.StartupFile
+  end;
   (*x: [[Main.main()]] resource initialisation *)
   begin match !palette with
   | None -> ()
