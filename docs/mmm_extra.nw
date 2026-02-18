@@ -3325,16 +3325,16 @@ and start_request09 proxy_mode wwwr cont cnx =
 
 <<function [[Http.proxy_request]]>>
 
-and proxy_request09 wr cont =
-  tcp_connect !proxy !proxy_port wr.www_logging
+and proxy_request09 caps wr cont =
+  tcp_connect caps !proxy !proxy_port wr.www_logging
           (start_request09 true wr cont)
           (failed_request wr cont.document_finish)
 
 <<function [[Http.request]]>>
 (* HTTP 0.9 ?? TODO? delete? obsolete?  *)
-and request09 wr cont =
+and request09 caps wr cont =
   if !always_proxy 
-  then proxy_request09 wr cont
+  then proxy_request09 caps wr cont
   else 
     let urlp = wr.www_url in
     if urlp.protocol = HTTP then
@@ -3349,11 +3349,11 @@ and request09 wr cont =
         | None -> 80  (* default http port *)
       in
       try 
-       tcp_connect host port wr.www_logging
+       tcp_connect caps host port wr.www_logging
         (start_request09 false wr cont)
         (failed_request wr cont.document_finish)
       with HTTP_error _ ->
-        tcp_connect !proxy !proxy_port wr.www_logging
+        tcp_connect caps !proxy !proxy_port wr.www_logging
                (start_request09 true wr cont)
               (failed_request wr cont.document_finish)
     else 
@@ -4774,7 +4774,8 @@ module Make(J: Data) = struct
             in
        (* Okay, go for the retrieval now *)
         try 
-          match Retrieve.f wr retry_data
+         let caps = Cap.network_caps_UNSAFE () in
+         match Retrieve.f caps wr retry_data
                {document_process = handle_data;
                 document_finish = (fun f -> if f then error url job)}
               with
@@ -12886,7 +12887,8 @@ let add_user_navigation (s : string) (f : Viewers.hyper_func) =
 <<function [[Nav.save_link]]>>=
 (* Simple wrappers *)
 let save_link nav whereto =
-  request nav (process_save whereto) (true, id_wr, nothing_specific)
+  let caps = Cap.network_caps_UNSAFE () in
+  request caps nav (process_save whereto) (true, id_wr, nothing_specific)
 @
 
 
@@ -12926,7 +12928,8 @@ let update nav did nocache =
       (* find the date of previous download, (or last-modified ?) *)
       let date_received = get_header "date" doc.document_headers in
       let follow_link =
-        request nav process_update
+        let caps = Cap.network_caps_UNSAFE () in
+        request caps nav process_update
         (false, (* we don't want to use cache here *)
          (* setup additional headers *)
          (fun wr -> 
@@ -13571,9 +13574,14 @@ open Fpath_.Operators
 (* Types and constants *)
 (*****************************************************************************)
 (* Need:
+ *  - Cap.network: obviously, this is a Web browser
  *  - open_in: for ??
  *)
-type caps = < Cap.stdout; Cap.stderr; Cap.open_in >
+type caps = < 
+   Cap.stdout; Cap.stderr; 
+   Cap.open_in;
+   Cap.network
+ >
 
 (*****************************************************************************)
 (* Helpers *)
@@ -13608,7 +13616,8 @@ type caps = < Cap.stdout; Cap.stderr; Cap.open_in >
 
 <<main_remote.ml>>=
 (* Talk to an mmm master *)
-open Unix
+
+type caps = < Cap.network >
 
 <<function [[Main_remote.request]]>>
     

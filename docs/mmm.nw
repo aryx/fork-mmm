@@ -749,7 +749,7 @@ let find did =
 % Nav.request -> Retrieve.f -> <>
 <<signature [[Protos.get]]>>=
 val get: Url.protocol ->
-  (Www.request -> Document.continuation -> Www.aborter) 
+  (< Cap.network > -> Www.request -> Document.continuation -> Www.aborter) 
   *
   (Document.handle -> Document.data * Cache.cache_fill)
 @
@@ -760,7 +760,7 @@ val get: Url.protocol ->
 
 <<constant [[Protos.protos]]>>=
 let protos : (Url.protocol, 
-             (Www.request -> Document.continuation -> Www.aborter) * 
+             (< Cap.network > -> Www.request -> Document.continuation -> Www.aborter) * 
              (Document.handle -> Document.data * Cache.cache_fill)) Hashtbl.t =
   Hashtbl_.create ()
 @
@@ -1777,7 +1777,8 @@ val follow_link : t -> Hyper.link -> unit
 @
 <<function [[Nav.follow_link]]>>=
 let follow_link nav lk =
-  lk |> request nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
+  let caps = Cap.network_caps_UNSAFE () in
+  lk |> request caps nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
       process_viewer true make_ctx nav wr dh
     )
     <<[[Nav.follow_link]] extra arguments to Nav.request>>
@@ -1789,7 +1790,7 @@ let follow_link nav lk =
 \subsection{[[Nav.request()]]}
 
 <<signature [[Nav.request]]>>=
-val request :
+val request : < Cap.network; ..> ->
   t -> (t -> Www.request -> Document.handle -> unit) ->
   <<[[Nav.request]] signature, extra arguments>>
   Hyper.link -> 
@@ -1814,7 +1815,8 @@ val request :
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request (nav : t) process (usecache, wrapwr, specific) (lk : Hyper.link) =
+let request (caps : < Cap.network; ..>) (nav : t)
+     process (usecache, wrapwr, specific) (lk : Hyper.link) =
 
   <<function [[Nav.request.retrieve_and_handle]]>>
   <<function [[Nav.request.handle_wr]]>>
@@ -1869,7 +1871,7 @@ let rec retrieve_and_handle wr =
       );
     }
   in
-  match Retrieve.f wr handle_link cont with
+  match Retrieve.f caps wr handle_link cont with
   | Retrieve.Started aborter -> 
       nav.nav_add_active wr.www_url aborter
   | Retrieve.InUse -> 
@@ -5318,10 +5320,11 @@ let contentencoding =
 % Nav.request.retrieve_and_handle -> <>
 <<signature [[Retrieve.f]]>>=
 (* f is supposed to raise only Invalid_url *)
-val f : Www.request ->  (* the request *)
-        (Hyper.link -> unit) -> (* the retry function *)
-        Document.continuation -> (* the handlers *)
-        status
+val f : < Cap.network; .. > ->
+   Www.request ->  (* the request *)
+   (Hyper.link -> unit) -> (* the retry function *)
+   Document.continuation -> (* the handlers *)
+   status
 @
 
 <<type [[Retrieve.retrievalStatus]]>>=
@@ -5341,7 +5344,8 @@ type status =
  *   we must catch here all errors due to protocols and remove the
  *   cnx from the set of active cnx.
  *)
-and f (request : Www.request) (retry : Hyper.link -> unit) 
+and f (caps : < Cap.network; ..>) 
+      (request : Www.request) (retry : Hyper.link -> unit) 
       (cont : Document.continuation) : status = 
   Logs.debug (fun m -> m "Retrieve.f on %s" (Url.string_of request.www_url));
   if Www.is_active_cnx request.www_url
@@ -5350,9 +5354,9 @@ and f (request : Www.request) (retry : Hyper.link -> unit)
     Www.add_active_cnx request.www_url;
     try 
       let (reqf, cachef) = Protos.get request.www_url.protocol in
-      Started (reqf request
+      Started (reqf (caps :> < Cap.network >) request
                  { cont with
-                   document_process = http_check cachef retry cont request})
+                   document_process = http_check caps cachef retry cont request})
 
    with 
    | Not_found ->
@@ -5395,7 +5399,8 @@ type behaviour =
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
-let rec http_check cache (retry : Hyper.link -> unit)
+let rec http_check (caps: < Cap.network; .. > )
+         cache (retry : Hyper.link -> unit)
          (cont : Document.continuation) (wwwr : Www.request)
          (dh : Document.handle) =
   Logs.debug (fun m -> m "Retrieve.http_check");
@@ -5421,7 +5426,7 @@ let rec http_check cache (retry : Hyper.link -> unit)
         retry hlink
     | Restart transform ->
         Document.dclose true dh;
-        f wwwr retry 
+        f caps wwwr retry 
          { cont with 
            document_process = (fun dh -> cont.document_process (transform dh))}
         |> ignore; (* we should probably do something of the result ! *)
@@ -5889,7 +5894,8 @@ let _ = Hashtbl.add protos Url.HTTP (Http.req, Cache.tobuffer)
 % Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
 %  (as Retrieve.f.req <- Protos.get HTTP wr <- Hashtbl.add protos (<>) <- _top
 <<signature [[Http.req]]>>=
-val req: Www.request -> Document.continuation -> Www.aborter
+val req: < Cap.network; ..> ->
+  Www.request -> Document.continuation -> Www.aborter
 @
 %todo: do a Aborted and type aborter = abort -> unit?
 % so here we return an aborter
@@ -5898,8 +5904,8 @@ val req: Www.request -> Document.continuation -> Www.aborter
 %(* Wrappers returning the abort callback *)
 % wr = web request, cont = continuation
 <<function [[Http.req]]>>=
-let req (wr : Www.request) (cont : Document.continuation) : Www.aborter =
-  let cnx = request wr cont in
+let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
+  let cnx = request caps wr cont in
   (fun () -> cnx#abort)
 @
 % run the request asynchronously,
@@ -5911,7 +5917,8 @@ let req (wr : Www.request) (cont : Document.continuation) : Www.aborter =
    we attempt first to connect directly to the host, and if it fails,
    we retry through the proxy
  *)
-and request (wr : Www.request) (cont : Document.continuation) : cnx =
+and request (caps : < Cap.network; ..>)
+    (wr : Www.request) (cont : Document.continuation) : cnx =
   <<[[Http.request()]] if always proxy>>
   else 
     let urlp = wr.www_url in
@@ -5928,7 +5935,7 @@ and request (wr : Www.request) (cont : Document.continuation) : cnx =
         | None -> 80  (* default http port *)
       in 
       try 
-        tcp_connect host port wr.www_logging
+        tcp_connect caps host port wr.www_logging
             (fun cnx -> start_request false wr cont  cnx)
             (fun s aborted -> failed_request wr cont.document_finish s aborted)
 
@@ -5949,7 +5956,8 @@ and request (wr : Www.request) (cont : Document.continuation) : cnx =
 <<function [[Http.tcp_connect]]>>=
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
-let tcp_connect (server_name : string) (port : int) logf cont error =
+let tcp_connect (caps : < Cap.network; ..>)
+    (server_name : string) (port : int) logf cont error =
 
   (*  Find the inet address *)
   let server_addr =
@@ -5966,7 +5974,7 @@ let tcp_connect (server_name : string) (port : int) logf cont error =
   logf (s_ "Contacting host...");
   try
     begin try
-      Unix.connect sock (ADDR_INET(server_addr, port));
+      CapUnix.connect caps sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
       logf (s_ "connection established");
@@ -6406,10 +6414,14 @@ let read_headers fd previous =
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
+    (*
     dclose false dh; (* keep it an active cnx since we are retrying *)
-    let newcnx = request09 wwwr cont in
+
+    let newcnx = request09 caps wwwr cont in
     (* the guy up there has the old one !*)
     cnx#set_fd newcnx#fd
+    *)
+    failwith "HTTP 0.9 not handled"
 @
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
@@ -7226,14 +7238,17 @@ class stdctx (did, nav) =
 
     (* by default, use the cache, don't touch the request *)
     let follow_link _ = 
-      request nav (process_viewer true make_ctx) 
+      let caps = Cap.network_caps_UNSAFE () in
+      request caps nav (process_viewer true make_ctx) 
         (true, id_wr, specific_viewer true)
     and save_link _ =
-      request nav (process_save None) (true, id_wr, nothing_specific)
+      let caps = Cap.network_caps_UNSAFE () in
+      request caps nav (process_save None) (true, id_wr, nothing_specific)
     and copy_link _ = 
       copy_link nav
     and head_link = 
-      let f = request nav process_head (true, id_wr, nothing_specific) in
+      let caps = Cap.network_caps_UNSAFE () in
+      let f = request caps nav process_head (true, id_wr, nothing_specific) in
       (fun _ hlink -> f (make_head hlink))
     and new_link _ = nav.nav_new
     in 
@@ -10875,7 +10890,8 @@ let historygoto nav did frag usecache =
     in
     (* modify wr *)
     let follow_link lk =
-      lk |> request nav  
+      let caps = Cap.network_caps_UNSAFE () in
+      lk |> request caps nav  
         (process_viewer false make_ctx) (* don't add to history *)
         (usecache,
          (fun wr ->
@@ -11422,7 +11438,7 @@ Menu.add_command helpm
 \subsection{[[file://]]}
 
 <<toplevel [[Protos._7]]>>=
-let _ = Hashtbl.add protos Url.FILE (File.request, Cache.dummy)
+let _ = Hashtbl.add protos Url.FILE ((fun _caps -> File.request), Cache.dummy)
 @
 
 <<[[Lexurl.f]] protocol cases>>=
@@ -11802,12 +11818,13 @@ let _ = Hashtbl.add protos Url.WAIS (Http.proxy_req, Cache.tobuffer)
 
 
 <<signature [[Http.proxy_req]]>>=
-val proxy_req: Www.request -> Document.continuation -> Www.aborter
+val proxy_req: < Cap.network; ..> ->
+  Www.request -> Document.continuation -> Www.aborter
 @
 
 <<function [[Http.prox_req]]>>=
-and proxy_req wr cont = 
-  let cnx = proxy_request wr cont in
+and proxy_req caps wr cont = 
+  let cnx = proxy_request caps wr cont in
   (fun () -> cnx#abort)
 @
 % see Advanced topics chapter on proxy and the proxy_request function
@@ -12012,30 +12029,31 @@ then Cci.init();
 <<function [[Main_remote.request]]>>=
 let request sock (cmd : string) (url : string) =
   if cmd <> "" 
-  then write sock (Bytes.of_string cmd) 0 (String.length cmd) |> ignore;
+  then Unix.write sock (Bytes.of_string cmd) 0 (String.length cmd) |> ignore;
 
-  write sock (Bytes.of_string url) 0 (String.length url) |> ignore;
-  write sock (Bytes.of_string "\n") 0 1 |> ignore;
+  Unix.write sock (Bytes.of_string url) 0 (String.length url) |> ignore;
+  Unix.write sock (Bytes.of_string "\n") 0 1 |> ignore;
   let buf = Bytes.create 1024 in
   try
     while true do
-      let n = read sock buf 0 1024 in
+      let n = Unix.read sock buf 0 1024 in
       if n = 0 
       then raise End_of_file 
-      else ignore (write stdout buf 0 n)
+      else ignore (Unix.write Unix.stdout buf 0 n)
     done
-  with End_of_file -> close sock
+  with End_of_file -> Unix.close sock
 @
 
 <<function [[Main_remote.main]]>>=
-let main () =
+let main (caps: < caps; Cap.stdout; Cap.stderr; ..>) (argv : string array)
+    : Exit.t =
   let file = 
     Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") "remote" in
   let cmd = ref "" in
   
-  let s = socket PF_UNIX SOCK_STREAM 0 in
-  connect s (ADDR_UNIX file);
-  Arg.parse [ 
+  let s = Unix.socket PF_UNIX SOCK_STREAM 0 in
+  CapUnix.connect caps s (ADDR_UNIX file);
+  Arg_.parse_argv caps argv  [ 
     "-get", Arg.Unit (fun () -> cmd := "GET "), "Get document";
     "-getbody", Arg.Unit (fun () -> cmd := "GETB "), "Get document body";
     "-head", Arg.Unit (fun () -> cmd := "HEAD "), "Get document headers";
@@ -12043,11 +12061,15 @@ let main () =
   ]
     (fun url -> request s !cmd url)
     "Usage: mmm_remote [-get | -getbody | -head | -show] <url>\n
-     The default is -show."
+     The default is -show.";
+   Exit.OK
 @
 
 <<toplevel [[Main_remote._1]]>>=
-let _ = Printexc.catch main ()
+let _ = 
+  Cap.main (fun (caps : Cap.all_caps) ->
+    let argv = CapSys.argv caps in
+    Exit.exit caps (Exit.catch (fun () -> main caps argv)))
 @
 
 
@@ -12320,11 +12342,11 @@ let always_proxy = ref false
 
 <<[[Http.request()]] if always proxy>>=
 if !always_proxy 
-then proxy_request wr cont
+then proxy_request caps wr cont
 @
 
 <<[[Http.request()]] if http error on [[tcp_connect]], try proxy>>=
-proxy_request wr cont
+proxy_request caps wr cont
 @
 %old: was the code below, but can factorize!
 %tcp_connect !proxy !proxy_port wr.www_logging
@@ -12334,8 +12356,8 @@ proxy_request wr cont
 
 <<function [[Http.proxy_request]]>>=
 (* Process an HTTP request using the proxy. We pass on the continuation *)
-and proxy_request wr cont =
-  tcp_connect !proxy !proxy_port wr.www_logging
+and proxy_request caps wr cont =
+  tcp_connect caps !proxy !proxy_port wr.www_logging
        (start_request true wr cont)
        (failed_request wr cont.document_finish)
 @

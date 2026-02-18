@@ -287,14 +287,17 @@ class stdctx (did, nav) =
 
     (* by default, use the cache, don't touch the request *)
     let follow_link _ = 
+      let caps = Cap.network_caps_UNSAFE () in
       request caps nav (process_viewer true make_ctx) 
         (true, id_wr, specific_viewer true)
     and save_link _ =
-      request nav (process_save None) (true, id_wr, nothing_specific)
+      let caps = Cap.network_caps_UNSAFE () in
+      request caps nav (process_save None) (true, id_wr, nothing_specific)
     and copy_link _ = 
       copy_link nav
     and head_link = 
-      let f = request nav process_head (true, id_wr, nothing_specific) in
+      let caps = Cap.network_caps_UNSAFE () in
+      let f = request caps nav process_head (true, id_wr, nothing_specific) in
       (fun _ hlink -> f (make_head hlink))
     and new_link _ = nav.nav_new
     in 
@@ -373,11 +376,13 @@ let make_ctx nav did =
 (*s: function [[Nav.save_link]] *)
 (* Simple wrappers *)
 let save_link nav whereto =
-  request nav (process_save whereto) (true, id_wr, nothing_specific)
+  let caps = Cap.network_caps_UNSAFE () in
+  request caps nav (process_save whereto) (true, id_wr, nothing_specific)
 (*e: function [[Nav.save_link]] *)
 (*s: function [[Nav.follow_link]] *)
 let follow_link nav lk =
-  lk |> request nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
+  let caps = Cap.network_caps_UNSAFE () in
+  lk |> request caps nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
       process_viewer true make_ctx nav wr dh
     )
     (*s: [[Nav.follow_link]] extra arguments to Nav.request *)
@@ -408,7 +413,8 @@ let historygoto nav did frag usecache =
     in
     (* modify wr *)
     let follow_link lk =
-      lk |> request nav  
+      let caps = Cap.network_caps_UNSAFE () in
+      lk |> request caps nav  
         (process_viewer false make_ctx) (* don't add to history *)
         (usecache,
          (fun wr ->
@@ -469,7 +475,8 @@ let update nav did nocache =
       (* find the date of previous download, (or last-modified ?) *)
       let date_received = get_header "date" doc.document_headers in
       let follow_link =
-        request nav process_update
+        let caps = Cap.network_caps_UNSAFE () in
+        request caps nav process_update
         (false, (* we don't want to use cache here *)
          (* setup additional headers *)
          (fun wr -> 

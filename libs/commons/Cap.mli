@@ -213,6 +213,7 @@ val no_caps : no_caps
 (**************************************************************************)
 (* !!DO NOT USE!! *)
 val tmp_caps_UNSAFE : unit -> < tmp >
+val network_caps_UNSAFE : unit -> < network >
 
 (**************************************************************************)
 (* Entry point *)

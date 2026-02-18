@@ -316,7 +316,8 @@ module Make(J: Data) = struct
             in
        (* Okay, go for the retrieval now *)
         try 
-          match Retrieve.f wr retry_data
+         let caps = Cap.network_caps_UNSAFE () in
+         match Retrieve.f caps wr retry_data
                {document_process = handle_data;
                 document_finish = (fun f -> if f then error url job)}
               with

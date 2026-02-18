@@ -75,7 +75,7 @@ let wrap_cache cache (dh : Document.handle) =
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
-let rec http_check (caps: < Cap.network > )
+let rec http_check (caps: < Cap.network; .. > )
          cache (retry : Hyper.link -> unit)
          (cont : Document.continuation) (wwwr : Www.request)
          (dh : Document.handle) =
@@ -130,7 +130,7 @@ and f (caps : < Cap.network; ..>)
     Www.add_active_cnx request.www_url;
     try 
       let (reqf, cachef) = Protos.get request.www_url.protocol in
-      Started (reqf caps request
+      Started (reqf (caps :> < Cap.network >) request
                  { cont with
                    document_process = http_check caps cachef retry cont request})
 

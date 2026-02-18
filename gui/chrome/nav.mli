@@ -31,7 +31,7 @@ type t = {
 (*e: type [[Nav.t]] *)
 
 (*s: signature [[Nav.request]] *)
-val request :
+val request : < Cap.network; ..> ->
   t -> (t -> Www.request -> Document.handle -> unit) ->
   (*s: [[Nav.request]] signature, extra arguments *)
   ( bool * 

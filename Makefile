@@ -142,7 +142,7 @@ htparse: $(HTMISC)  main/htparse.cmo
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
-mmm_remote: main/main_remote.cmo
+mmm_remote: libs/commons/lib.cma main/main_remote.cmo 
 	$(CAMLC) -custom -o $@ unix.cma $^
 
 clean::

@@ -9,7 +9,7 @@ type status =
 
 (*s: signature [[Retrieve.f]] *)
 (* f is supposed to raise only Invalid_url *)
-val f : < Cap.network> ->
+val f : < Cap.network; .. > ->
    Www.request ->  (* the request *)
    (Hyper.link -> unit) -> (* the retry function *)
    Document.continuation -> (* the handlers *)

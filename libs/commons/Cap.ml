@@ -323,7 +323,7 @@ let powerbox : all_caps =
 
     (* dangerous stuff *)
     method exec _cmd = ()
-    method network _ip = ()
+    method network _ip_or_hostname = ()
   end
 
 (**************************************************************************)
@@ -334,6 +334,10 @@ let powerbox : all_caps =
 let tmp_caps_UNSAFE () =
   object
     method tmp = ()
+  end
+let network_caps_UNSAFE () =
+  object
+    method network _ip = ()
   end
 
 (**************************************************************************)

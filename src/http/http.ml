@@ -412,13 +412,13 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
            cont.document_process dh
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
-(*
+           (*
            dclose false dh; (* keep it an active cnx since we are retrying *)
 
            let newcnx = request09 caps wwwr cont in
            (* the guy up there has the old one !*)
            cnx#set_fd newcnx#fd
-*)
+           *)
            failwith "HTTP 0.9 not handled"
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Unix_error(e,_,_) ->
