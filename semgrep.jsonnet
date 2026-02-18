@@ -60,8 +60,8 @@ local cap_rules = [
         # 'Unix.kill',
 	# Cap.env
 	 'Unix.environment',
-	# 'Sys.getenv',
-	# 'Sys.getenv_opt',
+	 #XXX 'Sys.getenv',
+	 'Sys.getenv_opt',
 	# Cap.open_in: see separate rule
 	# 'open_in_bin',
 	 #'open_in',
@@ -116,7 +116,6 @@ local cap_rules = [
     |||,
     paths: {
       exclude: [
-	'main.ml'
       ] + exclude_dirs,
     },
   },

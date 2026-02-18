@@ -157,7 +157,7 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
 
   (* Resources *)
   let site_resfile =
-    localize (Filename.concat (Filename.dirname Sys.argv.(0)) "MMM.ad") in
+    localize (Filename.concat (Filename.dirname argv.(0)) "/data/MMM.ad") in
   (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
   if Sys.file_exists site_resfile 
   then Tkresource.readfile site_resfile Tk.StartupFile;
