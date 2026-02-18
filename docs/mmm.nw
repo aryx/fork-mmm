@@ -108,7 +108,7 @@ Why? Because I think you are a better programmer if
 you fully understand how things work under the hood.
 
 
-\section{[mmm]]}
+\section{[[mmm]]}
 
 % chose mmm, written in ocaml, small, elegant.
 
@@ -116,28 +116,36 @@ you fully understand how things work under the hood.
 
 Here are other candidates that were considered but ultimately discarded:
 \begin{itemize}
+
 \item nexus
 % original one, objective C, 8000 LOC?
+
 \item mosaic
 % maybe good. but 130 000 LOC (vs 30 000 LOC for mmm)
+
 \item gecko (firefox)
 % descendant of mosaic, netscape, introduced IMG
 % huge now
+
 \item khtml/webkit/blink (kconqueror, safari, chrome)
 % started from scratch by kde people originally, now used by google/apple
 % huge
+
 \item netsurf
 % with subprojects like hubhub, libcss, libdom, etc
 %... was used originally by servo
 % also recent js engine called duktape is maybe used with it
+
 \item servo
 % already lots of LOC actually
 % https://github.com/servo/servo/wiki/Design
+
 \end{itemize}
 
 %other:
 % - Qnx Voyager browser, 1.44MB demo disk! full GUI and web browser!
 % - charon: inferno OS, support js and https
+% - mothra, abaco: pretty small but no css, no js
 %mini:
 % - vado: very basic html rendering in haskell
 %   https://github.com/chrisdone/vado
@@ -541,15 +549,18 @@ val make : Hyper.link -> request
   (* raises: Url_Lexing | Invalid_link *)
 @
 <<function [[Www.make]]>>=
-let make hlink =
+let make (hlink : Hyper.link) : request =
   let absuri = Hyper.resolve hlink in 
-  let url = Lexurl.make absuri.uri_url in
+  let url : Url.t = Lexurl.make absuri.uri_url in
+  (* TODO: rewrite to not abuse Not_found for regular path *)
   try (* search for space in network URI *)
     if List.mem url.protocol [FILE; MAILTO] 
     then raise Not_found
     else
-      (* will raise Not_found if no space found *)
-      let n = Str.search_forward sp absuri.uri_url 0 in
+      let n = 
+        (* will raise Not_found if no space found *)
+        Str.search_forward sp absuri.uri_url 0 
+      in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
   with Not_found -> 
     { www_link = hlink;
@@ -612,7 +623,7 @@ type document_data =
    For some documents, e.g. results of POST queries, the URL is not a
    sufficient description. Stamp is 0 for unique documents.
 *)
-type document_id = {
+type id = {
   document_url : Url.t;
   document_stamp : int
 }
@@ -641,7 +652,7 @@ let new_stamp () =
 
 % get a new document_id!
 <<signature [[Document.document_id]]>>=
-val document_id : Www.request -> document_id
+val document_id : Www.request -> id
 @
 <<function [[Document.document_id]]>>=
 let document_id wwwr =
@@ -655,37 +666,37 @@ let document_id wwwr =
 
 <<module Document.DocumentIDSet>>=
 module DocumentIDSet =
-  Set.Make(struct type t = document_id let compare = compare end)
+  Set.Make(struct type t = id let compare = compare end)
 @
 
 
 \subsection{Document cache}
 
 <<signature [[Cache.add]]>>=
-val add : Document.document_id -> Document.document -> unit
+val add : Document.id -> Document.document -> unit
 @
 <<signature [[Cache.find]]>>=
-val find : Document.document_id -> Document.document
+val find : Document.id -> Document.document
 @
 % see below
 <<signature [[Cache.finished]]>>=
-val finished : Document.document_id -> unit
+val finished : Document.id -> unit
 @
 % will see add and finished later in optimisation section.
 <<signature [[Cache.touch]]>>=
-val touch : Document.document_id -> unit
+val touch : Document.id -> unit
 @
 % refresh for cache
 
 
 <<signature [[Cache.kill]]>>=
-val kill : Document.document_id -> unit
+val kill : Document.id -> unit
 @
 %less: diff with finished?
 
 
 <<constant [[Cache.memory]]>>=
-let memory = ref ([] : (Document.document_id * entry) list)
+let memory = ref ([] : (Document.id * entry) list)
 @
 
 <<type [[Cache.entry]]>>=
@@ -804,7 +815,7 @@ type document_continuation = {
 (* This is passed around by request continuations. It represents a handle
    on a connexion for retrieving a document *)
 type handle = {
-  document_id : document_id;
+  document_id : id;
 
   (* this should help to know what to do even if have not the data yet *)
   mutable dh_headers : string list;
@@ -954,9 +965,9 @@ type media_parameter = string * string
 
 <<signature class [[Viewers.context]]>>=
 (* The context given to a viewer *)
-class virtual context : (Document.document_id * vparams) -> object ('a)
+class virtual context : (Document.id * vparams) -> object ('a)
 
-  method base : Document.document_id
+  method base : Document.id
 
   <<[[Viewers.context]] hypertext methods signatures>>
   <<[[Viewers.context]] embedded methods signatures>>
@@ -1894,7 +1905,7 @@ let id_wr wr = wr
 <<[[Nav.request]] signature, extra arguments>>=
 ( bool * 
   (Www.request -> Www.request) * 
-  (t -> Document.document_id -> Www.request -> unit)
+  (t -> Document.id -> Www.request -> unit)
 ) ->
 @
 
@@ -2100,7 +2111,7 @@ then nav.nav_add_hist dh.document_id dh.document_fragment;
 % want to consider it as part of history
 
 <<[[Nav.t]] manage history methods>>=
-nav_add_hist : Document.document_id -> string option -> unit;
+nav_add_hist : Document.id -> string option -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_add_hist = add_hist;
@@ -5736,7 +5747,7 @@ let progress_log dh = dh.document_logger.logger_progress
 \section{Images}
 
 <<signature [[Img.get]]>>=
-val get : document_id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
+val get : Document.id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
             Scheduler.progress_func -> unit
 @
 
@@ -6620,7 +6631,7 @@ let ht_of_stamp ut =
 
 
 <<signature [[Nav.make_ctx]]>>=
-val make_ctx : t -> Document.document_id -> Viewers.context
+val make_ctx : t -> Document.id -> Viewers.context
 @
 <<signature [[Viewers.view]]>>=
 val view : Widget.widget -> context -> Document.handle -> display_info option
@@ -7265,7 +7276,7 @@ end
 @
 
 <<class [[Viewers.context]]>>=
-class virtual context ((did : Document.document_id), 
+class virtual context ((did : Document.id), 
                        (v : vparams)) =
  object (self : 'a)
 
@@ -10248,7 +10259,7 @@ method embedded = embedded
 <<[[Viewers.context]] embedded methods signatures>>=
 (*-*)
 method for_embed : vparams -> frame_targets -> 'a
-method in_embed : Document.document_id -> 'a
+method in_embed : Document.id -> 'a
 @
 
 <<[[Viewers.context]] other methods signatures>>=
@@ -10769,7 +10780,7 @@ type t = {
    EXCEPT when you go back and then on a new link.
 *)
 type history_entry = {
-  h_did : Document.document_id;
+  h_did : Document.id;
   h_fragment : string option;
 
   h_prev : history_entry option;
@@ -10816,7 +10827,7 @@ let forward h =
 
 % goback | goforward | reload -> <> (false when from reload, don't use cache)
 <<signature [[Nav.historygoto]]>>=
-val historygoto : t -> Document.document_id -> string option -> bool -> bool
+val historygoto : t -> Document.id -> string option -> bool -> bool
 @
 % bool parameter is to usecache or not.
 % bool returned is everything when fine.
@@ -12047,7 +12058,7 @@ method source =
 <<signature [[Source.view]]>>=
 val view:
   Widget.widget ->
-  Document.document_id ->
+  Document.id ->
   (unit -> unit) ->
   (Html.location * string) list ref ->
   (Tk.textTag * Html.location) list ref -> 

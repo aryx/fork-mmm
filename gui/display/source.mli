@@ -8,7 +8,7 @@ val annotate:
 (*s: signature [[Source.view]] *)
 val view:
   Widget.widget ->
-  Document.document_id ->
+  Document.id ->
   (unit -> unit) ->
   (Html.location * string) list ref ->
   (Tk.textTag * Html.location) list ref -> 

@@ -4,7 +4,7 @@
    For some documents, e.g. results of POST queries, the URL is not a
    sufficient description. Stamp is 0 for unique documents.
 *)
-type document_id = {
+type id = {
   document_url : Url.t;
   document_stamp : int
 }
@@ -34,7 +34,7 @@ val tty_logger : logger
 (* This is passed around by request continuations. It represents a handle
    on a connexion for retrieving a document *)
 type handle = {
-  document_id : document_id;
+  document_id : id;
 
   (* this should help to know what to do even if have not the data yet *)
   mutable dh_headers : string list;
@@ -89,7 +89,7 @@ type document = {
 }
 (*e: type [[Document.document]] *)
 
-module DocumentIDSet : Set.S with type elt = document_id
+module DocumentIDSet : Set.S with type elt = id
 
 (*s: signature [[Document.dclose]] *)
 val dclose : bool -> handle -> unit
@@ -116,6 +116,6 @@ val destroy_log : handle -> bool -> unit
 (*e: signature [[Document.destroy_log]] *)
 
 (*s: signature [[Document.document_id]] *)
-val document_id : Www.request -> document_id
+val document_id : Www.request -> id
 (*e: signature [[Document.document_id]] *)
 (*e: www/document.mli *)

@@ -20,19 +20,19 @@ val init : unit -> unit
 (*e: signature [[Cache.init]] *)
 
 (*s: signature [[Cache.add]] *)
-val add : Document.document_id -> Document.document -> unit
+val add : Document.id -> Document.document -> unit
 (*e: signature [[Cache.add]] *)
 (*s: signature [[Cache.find]] *)
-val find : Document.document_id -> Document.document
+val find : Document.id -> Document.document
 (*e: signature [[Cache.find]] *)
 (*s: signature [[Cache.finished]] *)
-val finished : Document.document_id -> unit
+val finished : Document.id -> unit
 (*e: signature [[Cache.finished]] *)
 (*s: signature [[Cache.touch]] *)
-val touch : Document.document_id -> unit
+val touch : Document.id -> unit
 (*e: signature [[Cache.touch]] *)
 (*s: signature [[Cache.kill]] *)
-val kill : Document.document_id -> unit
+val kill : Document.id -> unit
 (*e: signature [[Cache.kill]] *)
 
 (*s: signature [[Cache.postmortem]] *)
@@ -68,11 +68,11 @@ val wrap: cache_fill -> Document.handle -> Document.handle
 (*e: signature [[Cache.wrap]] *)
 
 (*s: signature [[Cache.patch]] *)
-val patch : Document.document_id -> string list -> unit
+val patch : Document.id -> string list -> unit
 (*e: signature [[Cache.patch]] *)
 
 (*s: signature [[Cache.cutlinks]] *)
-val cutlinks : (Document.document_id -> unit) list ref
+val cutlinks : (Document.id -> unit) list ref
 (*e: signature [[Cache.cutlinks]] *)
 
 (*s: signature [[Cache.make_handle]] *)

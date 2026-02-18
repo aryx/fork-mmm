@@ -6,7 +6,7 @@
    EXCEPT when you go back and then on a new link.
 *)
 type history_entry = {
-  h_did : Document.document_id;
+  h_did : Document.id;
   h_fragment : string option;
 
   h_prev : history_entry option;
@@ -24,12 +24,12 @@ type t = {
   }
 (*e: type [[History.t]] *)
 
-val create: Document.document_id -> t
+val create: Document.id -> t
 
-val add: t -> Document.document_id -> string option -> unit
+val add: t -> Document.id -> string option -> unit
 
-val back: t -> (Document.document_id * string option) option
-val forward: t -> (Document.document_id * string option) option
+val back: t -> (Document.id * string option) option
+val forward: t -> (Document.id * string option) option
 
 val contents: t -> history_entry list
 

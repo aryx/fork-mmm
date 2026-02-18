@@ -20,16 +20,16 @@ val kill : int -> unit
 (*e: signature [[Gcache.kill]] *)
 
 (*s: signature [[Gcache.find]] *)
-val find : int -> Document.document_id -> Viewers.display_info
+val find : int -> Document.id -> Viewers.display_info
 (*e: signature [[Gcache.find]] *)
 (*s: signature [[Gcache.add]] *)
-val add : int -> Document.document_id -> Viewers.display_info -> unit
+val add : int -> Document.id -> Viewers.display_info -> unit
 (*e: signature [[Gcache.add]] *)
 (*s: signature [[Gcache.remove]] *)
-val remove : int -> Document.document_id -> unit
+val remove : int -> Document.id -> unit
 (*e: signature [[Gcache.remove]] *)
 (*s: signature [[Gcache.displace]] *)
-val displace : int -> Document.document_id -> unit
+val displace : int -> Document.id -> unit
 (*e: signature [[Gcache.displace]] *)
 
 (*s: signature [[Gcache.postmortem]] *)

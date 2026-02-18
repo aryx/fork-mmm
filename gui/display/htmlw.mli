@@ -13,10 +13,10 @@ val ignore_meta_charset : bool ref
 class  virtual viewer_globs : (Viewers.context * Document.handle) -> object
   (* val ctx : Viewers.context *)
   val mutable dh : Document.handle
-  val did : Document.document_id
+  val did : Document.id
   method ctx : Viewers.context
   method dh : Document.handle
-  method did : Document.document_id
+  method did : Document.id
 end
 (*pad: seems mostly boilerplate getters of params *)
 

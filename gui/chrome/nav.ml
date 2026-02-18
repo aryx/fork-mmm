@@ -22,7 +22,7 @@ type t = {
   nav_show_current: Viewers.display_info -> string option -> unit;
 
   (*s: [[Nav.t]] manage history methods *)
-  nav_add_hist : Document.document_id -> string option -> unit;
+  nav_add_hist : Document.id -> string option -> unit;
   (*e: [[Nav.t]] manage history methods *)
   (*s: [[Nav.t]] manage active connections methods *)
   nav_add_active : Url.t -> Www.aborter -> unit;

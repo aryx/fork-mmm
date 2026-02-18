@@ -22,12 +22,12 @@ module type Data =
   sig
    type t
 
-   val load : handle -> document_id list -> string -> t
+   val load : handle -> Document.id list -> string -> t
         (* [load dh referers file] *)
-   val cache_access : Url.t -> document_id -> t
+   val cache_access : Url.t -> Document.id -> t
         (* [cache_access url referer] *)       	     
    val error : Url.t -> 
-      (document_id * ((Url.t -> t -> unit) * progress_func)) list ->  unit
+      (Document.id * ((Url.t -> t -> unit) * progress_func)) list ->  unit
         (* [error url conts] *)
    val error_msg : (Www.request * string) -> unit
        (* Retrieval produces Invalid_url *)
@@ -38,17 +38,17 @@ module type S =
   sig
     type shared_data
     val add_request : 
-       Www.request -> document_id -> (Url.t -> shared_data -> unit) -> 
+       Www.request -> Document.id -> (Url.t -> shared_data -> unit) -> 
       progress_func -> unit
         (* [add_request wwwr ref_did cont progress_func] *)
-    val stop : document_id -> unit
+    val stop : Document.id -> unit
         (* [stop ref_did] *)
 
     (* Delayed queues for this scheduler *)
     type delayed
     val new_delayed : unit -> delayed
     val add_delayed : 
-       delayed -> Www.request -> document_id -> 
+       delayed -> Www.request -> Document.id -> 
       (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
@@ -68,7 +68,7 @@ module Make(J: Data) = struct
   (* A job is: a list of referers, with the continuations *)
   type job = {
       mutable stop : unit -> unit;
-      mutable conts : (document_id * 
+      mutable conts : (Document.id * 
              ((Url.t -> shared_data -> unit) * progress_func)) list;
       mutable bytes_loaded : int;
       mutable contentlength : int option  
@@ -107,7 +107,7 @@ module Make(J: Data) = struct
       if !r <= 0 then Hashtbl.remove samehost s
     with Not_found -> () (* that's an error actually *)
 
-  type queue = (request * document_id * (Url.t -> shared_data -> unit) * progress_func ) Queue.t
+  type queue = (request * Document.id * (Url.t -> shared_data -> unit) * progress_func ) Queue.t
     (* queue for one batch of docs *)
 
   let queues = (ref [] : queue list ref)

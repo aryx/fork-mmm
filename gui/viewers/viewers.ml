@@ -47,7 +47,7 @@ type hyper_func = {
 (*e: type [[Viewers.hyper_func]] *)
 
 (*s: class [[Viewers.context]] *)
-class virtual context ((did : Document.document_id), 
+class virtual context ((did : Document.id), 
                        (v : vparams)) =
  object (self : 'a)
 

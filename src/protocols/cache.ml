@@ -61,7 +61,7 @@ exception DontCache
 (*e: exception [[Cache.DontCache]] ([[protocols/cache.ml]]) *)
 
 (*s: constant [[Cache.memory]] *)
-let memory = ref ([] : (Document.document_id * entry) list)
+let memory = ref ([] : (Document.id * entry) list)
 (*e: constant [[Cache.memory]] *)
 
 (*s: function [[Cache.postmortem]] *)

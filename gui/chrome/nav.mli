@@ -7,7 +7,7 @@ type t = {
   nav_show_current: Viewers.display_info -> string option -> unit;
 
   (*s: [[Nav.t]] manage history methods *)
-  nav_add_hist : Document.document_id -> string option -> unit;
+  nav_add_hist : Document.id -> string option -> unit;
   (*e: [[Nav.t]] manage history methods *)
   (*s: [[Nav.t]] manage active connections methods *)
   nav_add_active : Url.t -> Www.aborter -> unit;
@@ -36,7 +36,7 @@ val request :
   (*s: [[Nav.request]] signature, extra arguments *)
   ( bool * 
     (Www.request -> Www.request) * 
-    (t -> Document.document_id -> Www.request -> unit)
+    (t -> Document.id -> Www.request -> unit)
   ) ->
   (*e: [[Nav.request]] signature, extra arguments *)
   Hyper.link -> 
@@ -62,17 +62,17 @@ val add_user_navigation : string -> Viewers.hyper_func -> unit
 (*e: signature [[Nav.add_user_navigation]] *)
 
 (*s: signature [[Nav.make_ctx]] *)
-val make_ctx : t -> Document.document_id -> Viewers.context
+val make_ctx : t -> Document.id -> Viewers.context
 (*e: signature [[Nav.make_ctx]] *)
 
 (*s: signature [[Nav.absolutegoto]] *)
 val absolutegoto : t -> string -> unit
 (*e: signature [[Nav.absolutegoto]] *)
 (*s: signature [[Nav.historygoto]] *)
-val historygoto : t -> Document.document_id -> string option -> bool -> bool
+val historygoto : t -> Document.id -> string option -> bool -> bool
 (*e: signature [[Nav.historygoto]] *)
 (*s: signature [[Nav.update]] *)
-val update : t -> Document.document_id -> bool -> unit
+val update : t -> Document.id -> bool -> unit
 (*e: signature [[Nav.update]] *)
 
 (*s: signature [[Nav.dont_check_cache]] *)

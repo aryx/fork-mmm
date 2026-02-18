@@ -2176,8 +2176,6 @@ module UrlSet : Set.S with type elt = Url.t
 %-------------------------------------------------------------
 
 <<www/www.ml>>=
-open Uri
-open Url
 
 <<type [[Www.request]]>>
 
@@ -2222,7 +2220,7 @@ open Url
 
 <<type [[Document.document]]>>
 
-module DocumentIDSet : Set.S with type elt = document_id
+module DocumentIDSet : Set.S with type elt = id
 
 <<signature [[Document.dclose]]>>
 
@@ -3418,11 +3416,11 @@ val wrap: cache_fill -> Document.handle -> Document.handle
 @
 
 <<signature [[Cache.patch]]>>=
-val patch : Document.document_id -> string list -> unit
+val patch : Document.id -> string list -> unit
 @
 
 <<signature [[Cache.cutlinks]]>>=
-val cutlinks : (Document.document_id -> unit) list ref
+val cutlinks : (Document.id -> unit) list ref
 @
 
 <<signature [[Cache.make_handle]]>>=
@@ -4147,12 +4145,12 @@ module ImageData : sig
   val jpeg_converter : string ref
   val verbose : bool ref
 
-  val load : handle -> document_id list -> string -> Tkanim.imageType
-  val cache_access : Url.t -> document_id -> Tkanim.imageType
+  val load : handle -> Document.id list -> string -> Tkanim.imageType
+  val cache_access : Url.t -> Document.id -> Tkanim.imageType
   val error :
-      Url.t -> (document_id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
+      Url.t -> (Document.id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
     val error_msg : Www.request * string -> unit
-    val remove_reference : document_id -> unit
+    val remove_reference : Document.id -> unit
     val dump: unit -> unit
   end
 
@@ -4401,18 +4399,18 @@ module type Data =
         (* Type of shared objects
          * The table of objects in managed in this module
          *)
-   val load : Document.handle -> Document.document_id list -> string -> t
+   val load : Document.handle -> Document.id list -> string -> t
         (* [load dh referers file]
          *   is responsible for creating the shared handle
          *)
-   val cache_access : Url.t -> Document.document_id -> t
+   val cache_access : Url.t -> Document.id -> t
         (* [cache_access url referer]
          *   attempts to find a shared handle for an URL.
          *   Raises Not_found
          *)       	     
    val error : 
         Url.t -> 
-      (Document.document_id * ((Url.t -> t -> unit) * progress_func)) list -> unit
+      (Document.id * ((Url.t -> t -> unit) * progress_func)) list -> unit
         (* [error url [(did,(cont,progress))]]
          *  if an error occurs, then each pending continuation is called
          *  (if necessary) as required (e.g. with "default" information)
@@ -4425,13 +4423,13 @@ module type Data =
 module type S =
   sig
     type shared_data
-    val add_request : Www.request -> Document.document_id ->
+    val add_request : Www.request -> Document.id ->
                       (Url.t -> shared_data -> unit) -> progress_func -> unit
         (* [add_request delayed wr referer cont progress_func]
          *   returns job handle that can subsequently by awakened
          *)
 
-    val stop : Document.document_id -> unit
+    val stop : Document.id -> unit
         (* [stop did]
          *   stops jobs for which did is the only referer
          *)
@@ -4440,7 +4438,7 @@ module type S =
     type delayed
     val new_delayed : unit -> delayed
     val add_delayed : 
-       delayed -> Www.request -> Document.document_id -> 
+       delayed -> Www.request -> Document.id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
@@ -4479,12 +4477,12 @@ module type Data =
   sig
    type t
 
-   val load : handle -> document_id list -> string -> t
+   val load : handle -> Document.id list -> string -> t
         (* [load dh referers file] *)
-   val cache_access : Url.t -> document_id -> t
+   val cache_access : Url.t -> Document.id -> t
         (* [cache_access url referer] *)       	     
    val error : Url.t -> 
-      (document_id * ((Url.t -> t -> unit) * progress_func)) list ->  unit
+      (Document.id * ((Url.t -> t -> unit) * progress_func)) list ->  unit
         (* [error url conts] *)
    val error_msg : (Www.request * string) -> unit
        (* Retrieval produces Invalid_url *)
@@ -4495,17 +4493,17 @@ module type S =
   sig
     type shared_data
     val add_request : 
-       Www.request -> document_id -> (Url.t -> shared_data -> unit) -> 
+       Www.request -> Document.id -> (Url.t -> shared_data -> unit) -> 
       progress_func -> unit
         (* [add_request wwwr ref_did cont progress_func] *)
-    val stop : document_id -> unit
+    val stop : Document.id -> unit
         (* [stop ref_did] *)
 
     (* Delayed queues for this scheduler *)
     type delayed
     val new_delayed : unit -> delayed
     val add_delayed : 
-       delayed -> Www.request -> document_id -> 
+       delayed -> Www.request -> Document.id -> 
       (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
@@ -4525,7 +4523,7 @@ module Make(J: Data) = struct
   (* A job is: a list of referers, with the continuations *)
   type job = {
       mutable stop : unit -> unit;
-      mutable conts : (document_id * 
+      mutable conts : (Document.id * 
              ((Url.t -> shared_data -> unit) * progress_func)) list;
       mutable bytes_loaded : int;
       mutable contentlength : int option  
@@ -4564,7 +4562,7 @@ module Make(J: Data) = struct
       if !r <= 0 then Hashtbl.remove samehost s
     with Not_found -> () (* that's an error actually *)
 
-  type queue = (request * document_id * (Url.t -> shared_data -> unit) * progress_func ) Queue.t
+  type queue = (request * Document.id * (Url.t -> shared_data -> unit) * progress_func ) Queue.t
     (* queue for one batch of docs *)
 
   let queues = (ref [] : queue list ref)
@@ -5289,7 +5287,7 @@ val tofile : (string -> unit) -> Document.handle -> string -> string -> unit
 @
 
 <<signature [[Save.document]]>>=
-val document : Document.document_id -> string option -> unit
+val document : Document.id -> string option -> unit
 @
 
 <<signature [[Save.print_command]]>>=
@@ -8658,10 +8656,10 @@ val display_html : Viewers.t
 class  virtual viewer_globs : (Viewers.context * Document.handle) -> object
   (* val ctx : Viewers.context *)
   val mutable dh : Document.handle
-  val did : Document.document_id
+  val did : Document.id
   method ctx : Viewers.context
   method dh : Document.handle
-  method did : Document.document_id
+  method did : Document.id
 end
 (*pad: seems mostly boilerplate getters of params *)
 
@@ -11488,19 +11486,19 @@ val kill : int -> unit
 @
 
 <<signature [[Gcache.find]]>>=
-val find : int -> Document.document_id -> Viewers.display_info
+val find : int -> Document.id -> Viewers.display_info
 @
 
 <<signature [[Gcache.add]]>>=
-val add : int -> Document.document_id -> Viewers.display_info -> unit
+val add : int -> Document.id -> Viewers.display_info -> unit
 @
 
 <<signature [[Gcache.remove]]>>=
-val remove : int -> Document.document_id -> unit
+val remove : int -> Document.id -> unit
 @
 
 <<signature [[Gcache.displace]]>>=
-val displace : int -> Document.document_id -> unit
+val displace : int -> Document.id -> unit
 @
 
 <<signature [[Gcache.postmortem]]>>=
@@ -11548,7 +11546,7 @@ let max_keep = ref 5
 
 <<constant [[Gcache.table]]>>=
 let table = (Hashtbl.create 37 :
-              (int, (document_id * display_info) list ref) Hashtbl.t)
+              (int, (Document.id * display_info) list ref) Hashtbl.t)
 @
 
 <<function [[Gcache.get_nav]]>>=
@@ -12610,12 +12608,12 @@ open Protocol
 
 <<type [[History.t]]>>
 
-val create: Document.document_id -> t
+val create: Document.id -> t
 
-val add: t -> Document.document_id -> string option -> unit
+val add: t -> Document.id -> string option -> unit
 
-val back: t -> (Document.document_id * string option) option
-val forward: t -> (Document.document_id * string option) option
+val back: t -> (Document.id * string option) option
+val forward: t -> (Document.id * string option) option
 
 val contents: t -> history_entry list
 
@@ -12755,7 +12753,7 @@ val add_user_navigation : string -> Viewers.hyper_func -> unit
 
 
 <<signature [[Nav.update]]>>=
-val update : t -> Document.document_id -> bool -> unit
+val update : t -> Document.id -> bool -> unit
 @
 
 

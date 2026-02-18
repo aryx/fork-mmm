@@ -8,7 +8,7 @@ open Document
    EXCEPT when you go back and then on a new link.
 *)
 type history_entry = {
-  h_did : Document.document_id;
+  h_did : Document.id;
   h_fragment : string option;
 
   h_prev : history_entry option;

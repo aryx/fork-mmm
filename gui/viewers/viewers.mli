@@ -22,9 +22,9 @@ type hyper_func = {
 
 (*s: signature class [[Viewers.context]] *)
 (* The context given to a viewer *)
-class virtual context : (Document.document_id * vparams) -> object ('a)
+class virtual context : (Document.id * vparams) -> object ('a)
 
-  method base : Document.document_id
+  method base : Document.id
 
   (*s: [[Viewers.context]] hypertext methods signatures *)
   method goto    : Hyper.link -> unit
@@ -38,7 +38,7 @@ class virtual context : (Document.document_id * vparams) -> object ('a)
   (*s: [[Viewers.context]] embedded methods signatures *)
   (*-*)
   method for_embed : vparams -> frame_targets -> 'a
-  method in_embed : Document.document_id -> 'a
+  method in_embed : Document.id -> 'a
   (*e: [[Viewers.context]] embedded methods signatures *)
 
   (*s: [[Viewers.context]] logging methods signatures *)

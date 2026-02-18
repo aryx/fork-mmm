@@ -11,12 +11,12 @@ module ImageData : sig
   val jpeg_converter : string ref
   val verbose : bool ref
 
-  val load : handle -> document_id list -> string -> Tkanim.imageType
-  val cache_access : Url.t -> document_id -> Tkanim.imageType
+  val load : handle -> Document.id list -> string -> Tkanim.imageType
+  val cache_access : Url.t -> Document.id -> Tkanim.imageType
   val error :
-      Url.t -> (document_id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
+      Url.t -> (Document.id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
     val error_msg : Www.request * string -> unit
-    val remove_reference : document_id -> unit
+    val remove_reference : Document.id -> unit
     val dump: unit -> unit
   end
 
@@ -24,7 +24,7 @@ module ImageScheduler : Scheduler.S with
     type shared_data = ImageData.t
 
 (*s: signature [[Img.get]] *)
-val get : document_id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
+val get : Document.id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
             Scheduler.progress_func -> unit
 (*e: signature [[Img.get]] *)
 (*s: signature [[Img.update]] *)

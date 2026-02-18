@@ -11,7 +11,7 @@ val tofile : (string -> unit) -> Document.handle -> string -> string -> unit
 
 
 (*s: signature [[Save.document]] *)
-val document : Document.document_id -> string option -> unit
+val document : Document.id -> string option -> unit
 (*e: signature [[Save.document]] *)
 (*s: signature [[Save.print_command]] *)
 val print_command : string ref

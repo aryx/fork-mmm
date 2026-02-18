@@ -24,18 +24,18 @@ module type Data =
         (* Type of shared objects
          * The table of objects in managed in this module
          *)
-   val load : Document.handle -> Document.document_id list -> string -> t
+   val load : Document.handle -> Document.id list -> string -> t
         (* [load dh referers file]
          *   is responsible for creating the shared handle
          *)
-   val cache_access : Url.t -> Document.document_id -> t
+   val cache_access : Url.t -> Document.id -> t
         (* [cache_access url referer]
          *   attempts to find a shared handle for an URL.
          *   Raises Not_found
          *)       	     
    val error : 
         Url.t -> 
-      (Document.document_id * ((Url.t -> t -> unit) * progress_func)) list -> unit
+      (Document.id * ((Url.t -> t -> unit) * progress_func)) list -> unit
         (* [error url [(did,(cont,progress))]]
          *  if an error occurs, then each pending continuation is called
          *  (if necessary) as required (e.g. with "default" information)
@@ -48,13 +48,13 @@ module type Data =
 module type S =
   sig
     type shared_data
-    val add_request : Www.request -> Document.document_id ->
+    val add_request : Www.request -> Document.id ->
                       (Url.t -> shared_data -> unit) -> progress_func -> unit
         (* [add_request delayed wr referer cont progress_func]
          *   returns job handle that can subsequently by awakened
          *)
 
-    val stop : Document.document_id -> unit
+    val stop : Document.id -> unit
         (* [stop did]
          *   stops jobs for which did is the only referer
          *)
@@ -63,7 +63,7 @@ module type S =
     type delayed
     val new_delayed : unit -> delayed
     val add_delayed : 
-       delayed -> Www.request -> Document.document_id -> 
+       delayed -> Www.request -> Document.id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit

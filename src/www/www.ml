@@ -1,6 +1,4 @@
 (*s: www/www.ml *)
-open Uri
-open Url
 
 (*s: type [[Www.request]] *)
 (*
@@ -36,15 +34,18 @@ let sp = Str.regexp "[ \t\n]"
 (*e: constant [[Www.sp]] *)
 
 (*s: function [[Www.make]] *)
-let make hlink =
+let make (hlink : Hyper.link) : request =
   let absuri = Hyper.resolve hlink in 
-  let url = Lexurl.make absuri.uri_url in
+  let url : Url.t = Lexurl.make absuri.uri_url in
+  (* TODO: rewrite to not abuse Not_found for regular path *)
   try (* search for space in network URI *)
     if List.mem url.protocol [FILE; MAILTO] 
     then raise Not_found
     else
-      (* will raise Not_found if no space found *)
-      let n = Str.search_forward sp absuri.uri_url 0 in
+      let n = 
+        (* will raise Not_found if no space found *)
+        Str.search_forward sp absuri.uri_url 0 
+      in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
   with Not_found -> 
     { www_link = hlink;

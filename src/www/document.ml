@@ -17,7 +17,7 @@ type logger = {
    For some documents, e.g. results of POST queries, the URL is not a
    sufficient description. Stamp is 0 for unique documents.
 *)
-type document_id = {
+type id = {
   document_url : Url.t;
   document_stamp : int
 }
@@ -25,14 +25,14 @@ type document_id = {
 
 (*s: module Document.DocumentIDSet *)
 module DocumentIDSet =
-  Set.Make(struct type t = document_id let compare = compare end)
+  Set.Make(struct type t = id let compare = compare end)
 (*e: module Document.DocumentIDSet *)
 
 (*s: type [[Document.handle]] *)
 (* This is passed around by request continuations. It represents a handle
    on a connexion for retrieving a document *)
 type handle = {
-  document_id : document_id;
+  document_id : id;
 
   (* this should help to know what to do even if have not the data yet *)
   mutable dh_headers : string list;
