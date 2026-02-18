@@ -30,7 +30,7 @@ local semgrep_rules = [
 // ----------------------------------------------------------------------------
 
 // lex and yacc are also part of ocaml-light so better not impose caps there
-local exclude_dirs = ['/external/ocamltk', 'demos', 'extensions', 'common.ml'];
+local exclude_dirs = ['/external/ocamltk', 'demos', 'extensions'];
 
 // partial copy of semgrep/TCB/forbid_xxx.jsonnet
 local cap_rules = [
@@ -42,24 +42,25 @@ local cap_rules = [
         # 'exit',
         # Cap.argv: see separate rule
         # 'Sys.argv',
+
 	# Cap.chdir
-	# 'Sys.chdir',
-	# 'Unix.chdir',
+	'Sys.chdir',
+	'Unix.chdir',
         # Cap.forkew
         # 'Sys.command',
-        # 'Unix.system',
+        #'Unix.system',
         # Cap.exec
-	# 'Unix.execve',
-	# 'Unix.execv',
+	'Unix.execve',
+	'Unix.execv',
 	# Cap.fork
 	# 'Unix.fork',
 	# Cap.wait
-	# 'Unix.wait',
-	# 'Unix.waitpid',
+	'Unix.wait',
+	#'Unix.waitpid',
 	# Cap.kill
         # 'Unix.kill',
 	# Cap.env
-	 'Unix.environment',
+	 #'Unix.environment',
 	 #XXX 'Sys.getenv',
 	 'Sys.getenv_opt',
 	# Cap.open_in: see separate rule
@@ -69,7 +70,7 @@ local cap_rules = [
 	# Cap.open_out
         #'open_out',
 	# Cap.open_out
-        #'Sys.remove',
+        'Sys.remove',
         #'Unix.unlink',
         # print_string, print_int, print_bool, ...
         # Cap.tmp
@@ -84,7 +85,7 @@ local cap_rules = [
     |||,
     paths: {
       exclude: [
-	'munix.ml',
+
 		] + exclude_dirs,
     },
   },
@@ -99,9 +100,7 @@ local cap_rules = [
     |||,
     paths: {
       exclude: [
-	'munix.ml', 'file.ml',
-	'save.ml',
-	'mmm.ml',
+	'munix.ml', 'file.ml','save.ml', 'mmm.ml',
       ] + exclude_dirs,
     },
   },
@@ -115,8 +114,7 @@ local cap_rules = [
        Do not use Sys.argv. Use CapSys.argv and capabilities.
     |||,
     paths: {
-      exclude: [
-      ] + exclude_dirs,
+      exclude: [] + exclude_dirs,
     },
   },
   {
