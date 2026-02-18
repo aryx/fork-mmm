@@ -312,7 +312,7 @@ let version_number =
 
 \section{[[hello.css]]}
 
-\section{Javascript dynamic language}
+\section{Javascript scripting language}
 
 \section{[[hello.js]]}
 
@@ -14520,6 +14520,7 @@ exception HTTP_error of string
 % actually it's from Tk
 
 \chapter{Standard Library}
+%alt: (Not so) Standard Library
 
 %<<constant Common.spf>>=
 %let spf = Printf.sprintf
