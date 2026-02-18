@@ -145,11 +145,13 @@ let _ =
 
 (*s: function [[Embed.add]] *)
 (* Queueing an embed *)
-let add ({ embed_hlink = link;
-       embed_frame = frame;
-       embed_context = embed_ctx;
-       embed_map = _m;
-       embed_alt = alt_txt} as emb) =
+let add (caps : < Cap.network; ..>) (emb : embobject) =
+  let { embed_hlink = link;
+        embed_frame = frame;
+        embed_context = embed_ctx;
+        embed_map = _m;
+        embed_alt = alt_txt} = emb 
+  in
   (* Put up the ALT text *)
   List.iter Tk.destroy (Winfo.children frame);
   pack [Label.create_named frame "alt" [Text alt_txt]][];
@@ -162,7 +164,7 @@ let add ({ embed_hlink = link;
        try Hashtbl.find embedded_viewers (typ,subtyp)
        with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
      in
-       EmbeddedScheduler.add_request
+       EmbeddedScheduler.add_request (caps :> < Cap.network >)
        (Www.make link)
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
@@ -193,7 +195,7 @@ let add ({ embed_hlink = link;
      Not_found -> (* not type given, we have to retrieve to know *)
        (* Firing the request *)
        try
-     EmbeddedScheduler.add_request
+     EmbeddedScheduler.add_request (caps :> < Cap.network >)
      (Www.make link)
      (embed_ctx#base)
      (* the continuation: it will receive the document *)
@@ -211,7 +213,9 @@ let add ({ embed_hlink = link;
 
 
 (*s: function [[Embed.update]] *)
-let update frame embed_ctx (doc : Document.t) notchanged =
+let update (caps : < Cap.network; ..>)
+    (frame : Widget.widget) (embed_ctx : Viewers.context) (doc : Document.t)
+    notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
     let date_received = get_header "date" doc.document_headers in
@@ -240,7 +244,7 @@ let update frame embed_ctx (doc : Document.t) notchanged =
       try Hashtbl.find embedded_viewers (typ,subtyp)
       with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
       in
-       EmbeddedScheduler.add_request
+       EmbeddedScheduler.add_request (caps :> < Cap.network >)
        (rewrite_wr (Www.make link))
        (embed_ctx#base)
        (* the continuation: it will receive the document *)
@@ -267,7 +271,7 @@ let update frame embed_ctx (doc : Document.t) notchanged =
       Not_found -> (* not type given, we have to retrieve to know *)
        (* Firing the request *)
         try
-      EmbeddedScheduler.add_request
+      EmbeddedScheduler.add_request (caps :> < Cap.network >)
         (rewrite_wr (Www.make link))
         (embed_ctx#base)
      (* the continuation: it will receive the document *)

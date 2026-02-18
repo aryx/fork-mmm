@@ -31,7 +31,8 @@ let gif_anim_auto = ref false
 
 (*s: function [[Imgload.display]] *)
 (* Utilities *)
-let display emb i =
+let display (caps : < Cap.network; ..>)
+    (emb : Embed.embobject) (i : imageType) =
   let prop = ref false in
   begin
   if Winfo.exists emb.embed_frame then
@@ -119,7 +120,7 @@ let display emb i =
         let url = 
           Lexurl.make (Hyper.resolve emb.embed_hlink).uri_url in
          bind w (Glevents.get "updateimage")
-          (BindSet ([], (fun _ -> Img.update url)))
+          (BindSet ([], (fun _ -> Img.update caps url)))
           with
         Url.Url_Lexing _ -> ()
         end
@@ -282,21 +283,23 @@ class loader () =
     make_map emb (* and possible bindings *)
 
   method private activate emb =
-    Log.debug "Activating image";
+    Logs.debug (fun m -> m "Activating image");
     try
-      Img.get emb.embed_context#base
-    emb.embed_hlink
+      let caps = Cap.network_caps_UNSAFE () in
+      Img.get caps emb.embed_context#base
+      emb.embed_hlink
         (fun url i -> 
-      display emb i;
-      self#add_loaded url)
+          display caps emb i;
+          self#add_loaded url)
         (Tk_progress.meter emb.embed_frame)
     with
-      e -> Log.f (sprintf "Can't load image (%s)" (Printexc.to_string e))
+      e -> Logs.warn (fun m -> m "Can't load image (%s)" (Printexc.to_string e))
 
   method flush_images = ()
   method load_images = ()
   method update_images = 
-    UrlSet.iter Img.update loaded
+    let caps = Cap.network_caps_UNSAFE () in
+    UrlSet.iter (Img.update caps) loaded
 end
 
 class synchronous () =
@@ -314,13 +317,14 @@ class auto () =
 
   method! add_image emb =
      super#add_image emb;
+     let caps = Cap.network_caps_UNSAFE () in
      try
        let wr = Www.make emb.embed_hlink in
        wr.www_headers <- "Accept: image/*" :: wr.www_headers;
        ImageScheduler.add_delayed q
      wr
      emb.embed_context#base
-     (fun url i -> display emb i; self#add_loaded url)
+     (fun url i -> display caps emb i; self#add_loaded url)
      (Tk_progress.meter emb.embed_frame)
      with
        e -> Log.f (sprintf "Can't compute image link (%s)"

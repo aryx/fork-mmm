@@ -48,8 +48,9 @@ module type Data =
 module type S =
   sig
     type shared_data
-    val add_request : Www.request -> Document.id ->
-                      (Url.t -> shared_data -> unit) -> progress_func -> unit
+    val add_request : < Cap.network > ->
+        Www.request -> Document.id ->
+        (Url.t -> shared_data -> unit) -> progress_func -> unit
         (* [add_request delayed wr referer cont progress_func]
          *   returns job handle that can subsequently by awakened
          *)

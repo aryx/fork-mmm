@@ -786,11 +786,12 @@ let embedded_html mediapars top ctx doc =
   let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
   viewer#init false;
   pack [viewer#di_widget][Expand true; Fill Fill_Both];
+  let caps = Cap.network_caps_UNSAFE () in
   (* set for events *)
   Frx_synth.bind viewer#di_widget "load_images" 
     (fun _top -> viewer#di_load_images);
   Frx_synth.bind viewer#di_widget "update" 
-    (fun _ -> Embed.update top ctx doc (fun () -> viewer#di_update))
+    (fun _ -> Embed.update caps top ctx doc (fun () -> viewer#di_update))
 (*e: function [[Htmlw.embedded_html]] *)
 
 (*s: toplevel [[Htmlw._1]] *)

@@ -357,7 +357,8 @@ module TableLogic = Html_table
       (* record all embedded objects in this machine *)
       val mutable (*private*) embedded = []
       method add_embedded x = 
-        Embed.add x;
+        let caps = Cap.network_caps_UNSAFE () in
+        Embed.add caps x;
         embedded <- x :: embedded
       method embedded = embedded
       (*e: [[Html_disp.display_machine]] embedded methods *)

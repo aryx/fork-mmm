@@ -194,17 +194,17 @@ let _ =
 
 (*s: function [[Img.get]] *)
 (* ??? -> <> *)
-let get (did : Document.id) (link : Hyper.link) cont 
+let get (caps : < Cap.network; ..>) (did : Document.id) (link : Hyper.link) cont 
         (prog : Scheduler.progress_func) : unit =
   let wr = Www.make link in
   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-  ImageScheduler.add_request wr did cont prog
+  ImageScheduler.add_request (caps :> < Cap.network >) wr did cont prog
 (*e: function [[Img.get]] *)
 
 (*s: function [[Img.update]] *)
-let update (url : Url.t) : unit =
+let update (caps : < Cap.network; ..>) (url : Url.t) : unit =
   try
-    let (oldi,refs,headers) = ImageData.direct_cache_access url in
+    let (oldi, refs, headers) = ImageData.direct_cache_access url in
     let link = Hyper.default_link (Url.string_of url) in
     let wr = Www.make link in
     let date_received = get_header "date" headers in
@@ -213,7 +213,7 @@ let update (url : Url.t) : unit =
        :: "Pragma: no-cache"
        :: wr.www_headers;
 
-    ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
+    ImageScheduler.add_request (caps :> < Cap.network >) wr (DocumentIDSet.choose !refs)
       (fun _url i -> 
         match oldi, i with
         | Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->

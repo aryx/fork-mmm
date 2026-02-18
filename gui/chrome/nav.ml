@@ -302,12 +302,13 @@ class stdctx (did, nav) =
     and new_link _ = nav.nav_new
     in 
     let frame_goto targets hlink =
+      let caps = Cap.network_caps_UNSAFE () in
       try
       (* target semantics PR-HTML 4.0 16.3.2 *)
        match List.assoc "target" hlink.h_params with
        | "_blank" ->
         let w = Toplevel.create Widget.default_toplevel [] in
-        Embed.add { 
+        Embed.add caps { 
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -315,7 +316,7 @@ class stdctx (did, nav) =
         embed_alt = "" }
        | "_self" ->
         let w = List.assoc "_self" targets in
-        Embed.add {
+        Embed.add caps {
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -324,7 +325,7 @@ class stdctx (did, nav) =
        | "_top" -> follow_link targets hlink
        | "_parent" ->
         let w = List.assoc "_parent" targets in
-        Embed.add { 
+        Embed.add caps { 
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -332,7 +333,7 @@ class stdctx (did, nav) =
         embed_alt = "" }
        | s ->
         let w = List.assoc s targets in
-        Embed.add {
+        Embed.add caps {
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;
@@ -342,7 +343,7 @@ class stdctx (did, nav) =
        Not_found -> (* if we are in a frame, it is available as _self *)
       try
         let w = List.assoc "_self" targets in
-        Embed.add {
+        Embed.add caps {
         embed_hlink = hlink;
         embed_frame = w;
         embed_context = make_embed_ctx w targets;

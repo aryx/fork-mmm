@@ -26,11 +26,12 @@ type embobject = {
 (*e: type [[Embed.embobject]] *)
 
 (*s: signature [[Embed.add]] *)
-val add : embobject -> unit
+val add : < Cap.network; ..> ->
+  embobject -> unit
 (*e: signature [[Embed.add]] *)
 (*s: signature [[Embed.update]] *)
-val update : 
-    Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
+val update : < Cap.network; ..> ->
+  Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
     -> unit
 (*e: signature [[Embed.update]] *)
 (*e: viewers/embed.mli *)

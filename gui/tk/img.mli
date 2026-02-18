@@ -24,10 +24,12 @@ module ImageScheduler : Scheduler.S with
     type shared_data = ImageData.t
 
 (*s: signature [[Img.get]] *)
-val get : Document.id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
-            Scheduler.progress_func -> unit
+val get : <Cap.network; ..> ->
+   Document.id -> Hyper.link -> (Url.t -> ImageData.t -> unit) -> 
+   Scheduler.progress_func -> unit
 (*e: signature [[Img.get]] *)
 (*s: signature [[Img.update]] *)
-val update : Url.t -> unit
+val update : < Cap.network; ..> ->
+  Url.t -> unit
 (*e: signature [[Img.update]] *)
 (*e: retrieve/img.mli *)

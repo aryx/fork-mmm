@@ -37,7 +37,7 @@ module type Data =
 module type S =
   sig
     type shared_data
-    val add_request : 
+    val add_request : < Cap.network > ->
        Www.request -> Document.id -> (Url.t -> shared_data -> unit) -> 
       progress_func -> unit
         (* [add_request wwwr ref_did cont progress_func] *)
@@ -150,22 +150,22 @@ module Make(J: Data) = struct
 
   (* Whenever we add something in the queue, we must call this *)
   (* Whenever a job finished, we must call this *)
-  let rec next_request () =
+  let rec next_request caps =
     if !active < !maxactive then
       try
         let j = pick() in
-        process_request j;
-        next_request() (* check if more can be done *)
+         process_request caps j;
+         next_request caps (* check if more can be done *)
       with
         Busy -> ()
 
   (* when adding a request individually (meant to be treated ASAP), we
      use a new singleton queue *)
-  and add_request wr did cont prog =
+  and add_request (caps : < Cap.network; .. >) wr did cont prog =
     let q = Queue.create() in
     Queue.add (wr, did, cont, prog) q;
     queues := q :: !queues;
-    next_request()
+    next_request caps
 
   (* error during data downloading *)
   and error url job =
@@ -173,11 +173,12 @@ module Make(J: Data) = struct
     J.error url job.conts;
     if !debug then 
       Log.f (sprintf "Retrieval of %s failed\n" (Url.string_of url));
-    next_request()
+    let caps = Cap.network_caps_UNSAFE () in
+    next_request caps
 
   (* process_request always follows pick, thus hostcount has always been
    * incremented for the URL of this request *)
-  and process_request (wr, did, cont, prog) =
+  and process_request (caps : < Cap.network; ..>) (wr, did, cont, prog) =
     try (* if we are in the cache of shared objects, apply continuation *)
       if skip_cache wr then raise Not_found
       else begin
@@ -275,7 +276,7 @@ module Make(J: Data) = struct
             Log.f (sprintf "Finished job for %s" 
                            (Url.string_of url));
               (* proceed with more requests *)
-              next_request()
+              next_request caps
             end
           with (* errors in retrieval *)
             Unix_error(code,s,s') -> 
@@ -309,14 +310,13 @@ module Make(J: Data) = struct
         newr.www_error <- wr.www_error;
         newr.www_logging <- wr.www_logging;
         List.iter (fun (did,(cont,prog)) ->
-          add_request newr did cont prog)
+          add_request caps newr did cont prog)
           job.conts
           with (* can't proceed with retry *)
         _ -> error url job
             in
        (* Okay, go for the retrieval now *)
         try 
-         let caps = Cap.network_caps_UNSAFE () in
          match Retrieve.f caps wr retry_data
                {document_process = handle_data;
                 document_finish = (fun f -> if f then error url job)}
@@ -329,7 +329,7 @@ module Make(J: Data) = struct
              ourself and try later *)
           job.stop();
           List.iter (fun (did,(cont,prog)) -> 
-            add_request wr did cont prog)
+            add_request caps wr did cont prog)
             job.conts
         with
           Invalid_request(w,msg) -> (* retrieve failed *)
@@ -371,7 +371,10 @@ module Make(J: Data) = struct
       actives;
     (* each stop closes the cnx properly and remove the job from actives *)
     List.iter (fun job -> job.stop()) !rem;
-    if !rem <> [] then next_request()
+    if !rem <> [] 
+    then
+      let caps = Cap.network_caps_UNSAFE () in
+      next_request caps
 
   
   (*
@@ -397,7 +400,8 @@ module Make(J: Data) = struct
   let flush_delayed q =
     (* Queue.iter (function (_,_,_,prog) -> prog None 0) q;(* create the gauge *) *)
     queues := !queues @ [q];
-    next_request()
+    let caps = Cap.network_caps_UNSAFE () in
+    next_request caps
 
   (* Flush a particular request from a queue : we do it in place 
      because we don't know if the queue has been put in the list yet
@@ -418,7 +422,8 @@ module Make(J: Data) = struct
     Queue.clear l;
     Queue.iter (fun r -> Queue.add r l) restqueue;
     (* try to process the flushed items *)
-    next_request()
+    let caps = Cap.network_caps_UNSAFE () in
+    next_request caps
 
 end
 (*e: retrieve/scheduler.ml *)
