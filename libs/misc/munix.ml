@@ -12,11 +12,12 @@ open Unix
    the program running, since we don't know how Tk would react *)
 let execvp s args =
   try 
-    execvp s args
+    Unix.execvp s args
   with
     Unix_error(e, _, _) ->
        Printf.eprintf "%s\n" (Unix.error_message e);
        flush Stdlib.stderr;
+       (* nosemgrep: do-not-use-exit *)
        exit 1
 (*e: function [[Munix.execvp]] *)
 

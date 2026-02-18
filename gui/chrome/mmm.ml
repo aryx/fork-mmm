@@ -29,8 +29,8 @@ let home =
   try
     Sys.getenv "HOME"
   with Not_found -> 
-    prerr_endline "Please set the HOME environment variable.";
-    exit (-1)
+    Logs.err (fun m -> m "Please set the HOME environment variable.");
+    raise (Exit.ExitCode (-1))
 (*e: constant [[Mmm.home]] *)
       
 

@@ -1,5 +1,4 @@
 (*s: viewers/save.ml *)
-
 open I18n
 
 open Unix
@@ -167,12 +166,15 @@ let pipe_from_string url data cmd =
     let len = String.length data and pos = ref 0 in
     (* now fork the command *)
     match Low.fork() with
-      0 ->
-    dup2 fd_in stdin; close fd_in; close fd_out;
-    ignore (Munix.system_eval cmd ["URL", urls] false);
-    exit 0
+    (* child *)
+    | 0 ->
+      dup2 fd_in stdin; close fd_in; close fd_out;
+      ignore (Munix.system_eval cmd ["URL", urls] false);
+      (* nosemgrep: do-not-use-exit *)
+      exit 0
+    (* parent *)
     | _n ->
-    close fd_in;
+       close fd_in;
        Fileevent.add_fileoutput fd_out (fun () ->
       if !pos < len then begin
         let n = min 512 (len - !pos) in
@@ -200,13 +202,16 @@ let pipe_from_file url f cmd =
   try
     (* just open the file and read from it *)
     match Low.fork() with
-      0 ->
-    let fd = openfile f [O_RDONLY] 0 in
-    dup2 fd stdin; close fd;
-    ignore (Munix.system_eval cmd ["URL", urls] false);
-    exit 0
-    | _n ->
-    ()
+    (* child *)
+    | 0 ->
+      let fd = openfile f [O_RDONLY] 0 in
+      dup2 fd stdin; close fd;
+      ignore (Munix.system_eval cmd ["URL", urls] false);
+      (* nosemgrep: do-not-use-exit *)
+      exit 0
+     (* parent *)
+     | _n ->
+       ()
   with Unix_error(_,_,_) -> (* pipe failed, fork failed *)
     Error.f (s_ "Can't execute command %s for %s" cmd urls)
 (*e: function [[Save.pipe_from_file]] *)

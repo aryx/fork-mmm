@@ -4,7 +4,6 @@ open I18n
 open Printf
 open Unix
 open Filename
-
 open Hyper
 open Www
 open Url
@@ -28,7 +27,7 @@ let _isdir path f =
 (*e: function [[File.isdir]] *)
 
 (*s: function [[File.d2html]] *)
-let d2html path d =
+let d2html path (d : Unix.dir_handle) =
   (* make sure that when path is used in url, it is / terminated *)
   let pathurl =
     let l = String.length path in
@@ -84,6 +83,7 @@ let dir path =
     let d = opendir path in
     let cin, cout = pipe() in
     match Low.fork() with
+    (* child *)
     | 0 -> 
         close cin; dup2 cout stdout; close cout;
         begin
@@ -93,8 +93,10 @@ let dir path =
             print_endline (Printexc.to_string e)
         end;
         flush Stdlib.stdout; (* strange bug with our at_exit stuff *)
+        (* nosemgrep: do-not-use-exit *)
         exit 0
         (*cin (*duh*) *)
+     (* parent *)
      | _n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
@@ -122,6 +124,7 @@ let fake_cgi wwwr cont path =
       with Not_found -> path, [| path |] 
     in
     match Low.fork() with
+    (* child *)
     | 0 -> 
         close cmd_in;
         dup2 cmd_out stdout; close cmd_out;
@@ -136,8 +139,10 @@ let fake_cgi wwwr cont path =
             Munix.write_string stdout "\" failed:";
             Munix.write_string stdout (Unix.error_message e);
             Munix.write_string stdout "\n";
+            (* nosemgrep: do-not-use-exit *)
             exit 1
          end
+   (* parent *)
    | _n ->
       close cmd_out;
       let dh = {document_id = document_id wwwr;

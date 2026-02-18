@@ -84,9 +84,7 @@ local cap_rules = [
        capabilities for dangerous functions.
     |||,
     paths: {
-      exclude: [
-
-		] + exclude_dirs,
+      exclude: [ ] + exclude_dirs,
     },
   },
   {
@@ -99,9 +97,7 @@ local cap_rules = [
        Do not use exit. Use CapStdlib.exit and capabilities.
     |||,
     paths: {
-      exclude: [
-	'munix.ml', 'file.ml','save.ml', 'mmm.ml',
-      ] + exclude_dirs,
+      exclude: [ ] + exclude_dirs,
     },
   },
   {
@@ -114,7 +110,7 @@ local cap_rules = [
        Do not use Sys.argv. Use CapSys.argv and capabilities.
     |||,
     paths: {
-      exclude: [] + exclude_dirs,
+      exclude: [ ] + exclude_dirs,
     },
   },
   {
