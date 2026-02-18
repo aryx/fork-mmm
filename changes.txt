@@ -1,6 +1,6 @@
 # -*- org -*-
 
-* 0.42 (Q1 2026) (resume with 4.14.2, Dockerfile/GHA, dune, semgrep)
+* 0.42 (Q1 2026) (resume with 4.14.2, dune, Dockerfile/GHA, semgrep, caps)
 
 ** build infra
 - resume compilation of mmm with OCaml 4.14, fixed many unused
@@ -16,6 +16,7 @@
 ** internals
 - introduce intermediate libs/, languages/, src/, and gui/ folders
   (like in my other projects such as codemap/efuns/osemgrep)
+- copy commons/ from xix and start to use capabilities!
 
 * beta (Q1 2015) (maintenance)
 
