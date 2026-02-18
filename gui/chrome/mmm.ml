@@ -1,4 +1,5 @@
 (*s: gui/mmm.ml *)
+open Fpath_.Operators
 open Common
 open I18n
 
@@ -25,9 +26,9 @@ let initial_geom = ref None
 (*e: constant [[Mmm.initial_geom]] *)
 
 (*s: constant [[Mmm.home]] *)
-let home =
+let home : Fpath.t =
   try
-    Sys.getenv "HOME"
+    Fpath.v (Sys.getenv "HOME")
   with Not_found -> 
     Logs.err (fun m -> m "Please set the HOME environment variable.");
     raise (Exit.ExitCode (-1))
@@ -35,8 +36,8 @@ let home =
       
 
 (*s: function [[Mmm.user_file]] *)
-let user_file name =
-  Filename.concat (Filename.concat home ".mmm") name
+let user_file (name : string) : Fpath.t =
+  home / ".mmm" / name
 (*e: function [[Mmm.user_file]] *)
 
 (*s: constant [[Mmm.preferences]] *)
@@ -797,7 +798,7 @@ let main_navigator = ref None
 (*e: constant [[Mmm.main_navigator]] *)
 
 (*s: function [[Mmm.initial_navigator]] *)
-let initial_navigator preffile init_url =
+let initial_navigator (preffile : Fpath.t) init_url =
   (*s: [[Mmm.initial_navigator()]] set preferences *)
   preferences := Mmmprefs.f preffile;
   !preferences();

@@ -1,5 +1,6 @@
 (*s: main.ml *)
 open Common
+open Fpath_.Operators
 
 (*****************************************************************************)
 (* Prelude *)
@@ -32,10 +33,10 @@ let rec safe_loop() =
 (*e: function [[Main.safe_loop]] *)
        
 (*s: function [[Main.localize]] *)
-let localize file =
-  let localized = spf "%s.%s" file !I18n.language in
+let localize (file : Fpath.t) : Fpath.t =
+  let localized = spf "%s.%s" !!file !I18n.language in
   if Sys.file_exists localized 
-  then localized 
+  then Fpath.v localized 
   else file
 (*e: function [[Main.localize]] *)
 
@@ -99,10 +100,10 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
    "-display", Arg.String (fun s -> display := s),
    " <foo:0> Display";
    (*x: [[Main.main()]] command line options *)
-   "-suffixes", Arg.String (fun s -> sufxfile := s),
+   "-suffixes", Arg.String (fun s -> sufxfile := (Fpath.v s)),
    " <file> Suffix file";
    (*x: [[Main.main()]] command line options *)
-   "-prefs", Arg.String (fun s -> preffile := s),
+   "-prefs", Arg.String (fun s -> preffile := (Fpath.v s)),
    " <file> Preference File";
    (*x: [[Main.main()]] command line options *)
    "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
@@ -166,12 +167,12 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
 
   (* Resources *)
   let site_resfile =
-    localize (Filename.concat (Filename.dirname argv.(0)) "/data/MMM.ad") in
+    localize (Fpath.v (Filename.dirname argv.(0)) / "data/MMM.ad") in
   (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
-  if Sys.file_exists site_resfile 
+  if Sys.file_exists !!site_resfile 
   then  begin
-      Logs.info (fun m -> m "loading resource startup file %s" site_resfile);
-      Tkresource.readfile site_resfile Tk.StartupFile
+      Logs.info (fun m -> m "loading resource startup file %s" !!site_resfile);
+      Tkresource.readfile !!site_resfile Tk.StartupFile
   end;
   (*x: [[Main.main()]] resource initialisation *)
   begin match !palette with
@@ -197,8 +198,8 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
   (*e: [[Main.main()]] local initialisation *)
   (*s: [[Main.main()]] suffix initialisation *)
   (* Suffix mapping to Content-Type and Content-Encoding *)
-  if Sys.file_exists !sufxfile 
-  then Http_headers.read_suffix_file !sufxfile;
+  if Sys.file_exists !!(!sufxfile) 
+  then Http_headers.read_suffix_file !!(!sufxfile);
   (*e: [[Main.main()]] suffix initialisation *)
   (*s: [[Main.main()]] misc initialisation *)
   (* Various stuff for the HTML viewer, needing Tk *)
@@ -230,7 +231,7 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
     | []     -> None 
     | x::_l -> Some x
   in
-  let user_preferences_file =
+  let user_preferences_file : Fpath.t =
     (*s: [[Main.main()]] user preferences file *)
     localize !preffile
     (*e: [[Main.main()]] user preferences file *)

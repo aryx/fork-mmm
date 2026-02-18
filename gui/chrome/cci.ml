@@ -1,4 +1,5 @@
 (*s: gui/cci.ml *)
+open Fpath_.Operators
 open I18n
 open Tk
 open Unix
@@ -54,22 +55,22 @@ let init () =
  let file = Mmm.user_file "remote" in
  try
   let socket = socket PF_UNIX SOCK_STREAM 0 in
-    begin try bind socket (ADDR_UNIX file) 
+    begin try bind socket (ADDR_UNIX !!file) 
     with
       _ -> 
-    if not (Sys.file_exists file) then raise Not_found;
+    if not (Sys.file_exists !!file) then raise Not_found;
     begin match 
       Frx_dialog.f Widget.default_toplevel 
         (Mstring.gensym "confirm")
         (s_ "Confirm")
-        (s_ "%s already exists. This may mean that there is another MMM already running. Do you want to remove this file and create again ? (Note that you must be sure there is no other MMM with -external option)" file)
+        (s_ "%s already exists. This may mean that there is another MMM already running. Do you want to remove this file and create again ? (Note that you must be sure there is no other MMM with -external option)" !!file)
         (Predefined "question") 0
         [ s_ "Yes"; 
           s_ "No, I give up to use -external option"] 
     with
       0 -> 
-        Unix.unlink file;  
-        bind socket (ADDR_UNIX file) 
+        Unix.unlink !!file;  
+        bind socket (ADDR_UNIX !!file) 
     | _ -> raise Exit
     end
     end;
@@ -81,9 +82,9 @@ let init () =
           let fd,_ = accept socket in
        handler fd (Munix.read_line fd)
       with _ -> ());
-    at_exit (fun () -> Msys.rm file)
+    at_exit (fun () -> Msys.rm !!file)
  with e ->
-   Error.f (s_ "Can't initialize %s\n%s" file (Printexc.to_string e))
+   Error.f (s_ "Can't initialize %s\n%s" !!file (Printexc.to_string e))
 (*e: function [[Cci.init]] *)
 
 (*e: gui/cci.ml *)

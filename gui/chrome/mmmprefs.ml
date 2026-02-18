@@ -1,4 +1,5 @@
 (*s: gui/mmmprefs.ml *)
+open Fpath_.Operators
 open I18n
 
 open Tk
@@ -263,7 +264,7 @@ let families = [ network; html; i18n; images; progs; cache; applets;
 (*e: constant [[Mmmprefs.families]] *)
 
 (*s: function [[Mmmprefs.f]] *)
-let f preffile = 
-  Prefs.define preffile families mute
+let f (preffile : Fpath.t) = 
+  Prefs.define !!preffile families mute
 (*e: function [[Mmmprefs.f]] *)
 (*e: gui/mmmprefs.ml *)

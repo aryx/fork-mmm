@@ -11,6 +11,6 @@ val home : string ref
 (*e: signature [[Mmmprefs.home]] *)
 
 (*s: signature [[Mmmprefs.f]] *)
-val f : string -> unit -> unit
+val f : Fpath.t -> unit -> unit
 (*e: signature [[Mmmprefs.f]] *)
 (*e: gui/mmmprefs.mli *)

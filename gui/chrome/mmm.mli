@@ -1,11 +1,12 @@
 (*s: gui/mmm.mli *)
 (*s: signature [[Mmm.user_file]] *)
-val user_file : string -> string
+val user_file : string -> Fpath.t
     (* [user_file base] returns $HOME/.mmm/[base] *)
 (*e: signature [[Mmm.user_file]] *)
 
 (*s: signature [[Mmm.initial_navigator]] *)
-val initial_navigator : string -> string option -> unit
+val initial_navigator : 
+  Fpath.t (* preference file *) -> string (* url *) option -> unit
 (*e: signature [[Mmm.initial_navigator]] *)
 (*s: signature [[Mmm.main_navigator]] *)
 val main_navigator : Nav.t option ref
