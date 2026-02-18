@@ -1315,12 +1315,12 @@ let init_urls = ref [] in
 
 % _ -> Main.postmortem -> <>
 <<function [[Main.main]]>>=
-let main () =
+let main (caps : < caps >) (argv : string array) : Exit.t =
   <<[[Main.main()]] tk backends setup>>
 
   (* As always, we must parse argument first, using references... *)
   <<[[Main.main()]] locals>>
-  Arg.parse [
+  Arg_.parse_argv caps argv [
    <<[[Main.main()]] command line options>>
   ]
     (fun s -> init_urls := s :: !init_urls)
@@ -1342,7 +1342,7 @@ let main () =
 
   safe_loop();
   <<[[Main.main()]] after event loop, if debug mode>>
-  ()
+  Exit.OK
 @
 %$
 
@@ -1948,8 +1948,8 @@ let rec safe_loop() =
   | Out_of_memory -> raise Out_of_memory
   | Sys.Break -> raise Sys.Break
   | Stack_overflow -> raise Stack_overflow
-  | e -> 
-      flush Pervasives.stderr; 
+  | _e -> 
+      flush Stdlib.stderr; 
       safe_loop()
 @
 
@@ -14015,13 +14015,13 @@ end;
 let _ = 
   Cap.main (fun (caps : Cap.all_caps) ->
     let argv = CapSys.argv caps in
-    Exit.exit caps (Exit.catch (fun () -> postmortem caps)))
+    Exit.exit caps (Exit.catch (fun () -> postmortem caps argv)))
 @
 
 <<function [[Main.postmortem]]>>=
-let postmortem (caps: < caps; ..>) =
+let postmortem (caps: < caps; ..>) (argv : string array) : Exit.t =
   try 
-    main caps
+    main (caps :> caps) argv
   with
   | Dynlink.Error err ->
       Logs.err (fun m -> m "dynlink error = %s" (Dynlink.error_message err));

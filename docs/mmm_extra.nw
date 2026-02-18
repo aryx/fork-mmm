@@ -13558,7 +13558,7 @@ open Common
 (* Need:
  *  - open_in: for ??
  *)
-type caps = < Cap.open_in >
+type caps = < Cap.stdout; Cap.stderr; Cap.open_in >
 
 (*****************************************************************************)
 (* Helpers *)
