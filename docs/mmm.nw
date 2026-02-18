@@ -1314,7 +1314,7 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
     | []     -> None 
     | x::_l -> Some x
   in
-  let user_preferences_file =
+  let user_preferences_file : Fpath.t =
     <<[[Main.main()]] user preferences file>>
   in
   (* Start the initial navigator *)
@@ -1427,20 +1427,20 @@ Resource.add "*MMM.Height" "1768" Tk.WidgetDefault;
 
 (* Resources *)
 let site_resfile =
-  localize (Filename.concat (Filename.dirname argv.(0)) "/data/MMM.ad") in
+  localize (Fpath.v (Filename.dirname argv.(0)) / "data/MMM.ad") in
 (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
-if Sys.file_exists site_resfile 
+if Sys.file_exists !!site_resfile 
 then  begin
-    Logs.info (fun m -> m "loading resource startup file %s" site_resfile);
-    Tkresource.readfile site_resfile Tk.StartupFile
+    Logs.info (fun m -> m "loading resource startup file %s" !!site_resfile);
+    Tkresource.readfile !!site_resfile Tk.StartupFile
 end;
 @
 
 <<function [[Main.localize]]>>=
-let localize file =
-  let localized = spf "%s.%s" file !I18n.language in
+let localize (file : Fpath.t) : Fpath.t =
+  let localized = spf "%s.%s" !!file !I18n.language in
   if Sys.file_exists localized 
-  then localized 
+  then Fpath.v localized 
   else file
 @
 % see more later in i18n chapter
@@ -1573,11 +1573,12 @@ get an updated copy.
 
 % file pref and url opt
 <<signature [[Mmm.initial_navigator]]>>=
-val initial_navigator : string -> string option -> unit
+val initial_navigator : 
+  Fpath.t (* preference file *) -> string (* url *) option -> unit
 @
 % main -> <>
 <<function [[Mmm.initial_navigator]]>>=
-let initial_navigator preffile init_url =
+let initial_navigator (preffile : Fpath.t) init_url =
   <<[[Mmm.initial_navigator()]] set preferences>>
   <<[[Mmm.initial_navigator()]] set initial page based on [[init_url]]>>
   main_navigator :=
@@ -1596,7 +1597,7 @@ let initial_navigator preffile init_url =
 \subsection{Initial URL}
 
 <<constant [[Mmm.initial_page]]>>=
-let initial_page = ref None
+let initial_page : Url.t option ref = ref None
 @
 % why need to store? if create a new window?
 
@@ -1635,7 +1636,7 @@ val navigator : bool -> Url.t -> Nav.t option
 
 % main -> Mmm.initial_navigator -> <>(, true, )
 <<function [[Mmm.navigator]]>>=
-let rec navigator is_main_window initial_url =
+let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
   <<[[Mmm.navigator()]] new navigator hook>>
 
   (* The first navigator is named, so we can put special information in
@@ -1773,7 +1774,9 @@ val follow_link : t -> Hyper.link -> unit
 @
 <<function [[Nav.follow_link]]>>=
 let follow_link nav lk =
-  lk |> request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+  lk |> request nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
+      process_viewer true make_ctx nav wr dh
+    )
     <<[[Nav.follow_link]] extra arguments to Nav.request>>
 @
 % true is to add in history, but when we don't want to history?
@@ -1808,7 +1811,7 @@ val request :
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request nav process (usecache, wrapwr, specific) lk =
+let request (nav : t) process (usecache, wrapwr, specific) (lk : Hyper.link) =
 
   <<function [[Nav.request.retrieve_and_handle]]>>
   <<function [[Nav.request.handle_wr]]>>
@@ -1820,7 +1823,7 @@ let request nav process (usecache, wrapwr, specific) lk =
 
 % link -> wr -> ...
 <<function [[Nav.request.handle_link]]>>=
-and handle_link h =
+and handle_link (h : Hyper.link) : unit =
   try (* Convert the link into a request *)
     let wr = Plink.make h in
     wr.www_error <- nav.nav_error;
@@ -1836,7 +1839,7 @@ in
 % wr (-> cache) -> ...
 <<function [[Nav.request.handle_wr]]>>=
 (* Wrapper to deal with general/specific cache *)
-and handle_wr wr =
+and handle_wr (wr : Www.request) : unit =
   try
     match wr.www_url.protocol with
     <<[[Nav.request.handle_wr()]] match protocol special cases>>
@@ -2060,7 +2063,7 @@ nav_show_current = show_current;
 % Nav.absolutegoto -> request -> process_viewer -> <> (as Nav.nav_show_current)
 <<local function [[Mmm.navigator.show_current]]>>=
 (* Change view, independently of history manip *)
-let show_current di frag =
+let show_current (di : Viewers.display_info) (frag : string option) =
   <<[[Mmm.navigator.show_current()]] start hook>>
   <<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>
   display di;
@@ -2072,7 +2075,7 @@ in
 % or is it if we switch?
 
 <<function [[Mmm.display]]>>=
-let display di = 
+let display (di : Viewers.display_info) = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
   else Error.f "fatal error: window was destroyed";
@@ -2090,7 +2093,7 @@ let display di =
 
 
 <<[[Mmm.navigator()]] locals>>=
-let current_di = ref None in
+let current_di : Viewers.display_info option ref = ref None in
 @
 
 <<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>=
@@ -2102,7 +2105,7 @@ current_di := Some di;
 @
 
 <<function [[Mmm.undisplay]]>>=
-let undisplay di = 
+let undisplay (di : Viewers.display_info) = 
   if Winfo.exists di#di_widget 
   then Pack.forget [di#di_widget]
 @
@@ -2131,7 +2134,7 @@ nav_add_hist = add_hist;
 @
 % Nav.process_viewer -> <> (as nav.nav_add_hist <- Mmm.navigator)
 <<local function [[Mmm.navigator.add_hist]]>>=
-let add_hist did frag =
+let add_hist (did : Document.id) (frag : string option) =
   History.add hist did frag;
   !update_vhistory ()
 in
@@ -2317,7 +2320,7 @@ in
 @
 
 <<function [[Mmm.quit]]>>=
-let quit confirm =
+let quit (confirm : bool) =
   if confirm then
     match 
      Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
@@ -2755,7 +2758,7 @@ and any = parse
 val normalize : string -> string
 @
 <<function [[Lexurl.normalize]]>>=
-let normalize url =
+let normalize (url : string) : string =
   let urlp = make url in
   Url.string_of urlp
 @
@@ -3023,7 +3026,7 @@ val resolve : link -> Uri.abs_uri
 @
 <<function [[Hyper.resolve]]>>=
 (* Produces an URI *)
-let resolve link =
+let resolve (link : link) : Uri.abs_uri =
   (* First remove the possible fragment of the uri *)
   let newuri, frag =
     try
@@ -3076,7 +3079,7 @@ val urlconcat: Url.t -> string -> string
 (* parsed Absolute URL + URL -> Absolute URL *)
 (* NO FRAGMENT HANDLING *)
 
-let urlconcat contextp newuri =
+let urlconcat (contextp : Url.t) (newuri : string) : string =
   let l = String.length newuri in 
   if l = 0 
   then string_of contextp 
@@ -7061,14 +7064,14 @@ let _ =
 let sufxfile = ref (Mmm.user_file "mime.types") in
 @
 <<[[Main.main()]] command line options>>=
-"-suffixes", Arg.String (fun s -> sufxfile := s),
+"-suffixes", Arg.String (fun s -> sufxfile := (Fpath.v s)),
 " <file> Suffix file";
 @
 
 <<[[Main.main()]] suffix initialisation>>=
 (* Suffix mapping to Content-Type and Content-Encoding *)
-if Sys.file_exists !sufxfile 
-then Http_headers.read_suffix_file !sufxfile;
+if Sys.file_exists !!(!sufxfile) 
+then Http_headers.read_suffix_file !!(!sufxfile);
 @
 
 %\subsection{[[Http_headers.read_suffix_file()]]}
@@ -11276,7 +11279,7 @@ preferences := Mmmprefs.f preffile;
 let preffile = ref (Mmm.user_file "MMM.ad") in
 @
 <<[[Main.main()]] command line options>>=
-"-prefs", Arg.String (fun s -> preffile := s),
+"-prefs", Arg.String (fun s -> preffile := (Fpath.v s)),
 " <file> Preference File";
 @
 % .ad?
@@ -11286,20 +11289,20 @@ let preffile = ref (Mmm.user_file "MMM.ad") in
 
 
 <<signature [[Mmm.user_file]]>>=
-val user_file : string -> string
+val user_file : string -> Fpath.t
     (* [user_file base] returns $HOME/.mmm/[base] *)
 @
 %$
 <<function [[Mmm.user_file]]>>=
-let user_file name =
-  Filename.concat (Filename.concat home ".mmm") name
+let user_file (name : string) : Fpath.t =
+  home / ".mmm" / name
 @
 
 %less: rename homedir!
 <<constant [[Mmm.home]]>>=
-let home =
+let home : Fpath.t =
   try
-    Sys.getenv "HOME"
+    Fpath.v (Sys.getenv "HOME")
   with Not_found -> 
     Logs.err (fun m -> m "Please set the HOME environment variable.");
     raise (Exit.ExitCode (-1))
