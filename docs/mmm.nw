@@ -1294,12 +1294,18 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
 
   (* As always, we must parse argument first, using references... *)
   <<[[Main.main()]] locals>>
-  Arg_.parse_argv caps argv [
+  let level = ref (Some Logs.Warning) in
+
+  let options = ([
    <<[[Main.main()]] command line options>>
-  ]
+  ] @ Logs_.cli_flags level) |> Arg.align
+  in
+  Arg_.parse_argv caps argv options
     (fun s -> init_urls := s :: !init_urls)
     usage_str
   ;
+  Logs_.setup !level ();
+  Logs.info (fun m -> m "ran as %s from %s" argv.(0) (Sys.getcwd()));
   <<[[Main.main()]] signal handling>>
   <<[[Main.main()]] initialisation>>
 
@@ -1387,11 +1393,11 @@ let display = ref (try Sys.getenv("DISPLAY") with Not_found -> "") in
 @
 <<[[Main.main()]] command line options>>=
 "-d", Arg.String (fun s -> display := s),
-"<foo:0>\t\tDisplay";
+" <foo:0> Display";
 @
 <<[[Main.main()]] command line options>>=
 "-display", Arg.String (fun s -> display := s),
-"<foo:0>\tDisplay";
+" <foo:0> Display";
 @
 
 
@@ -1424,7 +1430,10 @@ let site_resfile =
   localize (Filename.concat (Filename.dirname argv.(0)) "/data/MMM.ad") in
 (* Site specific resource file usually in INSTALLDIR=/usr/local/lib/mmm *)
 if Sys.file_exists site_resfile 
-then Tkresource.readfile site_resfile Tk.StartupFile;
+then  begin
+    Logs.info (fun m -> m "loading resource startup file %s" site_resfile);
+    Tkresource.readfile site_resfile Tk.StartupFile
+end;
 @
 
 <<function [[Main.localize]]>>=
@@ -7053,7 +7062,7 @@ let sufxfile = ref (Mmm.user_file "mime.types") in
 @
 <<[[Main.main()]] command line options>>=
 "-suffixes", Arg.String (fun s -> sufxfile := s),
-"<file>\tSuffix file";
+" <file> Suffix file";
 @
 
 <<[[Main.main()]] suffix initialisation>>=
@@ -11268,7 +11277,7 @@ let preffile = ref (Mmm.user_file "MMM.ad") in
 @
 <<[[Main.main()]] command line options>>=
 "-prefs", Arg.String (fun s -> preffile := s),
-"<file>\t\tPreference File";
+" <file> Preference File";
 @
 % .ad?
 % preferences of navigator
@@ -11292,8 +11301,8 @@ let home =
   try
     Sys.getenv "HOME"
   with Not_found -> 
-    prerr_endline "Please set the HOME environment variable.";
-    exit (-1)
+    Logs.err (fun m -> m "Please set the HOME environment variable.");
+    raise (Exit.ExitCode (-1))
 @
 
 
@@ -11312,7 +11321,7 @@ let initial_geom = ref None
 @
 <<[[Main.main()]] command line options>>=
 "-geometry", Arg.String (fun s -> Mmm.initial_geom := Some s),
-"<wxh+x+y>\tInitial geometry for the first navigator";
+" <wxh+x+y> Initial geometry for the first navigator";
 @
 
 <<[[Mmm.navigator()]] set geometry if specified>>=
@@ -11339,7 +11348,7 @@ let palette = ref None in
 @
 <<[[Main.main()]] command line options>>=
 "-palette", Arg.String (fun s -> palette := Some s),
-"<color>\tTk Palette";
+" <color> Tk Palette";
 @
 
 \subsection{Click to follow, [[-clicktofocus]]}
@@ -11354,7 +11363,7 @@ let clicktofocus = ref false in
 @
 <<[[Main.main()]] command line options>>=
 "-clicktofocus", Arg.Unit (fun () -> clicktofocus := true),
-"\tClick to Focus mode (default is Focus Follows Mouse)";
+" Click to Focus mode (default is Focus Follows Mouse)";
 @
 
 
@@ -11369,7 +11378,7 @@ let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
 @
 <<[[Main.main()]] command line options>>=
 "-helpurl", Arg.String (fun s -> Mmm.helpurl := Lexurl.make s),
-"<url>\tHelp URL";
+" <url> Help URL";
 @
 
 <<signature [[Version.helpurl]]>>=
@@ -11544,6 +11553,7 @@ let dir path =
     let d = opendir path in
     let cin, cout = pipe() in
     match Low.fork() with
+    (* child *)
     | 0 -> 
         close cin; dup2 cout stdout; close cout;
         begin
@@ -11553,8 +11563,10 @@ let dir path =
             print_endline (Printexc.to_string e)
         end;
         flush Stdlib.stdout; (* strange bug with our at_exit stuff *)
+        (* nosemgrep: do-not-use-exit *)
         exit 0
         (*cin (*duh*) *)
+     (* parent *)
      | _n -> closedir d; close cout; cin
   with Unix_error(_,_,_)  -> 
     raise (File_error (s_ "cannot open dir"))
@@ -11564,7 +11576,7 @@ let dir path =
 
 % File.dir -> <>
 <<function [[File.d2html]]>>=
-let d2html path d =
+let d2html path (d : Unix.dir_handle) =
   (* make sure that when path is used in url, it is / terminated *)
   let pathurl =
     let l = String.length path in
@@ -11970,7 +11982,7 @@ let accept_external = ref false in
 @
 <<[[Main.main()]] command line options>>=
 "-external", Arg.Unit (fun () -> accept_external := true),
-"\t\tAccept remote command (mmm_remote <url>)";
+" Accept remote command (mmm_remote <url>)";
 @
 
 <<[[Main.main()]] mmm server initialisation>>=
@@ -12276,11 +12288,11 @@ let proxy_port = ref 80
 @
 <<[[Main.main()]] command line options>>=
 "-proxy", Arg.String (fun s -> Http.proxy := s), 
-"<hostname>\tProxy host";
+" <hostname> Proxy host";
 @
 <<[[Main.main()]] command line options>>=
 "-port", Arg.Int (fun i -> Http.proxy_port := i),
-"<port>\t\tProxy port";
+" <port> Proxy port";
 @
 
 
@@ -12493,7 +12505,7 @@ let language = ref ""
 @
 <<[[Main.main()]] command line options>>=
 "-lang", Arg.String (fun s -> I18n.language := s),
-"<lang>\t\tI18n language";
+" <lang> I18n language";
 @
 
 
@@ -12505,7 +12517,7 @@ let message_file = ref ""
 @
 <<[[Main.main()]] command line options>>=
 "-msgfile", Arg.String (fun s -> I18n.message_file := s),
-"<file>\tI18n message file";
+" <file> I18n message file";
 @
 
 
@@ -13747,6 +13759,7 @@ let fake_cgi wwwr cont path =
       with Not_found -> path, [| path |] 
     in
     match Low.fork() with
+    (* child *)
     | 0 -> 
         close cmd_in;
         dup2 cmd_out stdout; close cmd_out;
@@ -13761,8 +13774,10 @@ let fake_cgi wwwr cont path =
             Munix.write_string stdout "\" failed:";
             Munix.write_string stdout (Unix.error_message e);
             Munix.write_string stdout "\n";
+            (* nosemgrep: do-not-use-exit *)
             exit 1
          end
+   (* parent *)
    | _n ->
       close cmd_out;
       let dh = {document_id = document_id wwwr;
@@ -13840,7 +13855,7 @@ let modules = ref true in
 @
 <<[[Main.main()]] command line options>>=
 "-nomodule", Arg.Unit (fun () -> modules := false),
-"\t\tDon't load initial modules";
+" Don't load initial modules";
 @
 
 
