@@ -1,3 +1,27 @@
+; can't link yet with dune so let's build a library at least
+; so can use dune to quickly check our OCaml code
+(library
+ (public_name mmm.main)
+ (name mmm_main)
+ (wrapped false)
+ (libraries
+    camltk
+    ;mmm.commons
+    ;mmm.japan
+    mmm.www
+    ;mmm.html
+    ;; mmm.http
+    ;mmm.protocols
+    ;mmm.tk
+    mmm.viewers
+    mmm.display
+    mmm.gui
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+
+
+
 ;(executable
 ; (name main)
 ; (modules main)

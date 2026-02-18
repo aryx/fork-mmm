@@ -14013,16 +14013,22 @@ end;
 
 <<toplevel [[Main._1]]>>=
 let _ = 
-  Printexc.catch postmortem ()
+  Cap.main (fun (caps : Cap.all_caps) ->
+    let argv = CapSys.argv caps in
+    Exit.exit caps (Exit.catch (fun () -> postmortem caps)))
 @
 
 <<function [[Main.postmortem]]>>=
-let postmortem () =
+let postmortem (caps: < caps; ..>) =
   try 
-    main ()
+    main caps
   with
   | Dynlink.Error err ->
-      failwith (spf "dynlink error = %s" (Dynlink.error_message err))
+      Logs.err (fun m -> m "dynlink error = %s" (Dynlink.error_message err));
+      Exit.Code 1
+  | Failure s ->
+      Logs.err (fun m -> m "mmm: %s" s);
+      Exit.Code 2
   | e -> 
       <<[[Main.main()]] after event loop, if debug mode>>
       raise e

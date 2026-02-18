@@ -22,7 +22,7 @@ TARGET=mmm
 
 OPTPROGS= $(PROGS:=.opt)
 
-SRC=main.ml
+SRC=main/main.ml
 
 # for the basic browser
 MAINDIRS= \
@@ -109,7 +109,7 @@ depend::
 OBJS= $(LIBS) $(TXTDISP)
 
 # Entry point
-MAIN=main.cmo
+MAIN=main/main.cmo
 
 # Exported sandbox libraries
 #SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo

@@ -2,12 +2,17 @@
 open Common
 
 (*****************************************************************************)
-(* Purpose *)
+(* Prelude *)
 (*****************************************************************************)
+(* The MMM Web Browser *)
 
 (*****************************************************************************)
-(* Flags *)
+(* Types and constants *)
 (*****************************************************************************)
+(* Need:
+ *  - open_in: for ??
+ *)
+type caps = < Cap.stdout; Cap.stderr; Cap.open_in >
 
 (*****************************************************************************)
 (* Helpers *)
@@ -21,8 +26,8 @@ let rec safe_loop() =
   | Out_of_memory -> raise Out_of_memory
   | Sys.Break -> raise Sys.Break
   | Stack_overflow -> raise Stack_overflow
-  | e -> 
-      flush Pervasives.stderr; 
+  | _e -> 
+      flush Stdlib.stderr; 
       safe_loop()
 (*e: function [[Main.safe_loop]] *)
        
@@ -48,7 +53,7 @@ let usage_str =
 (*e: constant [[Main.usage_str]] *)
 
 (*s: function [[Main.main]] *)
-let main () =
+let main (caps : < caps >) (argv : string array) : Exit.t =
   (*s: [[Main.main()]] tk backends setup *)
   Error.default                    := new Tk_error.t Widget.default_toplevel;
   Condition.backend                := Tk_condition.backend ();
@@ -84,7 +89,7 @@ let main () =
   (*x: [[Main.main()]] locals *)
   let modules = ref true in
   (*e: [[Main.main()]] locals *)
-  Arg.parse [
+  Arg_.parse_argv caps argv [
    (*s: [[Main.main()]] command line options *)
    "-d", Arg.String (fun s -> display := s),
    "<foo:0>\t\tDisplay";
@@ -228,16 +233,20 @@ let main () =
     Gcache.postmortem()
   end;
   (*e: [[Main.main()]] after event loop, if debug mode *)
-  ()
+  Exit.OK
 (*e: function [[Main.main]] *)
       
 (*s: function [[Main.postmortem]] *)
-let postmortem () =
+let postmortem (caps: < caps; ..>) (argv : string array) : Exit.t =
   try 
-    main ()
+    main (caps :> caps) argv
   with
   | Dynlink.Error err ->
-      failwith (spf "dynlink error = %s" (Dynlink.error_message err))
+      Logs.err (fun m -> m "dynlink error = %s" (Dynlink.error_message err));
+      Exit.Code 1
+  | Failure s ->
+      Logs.err (fun m -> m "mmm: %s" s);
+      Exit.Code 2
   | e -> 
       (*s: [[Main.main()]] after event loop, if debug mode *)
       if !Log.debug_mode then begin
@@ -250,6 +259,8 @@ let postmortem () =
 
 (*s: toplevel [[Main._1]] *)
 let _ = 
-  Printexc.catch postmortem ()
+  Cap.main (fun (caps : Cap.all_caps) ->
+    let argv = CapSys.argv caps in
+    Exit.exit caps (Exit.catch (fun () -> postmortem caps argv)))
 (*e: toplevel [[Main._1]] *)
 (*e: main.ml *)

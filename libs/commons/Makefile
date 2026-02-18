@@ -6,7 +6,22 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= Common.ml Console.ml Logs.ml
+SRC= Cap.ml CapStdlib.ml CapSys.ml CapUnix.ml \
+ Eq.ml Ord.ml \
+ Set_.ml Map_.ml \
+ Common.ml \
+ Dumper.ml OCaml.ml \
+ Console.ml \
+ Fpath.ml Fpath_.ml \
+ Logs.ml Logs_.ml \
+ Chan.ml FS.ml IO.ml Tmp.ml \
+ Cmd.ml Proc.ml \
+ Exception.ml Exit.ml \
+ Arg_.ml \
+ Endian.ml Arch.ml OS.ml \
+
+#skipped Data already in libs/misc/
+# Date.ml Bits.ml Rune.ml \
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
