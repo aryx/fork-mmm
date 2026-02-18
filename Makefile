@@ -138,11 +138,11 @@ mmm.opt:
 # The standalone HTML syntax checker
 HTMISC=libs/misc/lang.cmo libs/misc/ebuffer.cmo libs/misc/log.cmo\
        libs/i18n/japan/lib.cma languages/html/lib.cma
-htparse: $(HTMISC)  htparse.cmo
+htparse: $(HTMISC)  main/htparse.cmo
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
-mmm_remote: main_remote.cmo
+mmm_remote: main/main_remote.cmo
 	$(CAMLC) -custom -o $@ unix.cma $^
 
 clean::

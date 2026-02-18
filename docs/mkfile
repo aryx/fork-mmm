@@ -171,8 +171,8 @@ SRC= \
   gui/chrome/cci.ml\
   \
   main/main.ml\
-  main_remote.ml\
-  htparse.ml\
+  main/main_remote.ml\
+  main/htparse.ml\
   \
   extensions/audio.ml\
   extensions/images.ml\

@@ -36,38 +36,40 @@
 ; )
 ; ; 'byte' is for ocamldebug
 ; (modes native byte))
-;
-;
-;(executable
-; (name htparse)
-; (modules htparse)
-; (libraries
-;   mmm.html
-; )
-; ; 'byte' is for ocamldebug
-; (modes native byte))
-;
-;
-;(executable
-; (name main_remote)
-; (modules main_remote)
-; (libraries
-;   unix
-;   mmm.html
-; )
-; ; 'byte' is for ocamldebug
-; (modes native byte))
-;
-;
-;
-;(install
-; (package mmm)
-; (section bin)
-; (files
-;  (htparse.exe as htparse)
-;  ; useful to debug, see ../../debug and ocamldebug
-;  (htparse.bc as htparse.bc)
-;  (main_remote.exe as mmm_remote)
+
+
+
+(executable
+ (name htparse)
+ (modules htparse)
+ (libraries
+   mmm.html
+ )
+ ; 'byte' is for ocamldebug
+ (modes native byte))
+
+
+(executable
+ (name main_remote)
+ (modules main_remote)
+ (libraries
+   unix
+   mmm.html
+ )
+ ; 'byte' is for ocamldebug
+ (modes native byte))
+
+
+
+(install
+ (package mmm)
+ (section bin)
+ (files
+  (htparse.exe as htparse)
+  ; useful to debug, see ../../debug and ocamldebug
+  (htparse.bc as htparse.bc)
+  (main_remote.exe as mmm_remote)
 ;  (main.exe as mmm)
-; )
-;)
+ )
+)
+

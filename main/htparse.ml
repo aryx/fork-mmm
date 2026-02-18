@@ -50,8 +50,8 @@ let line_reporting ic =
   (fun pos ->
     let rec find_line = function
       [] -> 1, 0
-    | (linestart, linenum)::l when pos < linestart -> find_line l
-    | (linestart, linenum)::l -> linenum, linestart
+    | (linestart, _linenum)::l when pos < linestart -> find_line l
+    | (linestart, linenum)::_l -> linenum, linestart
     in
      find_line !lines)
 (*e: function [[Htparse.line_reporting]] *)
@@ -61,7 +61,7 @@ let html_lex name =
   let ic = open_in name in
   let lexbuf, find_line = line_reporting ic in
   Html_eval.automat Dtd.dtd32f lexbuf
-     (fun loc token ->
+     (fun _loc token ->
         match token with
         | EOF -> close_in ic
         | t -> 
@@ -90,7 +90,7 @@ let html_nest name =
        | CloseTag t ->
            (match !stack with
             | hd::tl when hd = t -> stack := tl
-            | hd::tl -> eprintf "Unmatched closing tag %s (expected %s) at 
+            | hd::_tl -> eprintf "Unmatched closing tag %s (expected %s) at 
                             pos %d - %d" t hd n n'
             | [] -> eprintf "Unmatched closing tag %s (Empty stack) at
                             pos %d - %d" t n n'
@@ -106,13 +106,13 @@ let html_indent name level =
     match level with
     | 0 -> Format.open_box
     | 1 -> Format.open_hvbox
-    | n -> Format.open_vbox 
+    | _n -> Format.open_vbox 
   in
   let ic = open_in name in
   let lexbuf  = Lexing.from_channel ic in
   box 0;
   Html_eval.automat Dtd.dtd32f lexbuf
-    (fun loc token ->
+    (fun _loc token ->
       match token with
       | EOF -> 
           Format.print_newline();
