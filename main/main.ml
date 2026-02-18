@@ -151,9 +151,12 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
   then Focus.follows_mouse();
   (*e: [[Main.main()]] tk initialisation *)
   (*s: [[Main.main()]] resource initialisation *)
-  (* Default values for navigator window *)
-  Resource.add "*MMM.Width" "640" Tk.WidgetDefault;
-  Resource.add "*MMM.Height" "480" Tk.WidgetDefault;
+  (* Default values for navigator window 
+   * old: was 640x480, but does not seem to fully work, xwininfo returns 
+   * different values of the one specified below.
+   *)
+  Resource.add "*MMM.Width" "2024" Tk.WidgetDefault;
+  Resource.add "*MMM.Height" "1768" Tk.WidgetDefault;
 
   (* Resources *)
   let site_resfile =
