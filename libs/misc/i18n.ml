@@ -113,9 +113,6 @@ let sprintf (fmt : ('a, unit, string) format) =
 
 let s_ fmt = sprintf fmt
 
-
-
-
 (*s: function [[I18n.menu_option]] *)
 (*e: function [[I18n.menu_option]] *)
 

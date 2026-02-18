@@ -273,7 +273,7 @@ let maken s =
 (*e: function [[Lexurl.maken]] *)
 
 (*s: function [[Lexurl.normalize]] *)
-let normalize url =
+let normalize (url : string) : string =
   let urlp = make url in
   Url.string_of urlp
 (*e: function [[Lexurl.normalize]] *)

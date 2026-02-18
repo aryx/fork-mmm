@@ -61,7 +61,7 @@ exception Invalid_link of link_error
 (* parsed Absolute URL + URL -> Absolute URL *)
 (* NO FRAGMENT HANDLING *)
 
-let urlconcat contextp newuri =
+let urlconcat (contextp : Url.t) (newuri : string) : string =
   let l = String.length newuri in 
   if l = 0 
   then string_of contextp 
@@ -108,7 +108,7 @@ let urlconcat contextp newuri =
           
 (*s: function [[Hyper.resolve]] *)
 (* Produces an URI *)
-let resolve link =
+let resolve (link : link) : Uri.abs_uri =
   (* First remove the possible fragment of the uri *)
   let newuri, frag =
     try

@@ -74,7 +74,7 @@ let dont_check_cache wwwr =
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request nav process (usecache, wrapwr, specific) lk =
+let request (nav : t) process (usecache, wrapwr, specific) (lk : Hyper.link) =
 
   (*s: function [[Nav.request.retrieve_and_handle]] *)
   (* Normally execute the request and process its answer (dh) *)
@@ -97,7 +97,7 @@ let request nav process (usecache, wrapwr, specific) lk =
   (*e: function [[Nav.request.retrieve_and_handle]] *)
   (*s: function [[Nav.request.handle_wr]] *)
   (* Wrapper to deal with general/specific cache *)
-  and handle_wr wr =
+  and handle_wr (wr : Www.request) : unit =
     try
       match wr.www_url.protocol with
       (*s: [[Nav.request.handle_wr()]] match protocol special cases *)
@@ -135,7 +135,7 @@ let request nav process (usecache, wrapwr, specific) lk =
       wr.www_error#f (s_ "The document %s\nis currently being retrieved for some other purpose.\nMMM cannot process your request until retrieval is completed." (Url.string_of url))
   (*e: function [[Nav.request.handle_wr]] *)
   (*s: function [[Nav.request.handle_link]] *)
-  and handle_link h =
+  and handle_link (h : Hyper.link) : unit =
     try (* Convert the link into a request *)
       let wr = Plink.make h in
       wr.www_error <- nav.nav_error;
@@ -376,7 +376,9 @@ let save_link nav whereto =
 (*e: function [[Nav.save_link]] *)
 (*s: function [[Nav.follow_link]] *)
 let follow_link nav lk =
-  lk |> request nav (fun nav wr dh -> process_viewer true make_ctx nav wr dh)
+  lk |> request nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
+      process_viewer true make_ctx nav wr dh
+    )
     (*s: [[Nav.follow_link]] extra arguments to Nav.request *)
     (true, id_wr, specific_viewer true)
     (*e: [[Nav.follow_link]] extra arguments to Nav.request *)

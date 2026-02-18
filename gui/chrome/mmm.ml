@@ -19,7 +19,7 @@ let _hotlist = ref ""
 let helpurl = ref (Lexurl.make (Version.helpurl (Lang.lang ())))
 (*e: constant [[Mmm.helpurl]] *)
 (*s: constant [[Mmm.initial_page]] *)
-let initial_page = ref None
+let initial_page : Url.t option ref = ref None
 (*e: constant [[Mmm.initial_page]] *)
 (*s: constant [[Mmm.initial_geom]] *)
 let initial_geom = ref None
@@ -81,12 +81,12 @@ let start_tachy () =
 
 (* Switching current viewers in the browser *)
 (*s: function [[Mmm.undisplay]] *)
-let undisplay di = 
+let undisplay (di : Viewers.display_info) = 
   if Winfo.exists di#di_widget 
   then Pack.forget [di#di_widget]
 (*e: function [[Mmm.undisplay]] *)
 (*s: function [[Mmm.display]] *)
-let display di = 
+let display (di : Viewers.display_info) = 
   if Winfo.exists di#di_widget
   then pack [di#di_widget][Fill Fill_Both; Expand true]
   else Error.f "fatal error: window was destroyed";
@@ -101,7 +101,7 @@ let display di =
 (*e: function [[Mmm.display]] *)
 
 (*s: function [[Mmm.quit]] *)
-let quit confirm =
+let quit (confirm : bool) =
   if confirm then
     match 
      Frx_dialog.f Widget.default_toplevel (Mstring.gensym "quit")
@@ -134,7 +134,7 @@ let navigators = ref 0
 (*e: constant [[Mmm.navigators]] *)
 
 (*s: function [[Mmm.navigator]] *)
-let rec navigator is_main_window initial_url =
+let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
   (*s: [[Mmm.navigator()]] new navigator hook *)
   incr navigators;
   (*e: [[Mmm.navigator()]] new navigator hook *)
@@ -157,7 +157,7 @@ let rec navigator is_main_window initial_url =
   (*s: [[Mmm.navigator()]] locals *)
   let entryv = Textvariable.create_temporary top in
   (*x: [[Mmm.navigator()]] locals *)
-  let current_di = ref None in
+  let current_di : Viewers.display_info option ref = ref None in
   (*x: [[Mmm.navigator()]] locals *)
   let update_vhistory = ref (fun () -> ()) (* duh *) in
   (*e: [[Mmm.navigator()]] locals *)
@@ -174,7 +174,7 @@ let rec navigator is_main_window initial_url =
     (*e: local [[Mmm.navigator.hist]] *)
     (*s: local function [[Mmm.navigator.show_current]] *)
     (* Change view, independently of history manip *)
-    let show_current di frag =
+    let show_current (di : Viewers.display_info) (frag : string option) =
       (*s: [[Mmm.navigator.show_current()]] start hook *)
       di#di_touch;
       (*e: [[Mmm.navigator.show_current()]] start hook *)
@@ -197,7 +197,7 @@ let rec navigator is_main_window initial_url =
     in
     (*e: local function [[Mmm.navigator.show_current]] *)
     (*s: local function [[Mmm.navigator.add_hist]] *)
-    let add_hist did frag =
+    let add_hist (did : Document.id) (frag : string option) =
       History.add hist did frag;
       !update_vhistory ()
     in
