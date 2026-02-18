@@ -75,6 +75,8 @@ local cap_rules = [
         # print_string, print_int, print_bool, ...
         # Cap.tmp
         #'Filename.temp_file',
+        # Cap.network
+        #'Unix.socket'
 	]
     },
     languages: ['ocaml'],

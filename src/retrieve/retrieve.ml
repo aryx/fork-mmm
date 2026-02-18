@@ -1,17 +1,16 @@
 (*s: retrieve/retrieve.ml *)
 (* Document retrieval *)
+open Common
 open I18n
 open Printf
 open Www
 open Hyper
 open Url
-open Document
 open Http
-open Http_headers
 open Auth
 
 (*s: type [[Retrieve.retrievalStatus]] *)
-type retrievalStatus =
+type status =
  | Started of Www.aborter
  | InUse
 (*e: type [[Retrieve.retrievalStatus]] *)
@@ -35,8 +34,10 @@ type behaviour =
 (*
  * Provision for user (re)definition of behaviours.
  *)
-let http_process = (Hashtbl.create 37: 
-   (int, Www.request -> Document.handle -> behaviour) Hashtbl.t)
+let http_process : 
+  (int, Www.request -> Document.handle -> behaviour) Hashtbl.t = 
+  Hashtbl_.create ()
+   
 (*e: constant [[Retrieve.http_process]] *)
 
 (*s: constant [[Retrieve.add_http_processor]] *)
@@ -45,13 +46,13 @@ let add_http_processor = Hashtbl.add http_process
 
 (*s: function [[Retrieve.wrap_cache]] *)
 (* What do we cache ? : text/html and text/plain in memory *)
-let wrap_cache cache dh =
-  Log.debug (sprintf "Wrapping cache for %s(%d)"
+let wrap_cache cache (dh : Document.handle) =
+  Logs.debug (fun m -> m "Wrapping cache for %s(%d)"
              (Url.string_of dh.document_id.document_url)
              dh.document_id.document_stamp);
   Retype.f dh;
   try
-    match Lexheaders.media_type (contenttype dh.dh_headers) with
+    match Lexheaders.media_type (Http_headers.contenttype dh.dh_headers) with
     | ("text","html"),_ 
     | ("text","plain"),_ ->
       begin 
@@ -74,8 +75,10 @@ let wrap_cache cache dh =
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
-let rec http_check cache retry cont wwwr dh =
-  Log.debug "Retrieve.http_check";
+let rec http_check cache (retry : Hyper.link -> unit)
+         (cont : Document.continuation) (wwwr : Www.request)
+         (dh : Document.handle) =
+  Logs.debug (fun m -> m "Retrieve.http_check");
   try (* the appropriate behavior *)
     let behav = Hashtbl.find http_process dh.document_status in
     match behav wwwr dh with
@@ -85,19 +88,19 @@ let rec http_check cache retry cont wwwr dh =
         cont.document_process
           (if cacheable then wrap_cache cache dh else dh)
     | Stop msg ->
-        dclose true dh;
+        Document.dclose true dh;
         cont.document_finish false;
         wwwr.www_error#ok msg
     | Error msg ->
-        dclose true dh;
+        Document.dclose true dh;
         cont.document_finish false;
         wwwr.www_error#f msg
     | Retry hlink ->
-        dclose true dh;
+        Document.dclose true dh;
         cont.document_finish false;
         retry hlink
     | Restart transform ->
-        dclose true dh;
+        Document.dclose true dh;
         f wwwr retry 
          { cont with 
            document_process = (fun dh -> cont.document_process (transform dh))}
@@ -116,17 +119,18 @@ let rec http_check cache retry cont wwwr dh =
  *   we must catch here all errors due to protocols and remove the
  *   cnx from the set of active cnx.
  *)
-and f request retry cont = 
-  Log.debug "Retrieve.f";
+and f (request : Www.request) (retry : Hyper.link -> unit) 
+      (cont : Document.continuation) : status = 
+  Logs.debug (fun m -> m "Retrieve.f on %s" (Url.string_of request.www_url));
   if Www.is_active_cnx request.www_url
   then InUse
   else begin
     Www.add_active_cnx request.www_url;
     try 
-      let (req, cache) = Protos.get request.www_url.protocol in
-      Started (req request
+      let (reqf, cachef) = Protos.get request.www_url.protocol in
+      Started (reqf request
                  { cont with
-                   document_process = http_check cache retry cont request})
+                   document_process = http_check cachef retry cont request})
 
    with 
    | Not_found ->
@@ -156,13 +160,13 @@ let code200 _wwwr _dh = Ok
 
 (*s: function [[Retrieve.code204]] *)
 (* 204 No Content: we should modify the headers of the referer ? *)
-let code204 _wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
+let code204 _wwwr (dh : Document.handle) =
+  Stop (s_ "Request fulfilled.\n(%s)" (Http_headers.status_msg dh.dh_headers))
 (*e: function [[Retrieve.code204]] *)
 
 (*s: function [[Retrieve.forward]] *)
 (* 302 Moved temporarily *)
-let forward wr dh =
+let forward (wr : Www.request) (dh : Document.handle) =
   try 
     let newurl = Http_headers.location dh.dh_headers in
     if (* do we forward automatically ?*)
@@ -187,7 +191,7 @@ let forward wr dh =
 
 (*s: function [[Retrieve.forward_permanent]] *)
 (* 301 Moved permanently *)
-let forward_permanent wr dh =
+let forward_permanent (wr : Www.request) (dh : Document.handle) =
   try
     let newurl = Http_headers.location dh.dh_headers in
     wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
@@ -210,9 +214,9 @@ let _code400 _wr _dh = Error (s_ "Bad Request")
 
 (*s: function [[Retrieve.ask_auth]] *)
 (* 401 Unauthorized *)
-let ask_auth wr dh =
+let ask_auth (wr : Www.request) (dh : Document.handle) =
   wr.www_logging (s_ "Checking authentication");
-  let rawchallenge = challenge dh.dh_headers in
+  let rawchallenge = Http_headers.challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   let host = match wr.www_url.host with
@@ -248,7 +252,7 @@ let unauthorized wr dh =
           Auth.add space cookie;
         (* Put the challenge header again *)
         begin try
-          newdh.dh_headers <- ("WWW-Authenticate: "^ (challenge dh.dh_headers))
+          newdh.dh_headers <- ("WWW-Authenticate: "^ (Http_headers.challenge dh.dh_headers))
                               :: newdh.dh_headers
          with
           Not_found -> ()
@@ -259,9 +263,9 @@ let unauthorized wr dh =
 (*s: function [[Retrieve.ask_proxy_auth]] *)
 (* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
-let ask_proxy_auth wr dh =
+let ask_proxy_auth (wr : Www.request) (dh : Document.handle) =
   wr.www_logging (s_ "Checking proxy authentication");
-  let rawchallenge = proxy_challenge dh.dh_headers in
+  let rawchallenge = Http_headers.proxy_challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   Auth.check wr challenge
@@ -289,7 +293,7 @@ let proxy_unauthorized wr dh =
          (* Put the challenge header again *)
          begin try
            newdh.dh_headers <- 
-              ("Proxy-Authenticate: "^ (proxy_challenge dh.dh_headers))
+              ("Proxy-Authenticate: "^ (Http_headers.proxy_challenge dh.dh_headers))
               :: newdh.dh_headers
           with
            Not_found -> ()

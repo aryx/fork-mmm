@@ -92,7 +92,7 @@ type t = {
 module DocumentIDSet : Set.S with type elt = id
 
 (*s: signature [[Document.dclose]] *)
-val dclose : bool -> handle -> unit
+val dclose : bool (* remactive *) -> handle -> unit
   (* [dclose remactive dh] closes a living dh *)
 (*e: signature [[Document.dclose]] *)
 

@@ -3331,7 +3331,7 @@ and proxy_request09 wr cont =
           (failed_request wr cont.document_finish)
 
 <<function [[Http.request]]>>
-
+(* HTTP 0.9 ?? TODO? delete? obsolete?  *)
 and request09 wr cont =
   if !always_proxy 
   then proxy_request09 wr cont
@@ -3997,7 +3997,7 @@ open Url
 %-------------------------------------------------------------
 
 <<protocols/protos.ml>>=
-open Url
+open Common
 
 <<constant [[Protos.protos]]>>
 
@@ -4066,14 +4066,13 @@ open Url
 
 <<retrieve/retrieve.ml>>=
 (* Document retrieval *)
+open Common
 open I18n
 open Printf
 open Www
 open Hyper
 open Url
-open Document
 open Http
-open Http_headers
 open Auth
 
 <<type [[Retrieve.retrievalStatus]]>>

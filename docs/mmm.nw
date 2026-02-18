@@ -759,7 +759,10 @@ val get: Url.protocol ->
 %  can abort the request, so I did a type instead of having unit -> unit
 
 <<constant [[Protos.protos]]>>=
-let protos = Hashtbl.create 11
+let protos : (Url.protocol, 
+             (Www.request -> Document.continuation -> Www.aborter) * 
+             (Document.handle -> Document.data * Cache.cache_fill)) Hashtbl.t =
+  Hashtbl_.create ()
 @
 
 <<constant [[Protos.get]]>>=
@@ -5318,11 +5321,11 @@ let contentencoding =
 val f : Www.request ->  (* the request *)
         (Hyper.link -> unit) -> (* the retry function *)
         Document.continuation -> (* the handlers *)
-        retrievalStatus
+        status
 @
 
 <<type [[Retrieve.retrievalStatus]]>>=
-type retrievalStatus =
+type status =
  | Started of Www.aborter
  | InUse
 @
@@ -5338,17 +5341,18 @@ type retrievalStatus =
  *   we must catch here all errors due to protocols and remove the
  *   cnx from the set of active cnx.
  *)
-and f request retry cont = 
-  Log.debug "Retrieve.f";
+and f (request : Www.request) (retry : Hyper.link -> unit) 
+      (cont : Document.continuation) : status = 
+  Logs.debug (fun m -> m "Retrieve.f on %s" (Url.string_of request.www_url));
   if Www.is_active_cnx request.www_url
   then InUse
   else begin
     Www.add_active_cnx request.www_url;
     try 
-      let (req, cache) = Protos.get request.www_url.protocol in
-      Started (req request
+      let (reqf, cachef) = Protos.get request.www_url.protocol in
+      Started (reqf request
                  { cont with
-                   document_process = http_check cache retry cont request})
+                   document_process = http_check cachef retry cont request})
 
    with 
    | Not_found ->
@@ -5391,8 +5395,10 @@ type behaviour =
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
-let rec http_check cache retry cont wwwr dh =
-  Log.debug "Retrieve.http_check";
+let rec http_check cache (retry : Hyper.link -> unit)
+         (cont : Document.continuation) (wwwr : Www.request)
+         (dh : Document.handle) =
+  Logs.debug (fun m -> m "Retrieve.http_check");
   try (* the appropriate behavior *)
     let behav = Hashtbl.find http_process dh.document_status in
     match behav wwwr dh with
@@ -5402,19 +5408,19 @@ let rec http_check cache retry cont wwwr dh =
         cont.document_process
           (if cacheable then wrap_cache cache dh else dh)
     | Stop msg ->
-        dclose true dh;
+        Document.dclose true dh;
         cont.document_finish false;
         wwwr.www_error#ok msg
     | Error msg ->
-        dclose true dh;
+        Document.dclose true dh;
         cont.document_finish false;
         wwwr.www_error#f msg
     | Retry hlink ->
-        dclose true dh;
+        Document.dclose true dh;
         cont.document_finish false;
         retry hlink
     | Restart transform ->
-        dclose true dh;
+        Document.dclose true dh;
         f wwwr retry 
          { cont with 
            document_process = (fun dh -> cont.document_process (transform dh))}
@@ -5431,13 +5437,13 @@ let rec http_check cache retry cont wwwr dh =
 % Retrieve.f -> http_check -> <> (-> Retype.f)
 <<function [[Retrieve.wrap_cache]]>>=
 (* What do we cache ? : text/html and text/plain in memory *)
-let wrap_cache cache dh =
-  Log.debug (sprintf "Wrapping cache for %s(%d)"
+let wrap_cache cache (dh : Document.handle) =
+  Logs.debug (fun m -> m "Wrapping cache for %s(%d)"
              (Url.string_of dh.document_id.document_url)
              dh.document_id.document_stamp);
   Retype.f dh;
   try
-    match Lexheaders.media_type (contenttype dh.dh_headers) with
+    match Lexheaders.media_type (Http_headers.contenttype dh.dh_headers) with
     | ("text","html"),_ 
     | ("text","plain"),_ ->
       begin 
@@ -5462,8 +5468,10 @@ let wrap_cache cache dh =
 (*
  * Provision for user (re)definition of behaviours.
  *)
-let http_process = (Hashtbl.create 37: 
-   (int, Www.request -> Document.handle -> behaviour) Hashtbl.t)
+let http_process : 
+  (int, Www.request -> Document.handle -> behaviour) Hashtbl.t = 
+  Hashtbl_.create ()
+   
 @
 % pass handler so can access the headers
 
@@ -5501,8 +5509,8 @@ let code200 _wwwr _dh = Ok
 @
 <<function [[Retrieve.code204]]>>=
 (* 204 No Content: we should modify the headers of the referer ? *)
-let code204 _wwwr dh =
-  Stop (s_ "Request fulfilled.\n(%s)" (status_msg dh.dh_headers))
+let code204 _wwwr (dh : Document.handle) =
+  Stop (s_ "Request fulfilled.\n(%s)" (Http_headers.status_msg dh.dh_headers))
 @
 
 <<function [[Retrieve.code400]]>>=
@@ -5587,14 +5595,14 @@ val of_fd : Unix.file_descr -> t
 % ??? -> <>
 <<function [[Feed.of_fd]]>>=
 (* We should distinguish internal/external connections *)
-let of_fd fd =
+let of_fd (fd : Unix.file_descr) : t =
   let is_open = ref true in
   let action = ref None in
   let condition = Condition.create() in
   let first_read = ref false in
 
   (* ASSUMES: this is the first read on the fileevent *)
-  let safe_read buf offs len =
+  let safe_read (buf : bytes) (offs : int) (len : int) : int =
     first_read := false;
     if !is_open 
     then Low.read fd buf offs len 
@@ -5602,7 +5610,7 @@ let of_fd fd =
   in
 
   (* In other cases : this is non blocking but not fully threaded. *)
-  let special_read buf ofs len =
+  let special_read (buf : bytes) (ofs : int) (len : int) : int =
      (* remove the normal handler *)
      Fileevent_.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
@@ -5638,11 +5646,11 @@ let of_fd fd =
 
    feed_schedule = (fun f ->
       if not !is_open 
-      then Log.f "ERROR: feed is closed, can't schedule"
+      then Logs.err (fun m -> m "feed is closed, can't schedule")
       else 
        (match !action with
         | Some _f -> (* we are already scheduled ! *)
-            Log.f "Warning: feed already scheduled"
+            Logs.warn (fun  m -> m "feed already scheduled")
         | None ->
             action := Some f;
             Low.add_fileinput fd (fun () -> first_read := true; f())
@@ -5673,7 +5681,7 @@ let of_fd fd =
       if !is_open 
       then
         (match !action with 
-        | Some _f -> Log.f "ERROR: feed is scheduled, can't close"
+        | Some _f -> Logs.err (fun m -> m "feed is scheduled, can't close")
         | None -> 
             Unix.close fd;
             is_open := false;
@@ -5689,7 +5697,7 @@ let of_fd fd =
 val internal : t -> internal
 @
 <<function [[Feed.internal]]>>=
-let internal feed = 
+let internal (feed : t) : internal = 
   feed.feed_internal
 @
 
@@ -5700,7 +5708,7 @@ let internal feed =
 
 
 <<signature [[Document.dclose]]>>=
-val dclose : bool -> handle -> unit
+val dclose : bool (* remactive *) -> handle -> unit
   (* [dclose remactive dh] closes a living dh *)
 @
 
@@ -5735,7 +5743,7 @@ val destroy_log : handle -> bool -> unit
    Tk implementation 
  *)
 
-let dclose remactive dh =
+let dclose (remactive : bool) (dh : handle) : unit =
   dh.document_feed.feed_unschedule();
   dh.document_feed.feed_close();
   if remactive then Www.rem_active_cnx dh.document_id.document_url
@@ -5743,20 +5751,20 @@ let dclose remactive dh =
 
 
 <<function [[Document.add_log]]>>=
-let add_log dh initmsg aborter =
+let add_log (dh : handle) initmsg aborter =
   !add_log_backend dh initmsg aborter
 @
 
 <<function [[Document.end_log]]>>=
-let end_log dh msg =
+let end_log (dh : handle) (msg : string) : unit =
     dh.document_logger.logger_end msg;
     destroy_log dh true
 @
 
 <<functions [[Document.xxx_log]]>>=
-let put_log dh = dh.document_logger.logger_msg
-let destroy_log dh = dh.document_logger.logger_destroy
-let progress_log dh = dh.document_logger.logger_progress
+let put_log (dh : handle) = dh.document_logger.logger_msg
+let destroy_log (dh : handle) = dh.document_logger.logger_destroy
+let progress_log (dh : handle) = dh.document_logger.logger_progress
 @
 
 
@@ -5773,7 +5781,9 @@ val update : Url.t -> unit
 
 
 <<function [[Img.get]]>>=
-let get did link cont prog =
+(* ??? -> <> *)
+let get (did : Document.id) (link : Hyper.link) cont 
+        (prog : Scheduler.progress_func) : unit =
   let wr = Www.make link in
   wr.www_headers <- "Accept: image/*" :: wr.www_headers;
   ImageScheduler.add_request wr did cont prog
@@ -5781,7 +5791,7 @@ let get did link cont prog =
 
 
 <<function [[Img.update]]>>=
-let update url =
+let update (url : Url.t) : unit =
   try
     let (oldi,refs,headers) = ImageData.direct_cache_access url in
     let link = Hyper.default_link (Url.string_of url) in
@@ -5794,10 +5804,11 @@ let update url =
 
     ImageScheduler.add_request wr (DocumentIDSet.choose !refs)
       (fun _url i -> 
-    match oldi, i with
-      Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
-        Imagephoto.copy oldn newn []
-  | _, _ -> ())
+        match oldi, i with
+        | Still (ImagePhoto oldn) , Still (ImagePhoto newn) ->
+          Imagephoto.copy oldn newn []
+        | _, _ -> ()
+      )
       Progress.no_meter
 
   with
@@ -5872,7 +5883,7 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 \subsection{[[Http.req()]]}
 
 <<toplevel [[Protos._2]]>>=
-let _ = Hashtbl.add protos HTTP (Http.req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.HTTP (Http.req, Cache.tobuffer)
 @
 
 % Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
@@ -5887,7 +5898,7 @@ val req: Www.request -> Document.continuation -> Www.aborter
 %(* Wrappers returning the abort callback *)
 % wr = web request, cont = continuation
 <<function [[Http.req]]>>=
-let req wr cont =
+let req (wr : Www.request) (cont : Document.continuation) : Www.aborter =
   let cnx = request wr cont in
   (fun () -> cnx#abort)
 @
@@ -5900,7 +5911,7 @@ let req wr cont =
    we attempt first to connect directly to the host, and if it fails,
    we retry through the proxy
  *)
-and request wr cont =
+and request (wr : Www.request) (cont : Document.continuation) : cnx =
   <<[[Http.request()]] if always proxy>>
   else 
     let urlp = wr.www_url in
@@ -5938,7 +5949,7 @@ and request wr cont =
 <<function [[Http.tcp_connect]]>>=
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
-let tcp_connect server_name port  log  cont error =
+let tcp_connect (server_name : string) (port : int) logf cont error =
 
   (*  Find the inet address *)
   let server_addr =
@@ -5952,14 +5963,14 @@ let tcp_connect server_name port  log  cont error =
   Unix.clear_nonblock sock;
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, error "User abort") in
-  log (s_ "Contacting host...");
+  logf (s_ "Contacting host...");
   try
     begin try
       Unix.connect sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
-      log (s_ "connection established");
-      Log.debug "Connect returned without error !";
+      logf (s_ "connection established");
+      Logs.debug (fun m -> m "Connect returned without error !");
 
       (* because we need to return cnx *)
       Timer_.set 10 (fun () -> 
@@ -6030,13 +6041,13 @@ end
 % ugly, could simplify?
 
 
-\subsubsection{Error managment}
+\subsubsection{Error management}
 
 <<[[Http.tcp_connect()]] if [[inet_add_of_string]] fails>>=
 try
-  log (s_ "Looking for %s ..." server_name);
+  logf (s_ "Looking for %s ..." server_name);
   let adr = (Low.busy Munix.gethostbyname server_name).h_addr_list.(0) in
-  log (s_ "%s found" server_name);
+  logf (s_ "%s found" server_name);
   adr
 with Not_found -> 
  raise (HTTP_error (s_ "Unknown host: %s" server_name)) 
@@ -6053,7 +6064,7 @@ with Not_found ->
      Unix.clear_nonblock sock; (* return to blocking mode *)
      begin try (* But has there been a cnx actually *)
        let _ = getpeername sock in
-       log (s_ "connection established");
+       logf (s_ "connection established");
        cont cnx
      with Unix_error(ENOTCONN, "getpeername", _) ->
        cnx#close;
@@ -6066,7 +6077,7 @@ with Not_found ->
 
 
 
-\subsubsection{Timout managment}
+\subsubsection{Timout management}
 
 <<constant [[Http.timeout]]>>=
 let timeout = ref 60		(* in seconds *)
@@ -6091,7 +6102,8 @@ Timer_.set (1000 * !timeout)
 
 % tcp_connect -> <>
 <<function [[Http.start_request]]>>=
-and start_request proxy_mode wwwr cont =
+and start_request (proxy_mode : bool) (wwwr : Www.request)
+     (cont : Document.continuation) =
  fun cnx ->
   async_request proxy_mode wwwr 
      (fun cnx -> process_response wwwr cont cnx) cnx
@@ -6105,7 +6117,7 @@ and start_request proxy_mode wwwr cont =
  *   NOTE: tk doesn't allow two handles on the same fd, thus use CPS
  *         so that reading response is our continuation
  *)
-and async_request proxy_mode wwwr cont cnx =
+and async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
   let b = Ebuffer.create 1024 in
   full_request (fun x -> Ebuffer.output_string b x) proxy_mode wwwr;
   let req = Ebuffer.get b in
@@ -6134,8 +6146,9 @@ and async_request proxy_mode wwwr cont cnx =
 
 % Http.req -> tcp_connect -> start_request -> async_request -> <>
 <<function [[Http.full_request]]>>=
-let full_request w proxy_mode wwwr = 
-  let url = 
+(* 'w' is the writer that will fill a buffer set in the caller *)
+let full_request (w : string -> unit) (proxy_mode : bool) (wwwr : Www.request) : unit = 
+  let url : string = 
     <<[[Http.full_request()]] url value if proxy mode>>
     else distant_path wwwr.www_url 
   in
@@ -6262,7 +6275,7 @@ in
 % call with aborted = true when ??
 <<function [[Http.failed_request]]>>=
 (* shared error *)
-let failed_request wr finish =
+let failed_request (wr : Www.request) finish =
  fun s aborted ->
   finish aborted;
   Www.rem_active_cnx wr.www_url;
@@ -6278,9 +6291,9 @@ let failed_request wr finish =
 % async_request (via its continuation passed in start_request) -> <>
 <<function [[Http.process_response]]>>=
 (* Read headers and run continuation *)
-let rec process_response wwwr cont =
- fun cnx ->
-  let url = Url.string_of wwwr.www_url in
+let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
+ fun (cnx : cnx) ->
+  let url : string = Url.string_of wwwr.www_url in
   wwwr.www_logging (s_ "Reading headers...");
 
   let dh = 
@@ -6388,7 +6401,7 @@ let read_headers fd previous =
 @
 
 
-\subsection{Error managment}
+\subsection{Error management}
 
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
@@ -6423,7 +6436,7 @@ let read_headers fd previous =
     finish true
 @
 
-\subsection{Timeout managment}
+\subsection{Timeout management}
 
 
 <<[[Http.process_response()]] setup a timer>>=
@@ -6769,7 +6782,7 @@ let reset () =
 
 % will see later other cases, for Externak and more
 
-\subsection{Error managment}
+\subsection{Error management}
 
 <<[[Viewers.view]] exn handler 1>>=
 | Failure "too late" -> (* custom for our internal viewers *)
@@ -11409,7 +11422,7 @@ Menu.add_command helpm
 \subsection{[[file://]]}
 
 <<toplevel [[Protos._7]]>>=
-let _ = Hashtbl.add protos FILE (File.request, Cache.dummy)
+let _ = Hashtbl.add protos Url.FILE (File.request, Cache.dummy)
 @
 
 <<[[Lexurl.f]] protocol cases>>=
@@ -11768,23 +11781,23 @@ let error body =
 % can translate from unhandled protocol to http for us! :)
 
 <<toplevel [[Protos._1]]>>=
-let _ = Hashtbl.add protos FTP (Http.proxy_req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.FTP (Http.proxy_req, Cache.tobuffer)
 @
 
 <<toplevel [[Protos._3]]>>=
-let _ = Hashtbl.add protos GOPHER (Http.proxy_req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.GOPHER (Http.proxy_req, Cache.tobuffer)
 @
 
 <<toplevel [[Protos._4]]>>=
-let _ = Hashtbl.add protos NEWS (Http.proxy_req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.NEWS (Http.proxy_req, Cache.tobuffer)
 @
 
 <<toplevel [[Protos._5]]>>=
-let _ = Hashtbl.add protos NNTP (Http.proxy_req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.NNTP (Http.proxy_req, Cache.tobuffer)
 @
 
 <<toplevel [[Protos._6]]>>=
-let _ = Hashtbl.add protos WAIS (Http.proxy_req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.WAIS (Http.proxy_req, Cache.tobuffer)
 @
 
 
@@ -12353,7 +12366,7 @@ then Url.string_of wwwr.www_url
 
 <<function [[Retrieve.forward_permanent]]>>=
 (* 301 Moved permanently *)
-let forward_permanent wr dh =
+let forward_permanent (wr : Www.request) (dh : Document.handle) =
   try
     let newurl = Http_headers.location dh.dh_headers in
     wr.www_error#ok (s_ "Document moved permanently to\n%s" newurl);
@@ -12364,7 +12377,7 @@ let forward_permanent wr dh =
 
 <<function [[Retrieve.forward]]>>=
 (* 302 Moved temporarily *)
-let forward wr dh =
+let forward (wr : Www.request) (dh : Document.handle) =
   try 
     let newurl = Http_headers.location dh.dh_headers in
     if (* do we forward automatically ?*)
@@ -13382,9 +13395,9 @@ let init () =
 
 <<function [[Retrieve.ask_auth]]>>=
 (* 401 Unauthorized *)
-let ask_auth wr dh =
+let ask_auth (wr : Www.request) (dh : Document.handle) =
   wr.www_logging (s_ "Checking authentication");
-  let rawchallenge = challenge dh.dh_headers in
+  let rawchallenge = Http_headers.challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   let host = match wr.www_url.host with
@@ -13420,7 +13433,7 @@ let unauthorized wr dh =
           Auth.add space cookie;
         (* Put the challenge header again *)
         begin try
-          newdh.dh_headers <- ("WWW-Authenticate: "^ (challenge dh.dh_headers))
+          newdh.dh_headers <- ("WWW-Authenticate: "^ (Http_headers.challenge dh.dh_headers))
                               :: newdh.dh_headers
          with
           Not_found -> ()
@@ -13432,9 +13445,9 @@ let unauthorized wr dh =
 <<function [[Retrieve.ask_proxy_auth]]>>=
 (* 407 Unauthorized *)
 (* We dump the realm altogether, because it has no meaning for proxies *)
-let ask_proxy_auth wr dh =
+let ask_proxy_auth (wr : Www.request) (dh : Document.handle) =
   wr.www_logging (s_ "Checking proxy authentication");
-  let rawchallenge = proxy_challenge dh.dh_headers in
+  let rawchallenge = Http_headers.proxy_challenge dh.dh_headers in
   let challenge = 
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   Auth.check wr challenge
@@ -13462,7 +13475,7 @@ let proxy_unauthorized wr dh =
          (* Put the challenge header again *)
          begin try
            newdh.dh_headers <- 
-              ("Proxy-Authenticate: "^ (proxy_challenge dh.dh_headers))
+              ("Proxy-Authenticate: "^ (Http_headers.proxy_challenge dh.dh_headers))
               :: newdh.dh_headers
           with
            Not_found -> ()
@@ -14174,7 +14187,7 @@ let verbose = ref false
 
 <<[[Http.async_request()]] log request string req if verbose>>=
 if !verbose 
-then Log.f req;
+then Logs.debug (fun m -> m "%s" req);
 @
 
 
@@ -14413,7 +14426,7 @@ let print = function
 
 \chapter{Profiling}
 
-\chapter{Error Managment}
+\chapter{Error Management}
 
 \section{[[Error.t]]}
 

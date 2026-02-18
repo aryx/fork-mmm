@@ -2,7 +2,7 @@
 (* Document retrieval *)
 
 (*s: type [[Retrieve.retrievalStatus]] *)
-type retrievalStatus =
+type status =
  | Started of Www.aborter
  | InUse
 (*e: type [[Retrieve.retrievalStatus]] *)
@@ -12,7 +12,7 @@ type retrievalStatus =
 val f : Www.request ->  (* the request *)
         (Hyper.link -> unit) -> (* the retry function *)
         Document.continuation -> (* the handlers *)
-        retrievalStatus
+        status
 (*e: signature [[Retrieve.f]] *)
 
 (*s: type [[Retrieve.behaviour]] *)

@@ -116,7 +116,7 @@ let document_id wwwr =
    Tk implementation 
  *)
 
-let dclose remactive dh =
+let dclose (remactive : bool) (dh : handle) : unit =
   dh.document_feed.feed_unschedule();
   dh.document_feed.feed_close();
   if remactive then Www.rem_active_cnx dh.document_id.document_url
@@ -135,16 +135,16 @@ let tty_logger =
 let add_log_backend = ref (fun _ _ _ -> failwith "no add_log defined")
   
 (*s: function [[Document.add_log]] *)
-let add_log dh initmsg aborter =
+let add_log (dh : handle) initmsg aborter =
   !add_log_backend dh initmsg aborter
 (*e: function [[Document.add_log]] *)
 (*s: functions [[Document.xxx_log]] *)
-let put_log dh = dh.document_logger.logger_msg
-let destroy_log dh = dh.document_logger.logger_destroy
-let progress_log dh = dh.document_logger.logger_progress
+let put_log (dh : handle) = dh.document_logger.logger_msg
+let destroy_log (dh : handle) = dh.document_logger.logger_destroy
+let progress_log (dh : handle) = dh.document_logger.logger_progress
 (*e: functions [[Document.xxx_log]] *)
 (*s: function [[Document.end_log]] *)
-let end_log dh msg =
+let end_log (dh : handle) (msg : string) : unit =
     dh.document_logger.logger_end msg;
     destroy_log dh true
 (*e: function [[Document.end_log]] *)

@@ -19,14 +19,14 @@ type t = {
 
 (*s: function [[Feed.of_fd]] *)
 (* We should distinguish internal/external connections *)
-let of_fd fd =
+let of_fd (fd : Unix.file_descr) : t =
   let is_open = ref true in
   let action = ref None in
   let condition = Condition.create() in
   let first_read = ref false in
 
   (* ASSUMES: this is the first read on the fileevent *)
-  let safe_read buf offs len =
+  let safe_read (buf : bytes) (offs : int) (len : int) : int =
     first_read := false;
     if !is_open 
     then Low.read fd buf offs len 
@@ -34,7 +34,7 @@ let of_fd fd =
   in
 
   (* In other cases : this is non blocking but not fully threaded. *)
-  let special_read buf ofs len =
+  let special_read (buf : bytes) (ofs : int) (len : int) : int =
      (* remove the normal handler *)
      Fileevent_.remove_fileinput fd; 
      (* add a handler to trigger the condition *)
@@ -70,11 +70,11 @@ let of_fd fd =
 
    feed_schedule = (fun f ->
       if not !is_open 
-      then Log.f "ERROR: feed is closed, can't schedule"
+      then Logs.err (fun m -> m "feed is closed, can't schedule")
       else 
        (match !action with
         | Some _f -> (* we are already scheduled ! *)
-            Log.f "Warning: feed already scheduled"
+            Logs.warn (fun  m -> m "feed already scheduled")
         | None ->
             action := Some f;
             Low.add_fileinput fd (fun () -> first_read := true; f())
@@ -105,7 +105,7 @@ let of_fd fd =
       if !is_open 
       then
         (match !action with 
-        | Some _f -> Log.f "ERROR: feed is scheduled, can't close"
+        | Some _f -> Logs.err (fun m -> m "feed is scheduled, can't close")
         | None -> 
             Unix.close fd;
             is_open := false;
@@ -118,7 +118,7 @@ let of_fd fd =
 (*e: function [[Feed.of_fd]] *)
  
 (*s: function [[Feed.internal]] *)
-let internal feed = 
+let internal (feed : t) : internal = 
   feed.feed_internal
 (*e: function [[Feed.internal]] *)
 
