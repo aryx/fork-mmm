@@ -40,3 +40,13 @@ let unlink (caps : < Cap.open_out; ..>) file =
   let _ = caps#open_out file in
   (* nosemgrep: use-caps *)
   Unix.unlink
+let connect (caps : < Cap.network; ..>) sock addr =
+  let str = 
+    match addr with
+    | Unix.ADDR_INET (inet_addr, _port) ->
+        Unix.string_of_inet_addr inet_addr
+    | Unix.ADDR_UNIX str -> str
+  in
+  let _ = caps#network str in
+  (* nosemgrep: use-caps *)
+  Unix.connect sock addr

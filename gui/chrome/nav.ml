@@ -74,7 +74,8 @@ let dont_check_cache wwwr =
      the link
    [wrapwr wr] : returns a modified wr
  *)
-let request (nav : t) process (usecache, wrapwr, specific) (lk : Hyper.link) =
+let request (caps : < Cap.network; ..>) (nav : t)
+     process (usecache, wrapwr, specific) (lk : Hyper.link) =
 
   (*s: function [[Nav.request.retrieve_and_handle]] *)
   (* Normally execute the request and process its answer (dh) *)
@@ -89,7 +90,7 @@ let request (nav : t) process (usecache, wrapwr, specific) (lk : Hyper.link) =
         );
       }
     in
-    match Retrieve.f wr handle_link cont with
+    match Retrieve.f caps wr handle_link cont with
     | Retrieve.Started aborter -> 
         nav.nav_add_active wr.www_url aborter
     | Retrieve.InUse -> 
@@ -286,7 +287,7 @@ class stdctx (did, nav) =
 
     (* by default, use the cache, don't touch the request *)
     let follow_link _ = 
-      request nav (process_viewer true make_ctx) 
+      request caps nav (process_viewer true make_ctx) 
         (true, id_wr, specific_viewer true)
     and save_link _ =
       request nav (process_save None) (true, id_wr, nothing_specific)

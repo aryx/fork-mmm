@@ -97,7 +97,8 @@ end
 (*s: function [[Http.tcp_connect]] *)
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
-let tcp_connect (server_name : string) (port : int) logf cont error =
+let tcp_connect (caps : < Cap.network; ..>)
+    (server_name : string) (port : int) logf cont error =
 
   (*  Find the inet address *)
   let server_addr =
@@ -122,7 +123,7 @@ let tcp_connect (server_name : string) (port : int) logf cont error =
   logf (s_ "Contacting host...");
   try
     begin try
-      Unix.connect sock (ADDR_INET(server_addr, port));
+      CapUnix.connect caps sock (ADDR_INET(server_addr, port));
       (* just in case. Normally an error should be raised *)
       Unix.clear_nonblock sock; (* set to non-blocking *)
       logf (s_ "connection established");
@@ -411,10 +412,14 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
            cont.document_process dh
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
+(*
            dclose false dh; (* keep it an active cnx since we are retrying *)
-           let newcnx = request09 wwwr cont in
+
+           let newcnx = request09 caps wwwr cont in
            (* the guy up there has the old one !*)
            cnx#set_fd newcnx#fd
+*)
+           failwith "HTTP 0.9 not handled"
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Unix_error(e,_,_) ->
            cnx#abort;
@@ -489,14 +494,14 @@ and start_request09 proxy_mode wwwr cont cnx =
 
 (*s: function [[Http.proxy_request]] *)
 (* Process an HTTP request using the proxy. We pass on the continuation *)
-and proxy_request wr cont =
-  tcp_connect !proxy !proxy_port wr.www_logging
+and proxy_request caps wr cont =
+  tcp_connect caps !proxy !proxy_port wr.www_logging
        (start_request true wr cont)
        (failed_request wr cont.document_finish)
 (*e: function [[Http.proxy_request]] *)
 
-and proxy_request09 wr cont =
-  tcp_connect !proxy !proxy_port wr.www_logging
+and proxy_request09 caps wr cont =
+  tcp_connect caps !proxy !proxy_port wr.www_logging
           (start_request09 true wr cont)
           (failed_request wr cont.document_finish)
 
@@ -505,10 +510,11 @@ and proxy_request09 wr cont =
    we attempt first to connect directly to the host, and if it fails,
    we retry through the proxy
  *)
-and request (wr : Www.request) (cont : Document.continuation) : cnx =
+and request (caps : < Cap.network; ..>)
+    (wr : Www.request) (cont : Document.continuation) : cnx =
   (*s: [[Http.request()]] if always proxy *)
   if !always_proxy 
-  then proxy_request wr cont
+  then proxy_request caps wr cont
   (*e: [[Http.request()]] if always proxy *)
   else 
     let urlp = wr.www_url in
@@ -525,13 +531,13 @@ and request (wr : Www.request) (cont : Document.continuation) : cnx =
         | None -> 80  (* default http port *)
       in 
       try 
-        tcp_connect host port wr.www_logging
+        tcp_connect caps host port wr.www_logging
             (fun cnx -> start_request false wr cont  cnx)
             (fun s aborted -> failed_request wr cont.document_finish s aborted)
 
       with HTTP_error _ -> (* direct failed, go through proxy *)
         (*s: [[Http.request()]] if http error on [[tcp_connect]], try proxy *)
-        proxy_request wr cont
+        proxy_request caps wr cont
         (*e: [[Http.request()]] if http error on [[tcp_connect]], try proxy *)
     else 
       raise (HTTP_error (s_ 
@@ -539,9 +545,9 @@ and request (wr : Www.request) (cont : Document.continuation) : cnx =
                (Url.string_of wr.www_url)))
 (*e: function [[Http.request]] *)
 (* HTTP 0.9 ?? TODO? delete? obsolete?  *)
-and request09 wr cont =
+and request09 caps wr cont =
   if !always_proxy 
-  then proxy_request09 wr cont
+  then proxy_request09 caps wr cont
   else 
     let urlp = wr.www_url in
     if urlp.protocol = HTTP then
@@ -556,11 +562,11 @@ and request09 wr cont =
         | None -> 80  (* default http port *)
       in
       try 
-       tcp_connect host port wr.www_logging
+       tcp_connect caps host port wr.www_logging
         (start_request09 false wr cont)
         (failed_request wr cont.document_finish)
       with HTTP_error _ ->
-        tcp_connect !proxy !proxy_port wr.www_logging
+        tcp_connect caps !proxy !proxy_port wr.www_logging
                (start_request09 true wr cont)
               (failed_request wr cont.document_finish)
     else 
@@ -568,13 +574,13 @@ and request09 wr cont =
 
 (* Wrappers returning the abort callback *)
 (*s: function [[Http.req]] *)
-let req (wr : Www.request) (cont : Document.continuation) : Www.aborter =
-  let cnx = request wr cont in
+let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
+  let cnx = request caps wr cont in
   (fun () -> cnx#abort)
 (*e: function [[Http.req]] *)
 (*s: function [[Http.prox_req]] *)
-and proxy_req wr cont = 
-  let cnx = proxy_request wr cont in
+and proxy_req caps wr cont = 
+  let cnx = proxy_request caps wr cont in
   (fun () -> cnx#abort)
 (*e: function [[Http.prox_req]] *)
 (*e: http/http.ml *)

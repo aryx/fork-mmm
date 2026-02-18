@@ -75,7 +75,8 @@ let wrap_cache cache (dh : Document.handle) =
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
-let rec http_check cache (retry : Hyper.link -> unit)
+let rec http_check (caps: < Cap.network > )
+         cache (retry : Hyper.link -> unit)
          (cont : Document.continuation) (wwwr : Www.request)
          (dh : Document.handle) =
   Logs.debug (fun m -> m "Retrieve.http_check");
@@ -101,7 +102,7 @@ let rec http_check cache (retry : Hyper.link -> unit)
         retry hlink
     | Restart transform ->
         Document.dclose true dh;
-        f wwwr retry 
+        f caps wwwr retry 
          { cont with 
            document_process = (fun dh -> cont.document_process (transform dh))}
         |> ignore; (* we should probably do something of the result ! *)
@@ -119,7 +120,8 @@ let rec http_check cache (retry : Hyper.link -> unit)
  *   we must catch here all errors due to protocols and remove the
  *   cnx from the set of active cnx.
  *)
-and f (request : Www.request) (retry : Hyper.link -> unit) 
+and f (caps : < Cap.network; ..>) 
+      (request : Www.request) (retry : Hyper.link -> unit) 
       (cont : Document.continuation) : status = 
   Logs.debug (fun m -> m "Retrieve.f on %s" (Url.string_of request.www_url));
   if Www.is_active_cnx request.www_url
@@ -128,9 +130,9 @@ and f (request : Www.request) (retry : Hyper.link -> unit)
     Www.add_active_cnx request.www_url;
     try 
       let (reqf, cachef) = Protos.get request.www_url.protocol in
-      Started (reqf request
+      Started (reqf caps request
                  { cont with
-                   document_process = http_check cachef retry cont request})
+                   document_process = http_check caps cachef retry cont request})
 
    with 
    | Not_found ->

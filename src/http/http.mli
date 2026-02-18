@@ -19,7 +19,8 @@ exception HTTP_error of string
 (*e: exception [[Http.HTTP_error]] *)
 
 (*s: signature [[Http.req]] *)
-val req: Www.request -> Document.continuation -> Www.aborter
+val req: < Cap.network; ..> ->
+  Www.request -> Document.continuation -> Www.aborter
 (*e: signature [[Http.req]] *)
 
 (*s: signature [[Http.proxy_xxx]] *)
@@ -28,7 +29,8 @@ val proxy_port: int ref
 (*e: signature [[Http.proxy_xxx]] *)
 
 (*s: signature [[Http.proxy_req]] *)
-val proxy_req: Www.request -> Document.continuation -> Www.aborter
+val proxy_req: < Cap.network; ..> ->
+  Www.request -> Document.continuation -> Www.aborter
 (*e: signature [[Http.proxy_req]] *)
 
 val always_proxy: bool ref

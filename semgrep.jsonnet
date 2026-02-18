@@ -76,7 +76,8 @@ local cap_rules = [
         # Cap.tmp
         #'Filename.temp_file',
         # Cap.network
-        #'Unix.socket'
+        'Unix.connect',
+        #TODO: 'Unix.bind',
 	]
     },
     languages: ['ocaml'],

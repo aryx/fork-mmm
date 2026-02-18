@@ -11,9 +11,14 @@ open Fpath_.Operators
 (* Types and constants *)
 (*****************************************************************************)
 (* Need:
+ *  - Cap.network: obviously, this is a Web browser
  *  - open_in: for ??
  *)
-type caps = < Cap.stdout; Cap.stderr; Cap.open_in >
+type caps = < 
+   Cap.stdout; Cap.stderr; 
+   Cap.open_in;
+   Cap.network
+ >
 
 (*****************************************************************************)
 (* Helpers *)

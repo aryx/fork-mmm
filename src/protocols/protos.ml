@@ -3,7 +3,7 @@ open Common
 
 (*s: constant [[Protos.protos]] *)
 let protos : (Url.protocol, 
-             (Www.request -> Document.continuation -> Www.aborter) * 
+             (< Cap.network > -> Www.request -> Document.continuation -> Www.aborter) * 
              (Document.handle -> Document.data * Cache.cache_fill)) Hashtbl.t =
   Hashtbl_.create ()
 (*e: constant [[Protos.protos]] *)
@@ -27,7 +27,7 @@ let _ = Hashtbl.add protos Url.NNTP (Http.proxy_req, Cache.tobuffer)
 let _ = Hashtbl.add protos Url.WAIS (Http.proxy_req, Cache.tobuffer)
 (*e: toplevel [[Protos._6]] *)
 (*s: toplevel [[Protos._7]] *)
-let _ = Hashtbl.add protos Url.FILE (File.request, Cache.dummy)
+let _ = Hashtbl.add protos Url.FILE ((fun _caps -> File.request), Cache.dummy)
 (*e: toplevel [[Protos._7]] *)
 
 (*s: constant [[Protos.get]] *)
