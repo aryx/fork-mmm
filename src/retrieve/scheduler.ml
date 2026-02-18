@@ -1,5 +1,6 @@
 (*s: retrieve/scheduler.ml *)
 (* Scheduled downloading *)
+
 open Printf
 open Unix
 open Www
@@ -163,18 +164,19 @@ module Make(J: Data) = struct
 
   (* when adding a request individually (meant to be treated ASAP), we
      use a new singleton queue *)
-  and add_request (caps : < Cap.network; .. >) wr did cont prog =
+  and add_request (caps : < Cap.network; .. >) 
+      (wr : Www.request) (did : Document.id) cont (prog : progress_func) =
     let q = Queue.create() in
     Queue.add (wr, did, cont, prog) q;
     queues := q :: !queues;
     next_request caps
 
   (* error during data downloading *)
-  and error url job =
+  and error (url : Url.t) (job : job) =
     job.stop();
     J.error url job.conts;
     if !debug then 
-      Log.f (sprintf "Retrieval of %s failed\n" (Url.string_of url));
+      Logs.warn (fun m -> m "Retrieval of %s failed\n" (Url.string_of url));
     let caps = Cap.network_caps_UNSAFE () in
     next_request caps
 
@@ -236,7 +238,7 @@ module Make(J: Data) = struct
         end;
 
         (* actually start sucking data *)
-                dh.document_feed.feed_schedule (fun _ ->
+          dh.document_feed.feed_schedule (fun _ ->
           try
             let n = dh.document_feed.feed_read buffer 0 2048 in
 
@@ -346,18 +348,17 @@ module Make(J: Data) = struct
    *)
 
   (* remove pending requests whose referer is did *)
-  let stop did =
+  let stop (did : Document.id) =
     (* For all queues, for all request in the queue, if the request matches
        the predicate, it is removed from the queue. *)
     queues := 
-       List.map (fun q ->
-     let newq = Queue.create () in
-     Queue.iter (function
-       | (_wr, didr, _cont, _progress) when did = didr -> ()
-       | r -> Queue.add r newq)
-       q;
-     newq)
-     !queues;
+       !queues |> List.map (fun q ->
+         let newq = Queue.create () in
+         q |> Queue.iter (function
+           | (_wr, didr, _cont, _progress) when did = didr -> ()
+           | r -> Queue.add r newq
+          );
+         newq);
 
     (* If the request is active, remove the particular continuation, and if it
        was the only continuation, kill the job
@@ -365,11 +366,11 @@ module Make(J: Data) = struct
     let rem = ref [] in (* jobs to kill *)
     Hashtbl.iter 
       (fun _url job ->
-    try 
-      job.conts <- Mlist.except_assoc did job.conts;
-      if job.conts = [] then rem := job :: !rem
-    with
-      Not_found -> ())
+        try 
+          job.conts <- Mlist.except_assoc did job.conts;
+         if job.conts = [] then rem := job :: !rem
+        with
+         Not_found -> ())
       actives;
     (* each stop closes the cnx properly and remove the job from actives *)
     List.iter (fun job -> job.stop()) !rem;
@@ -386,20 +387,21 @@ module Make(J: Data) = struct
 
   let new_delayed = Queue.create
 
-  let is_empty q = 
+  let is_empty (q : queue) = 
     try Queue.peek q |> ignore; false with Queue.Empty -> true
 
   (* add a new request in the queue *)
   (* Actually, if the document is already in the cache, then process
      the continuation *)
-  let add_delayed q wr did cont progress =
+  let add_delayed (q : delayed) (wr : Www.request) did cont progress =
     try 
-      if skip_cache wr then raise Not_found
+      if skip_cache wr
+      then raise Not_found
       else cont wr.www_url (J.cache_access wr.www_url did)
     with Not_found -> Queue.add (wr,did,cont,progress) q
 
   (* Put the queue in the list of queues *)
-  let flush_delayed q =
+  let flush_delayed (q : delayed) =
     (* Queue.iter (function (_,_,_,prog) -> prog None 0) q;(* create the gauge *) *)
     queues := !queues @ [q];
     let caps = Cap.network_caps_UNSAFE () in
@@ -414,8 +416,8 @@ module Make(J: Data) = struct
     (* split in two *)
     Queue.iter (function
       | (wr,did,cont,prog) when wr.www_url = url ->
-      prog None 0; (* create the gauge *)
-      Queue.add (wr,did,cont,prog) flushedqueue
+        prog None 0; (* create the gauge *)
+        Queue.add (wr,did,cont,prog) flushedqueue
       | r -> Queue.add r restqueue)
       l;
     (* the flushed goes at the beginning *)

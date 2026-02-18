@@ -74,7 +74,7 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
     let uri = Hyper.resolve hlink in
     let name =
       match uri.uri_fragment with 
-        None -> uri.uri_url
+      | None -> uri.uri_url
       | Some frag -> sprintf "%s#%s" uri.uri_url frag
     in
       match Maps.get name with
@@ -86,9 +86,9 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
               RequestedMap _ ->
              Log.f "INTERNAL ERROR: delayed_client_side"
             | KnownMap m -> Cmap.gfx_mode emb m c)
-      with
-    e -> Log.f (sprintf "INTERNAL ERROR in display (%s)"
-                    (Printexc.to_string e))
+    with
+      e -> Logs.err (fun m -> m "INTERNAL ERROR in display (%s)"
+                               (Printexc.to_string e))
       end
 
   | _ ->

@@ -35,7 +35,7 @@ module type Data =
          *)       	     
    val error : 
         Url.t -> 
-      (Document.id * ((Url.t -> t -> unit) * progress_func)) list -> unit
+        (Document.id * ((Url.t -> t -> unit) * progress_func)) list -> unit
         (* [error url [(did,(cont,progress))]]
          *  if an error occurs, then each pending continuation is called
          *  (if necessary) as required (e.g. with "default" information)
@@ -63,11 +63,13 @@ module type S =
     (* Delayed queues for this scheduler *)
     type delayed
     val new_delayed : unit -> delayed
+
     val add_delayed : 
-       delayed -> Www.request -> Document.id -> 
+        delayed -> Www.request -> Document.id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
+   
     val is_empty : delayed -> bool
     val maxactive : int ref
     val maxsamehost : int ref
