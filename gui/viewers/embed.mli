@@ -16,13 +16,13 @@ val rem_viewer :  Http_headers.media_type -> unit
 (*s: type [[Embed.embobject]] *)
 (* Embedded objects *)
 type obj = {
-  embed_hlink : Hyper.link;               (* hyperlink to the object *)
-  embed_frame : Widget.widget;  
-     (* the frame where the viewers can do their stuff *)
+  embed_hlink : Hyper.link; (* hyperlink to the object *)
+  embed_frame : Widget.widget;
+      (* the frame where the viewers can do their stuff *)
   embed_context : Viewers.context;
-  embed_map : Maps.t;                  (* associated map *)
-  embed_alt : string
- }
+  embed_map : Maps.t; (* associated map *)
+  embed_alt : string;
+}
 (*e: type [[Embed.embobject]] *)
 
 (*s: signature [[Embed.add]] *)

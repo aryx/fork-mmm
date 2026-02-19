@@ -4135,7 +4135,6 @@ val gif_anim_load : bool ref
 %-------------------------------------------------------------
 
 <<retrieve/img.mli>>=
-open Document
 <<signature [[Img.gif_anim_load]]>>
 
 module ImageData : sig
@@ -4145,14 +4144,14 @@ module ImageData : sig
   val jpeg_converter : string ref
   val verbose : bool ref
 
-  val load : handle -> Document.id list -> Fpath.t -> Tkanim.imageType
+  val load : Document.handle -> Document.id list -> Fpath.t -> Tkanim.imageType
   val cache_access : Url.t -> Document.id -> Tkanim.imageType
   val error :
       Url.t -> (Document.id * ((Url.t -> Tkanim.imageType -> unit) * Scheduler.progress_func)) list -> unit
-    val error_msg : Www.request * string -> unit
-    val remove_reference : Document.id -> unit
-    val dump: unit -> unit
-  end
+  val error_msg : Www.request * string -> unit
+  val remove_reference : Document.id -> unit
+  val dump: unit -> unit
+end
 
 module ImageScheduler : Scheduler.S with
     type shared_data = ImageData.t
@@ -4187,17 +4186,7 @@ let _ =
 (* Image cache and scheduled image downloading *)
 
 open Fpath_.Operators
-
-open Printf
-
 open Tk
-open Tkanim
-
-open Document
-open Www
-
-
-open Http_headers
 
 <<constant [[Img.gif_anim_load]]>>
 
@@ -4214,21 +4203,21 @@ module ImageData =
     * The image cache
     *)
 
-
-    let set_of_list l = List.fold_right DocumentIDSet.add l DocumentIDSet.empty
+    let set_of_list l = 
+      List.fold_right Document.DocumentIDSet.add l Document.DocumentIDSet.empty
 
     (* url -> (option for tk configure, set of referers, headers) *)
     let img_cache = 
        (Hashtbl.create 53 : (Url.t, 
-                 Tkanim.imageType * DocumentIDSet.t ref
+                 Tkanim.imageType * Document.DocumentIDSet.t ref
                    * string list) Hashtbl.t)
 
     (* Debugging *)
     let dump () =
       Hashtbl.iter (fun url (_,r, _) ->
-       Log.f (sprintf "IMG %s" (Url.string_of url));
-    DocumentIDSet.iter 
-         (fun did -> Log.f (sprintf "\tref: %s"
+       Logs.debug (fun m -> m "IMG %s" (Url.string_of url));
+       Document.DocumentIDSet.iter 
+         (fun did -> Logs.debug (fun m -> m "\tref: %s"
                          (Url.string_of did.document_url)))
          !r)
     img_cache
@@ -4239,14 +4228,15 @@ module ImageData =
     (* Raises Not_found *)
     let cache_access url from =
       let img, refs, _ = Hashtbl.find img_cache url in
-    refs := DocumentIDSet.add from !refs;
+    refs := Document.DocumentIDSet.add from !refs;
     img
 
     let direct_cache_access  = Hashtbl.find img_cache
 
     (* Delete an image from the cache *)
     let delete_image img =
-      if !verbose then Log.f (sprintf "Removing img %s" (Url.string_of img));
+      if !verbose 
+      then Logs.info (fun m -> m "Removing img %s" (Url.string_of img));
       match Hashtbl.find img_cache img with
     Still x, _, _ ->
       begin match x with
@@ -4260,21 +4250,21 @@ module ImageData =
       |	Animated anm, _, _ -> Tkanim.delete anm; Hashtbl.remove img_cache img
 
     (* Remove reference to an image, clean *)
-    let remove_reference referer =
-      if !verbose then 
-     Log.f (sprintf "Removing img references from %s(%d)" 
+    let remove_reference (referer : Document.id) =
+      if !verbose 
+      then Logs.info (fun m -> m "Removing img references from %s(%d)" 
             (Url.string_of referer.document_url)
              referer.document_stamp);
       let delete_them = ref [] in
       Hashtbl.iter
     (fun img (_o, refs, _) ->
-        refs := DocumentIDSet.remove referer !refs;
-        if DocumentIDSet.is_empty !refs then
+        refs := Document.DocumentIDSet.remove referer !refs;
+        if Document.DocumentIDSet.is_empty !refs then
          delete_them := img :: !delete_them)
     img_cache;
       List.iter delete_image !delete_them
 
-    let broken_data = Still (Bitmap (Predefined "error"))
+    let broken_data = Tkanim.Still (Bitmap (Predefined "error"))
 
     (* load an image *)
     (* For GIFs, we use JPF's Tkanim package first *)
@@ -4287,13 +4277,13 @@ module ImageData =
     (* For JPEG, we attempt internal load first, because we might have
        an extension for loading them *)
     let tk_load_jpeg file =
-      try Still (ImagePhoto (Imagephoto.create [File file; Gamma !gamma]))
+      try Tkanim.Still (ImagePhoto (Imagephoto.create [File file; Gamma !gamma]))
       with Protocol.TkError _ ->
     let pnmfile = Msys.mktemp "pnm" in
     let cmd = (!jpeg_converter^" "^file^" > "^pnmfile) in
     try match Sys.command cmd with
       0 ->
-        let img = Still (ImagePhoto (Imagephoto.create
+        let img = Tkanim.Still (ImagePhoto (Imagephoto.create
                      [File pnmfile; Gamma !gamma])) in
         Msys.rm pnmfile;
         img
@@ -4305,7 +4295,7 @@ module ImageData =
 
     (* other formats *)
     let tk_load_other file =
-      Still (
+      Tkanim.Still (
         try ImageBitmap (Imagebitmap.create [File file])
     with
       Protocol.TkError _ ->
@@ -4320,17 +4310,17 @@ module ImageData =
       let url = dh.document_id.document_url in
       let img = 
         try
-          let ctype = contenttype dh.dh_headers in
+          let ctype = Http_headers.contenttype dh.dh_headers in
           match Lexheaders.media_type ctype with
            ("image","jpeg"), _ -> Low.busy tk_load_jpeg !!file
           | ("image","gif"), _ -> Low.busy tk_load_gif !!file
           | _,_ -> Low.busy tk_load_other !!file
         with
         | Not_found -> Low.busy tk_load_other !!file 
-        | Invalid_HTTP_header _ -> Msys.rm !!file; broken_data
+        | Http_headers.Invalid_HTTP_header _ -> Msys.rm !!file; broken_data
           in
-      if !verbose then
-        Log.f (sprintf "Loaded %s as %s" !!file (Url.string_of url));
+      if !verbose 
+      then Logs.info (fun m -> m "Loaded %s as %s" !!file (Url.string_of url));
       Msys.rm !!file;
       add url img referers dh.dh_headers;
       img
@@ -4348,14 +4338,14 @@ module ImageData =
       
       (* error during img downloading *)
     let error url job =
-      Log.f (sprintf "Could not load image at %s" (Url.string_of url));
-      let img = Still (Bitmap (Predefined "error")) in
+      Logs.err (fun m -> m "Could not load image at %s" (Url.string_of url));
+      let img = Tkanim.Still (Bitmap (Predefined "error")) in
       add url img (List.map fst job) [];
       List.iter (fun (_, (cont,_)) -> cont url img) job
     
       (* Invalid urls in images are silently ignored *)
-    let error_msg (w, msg) = 
-      Log.f (sprintf "Invalid image request: %s (%s)" 
+    let error_msg ((w : Www.request), msg) = 
+      Logs.err (fun m -> m "Invalid image request: %s (%s)" 
            (Url.string_of w.www_url) msg);
       
   end
@@ -5130,9 +5120,7 @@ let add (caps : < Cap.network ; .. >) (emb : obj) =
           (fun _url doc ->
           let doc =
             Document.
-              {
-                document_address = doc.document_address;
-                document_data = doc.document_data;
+              { doc with
                 document_headers =
                   Http_headers.merge_headers doc.document_headers
                     [ "Content-Type: " ^ given_type ];
@@ -5149,10 +5137,10 @@ let add (caps : < Cap.network ; .. >) (emb : obj) =
         (* no viewer for this *)
         let t = s_ "Embed Error: no viewer for type %s" given_type in
         pack [ Label.create frame [ Text t ] ] []
-    | Invalid_request (w, msg) ->
+    | Www.Invalid_request (w, msg) ->
         let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
         pack [ Message.create frame [ Text t ] ] []
-    | Invalid_link _err ->
+    | Hyper.Invalid_link _err ->
         let t = s_ "Embed Error: invalid link" in
         pack [ Message.create frame [ Text t ] ] []
   with
@@ -5168,10 +5156,10 @@ let add (caps : < Cap.network ; .. >) (emb : obj) =
             (fun _url doc -> embedded_viewer frame embed_ctx doc)
           (Tk_progress.meter frame)
       with
-      | Invalid_request (w, msg) ->
+      | Www.Invalid_request (w, msg) ->
           let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
           pack [ Message.create frame [ Text t ] ] []
-      | Invalid_link _err ->
+      | Hyper.Invalid_link _err ->
           let t = s_ "Embed Error: invalid link" in
           pack [ Message.create frame [ Text t ] ] [])
 @
@@ -5181,8 +5169,8 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
     (embed_ctx : Viewers.context) (doc : Document.t) notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
-    let date_received = get_header "date" doc.document_headers in
-    let rewrite_wr wr =
+    let date_received = Http_headers.get_header "date" doc.document_headers in
+    let rewrite_wr (wr : Www.request) =
       wr.www_headers <-
         ("If-Modified-Since: " ^ date_received) :: wr.www_headers;
       wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
@@ -5192,7 +5180,7 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx (newdoc : Document.t) =
       let newdate =
-        try get_header "date" newdoc.document_headers with
+        try Http_headers.get_header "date" newdoc.document_headers with
         | Not_found -> "foo"
       in
       if newdate <> date_received then begin
@@ -5233,10 +5221,10 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
           (* no viewer for this *)
           let t = s_ "Embed Error: no viewer for type %s" given_type in
           pack [ Label.create frame [ Text t ] ] []
-      | Invalid_request (w, msg) ->
+      | Www.Invalid_request (w, msg) ->
           let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
           pack [ Message.create frame [ Text t ] ] []
-      | Invalid_link _err ->
+      | Hyper.Invalid_link _err ->
           let t = s_ "Embed Error: invalid link" in
           pack [ Message.create frame [ Text t ] ] []
     with
@@ -5253,10 +5241,10 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
               (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
             (Tk_progress.meter frame)
         with
-        | Invalid_request (w, msg) ->
+        | Www.Invalid_request (w, msg) ->
             let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
             pack [ Message.create frame [ Text t ] ] []
-        | Invalid_link _err ->
+        | Hyper.Invalid_link _err ->
             let t = s_ "Embed Error: invalid link" in
             pack [ Message.create frame [ Text t ] ] [])
   with
@@ -5274,9 +5262,6 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
 open Fpath_.Operators
 open I18n
 open Tk
-open Www
-open Hyper
-open Http_headers
 
 (* Assume any kind of data could be embedded 
  * The normal retrieval, used by the scheduler, makes its own decision
@@ -5303,8 +5288,8 @@ module EmbeddedData = struct
     | 200 -> begin
         try
           let doc = Cache.find dh.document_id in
-          let this_date = get_header "date" dh.dh_headers in
-          let cache_date = get_header "date" doc.document_headers in
+          let this_date = Http_headers.get_header "date" dh.dh_headers in
+          let cache_date = Http_headers.get_header "date" doc.document_headers in
           if this_date <> cache_date then raise Not_found else doc
         with
         | Not_found ->
@@ -8174,62 +8159,60 @@ let display (caps : < Cap.network ; .. >) (emb : Embed.obj)
       | _ ->
           (* in all other cases, get the alt label, and configure it *)
           (* WARNING: there may be an hypermenu here *)
-          List.iter
-            (function
-              | w -> (
-                  match Winfo.class_name w with
-                  | "Label" ->
-                      (* remove its border *)
-                      Label.configure w [ BorderWidth (Pixels 0) ];
-                      begin
-                        match i with
-                        | Still x ->
-                            Label.configure w [ x ];
-                            begin
-                              match x with
-                              | ImageBitmap _
-                              | ImagePhoto _ ->
-                                  prop := true
-                              (*fit the size to the image*)
-                              | _ -> ()
-                              (*We cannot restore the origianl size of the window...*)
-                            end;
-                            (* Utility to copy the img url in the selection buffer *)
-                            Tk.bind w
-                              (Glevents.get "copyimgurl")
-                              (BindSet
-                                 ( [],
-                                   fun _ ->
-                                     emb.embed_context#invoke "copy"
-                                       emb.embed_hlink ));
-                            (* Updating an image *)
-                            begin
-                              try
-                                let url =
-                                  Lexurl.make
-                                    (Hyper.resolve emb.embed_hlink).uri_url
-                                in
-                                Tk.bind w
-                                  (Glevents.get "updateimage")
-                                  (BindSet ([], fun _ -> Img.update caps url))
-                              with
-                              | Url.Url_Lexing _ -> ()
-                            end
-                        | Animated anm -> begin
-                            let f = Tkanim.animate w anm in
-                            Tk.bind w (Glevents.get "stopanim")
-                              (BindSet ([], fun _ -> f false));
-                            Tk.bind w
-                              (Glevents.get "restartanim")
-                              (BindSet ([], fun _ -> f true));
-                            Label.configure w [ Cursor (XCursor "watch") ];
-                            if !gif_anim_auto then f false;
-                            prop := true (*fit the size to the image*)
-                          end
-                      end
-                  | "Canvas" -> Tk.destroy w (* delete the progress meter *)
-                  | _ -> ()))
-            (Winfo.children emb.embed_frame)
+          Winfo.children emb.embed_frame
+          |> List.iter (fun w ->
+                 match Winfo.class_name w with
+                 | "Label" ->
+                     (* remove its border *)
+                     Label.configure w [ BorderWidth (Pixels 0) ];
+                     begin
+                       match i with
+                       | Still x ->
+                           Label.configure w [ x ];
+                           begin
+                             match x with
+                             | ImageBitmap _
+                             | ImagePhoto _ ->
+                                 prop := true
+                             (*fit the size to the image*)
+                             | _ -> ()
+                             (*We cannot restore the origianl size of the window...*)
+                           end;
+                           (* Utility to copy the img url in the selection buffer *)
+                           Tk.bind w
+                             (Glevents.get "copyimgurl")
+                             (BindSet
+                                ( [],
+                                  fun _ ->
+                                    emb.embed_context#invoke "copy"
+                                      emb.embed_hlink ));
+                           (* Updating an image *)
+                           begin
+                             try
+                               let url =
+                                 Lexurl.make
+                                   (Hyper.resolve emb.embed_hlink).uri_url
+                               in
+                               Tk.bind w
+                                 (Glevents.get "updateimage")
+                                 (BindSet ([], fun _ -> Img.update caps url))
+                             with
+                             | Url.Url_Lexing _ -> ()
+                           end
+                       | Animated anm -> begin
+                           let f = Tkanim.animate w anm in
+                           Tk.bind w (Glevents.get "stopanim")
+                             (BindSet ([], fun _ -> f false));
+                           Tk.bind w
+                             (Glevents.get "restartanim")
+                             (BindSet ([], fun _ -> f true));
+                           Label.configure w [ Cursor (XCursor "watch") ];
+                           if !gif_anim_auto then f false;
+                           prop := true (*fit the size to the image*)
+                         end
+                     end
+                 | "Canvas" -> Tk.destroy w (* delete the progress meter *)
+                 | _ -> ())
   end;
   if !prop then Pack.propagate_set emb.embed_frame true
 @

@@ -91,60 +91,60 @@ let display (caps : < Cap.network ; .. >) (emb : Embed.obj)
       | _ ->
           (* in all other cases, get the alt label, and configure it *)
           (* WARNING: there may be an hypermenu here *)
-          (Winfo.children emb.embed_frame) |> List.iter (fun w ->
-             match Winfo.class_name w with
-             | "Label" ->
-                      (* remove its border *)
-                      Label.configure w [ BorderWidth (Pixels 0) ];
-                      begin
-                        match i with
-                        | Still x ->
-                            Label.configure w [ x ];
-                            begin
-                              match x with
-                              | ImageBitmap _
-                              | ImagePhoto _ ->
-                                  prop := true
-                              (*fit the size to the image*)
-                              | _ -> ()
-                              (*We cannot restore the origianl size of the window...*)
-                            end;
-                            (* Utility to copy the img url in the selection buffer *)
-                            Tk.bind w
-                              (Glevents.get "copyimgurl")
-                              (BindSet
-                                 ( [],
-                                   fun _ ->
-                                     emb.embed_context#invoke "copy"
-                                       emb.embed_hlink ));
-                            (* Updating an image *)
-                            begin
-                              try
-                                let url =
-                                  Lexurl.make
-                                    (Hyper.resolve emb.embed_hlink).uri_url
-                                in
-                                Tk.bind w
-                                  (Glevents.get "updateimage")
-                                  (BindSet ([], fun _ -> Img.update caps url))
-                              with
-                              | Url.Url_Lexing _ -> ()
-                            end
-                        | Animated anm -> begin
-                            let f = Tkanim.animate w anm in
-                            Tk.bind w (Glevents.get "stopanim")
-                              (BindSet ([], fun _ -> f false));
-                            Tk.bind w
-                              (Glevents.get "restartanim")
-                              (BindSet ([], fun _ -> f true));
-                            Label.configure w [ Cursor (XCursor "watch") ];
-                            if !gif_anim_auto then f false;
-                            prop := true (*fit the size to the image*)
-                          end
-                      end
-                  | "Canvas" -> Tk.destroy w (* delete the progress meter *)
-                  | _ -> ()
-               )
+          Winfo.children emb.embed_frame
+          |> List.iter (fun w ->
+                 match Winfo.class_name w with
+                 | "Label" ->
+                     (* remove its border *)
+                     Label.configure w [ BorderWidth (Pixels 0) ];
+                     begin
+                       match i with
+                       | Still x ->
+                           Label.configure w [ x ];
+                           begin
+                             match x with
+                             | ImageBitmap _
+                             | ImagePhoto _ ->
+                                 prop := true
+                             (*fit the size to the image*)
+                             | _ -> ()
+                             (*We cannot restore the origianl size of the window...*)
+                           end;
+                           (* Utility to copy the img url in the selection buffer *)
+                           Tk.bind w
+                             (Glevents.get "copyimgurl")
+                             (BindSet
+                                ( [],
+                                  fun _ ->
+                                    emb.embed_context#invoke "copy"
+                                      emb.embed_hlink ));
+                           (* Updating an image *)
+                           begin
+                             try
+                               let url =
+                                 Lexurl.make
+                                   (Hyper.resolve emb.embed_hlink).uri_url
+                               in
+                               Tk.bind w
+                                 (Glevents.get "updateimage")
+                                 (BindSet ([], fun _ -> Img.update caps url))
+                             with
+                             | Url.Url_Lexing _ -> ()
+                           end
+                       | Animated anm -> begin
+                           let f = Tkanim.animate w anm in
+                           Tk.bind w (Glevents.get "stopanim")
+                             (BindSet ([], fun _ -> f false));
+                           Tk.bind w
+                             (Glevents.get "restartanim")
+                             (BindSet ([], fun _ -> f true));
+                           Label.configure w [ Cursor (XCursor "watch") ];
+                           if !gif_anim_auto then f false;
+                           prop := true (*fit the size to the image*)
+                         end
+                     end
+                 | "Canvas" -> Tk.destroy w (* delete the progress meter *)
+                 | _ -> ())
   end;
   if !prop then Pack.propagate_set emb.embed_frame true
 (*e: function [[Imgload.display]] *)
