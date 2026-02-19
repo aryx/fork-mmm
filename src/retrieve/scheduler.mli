@@ -48,6 +48,7 @@ module type Data =
 module type S =
   sig
     type shared_data
+
     val add_request : < Cap.network > ->
         Www.request -> Document.id ->
         (Url.t -> shared_data -> unit) -> progress_func -> unit
@@ -62,11 +63,13 @@ module type S =
 
     (* Delayed queues for this scheduler *)
     type delayed
+
     val new_delayed : unit -> delayed
 
     val add_delayed : 
         delayed -> Www.request -> Document.id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
+
     val flush_delayed : delayed -> unit
     val flush_one : delayed -> Url.t -> unit
    

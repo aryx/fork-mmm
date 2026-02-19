@@ -14244,7 +14244,7 @@ method virtual log : string -> unit
 val debug : bool ref
 @
 <<constant [[Scheduler.debug]]>>=
-let debug = ref false 
+let debug = ref false
 @
 
 % who uses that?
