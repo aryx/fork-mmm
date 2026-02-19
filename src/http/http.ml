@@ -101,7 +101,7 @@ let tcp_connect (caps : < Cap.network; ..>)
     (server_name : string) (port : int) logf cont error =
 
   (*  Find the inet address *)
-  let server_addr =
+  let server_addr : Unix.inet_addr =
     try Unix.inet_addr_of_string server_name
     with Failure _ ->
       (*s: [[Http.tcp_connect()]] if [[inet_add_of_string]] fails *)
@@ -483,7 +483,7 @@ and async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
 (*s: function [[Http.start_request]] *)
 and start_request (proxy_mode : bool) (wwwr : Www.request)
      (cont : Document.continuation) =
- fun cnx ->
+ fun (cnx : cnx) ->
   async_request proxy_mode wwwr 
      (fun cnx -> process_response wwwr cont cnx) cnx
 (*e: function [[Http.start_request]] *)
@@ -494,7 +494,7 @@ and start_request09 proxy_mode wwwr cont cnx =
 
 (*s: function [[Http.proxy_request]] *)
 (* Process an HTTP request using the proxy. We pass on the continuation *)
-and proxy_request caps wr cont =
+and proxy_request caps (wr : Www.request) (cont : Document.continuation) =
   tcp_connect caps !proxy !proxy_port wr.www_logging
        (start_request true wr cont)
        (failed_request wr cont.document_finish)

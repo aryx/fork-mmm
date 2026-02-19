@@ -143,7 +143,7 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
 
 (*s: function [[Imgload.put_alt]] *)
 (* put up the alternate text *)
-let put_alt emb =
+let put_alt (emb : Embed.obj) =
   let m = Label.create_named emb.embed_frame "alt" [Text emb.embed_alt] in
   (* make sure all bindings we put on the frame are attached there *)
   Tk.bindtags m ((WidgetBindings emb.embed_frame)::Tk.bindtags_get m);
@@ -267,19 +267,26 @@ let make_map emb =
 (*e: function [[Imgload.make_map]] *)
 
 
-(* The default behavior *)
+(* The default behavior, for no_images *)
 class loader () =
  object (self)
   val mutable loaded = UrlSet.empty
 
-  method private add_loaded url = 
-    loaded <- UrlSet.add url loaded
-
-  method add_image emb =
+  (* default no_image implem *)
+  method add_image (emb : Embed.obj) : unit =
     put_alt emb; (* make the alt widget*)
     make_map emb (* and possible bindings *)
 
-  method private activate emb =
+  (* flush when document is loaded *)
+  method flush_images = ()
+
+  (* manual flush *)
+  method load_images = ()
+
+  method private add_loaded (url : Url.t) : unit = 
+    loaded <- UrlSet.add url loaded
+
+  method private activate (emb : Embed.obj) =
     Logs.debug (fun m -> m "Activating image");
     try
       let caps = Cap.network_caps_UNSAFE () in
@@ -292,21 +299,23 @@ class loader () =
     with
       e -> Logs.warn (fun m -> m "Can't load image (%s)" (Printexc.to_string e))
 
-  method flush_images = ()
-  method load_images = ()
+  (* called when ?? *)
   method update_images = 
     let caps = Cap.network_caps_UNSAFE () in
     UrlSet.iter (Img.update caps) loaded
 end
 
+(* for DuringDoc *)
 class synchronous () =
  object
   inherit loader () as super
 
-  method! add_image emb =
-    super#add_image emb; super#activate emb
+  method! add_image (emb : Embed.obj) =
+    super#add_image emb; 
+    super#activate emb
 end
 
+(* for AfterDocAuto *)
 class auto () =
  object (self)
   inherit loader () as super
@@ -332,6 +341,7 @@ class auto () =
   method! flush_images = ImageScheduler.flush_delayed q
 end
 
+(* for AfterDocManual *)
 class manual () =
  object
   inherit auto () as super
@@ -346,10 +356,10 @@ class manual () =
 end
 
 (*s: function [[Imgload.create]] *)
-let create () =
+let create () : loader =
    if !no_images then new loader ()
    else match !mode with
-     DuringDoc -> (new synchronous () :> loader)
+   | DuringDoc -> (new synchronous () :> loader)
    | AfterDocAuto -> (new auto() :> loader)
    | AfterDocManual -> (new manual() :> loader)
 (*e: function [[Imgload.create]] *)

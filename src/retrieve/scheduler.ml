@@ -319,6 +319,7 @@ module Make(J: Data) = struct
           with (* can't proceed with retry *)
         _ -> error url job
             in
+
        (* Okay, go for the retrieval now *)
         try 
          match Retrieve.f caps wr retry_data

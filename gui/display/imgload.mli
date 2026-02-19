@@ -27,6 +27,7 @@ end
 (*e: class [[Imgload.loader]] signature *)
 
 (*s: signature [[Imgload.create]] *)
+(* depending on !mode and !no_images will return a different kind of loader *)
 val create : unit -> loader
 (*e: signature [[Imgload.create]] *)
 
