@@ -26,7 +26,6 @@ module ImageData =
     * The image cache
     *)
 
-
     let set_of_list l = 
       List.fold_right Document.DocumentIDSet.add l Document.DocumentIDSet.empty
 
