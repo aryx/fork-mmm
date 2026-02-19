@@ -984,7 +984,7 @@ end
 %todo: replace with unix?
 
 <<signature [[Low.read]]>>=
-val read : file_descr -> bytes -> int -> int -> int
+val read : Unix.file_descr -> bytes -> int -> int -> int
   (* Unix.read wrapper, to be used when data transferred has to
      be counted by the tachymeter
    *)
@@ -996,11 +996,11 @@ val fork : unit -> int
 @
 
 <<signature [[Low.add_fileinput]]>>=
-val add_fileinput : file_descr -> (unit -> unit) -> unit
+val add_fileinput : Unix.file_descr -> (unit -> unit) -> unit
 @
 
 <<signature [[Low.remove_fileinput]]>>=
-val remove_fileinput: file_descr -> unit
+val remove_fileinput: Unix.file_descr -> unit
   (* Wrapping of Tk fileinput functions, with feedback on the tachymeter *)
 @
 
@@ -1019,9 +1019,10 @@ val update_idletasks : unit -> unit
 %-------------------------------------------------------------
 
 <<commons/low.mli>>=
-open Unix
 
 <<signature [[Low.read]]>>
+
+val read_line: Unix.file_descr -> string
 
 <<signature [[Low.fork]]>>
 
@@ -1182,6 +1183,27 @@ end
 
 <<function [[Low.read]]>>
 
+
+(*
+ * Read a line (terminated by \n or \r\n).
+ *   strips terminator !
+ *)
+let read_line fd =
+  let rec read_rec (buf : bytes) bufsize offs =
+    let n = read fd buf offs 1 in
+      if n = 0 then raise End_of_file
+      else if Bytes.get buf offs = '\n'
+           then (* strips \n and possibly \r  *)
+             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
+                       else offs in
+               Bytes.sub_string buf 0 len
+           else let offs = succ offs in
+                  if offs = bufsize 
+                  then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
+                  else read_rec buf bufsize offs in
+  read_rec (Bytes.create 128) 128 0 
+
+
 <<global [[Low.pending_read]]>>
 let _action = ref (fun _ -> ())
 
@@ -1217,6 +1239,8 @@ let update_idletasks_backend =
 
 <<constant [[Low.last_update]]>>
 <<function [[Low.update_idletasks]]>>
+
+
 @
 
 
