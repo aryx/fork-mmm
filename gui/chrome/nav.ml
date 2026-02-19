@@ -269,7 +269,7 @@ let id_wr wr = wr
  * A new object is created for each new top viewer (follow_link).
  * AND for each frame_goto operation.
  *)
-class stdctx (did, nav) =
+class stdctx (caps : < Cap.network; ..>) (did, nav) =
  object (self)
   inherit Viewers.context (did, []) as super
   (* val did = did *)
@@ -279,15 +279,16 @@ class stdctx (did, nav) =
   method init =
 
     (* a new context for a toplevel window *)
-    let make_ctx nav did = 
-      ((new stdctx(did, nav))#init :> Viewers.context)
+    let make_ctx (caps : < Cap.network; ..>) nav did = 
+      ((new stdctx caps (did, nav))#init :> Viewers.context)
     in
 
     (* a new context for an embedded window *)
-    let make_embed_ctx w targets = 
+    let make_embed_ctx (w : Widget.widget) (targets : Viewers.frame_targets) 
+        : Viewers.context = 
       let targets = 
         ("_self", w) :: ("_parent", Winfo.parent w) :: (Viewers.frame_fugue targets) in
-      let newctx = (new stdctx(did,nav))#init in
+      let newctx = (new stdctx caps (did,nav))#init in
       begin
         try 
           let f = List.assoc "pointsto" self#hyper_funs in
@@ -300,23 +301,26 @@ class stdctx (did, nav) =
     in
 
     (* by default, use the cache, don't touch the request *)
-    let follow_link _ = 
-      let caps = Cap.network_caps_UNSAFE () in
-      request caps nav (process_viewer true make_ctx) 
+    let follow_link (caps : < Cap.network; ..>) _ = 
+      request caps nav (process_viewer true (make_ctx caps))
         (true, id_wr, specific_viewer true)
-    and save_link _ =
-      let caps = Cap.network_caps_UNSAFE () in
+
+    and save_link (caps : < Cap.network; ..>) _ =
       request caps nav (process_save None) (true, id_wr, nothing_specific)
+
     and copy_link _ = 
       copy_link nav
-    and head_link = 
-      let caps = Cap.network_caps_UNSAFE () in
+
+    and head_link (caps : < Cap.network; ..>) = 
       let f = request caps nav process_head (true, id_wr, nothing_specific) in
       (fun _ hlink -> f (make_head hlink))
+
     and new_link _ = nav.nav_new
+
     in 
-    let frame_goto (targets : Viewers.frame_targets) (hlink : Hyper.link) =
-      let caps = Cap.network_caps_UNSAFE () in
+
+    let frame_goto ( caps : < Cap.network; .. > )
+         (targets : Viewers.frame_targets) (hlink : Hyper.link) =
       try
       (* target semantics PR-HTML 4.0 16.3.2 *)
        match List.assoc "target" hlink.h_params with
@@ -336,7 +340,7 @@ class stdctx (did, nav) =
         embed_context = make_embed_ctx w targets;
         embed_map = Maps.NoMap;
         embed_alt = "" }
-       | "_top" -> follow_link targets hlink
+       | "_top" -> follow_link caps targets hlink
        | "_parent" ->
         let w = List.assoc "_parent" targets in
         Embed.add caps { 
@@ -364,15 +368,16 @@ class stdctx (did, nav) =
         embed_map = Maps.NoMap;
         embed_alt = "" }
       with
-        Not_found -> follow_link targets hlink
+        Not_found -> follow_link caps targets hlink
     in
+
     !user_navigation |> List.iter super#add_nav;
 
     ["copy", copy_link, s_ "Copy this Link to clipboard";
-     "head", head_link, s_ "Headers of document";
-     "save", save_link, s_ "Save this Link";
+     "head", head_link caps, s_ "Headers of document";
+     "save", save_link caps, s_ "Save this Link";
      "gotonew", new_link, s_ "New window with this Link";
-     "goto", frame_goto, s_ "Open this Link";
+     "goto", frame_goto caps, s_ "Open this Link";
     ] |> List.iter (fun (name, f, txt) ->
         self#add_nav (name, { hyper_visible = true; 
                               hyper_func = f; 
@@ -384,8 +389,8 @@ end
 (*e: class [[Nav.stdctx]] *)
 
 (*s: function [[Nav.make_ctx]] *)
-let make_ctx (nav : t) (did : Document.id) : Viewers.context = 
-  ((new stdctx(did, nav))#init :> Viewers.context)
+let make_ctx (caps : < Cap.network; ..>) (nav : t) (did : Document.id) : Viewers.context = 
+  ((new stdctx caps (did, nav))#init :> Viewers.context)
 (*e: function [[Nav.make_ctx]] *)
 
 (*s: function [[Nav.save_link]] *)
@@ -399,7 +404,7 @@ let save_link (caps : < Cap.network; ..>)
 let follow_link (caps : < Cap.network; ..>)
      (nav : t) (lk : Hyper.link) : unit =
   lk |> request caps nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
-      process_viewer true make_ctx nav wr dh
+      process_viewer true (make_ctx caps) nav wr dh
     )
     (*s: [[Nav.follow_link]] extra arguments to Nav.request *)
     (true, id_wr, specific_viewer true)
@@ -431,7 +436,7 @@ let historygoto (caps : < Cap.network; ..>)
     (* modify wr *)
     let follow_link (lk : Hyper.link) =
       lk |> request caps nav  
-        (process_viewer false make_ctx) (* don't add to history *)
+        (process_viewer false (make_ctx caps)) (* don't add to history *)
         (usecache,
          (fun wr ->
             if not usecache 
@@ -485,7 +490,7 @@ let update (caps: < Cap.network; ..>)
     if add_hist then 
       wr.www_error#ok (s_ "Document %s is relocated to:\n%s" oldurl newurl);
      wr.www_logging <- nav.nav_log;
-     process_viewer add_hist make_ctx nav wr dh
+     process_viewer add_hist (make_ctx caps) nav wr dh
   in
 
   try

@@ -64,7 +64,8 @@ val add_user_navigation : string -> Viewers.hyper_func -> unit
 (*e: signature [[Nav.add_user_navigation]] *)
 
 (*s: signature [[Nav.make_ctx]] *)
-val make_ctx : t -> Document.id -> Viewers.context
+val make_ctx : < Cap.network; ..> ->
+  t -> Document.id -> Viewers.context
 (*e: signature [[Nav.make_ctx]] *)
 
 (*s: signature [[Nav.absolutegoto]] *)

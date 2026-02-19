@@ -13017,7 +13017,7 @@ let update (caps: < Cap.network; ..>)
     if add_hist then 
       wr.www_error#ok (s_ "Document %s is relocated to:\n%s" oldurl newurl);
      wr.www_logging <- nav.nav_log;
-     process_viewer add_hist make_ctx nav wr dh
+     process_viewer add_hist (make_ctx caps) nav wr dh
   in
 
   try

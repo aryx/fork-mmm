@@ -631,7 +631,7 @@ let rec navigator (caps: < Cap.network; ..>)
       !user_menus |> List.iter (fun (entry, f) ->
           Menu.add_command !userm 
                [Label entry; 
-                Command (fun () -> f (Nav.make_ctx nav hist.h_current.h_did))]
+                Command (fun () -> f (Nav.make_ctx caps nav hist.h_current.h_did))]
       );
       Menubutton.configure userb [Menu !userm] 
     in
