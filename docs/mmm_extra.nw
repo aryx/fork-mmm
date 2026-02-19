@@ -4426,6 +4426,8 @@ module type Data =
 module type S =
   sig
     type shared_data
+
+    (* ?? -> <> -> Retrieve.f -> Http.req (via protos) *)
     val add_request : < Cap.network > ->
         Www.request -> Document.id ->
         (Url.t -> shared_data -> unit) -> progress_func -> unit
@@ -4440,13 +4442,15 @@ module type S =
 
     (* Delayed queues for this scheduler *)
     type delayed
+
     val new_delayed : unit -> delayed
 
     val add_delayed : 
         delayed -> Www.request -> Document.id -> 
             (Url.t -> shared_data -> unit) -> progress_func -> unit
+
     val flush_delayed : delayed -> unit
-    val flush_one : delayed -> Url.t -> unit
+    val flush_one : < Cap.network > -> delayed -> Url.t -> unit
    
     val is_empty : delayed -> bool
     val maxactive : int ref
@@ -4466,14 +4470,6 @@ module Make(J : Data):(S with type shared_data = J.t)
 <<retrieve/scheduler.ml>>=
 (* Scheduled downloading *)
 
-open Printf
-open Unix
-open Www
-open Document
-open Url
-open Feed
-open Http_headers
-
 <<constant [[Scheduler.debug]]>>
 
 <<type [[Scheduler.progress_func]]>>
@@ -4482,7 +4478,7 @@ open Http_headers
 module type Data = sig
   type t
 
-  val load : handle -> Document.id list -> Fpath.t -> t
+  val load : Document.handle -> Document.id list -> Fpath.t -> t
   (* [load dh referers file] *)
 
   val cache_access : Url.t -> Document.id -> t
@@ -4525,7 +4521,7 @@ module type S = sig
     unit
 
   val flush_delayed : delayed -> unit
-  val flush_one : delayed -> Url.t -> unit
+  val flush_one : < Cap.network > -> delayed -> Url.t -> unit
   val is_empty : delayed -> bool
   val maxactive : int ref
   val maxsamehost : int ref
@@ -4561,7 +4557,7 @@ module Make (J : Data) = struct
   (* count of cnx on each host (IP number is best choice), but for
      performance reason (DNS lookups), we take FQDN *)
 
-  let addhost url =
+  let addhost (url : Url.t) =
     let s =
       match url.host with
       | Some s -> s
@@ -4578,7 +4574,7 @@ module Make (J : Data) = struct
         Hashtbl.add samehost s (ref 1);
         true (* assumes maxsamehost >= 1 *)
 
-  let remhost url =
+  let remhost (url : Url.t) =
     let s =
       match url.host with
       | Some s -> s
@@ -4603,14 +4599,14 @@ module Make (J : Data) = struct
 
   exception Busy
 
-  let skip_cache wr =
-    try get_header "pragma" wr.www_headers = "no-cache" with
+  let skip_cache (wr : Www.request) =
+    try Http_headers.get_header "pragma" wr.www_headers = "no-cache" with
     | Not_found -> false
 
   let pick () =
     let pick_in_batch q =
       try
-        let wr, _, _, _ = Queue.peek q in
+        let (wr : Www.request), _, _, _ = Queue.peek q in
         let url = wr.www_url in
         if addhost url then Some (Queue.take q) else None
       with
@@ -4658,12 +4654,11 @@ module Make (J : Data) = struct
     next_request caps
 
   (* error during data downloading *)
-  and error (url : Url.t) (job : job) =
+  and error (caps : < Cap.network; .. >) (url : Url.t) (job : job) =
     job.stop ();
     J.error url job.conts;
     if !debug then
       Logs.warn (fun m -> m "Retrieval of %s failed\n" (Url.string_of url));
-    let caps = Cap.network_caps_UNSAFE () in
     next_request caps
 
   (* process_request always follows pick, thus hostcount has always been
@@ -4692,7 +4687,7 @@ module Make (J : Data) = struct
         | Not_found -> begin
             (* start a new job *)
             if !debug then
-              Log.f (sprintf "Starting job for %s" (Url.string_of url));
+              Logs.debug (fun m -> m "Starting job for %s" (Url.string_of url));
             let job =
               {
                 stop =
@@ -4712,12 +4707,15 @@ module Make (J : Data) = struct
             (* We are now going to run the retrieval process *)
 
             (* Continuations for the retrieval *)
-            let handle_data dh =
+            (* TODO: remove those nested function, move out and pass down
+             * necessary closed arguments
+             *)
+            let handle_data (dh : Document.handle) =
               (* add more things to do in stop *)
               let oldstop = job.stop in
               job.stop <-
                 (fun () ->
-                  dclose true dh;
+                  Document.dclose true dh;
                   oldstop ());
               try
                 (* open the temporary file in which doc is to be saved *)
@@ -4734,7 +4732,7 @@ module Make (J : Data) = struct
                 end;
 
                 (* actually start sucking data *)
-                dh.document_feed.feed_schedule (fun _ ->
+                dh.document_feed.feed_schedule (fun () ->
                     try
                       let n = dh.document_feed.feed_read buffer 0 2048 in
 
@@ -4748,7 +4746,7 @@ module Make (J : Data) = struct
                       if n <> 0 then output oc buffer 0 n
                       else begin
                         (* end of document *)
-                        dclose true dh;
+                        Document.dclose true dh;
                         (* see comment below *)
                         close_out oc;
                         (* proceed to load and run continuations *)
@@ -4768,8 +4766,8 @@ module Make (J : Data) = struct
                           with
                           (* load failed *)
                           | e ->
-                              Log.f
-                                (sprintf "Load error %s" (Printexc.to_string e));
+                              Logs.warn (fun m -> m "Load error %s"
+                                            (Printexc.to_string e));
                               J.error url job.conts
                         end;
                         (* we must remove from active only after
@@ -4781,52 +4779,52 @@ module Make (J : Data) = struct
                            callback will we called indefinitely *)
                         oldstop ();
                         if !debug then
-                          Log.f
-                            (sprintf "Finished job for %s" (Url.string_of url));
+                          Logs.debug (fun m -> m
+                            "Finished job for %s" (Url.string_of url));
                         (* proceed with more requests *)
                         next_request caps
                       end
                     with
                     (* errors in retrieval *)
-                    | Unix_error (code, s, s') ->
-                        Log.f
-                          (sprintf "Unix error (%s) in scheduler %s %s"
-                             (error_message code) s s');
+                    | Unix.Unix_error (code, s, s') ->
+                        Logs.err (fun m -> m "Unix error (%s) in scheduler %s %s"
+                                              (Unix.error_message code) s s');
                         close_out oc;
-                        error url job
+                        error caps url job
                     | Sys_error s ->
-                        Log.f (sprintf "IO error (%s) in scheduler" s);
+                        Logs.err (fun m -> m "IO error (%s) in scheduler" s);
                         close_out oc;
-                        error url job
+                        error caps url job
                     | e ->
-                        Log.f
-                          (sprintf "Bug in scheduler %s" (Printexc.to_string e));
+                        Logs.err (fun m -> m
+                          "Bug in scheduler %s" (Printexc.to_string e));
                         close_out oc;
-                        error url job)
+                        error caps url job)
               with
               (* error creating tmp file *)
               | Sys_error s ->
-                  Log.f (sprintf "Can't create temporary file (%s)" s);
-                  error url job
+                  Logs.err (fun m -> m "Can't create temporary file (%s)" s);
+                  error caps url job
               | e ->
-                  Log.f (sprintf "Bug in scheduler %s" (Printexc.to_string e));
-                  error url job
+                  Logs.err (fun m -> m "Bug in scheduler %s" (Printexc.to_string e));
+                  error caps url job
+
+
             (* Data has moved. The best way to do this properly is to
                reschedule the job conts as new requests *)
-            and retry_data hlink =
+            and retry_data (hlink : Hyper.link) =
               try
                 job.stop ();
                 let newr = Www.make hlink in
                 newr.www_error <- wr.www_error;
                 newr.www_logging <- wr.www_logging;
-                List.iter
-                  (fun (did, (cont, prog)) ->
+                job.conts |> List.iter (fun (did, (cont, prog)) ->
                     add_request caps newr did cont prog)
-                  job.conts
               with
               (* can't proceed with retry *)
-              | _ -> error url job
+              | _ -> error caps url job
             in
+
 
             (* Okay, go for the retrieval now *)
             try
@@ -4834,7 +4832,7 @@ module Make (J : Data) = struct
                 Retrieve.f caps wr retry_data
                   {
                     document_process = handle_data;
-                    document_finish = (fun f -> if f then error url job);
+                    document_finish = (fun f -> if f then error caps url job);
                   }
               with
               | Retrieve.Started _ -> ()
@@ -4849,10 +4847,10 @@ module Make (J : Data) = struct
                       add_request caps wr did cont prog)
                     job.conts
             with
-            | Invalid_request (w, msg) ->
+            | Www.Invalid_request (w, msg) ->
                 (* retrieve failed *)
                 J.error_msg (w, msg);
-                error url job
+                error caps url job
           end)
 
   (*
@@ -4864,11 +4862,9 @@ module Make (J : Data) = struct
     (* For all queues, for all request in the queue, if the request matches
        the predicate, it is removed from the queue. *)
     queues :=
-      !queues
-      |> List.map (fun q ->
+      !queues |> List.map (fun q ->
              let newq = Queue.create () in
-             q
-             |> Queue.iter (function
+             q |> Queue.iter (function
                   | _wr, didr, _cont, _progress when did = didr -> ()
                   | r -> Queue.add r newq);
              newq);
@@ -4878,16 +4874,16 @@ module Make (J : Data) = struct
     *)
     let rem = ref [] in
     (* jobs to kill *)
-    Hashtbl.iter
+    actives |> Hashtbl.iter
       (fun _url job ->
         try
           job.conts <- Mlist.except_assoc did job.conts;
           if job.conts = [] then rem := job :: !rem
         with
-        | Not_found -> ())
-      actives;
+        | Not_found -> ()
+    );
     (* each stop closes the cnx properly and remove the job from actives *)
-    List.iter (fun job -> job.stop ()) !rem;
+    !rem |> List.iter (fun job -> job.stop ());
     if !rem <> [] then
       let caps = Cap.network_caps_UNSAFE () in
       next_request caps
@@ -4917,7 +4913,7 @@ module Make (J : Data) = struct
     | Not_found -> Queue.add (wr, did, cont, progress) q
 
   (* Put the queue in the list of queues *)
-  let flush_delayed (q : delayed) =
+  let flush_delayed (q : delayed) : unit =
     (* Queue.iter (function (_,_,_,prog) -> prog None 0) q;(* create the gauge *) *)
     queues := !queues @ [ q ];
     let caps = Cap.network_caps_UNSAFE () in
@@ -4926,24 +4922,22 @@ module Make (J : Data) = struct
   (* Flush a particular request from a queue : we do it in place
      because we don't know if the queue has been put in the list yet
   *)
-  let flush_one l url =
+  let flush_one (caps : < Cap.network >) (l : delayed) (url : Url.t) : unit  =
     let flushedqueue = Queue.create () and restqueue = Queue.create () in
     (* split in two *)
-    Queue.iter
-      (function
-        | wr, did, cont, prog when wr.www_url = url ->
+    l |> Queue.iter (function
+        | (wr : Www.request), did, cont, prog when wr.www_url = url ->
             prog None 0;
             (* create the gauge *)
             Queue.add (wr, did, cont, prog) flushedqueue
-        | r -> Queue.add r restqueue)
-      l;
+        | r -> Queue.add r restqueue
+    );
     (* the flushed goes at the beginning *)
     queues := flushedqueue :: !queues;
     (* copy back the remaining in l (MUST BE THE SAME l) *)
     Queue.clear l;
-    Queue.iter (fun r -> Queue.add r l) restqueue;
+    restqueue |> Queue.iter (fun r -> Queue.add r l);
     (* try to process the flushed items *)
-    let caps = Cap.network_caps_UNSAFE () in
     next_request caps
 end
 @
@@ -8074,19 +8068,18 @@ val gif_anim_auto : bool ref
 
 <<type Imgload.mode (./display/imgload.ml)>>=
 (* Images are embedded objects, with a twist *)
-type mode =
-  | DuringDoc
-  | AfterDocAuto
-  | AfterDocManual
+type mode = DuringDoc | AfterDocAuto | AfterDocManual
 @
 
 <<constant [[Imgload.mode]]>>=
 (* Preference settings *)
 let mode = ref AfterDocManual
+
 @
 
 <<constant [[Imgload.no_images]]>>=
 let no_images = ref false
+
 @
 
 <<constant [[Imgload.gif_anim_auto]]>>=
@@ -8095,114 +8088,133 @@ let gif_anim_auto = ref false
 
 <<function [[Imgload.display]]>>=
 (* Utilities *)
-let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
+let display (caps : < Cap.network ; .. >) (emb : Embed.obj)
+    (i : Tkanim.imageType) =
   let prop = ref false in
   begin
-  if Winfo.exists emb.embed_frame then
-  match emb.embed_map with
-    ClientSide hlink -> (* kill'em all *)
-      begin try
-    List.iter destroy (Winfo.children emb.embed_frame);
-    let w, h =
-     match i with
-       Still x -> 
-         begin match x with
-           ImageBitmap i -> Imagebitmap.width i, Imagebitmap.height i
-         | ImagePhoto  i -> Imagephoto.width i, Imagephoto.height i
-         | _ -> failwith "invalid image" 
-         end
-     | Animated anm -> Tkanim.width anm, Tkanim.height anm in
-    let c = Canvas.create emb.embed_frame 
-           [Width (Pixels w); Height (Pixels h)] in
-    prop := true; (*fit the size to the image*)
-    Tk.bindtags c ((WidgetBindings emb.embed_frame)::Tk.bindtags_get c);
-      pack [c][];
-    let ii = Canvas.create_image c (Pixels 0) (Pixels 0)
-                   [Anchor NW] in
-    begin
-      match i with
-        Still x -> Canvas.configure_image c ii [x]
-      | Animated anm -> 
-          begin
-        let f = Tkanim.animate_canvas_item c ii anm in
-        (* binding on c is bad... *)
-        bind c (Glevents.get "stopanim") (BindSet ([], (fun _ ->
-          f false)));
-        bind c (Glevents.get "restartanim") (BindSet ([], (fun _ ->
-          f true)));
-        (* I am sure it doesn't work *)
-        Canvas.configure c [Cursor (XCursor "watch")];
-        if !gif_anim_auto then f false
-          end
-    end;
-    (* now we have the image displayed in a canvas.
-       and we can create the client side map *)
-    let uri = Hyper.resolve hlink in
-    let name =
-      match uri.uri_fragment with 
-      | None -> uri.uri_url
-      | Some frag -> sprintf "%s#%s" uri.uri_url frag
-    in
-      match Maps.get name with
-        KnownMap m -> Cmap.gfx_mode emb m c
-      | RequestedMap event ->
-         Frx_synth.bind c event 
-         (fun c -> 
+    if Winfo.exists emb.embed_frame then
+      match emb.embed_map with
+      (* kill'em all *)
+      | ClientSide hlink -> begin
+          try
+            List.iter Tk.destroy (Winfo.children emb.embed_frame);
+            let w, h =
+              match i with
+              | Still x -> begin
+                  match x with
+                  | ImageBitmap i -> (Imagebitmap.width i, Imagebitmap.height i)
+                  | ImagePhoto i -> (Imagephoto.width i, Imagephoto.height i)
+                  | _ -> failwith "invalid image"
+                end
+              | Animated anm -> (Tkanim.width anm, Tkanim.height anm)
+            in
+            let c =
+              Canvas.create emb.embed_frame
+                [ Width (Pixels w); Height (Pixels h) ]
+            in
+            prop := true;
+            (*fit the size to the image*)
+            Tk.bindtags c (WidgetBindings emb.embed_frame :: Tk.bindtags_get c);
+            Tk.pack [ c ] [];
+            let ii =
+              Canvas.create_image c (Pixels 0) (Pixels 0) [ Anchor NW ]
+            in
+            begin
+              match i with
+              | Still x -> Canvas.configure_image c ii [ x ]
+              | Animated anm -> begin
+                  let f = Tkanim.animate_canvas_item c ii anm in
+                  (* binding on c is bad... *)
+                  Tk.bind c (Glevents.get "stopanim")
+                    (BindSet ([], fun _ -> f false));
+                  Tk.bind c
+                    (Glevents.get "restartanim")
+                    (BindSet ([], fun _ -> f true));
+                  (* I am sure it doesn't work *)
+                  Canvas.configure c [ Cursor (XCursor "watch") ];
+                  if !gif_anim_auto then f false
+                end
+            end;
+            (* now we have the image displayed in a canvas.
+               and we can create the client side map *)
+            let uri = Hyper.resolve hlink in
+            let name =
+              match uri.uri_fragment with
+              | None -> uri.uri_url
+              | Some frag -> Printf.sprintf "%s#%s" uri.uri_url frag
+            in
             match Maps.get name with
-              RequestedMap _ ->
-             Log.f "INTERNAL ERROR: delayed_client_side"
-            | KnownMap m -> Cmap.gfx_mode emb m c)
-    with
-      e -> Logs.err (fun m -> m "INTERNAL ERROR in display (%s)"
-                               (Printexc.to_string e))
-      end
-
-  | _ ->
-    (* in all other cases, get the alt label, and configure it *)
-    (* WARNING: there may be an hypermenu here *)
-    List.iter (function w ->
-      match Winfo.class_name w with
-    "Label" ->
-    (* remove its border *)
-    Label.configure w [BorderWidth (Pixels 0)];
-    begin match i with
-      Still x -> 
-        Label.configure w [x];
-        begin match x with
-          ImageBitmap _ | ImagePhoto _ ->
-        prop := true; (*fit the size to the image*)
-        | _ -> () (*We cannot restore the origianl size of the window...*)
-        end;
-        (* Utility to copy the img url in the selection buffer *)
-        bind w (Glevents.get "copyimgurl")
-          (BindSet ([], (fun _ ->
-        emb.embed_context#invoke "copy" emb.embed_hlink)));
-        (* Updating an image *)
-        begin
-          try 
-        let url = 
-          Lexurl.make (Hyper.resolve emb.embed_hlink).uri_url in
-         bind w (Glevents.get "updateimage")
-          (BindSet ([], (fun _ -> Img.update caps url)))
+            | KnownMap m -> Cmap.gfx_mode emb m c
+            | RequestedMap event ->
+                Frx_synth.bind c event (fun c ->
+                    match Maps.get name with
+                    | RequestedMap _ ->
+                        Log.f "INTERNAL ERROR: delayed_client_side"
+                    | KnownMap m -> Cmap.gfx_mode emb m c)
           with
-        Url.Url_Lexing _ -> ()
+          | e ->
+              Logs.err (fun m ->
+                  m "INTERNAL ERROR in display (%s)" (Printexc.to_string e))
         end
-
-    | Animated anm -> 
-        begin
-          let f = Tkanim.animate w anm in
-          bind w (Glevents.get "stopanim") (BindSet ([], (fun _ ->
-        f false)));
-          bind w (Glevents.get "restartanim") (BindSet ([], (fun _ ->
-        f true)));
-        Label.configure w [Cursor (XCursor "watch")];
-          if !gif_anim_auto then f false;
-          prop := true (*fit the size to the image*)
-        end
-    end
-      |	"Canvas" -> destroy w (* delete the progress meter *)
-      |	_ -> ())
-      (Winfo.children emb.embed_frame)
+      | _ ->
+          (* in all other cases, get the alt label, and configure it *)
+          (* WARNING: there may be an hypermenu here *)
+          List.iter
+            (function
+              | w -> (
+                  match Winfo.class_name w with
+                  | "Label" ->
+                      (* remove its border *)
+                      Label.configure w [ BorderWidth (Pixels 0) ];
+                      begin
+                        match i with
+                        | Still x ->
+                            Label.configure w [ x ];
+                            begin
+                              match x with
+                              | ImageBitmap _
+                              | ImagePhoto _ ->
+                                  prop := true
+                              (*fit the size to the image*)
+                              | _ -> ()
+                              (*We cannot restore the origianl size of the window...*)
+                            end;
+                            (* Utility to copy the img url in the selection buffer *)
+                            Tk.bind w
+                              (Glevents.get "copyimgurl")
+                              (BindSet
+                                 ( [],
+                                   fun _ ->
+                                     emb.embed_context#invoke "copy"
+                                       emb.embed_hlink ));
+                            (* Updating an image *)
+                            begin
+                              try
+                                let url =
+                                  Lexurl.make
+                                    (Hyper.resolve emb.embed_hlink).uri_url
+                                in
+                                Tk.bind w
+                                  (Glevents.get "updateimage")
+                                  (BindSet ([], fun _ -> Img.update caps url))
+                              with
+                              | Url.Url_Lexing _ -> ()
+                            end
+                        | Animated anm -> begin
+                            let f = Tkanim.animate w anm in
+                            Tk.bind w (Glevents.get "stopanim")
+                              (BindSet ([], fun _ -> f false));
+                            Tk.bind w
+                              (Glevents.get "restartanim")
+                              (BindSet ([], fun _ -> f true));
+                            Label.configure w [ Cursor (XCursor "watch") ];
+                            if !gif_anim_auto then f false;
+                            prop := true (*fit the size to the image*)
+                          end
+                      end
+                  | "Canvas" -> Tk.destroy w (* delete the progress meter *)
+                  | _ -> ()))
+            (Winfo.children emb.embed_frame)
   end;
   if !prop then Pack.propagate_set emb.embed_frame true
 @
@@ -8210,138 +8222,149 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
 <<function [[Imgload.put_alt]]>>=
 (* put up the alternate text *)
 let put_alt (emb : Embed.obj) =
-  let m = Label.create_named emb.embed_frame "alt" [Text emb.embed_alt] in
+  let m = Label.create_named emb.embed_frame "alt" [ Text emb.embed_alt ] in
   (* make sure all bindings we put on the frame are attached there *)
-  Tk.bindtags m ((WidgetBindings emb.embed_frame)::Tk.bindtags_get m);
-  pack [m][Fill Fill_Both; Expand true];
-  if not (Pack.propagate_get emb.embed_frame) then begin (* with width and height *)
+  Tk.bindtags m (WidgetBindings emb.embed_frame :: Tk.bindtags_get m);
+  Tk.pack [ m ] [ Fill Fill_Both; Expand true ];
+  if not (Pack.propagate_get emb.embed_frame) then begin
+    (* with width and height *)
     if Winfo.reqwidth emb.embed_frame < Winfo.reqwidth m then
-      Frame.configure emb.embed_frame [Width (Pixels (Winfo.reqwidth m))];
+      Frame.configure emb.embed_frame [ Width (Pixels (Winfo.reqwidth m)) ];
     if Winfo.reqheight emb.embed_frame < Winfo.reqheight m then
-      Frame.configure emb.embed_frame [Height (Pixels (Winfo.reqheight m))];
-(* Buggy
-    let wf = Winfo.reqwidth emb.embed_frame 
-    and wm = Winfo.reqwidth m
-    and hf = Winfo.reqheight emb.embed_frame 
-    and hm = Winfo.reqheight m
-    in
-    if wf < wm || hf < hm then begin
-      bind emb.embed_frame [[], Enter] (BindExtend ([], (fun _ ->
-    if wf < wm then
-      Frame.configure emb.embed_frame [Width (Pixels wm)];
-    if hf < hm then
-      Frame.configure emb.embed_frame [Height (Pixels hm)])));
-      bind emb.embed_frame [[], Leave] (BindExtend ([], (fun _ ->
-    Frame.configure emb.embed_frame [Width (Pixels wf)];
-    Frame.configure emb.embed_frame [Height (Pixels hf)])))
-    end
-*)
+      Frame.configure emb.embed_frame [ Height (Pixels (Winfo.reqheight m)) ]
+      (* Buggy
+          let wf = Winfo.reqwidth emb.embed_frame
+          and wm = Winfo.reqwidth m
+          and hf = Winfo.reqheight emb.embed_frame
+          and hm = Winfo.reqheight m
+          in
+          if wf < wm || hf < hm then begin
+            bind emb.embed_frame [[], Enter] (BindExtend ([], (fun _ ->
+          if wf < wm then
+            Frame.configure emb.embed_frame [Width (Pixels wm)];
+          if hf < hm then
+            Frame.configure emb.embed_frame [Height (Pixels hm)])));
+            bind emb.embed_frame [[], Leave] (BindExtend ([], (fun _ ->
+          Frame.configure emb.embed_frame [Width (Pixels wf)];
+          Frame.configure emb.embed_frame [Height (Pixels hf)])))
+          end
+      *)
   end
 @
 
 <<function [[Imgload.make_auto]]>>=
 (* for delayed load, add binding *)
-let make_auto delayed emb =
+let make_auto delayed (emb : Embed.obj) =
   try
     let url = (Www.make emb.embed_hlink).www_url in
-    bind emb.embed_frame
-      (Glevents.get "loadimage")
-      (BindSet ([], (fun _ -> Img.ImageScheduler.flush_one delayed url)))
+    let caps = Cap.network_caps_UNSAFE () in
+    Tk.bind emb.embed_frame (Glevents.get "loadimage")
+      (BindSet ([], fun _ -> Img.ImageScheduler.flush_one caps delayed url))
   with
-    e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
+  | e ->
+      Logs.warn (fun m ->
+          m "Can't compute image link (%s)" (Printexc.to_string e))
 @
 
 <<function [[Imgload.make_map]]>>=
 (* If the object is clickable, make it visible *)
 
-let make_map emb =
-  let visible = [
-    BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2)); 
-    Relief (Tkresource.relief "clickableRelief" Raised); 
-    Cursor (XCursor (Tkresource.string "clickableCursor" "hand2"));
-    Background (NamedColor (Tkresource.string "clickableBackground" "white"))]
-  and visible_map = [
-    BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2)); 
-    Relief (Tkresource.relief "clickableRelief" Raised); 
-    Cursor (XCursor (Tkresource.string "clickableMapCursor" "left_ptr"));
-    Background (NamedColor (Tkresource.string "clickableBackground" "white"))]
+let make_map (emb : Embed.obj) =
+  let visible =
+    [
+      Tk.BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2));
+      Relief (Tkresource.relief "clickableRelief" Raised);
+      Cursor (XCursor (Tkresource.string "clickableCursor" "hand2"));
+      Background (NamedColor (Tkresource.string "clickableBackground" "white"));
+    ]
+  and visible_map =
+    [
+      Tk.BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2));
+      Relief (Tkresource.relief "clickableRelief" Raised);
+      Cursor (XCursor (Tkresource.string "clickableMapCursor" "left_ptr"));
+      Background (NamedColor (Tkresource.string "clickableBackground" "white"));
+    ]
   in
   let reconfigure_frame f =
-    let internal_width = try int_of_string (cget f CWidth) with _ -> 0 
-    and internal_height = try int_of_string (cget f CHeight) with _ -> 0
-    and border_width = try int_of_string (cget f CBorderWidth) with _ -> 0
+    let internal_width =
+      try int_of_string (Tk.cget f CWidth) with
+      | _ -> 0
+    and internal_height =
+      try int_of_string (Tk.cget f CHeight) with
+      | _ -> 0
+    and border_width =
+      try int_of_string (Tk.cget f CBorderWidth) with
+      | _ -> 0
     in
     if internal_width = 0 || internal_height = 0 then ()
     else
-      Frame.configure f [ Width (Pixels (internal_width + border_width * 2));
-              Height (Pixels (internal_height + border_width * 2))]
+      Frame.configure f
+        [
+          Width (Pixels (internal_width + (border_width * 2)));
+          Height (Pixels (internal_height + (border_width * 2)));
+        ]
   in
   match emb.embed_map with
-    ClientSide hlink ->
+  | ClientSide hlink ->
       Frame.configure emb.embed_frame visible_map;
-      reconfigure_frame emb.embed_frame; 
-     (* At this moment, we assume that we are in alt mode.
-    If the image gets loaded, the label gets destroyed and
-    the callback will never be invoked. Instead, it will
-    be called from "display" *)
-      begin try
-       match Winfo.children emb.embed_frame with
-    [l] when Winfo.class_name l = "Label" ->
-      let uri = Hyper.resolve hlink in
-      let name =
-        match uri.uri_fragment with 
-          None -> uri.uri_url
-        | Some frag -> sprintf "%s#%s" uri.uri_url frag in
-      begin match Maps.get name with
-        KnownMap m -> Cmap.alt_mode emb m l
-      | RequestedMap event ->
-         Frx_synth.bind l event 
-         (fun l -> 
-            match Maps.get name with
-              RequestedMap _ -> Log.f 
-             "INTERNAL ERROR: delayed_client_side"
-            | KnownMap m -> Cmap.alt_mode emb m l)
-      end
-       | _ -> Log.f "make_map. children not a label"
-      with
-    _ -> ()
+      reconfigure_frame emb.embed_frame;
+      (* At this moment, we assume that we are in alt mode.
+         If the image gets loaded, the label gets destroyed and
+         the callback will never be invoked. Instead, it will
+         be called from "display" *)
+      begin
+        try
+          match Winfo.children emb.embed_frame with
+          | [ l ] when Winfo.class_name l = "Label" ->
+              let uri = Hyper.resolve hlink in
+              let name =
+                match uri.uri_fragment with
+                | None -> uri.uri_url
+                | Some frag -> Printf.sprintf "%s#%s" uri.uri_url frag
+              in
+              begin
+                match Maps.get name with
+                | KnownMap m -> Cmap.alt_mode emb m l
+                | RequestedMap event ->
+                    Frx_synth.bind l event (fun l ->
+                        match Maps.get name with
+                        | RequestedMap _ ->
+                            Log.f "INTERNAL ERROR: delayed_client_side"
+                        | KnownMap m -> Cmap.alt_mode emb m l)
+              end
+          | _ -> Log.f "make_map. children not a label"
+        with
+        | _ -> ()
       end
   | ServerSide link ->
       Frame.configure emb.embed_frame visible;
-      reconfigure_frame emb.embed_frame; 
+      reconfigure_frame emb.embed_frame;
       (new Htbind.servermap (emb.embed_frame, link))#init emb.embed_context
-  | Direct link -> 
+  | Direct link ->
       Frame.configure emb.embed_frame visible;
-      reconfigure_frame emb.embed_frame; 
+      reconfigure_frame emb.embed_frame;
       (new Htbind.directmap (emb.embed_frame, link))#init emb.embed_context
   | NoMap -> ()
   | FormMap getlink ->
       Frame.configure emb.embed_frame visible;
-      reconfigure_frame emb.embed_frame; 
+      reconfigure_frame emb.embed_frame;
       (new Htbind.formmap (emb.embed_frame, getlink))#init emb.embed_context
 @
 
 <<function [[Imgload.create]]>>=
 let create () : loader =
-   if !no_images then new loader ()
-   else match !mode with
-   | DuringDoc -> (new synchronous () :> loader)
-   | AfterDocAuto -> (new auto() :> loader)
-   | AfterDocManual -> (new manual() :> loader)
+  if !no_images then new loader ()
+  else
+    match !mode with
+    | DuringDoc -> (new synchronous () :> loader)
+    | AfterDocAuto -> (new auto () :> loader)
+    | AfterDocManual -> (new manual () :> loader)
 @
 
 
 %-------------------------------------------------------------
 
 <<display/imgload.ml>>=
-open Printf
-open Tk
-open Tkanim
-open Www
-open Uri
-open Maps
-open Embed
-open Img
 
 <<type Imgload.mode (./display/imgload.ml)>>
 
@@ -8356,106 +8379,104 @@ open Img
 <<function [[Imgload.make_auto]]>>
 
 (* for manual load, add binding
-let make_manual emb =
-  try
-    let url = (Www.make emb.embed_hlink).www_url in
-    bind emb.embed_frame
-      (Glevents.get "loadimage")
-      (BindSet ([], (fun _ -> activate emb)))
-  with
-    e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
- *)
+   let make_manual emb =
+     try
+       let url = (Www.make emb.embed_hlink).www_url in
+       bind emb.embed_frame
+         (Glevents.get "loadimage")
+         (BindSet ([], (fun _ -> activate emb)))
+     with
+       e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
+*)
 
 <<function [[Imgload.make_map]]>>
 
-
 (* The default behavior, for no_images *)
 class loader () =
- object (self)
-  val mutable loaded = UrlSet.empty
+  object (self)
+    val mutable loaded = Www.UrlSet.empty
 
-  (* default no_image implem *)
-  method add_image (emb : Embed.obj) : unit =
-    put_alt emb; (* make the alt widget*)
-    make_map emb (* and possible bindings *)
+    (* default no_image implem *)
+    method add_image (emb : Embed.obj) : unit =
+      put_alt emb;
+      (* make the alt widget*)
+      make_map emb (* and possible bindings *)
 
-  (* flush when document is loaded *)
-  method flush_images = ()
+    (* flush when document is loaded *)
+    method flush_images = ()
 
-  (* manual flush *)
-  method load_images = ()
+    (* manual flush *)
+    method load_images = ()
 
-  method private add_loaded (url : Url.t) : unit = 
-    loaded <- UrlSet.add url loaded
+    method private add_loaded (url : Url.t) : unit =
+      loaded <- Www.UrlSet.add url loaded
 
-  method private activate (emb : Embed.obj) =
-    Logs.debug (fun m -> m "Activating image");
-    try
+    method private activate (emb : Embed.obj) =
+      Logs.debug (fun m -> m "Activating image");
+      try
+        let caps = Cap.network_caps_UNSAFE () in
+        Img.get caps emb.embed_context#base emb.embed_hlink
+          (fun url i ->
+            display caps emb i;
+            self#add_loaded url)
+          (Tk_progress.meter emb.embed_frame)
+      with
+      | e ->
+          Logs.warn (fun m -> m "Can't load image (%s)" (Printexc.to_string e))
+
+    (* called when ?? *)
+    method update_images =
       let caps = Cap.network_caps_UNSAFE () in
-      Img.get caps emb.embed_context#base
-      emb.embed_hlink
-        (fun url i -> 
-          display caps emb i;
-          self#add_loaded url)
-        (Tk_progress.meter emb.embed_frame)
-    with
-      e -> Logs.warn (fun m -> m "Can't load image (%s)" (Printexc.to_string e))
-
-  (* called when ?? *)
-  method update_images = 
-    let caps = Cap.network_caps_UNSAFE () in
-    UrlSet.iter (Img.update caps) loaded
-end
+      Www.UrlSet.iter (Img.update caps) loaded
+  end
 
 (* for DuringDoc *)
 class synchronous () =
- object
-  inherit loader () as super
+  object
+    inherit loader () as super
 
-  method! add_image (emb : Embed.obj) =
-    super#add_image emb; 
-    super#activate emb
-end
+    method! add_image (emb : Embed.obj) =
+      super#add_image emb;
+      super#activate emb
+  end
 
 (* for AfterDocAuto *)
 class auto () =
- object (self)
-  inherit loader () as super
-  val q = ImageScheduler.new_delayed()
+  object (self)
+    inherit loader () as super
+    val q = Img.ImageScheduler.new_delayed ()
 
-  method! add_image emb =
-     super#add_image emb;
-     let caps = Cap.network_caps_UNSAFE () in
-     try
-       let wr = Www.make emb.embed_hlink in
-       wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-       ImageScheduler.add_delayed q
-     wr
-     emb.embed_context#base
-     (fun url i -> 
-           display caps emb i; 
-           self#add_loaded url)
-     (Tk_progress.meter emb.embed_frame)
-     with
-       e -> Logs.warn (fun m -> m "Can't compute image link (%s)"
-                         (Printexc.to_string e))
+    method! add_image emb =
+      super#add_image emb;
+      let caps = Cap.network_caps_UNSAFE () in
+      try
+        let wr = Www.make emb.embed_hlink in
+        wr.www_headers <- "Accept: image/*" :: wr.www_headers;
+        Img.ImageScheduler.add_delayed q wr emb.embed_context#base
+          (fun url i ->
+            display caps emb i;
+            self#add_loaded url)
+          (Tk_progress.meter emb.embed_frame)
+      with
+      | e ->
+          Logs.warn (fun m ->
+              m "Can't compute image link (%s)" (Printexc.to_string e))
 
-  method! flush_images = ImageScheduler.flush_delayed q
-end
+    method! flush_images = Img.ImageScheduler.flush_delayed q
+  end
 
 (* for AfterDocManual *)
 class manual () =
- object
-  inherit auto () as super
+  object
+    inherit auto () as super
 
-  method! add_image emb =
-    super#add_image emb;
-    make_auto q emb
- 
-  method! flush_images = ()
+    method! add_image emb =
+      super#add_image emb;
+      make_auto q emb
 
-  method! load_images = ImageScheduler.flush_delayed q
-end
+    method! flush_images = ()
+    method! load_images = Img.ImageScheduler.flush_delayed q
+  end
 
 <<function [[Imgload.create]]>>
 
