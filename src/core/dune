@@ -1,0 +1,14 @@
+; was merged in misc/ in original mmm and dependent on Tk
+; but I've removed the Tk backend part and use refs instead
+; set in main.ml
+
+(library
+ (public_name mmm.core)
+ (name mmm_core)
+ (wrapped false)
+ (libraries
+    mmm.commons mmm.i18n mmm.misc
+ )
+ (preprocess (pps ppx_deriving.show))
+)
+

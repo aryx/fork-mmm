@@ -7,39 +7,39 @@ DOC=mmm
 SRC_ORIG=mmm.nw mmm_extra.nw
 
 SRC= \
-  libs/misc/condition.mli\
-  libs/misc/condition.ml\
+  src/core/condition.mli\
+  src/core/condition.ml\
   libs/misc/date.mli\
   libs/misc/date.ml\
   libs/misc/ebuffer.mli\
   libs/misc/ebuffer.ml\
-  libs/misc/error.mli\
-  libs/misc/error.ml\
-  libs/misc/i18nprintf.mli\
-  libs/misc/i18nprintf.ml\
+  src/core/error.mli\
+  src/core/error.ml\
+  libs/i18n/i18nprintf.mli\
+  libs/i18n/i18nprintf.ml\
   libs/misc/ibtree.mli\
   libs/misc/ibtree.ml\
-  libs/misc/lang.mli\
-  libs/misc/lang.ml\
+  libs/i18n/lang.mli\
+  libs/i18n/lang.ml\
   libs/misc/log.mli\
   libs/misc/log.ml\
-  libs/misc/low.mli\
-  libs/misc/low.ml\
+  src/core/low.mli\
+  src/core/low.ml\
   libs/misc/mlist.mli\
   libs/misc/mlist.ml\
   libs/misc/mstring.mli\
   libs/misc/mstring.ml\
   libs/misc/msys.mli\
   libs/misc/msys.ml\
-  libs/misc/i18n.mli\
-  libs/misc/i18n.ml\
+  libs/i18n/i18n.mli\
+  libs/i18n/i18n.ml\
   libs/misc/munix.ml\
   \
-  libs/misc/feed.mli\
-  libs/misc/feed.ml\
+  src/core/feed.mli\
+  src/core/feed.ml\
   gui/tk/glevents.mli\
   gui/tk/glevents.ml\
-  libs/misc/hotlist.ml\
+  src/core/hotlist.ml\
   \
   src/globals/version.mli\
   src/globals/version.ml\

@@ -91,7 +91,7 @@ let init (caps : < Cap.network ; .. >) =
     Fileevent.add_fileinput socket (fun () ->
         try
           let fd, _ = Unix.accept socket in
-          handler caps fd (Munix.read_line fd)
+          handler caps fd (Low.read_line fd)
         with
         | _ -> ());
     at_exit (fun () -> Msys.rm !!file)

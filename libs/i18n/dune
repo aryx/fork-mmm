@@ -1,0 +1,12 @@
+
+(library
+ (public_name mmm.i18n)
+ (name mmm_i18n)
+ (wrapped false)
+ (libraries
+    ;mmm.commons
+ )
+ ;(inline_tests)
+ ;(preprocess
+ ; (pps ppx_inline_test))
+)

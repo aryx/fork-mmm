@@ -43,7 +43,7 @@
  (name htparse)
  (modules htparse)
  (libraries
-   mmm.html
+   mmm.html mmm.i18n
  )
  ; 'byte' is for ocamldebug
  (modes native byte))

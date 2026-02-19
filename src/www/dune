@@ -3,7 +3,7 @@
  (name mmm_www)
  (wrapped false)
  (libraries
-    mmm.misc mmm.url
+    mmm.i18n mmm.url mmm.core
  )
  (preprocess (pps ppx_deriving.show))
 )

@@ -1,12 +1,13 @@
 (*s: commons/low.mli *)
-open Unix
 
 (*s: signature [[Low.read]] *)
-val read : file_descr -> bytes -> int -> int -> int
+val read : Unix.file_descr -> bytes -> int -> int -> int
   (* Unix.read wrapper, to be used when data transferred has to
      be counted by the tachymeter
    *)
 (*e: signature [[Low.read]] *)
+
+val read_line: Unix.file_descr -> string
 
 (*s: signature [[Low.fork]] *)
 val fork : unit -> int
@@ -14,10 +15,10 @@ val fork : unit -> int
 (*e: signature [[Low.fork]] *)
 
 (*s: signature [[Low.add_fileinput]] *)
-val add_fileinput : file_descr -> (unit -> unit) -> unit
+val add_fileinput : Unix.file_descr -> (unit -> unit) -> unit
 (*e: signature [[Low.add_fileinput]] *)
 (*s: signature [[Low.remove_fileinput]] *)
-val remove_fileinput: file_descr -> unit
+val remove_fileinput: Unix.file_descr -> unit
   (* Wrapping of Tk fileinput functions, with feedback on the tachymeter *)
 (*e: signature [[Low.remove_fileinput]] *)
 

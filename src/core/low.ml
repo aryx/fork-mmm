@@ -43,6 +43,27 @@ let read fd buf offs l =
     n
 (*e: function [[Low.read]] *)
 
+
+(*
+ * Read a line (terminated by \n or \r\n).
+ *   strips terminator !
+ *)
+let read_line fd =
+  let rec read_rec (buf : bytes) bufsize offs =
+    let n = read fd buf offs 1 in
+      if n = 0 then raise End_of_file
+      else if Bytes.get buf offs = '\n'
+           then (* strips \n and possibly \r  *)
+             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
+                       else offs in
+               Bytes.sub_string buf 0 len
+           else let offs = succ offs in
+                  if offs = bufsize 
+                  then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
+                  else read_rec buf bufsize offs in
+  read_rec (Bytes.create 128) 128 0 
+
+
 (*s: global [[Low.pending_read]] *)
 let pending_read = ref 0
 (*e: global [[Low.pending_read]] *)
@@ -153,4 +174,6 @@ let update_idletasks () =
     last_update := !global_time
   end
 (*e: function [[Low.update_idletasks]] *)
+
+
 (*e: commons/low.ml *)

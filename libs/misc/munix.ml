@@ -53,24 +53,6 @@ let write_string fd (s : string) =
 (*e: function [[Munix.write_string]] *)
 
 (*s: function [[Munix.read_line]] *)
-(*
- * Read a line (terminated by \n or \r\n).
- *   strips terminator !
- *)
-let read_line fd =
-  let rec read_rec (buf : bytes) bufsize offs =
-    let n = Low.read fd buf offs 1 in
-      if n = 0 then raise End_of_file
-      else if Bytes.get buf offs = '\n'
-           then (* strips \n and possibly \r  *)
-             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
-                       else offs in
-               Bytes.sub_string buf 0 len
-           else let offs = succ offs in
-                  if offs = bufsize 
-                  then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
-                  else read_rec buf bufsize offs in
-  read_rec (Bytes.create 128) 128 0 
 (*e: function [[Munix.read_line]] *)
 
 

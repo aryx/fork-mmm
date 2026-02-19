@@ -158,7 +158,7 @@ let fake_cgi wwwr cont path =
            try
             if dh.dh_headers = [] then begin
             (* it should be the HTTP Status-Line *)
-            let l = Munix.read_line cmd_in in
+            let l = Low.read_line cmd_in in
               dh.document_status <- (parse_status l).status_code;
               dh.dh_headers <- [l] (* keep it there *)
             end

@@ -4,7 +4,7 @@
  (wrapped false)
  (libraries
     mmm.commons
-    mmm.www mmm.http
+    mmm.core mmm.www mmm.http
  )
  (preprocess (pps ppx_deriving.show))
 )

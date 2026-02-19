@@ -333,7 +333,7 @@ exception End_of_headers
 
 (*s: function [[Http.read_headers]] *)
 let read_headers fd previous =
-  let l = Munix.read_line fd in
+  let l = Low.read_line fd in
    if String.length l = 0 
    then raise End_of_headers (* end of headers *)
    else 
@@ -396,7 +396,7 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
        try
          if dh.dh_headers = [] then begin
            (* it should be the HTTP Status-Line *)
-           let l = Munix.read_line cnx#fd in
+           let l = Low.read_line cnx#fd in
            dh.document_status <- (Http_headers.parse_status l).status_code;
            dh.dh_headers <- [l] (* keep it there *)
          end else 
