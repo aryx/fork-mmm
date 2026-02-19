@@ -43,7 +43,7 @@ class behaviour (base, formtag, deftarget, i18n_encoder) =
     method add_reset f = elem_reset <- f :: elem_reset
 
     (* The link for a given submit activation *)
-    method submit l =
+    method submit (l : (string * string) list) : Hyper.link =
       let values =
         List.flatten
           (List.map

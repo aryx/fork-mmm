@@ -1,15 +1,5 @@
 (*s: display/html_disp.ml *)
 (* HTML Display Machine *)
-open Printf
-open Html
-open Htmlfmt
-open Hyper
-
-open Document
-open Maps
-open Embed
-
-open Fonts
 
 (*s: constant [[Html_disp.verbose]] *)
 let verbose = ref false
@@ -151,7 +141,7 @@ let add_hook f =
 
 (*s: constant [[Html_disp.default_fo]] *)
 (* This is the default formatter *)
-let default_fo = {
+let default_fo = Htmlfmt.{
   (* Text primitives of the device *)
   new_paragraph   = (fun () -> ());
   close_paragraph = (fun () -> ());
@@ -187,15 +177,15 @@ let default_fo = {
 (* Style abbreviation 
  * TODO?: check stack.
  *)
-let push_style fo s =
+let push_style (fo : Htmlfmt.formatter) s =
   try fo.push_attr (Styles.get s)
-  with Not_found -> Log.f (sprintf "Missing style : %s" s)
+  with Not_found -> Logs.warn (fun m -> m "Missing style : %s" s)
 (*e: function [[Html_disp.push_style]] *)
 
 (*s: function [[Html_disp.pop_style]] *)
-let pop_style fo s =
+let pop_style (fo : Htmlfmt.formatter) s =
   try fo.pop_attr (Styles.get s)
-  with Not_found -> Log.f (sprintf "Missing style : %s" s)
+  with Not_found -> Logs.warn (fun m -> m "Missing style : %s" s)
 (*e: function [[Html_disp.pop_style]] *)
 
 (*s: functor [[Html_disp.Make]] *)
@@ -225,7 +215,7 @@ module TableLogic = Html_table
   (*e: functions [[Html_disp.Make.ignore_xxx]] *)
 
   (*s: class [[Html_disp.Make.display_machine]] *)
-  class display_machine (ctx, imgmanager) =
+  class display_machine ((ctx : Viewers.context), imgmanager) =
    object (self) 
       inherit machine ()
 
@@ -268,7 +258,7 @@ module TableLogic = Html_table
       (*x: [[Html_disp.display_machine]] html token input methods *)
       (* Dispatching a token *)
       method private normal_send = function
-      | EOF -> self#flush_formatters;
+      | Html.EOF -> self#flush_formatters;
       | CData s -> action s
       | PCData s -> action s
       | OpenTag t ->
@@ -276,13 +266,15 @@ module TableLogic = Html_table
             let tag = Hashtbl.find tags t.tag_name in
             tag.tag_open formatter t
          with Not_found ->
-           if !verbose then Log.f (sprintf "Display machine: <%s> ignored" t.tag_name)
+           if !verbose 
+           then Logs.debug (fun m -> m "Display machine: <%s> ignored" t.tag_name)
          end
       | CloseTag n ->
           begin try
             (Hashtbl.find tags n).tag_close formatter
           with Not_found ->
-             if !verbose then Log.f (sprintf "Display machine: </%s> ignored" n)
+             if !verbose 
+            then Logs.debug (fun m -> m "Display machine: </%s> ignored" n)
           end
       | Comment _ -> ()
       | Doctype _ -> ()
@@ -409,12 +401,12 @@ module TableLogic = Html_table
     mach#add_tag "base"
         (fun _fo tag ->
           begin 
-            try mach#set_target (get_attribute tag "target")
+            try mach#set_target (Html.get_attribute tag "target")
             with Not_found -> ()
           end;
           begin 
-            try mach#set_base (get_attribute tag "href")
-            with Not_found -> raise (Invalid_Html "HREF required in BASE")
+            try mach#set_base (Html.get_attribute tag "href")
+            with Not_found -> raise (Html.Invalid_Html "HREF required in BASE")
           end)
         ignore_close
     ;
@@ -426,7 +418,7 @@ module TableLogic = Html_table
      *       here because it may appear in BODY
      *)
     mach#add_tag "isindex"
-       (fun fo t -> fo.isindex (get_attribute t "prompt") mach#base)
+       (fun fo t -> fo.isindex (Html.get_attribute t "prompt") mach#base)
        ignore_close
     ;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -469,10 +461,10 @@ module TableLogic = Html_table
     (*e: [[Html_disp.Make.init()]] headings private variables *)
     (*s: function [[Html_disp.Make.init.open_header]] *)
     let open_header size = 
-     fun fo tag ->
+     fun (fo : Htmlfmt.formatter) tag ->
       fo.new_paragraph() ;
       header_size := size;
-      push_style fo (sprintf "header%d" size);
+      push_style fo (Printf.sprintf "header%d" size);
       try
         let align = Html.get_attribute tag "align" in 
         fo.push_attr [Justification align];
@@ -482,7 +474,7 @@ module TableLogic = Html_table
     (*e: function [[Html_disp.Make.init.open_header]] *)
     (*s: function [[Html_disp.Make.init.close_header]] *)
     let close_header fo =
-      pop_style fo (sprintf "header%d" !header_size);
+      pop_style fo (Printf.sprintf "header%d" !header_size);
       fo.close_paragraph();
       match !header_align with
       | None -> ()
@@ -490,7 +482,7 @@ module TableLogic = Html_table
     in
     (*e: function [[Html_disp.Make.init.close_header]] *)
     [1;2;3;4;5;6] |> List.iter (fun headnum ->
-      mach#add_tag (sprintf "h%d" headnum) (open_header headnum) close_header
+      mach#add_tag (Printf.sprintf "h%d" headnum) (open_header headnum) close_header
     );
          
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -508,7 +500,7 @@ module TableLogic = Html_table
       (fun fo tag -> 
          fo.new_paragraph ();
          try
-           let a = get_attribute tag "align" in
+           let a = Html.get_attribute tag "align" in
            paligns := (Some a) :: !paligns;
            fo.push_attr [Justification a]
          with Not_found -> paligns := None :: !paligns)
@@ -633,7 +625,7 @@ module TableLogic = Html_table
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
       mach#add_tag "div"
-          (fun fo t -> fo.push_attr [Justification (get_attribute t "align")])
+          (fun fo t -> fo.push_attr [Justification (Html.get_attribute t "align")])
           (fun fo -> fo.pop_attr [Justification "whocares"]);
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 flashy features *)
@@ -658,11 +650,11 @@ module TableLogic = Html_table
      *)
     let list_level = ref 0 in
 
-    let open_list fo tag =
+    let open_list (fo : Htmlfmt.formatter) tag =
       fo.push_attr [Margin 10];
       incr list_level;
       let bullet = 
-        try get_attribute tag "type" 
+        try Html.get_attribute tag "type" 
         with Not_found ->
            (match !list_level mod 3 with
            | 1 -> "disc" 
@@ -670,7 +662,7 @@ module TableLogic = Html_table
            | _ -> "square" 
            )
       in
-      let compact = has_attribute tag "compact" in
+      let compact = Html.has_attribute tag "compact" in
       let first_line = ref true in
       fo.new_paragraph();
       mach#add_tag "li"
@@ -681,12 +673,12 @@ module TableLogic = Html_table
               if compact 
               then fo.print_newline false 
               else fo.new_paragraph();
-            let bullet = try get_attribute tag "type" with Not_found -> bullet in
+            let bullet = try Html.get_attribute tag "type" with Not_found -> bullet in
          fo.bullet bullet)
          (fun fo -> if not compact then fo.close_paragraph())
     in
 
-    let close_list fo =
+    let close_list (fo : Htmlfmt.formatter) =
       decr list_level;
       fo.close_paragraph();
       fo.pop_attr [Margin 10];
@@ -730,19 +722,19 @@ module TableLogic = Html_table
 
     let nesting = ref [] in
 
-    let open_nlist fo tag =
+    let open_nlist (fo : Htmlfmt.formatter) tag =
       let li_counter = 
-        ref (try int_of_string (get_attribute tag "start")
+        ref (try int_of_string (Html.get_attribute tag "start")
              with _ -> 1) 
       in
       fo.push_attr [Margin 10];
       nesting := li_counter :: !nesting;
       let thisnumbers = List.rev !nesting in
       let numbering = 
-         try List.assoc (get_attribute tag "type") numbering_styles 
+         try List.assoc (Html.get_attribute tag "type") numbering_styles 
          with Not_found -> string_of_int
       in
-      let compact = has_attribute tag "compact" in
+      let compact = Html.has_attribute tag "compact" in
       mach#add_tag "li"
         (fun fo tag ->
           fo.new_paragraph();
@@ -751,7 +743,7 @@ module TableLogic = Html_table
           (* if value is given, use it as number *)
           begin
             try
-              let n = int_of_string (get_attribute tag "value") in
+              let n = int_of_string (Html.get_attribute tag "value") in
               match !nesting with
               | c::_ -> c := n
               |	_ -> () (* assert false *)
@@ -768,7 +760,7 @@ module TableLogic = Html_table
           fo.close_paragraph())
     in
 
-    let close_nlist fo =
+    let close_nlist (fo : Htmlfmt.formatter) =
       fo.pop_attr [Margin 10];
       nesting := 
         (match !nesting with
@@ -791,7 +783,7 @@ module TableLogic = Html_table
     (*
      * 5.6.5 Definition List: <DL>, <DT>, <DD> 
      *)
-    let open_dl fo tag =
+    let open_dl (fo : Htmlfmt.formatter) tag =
       let compact = Html.has_attribute tag "compact" in
       fo.new_paragraph();
       fo.push_attr [Margin 10];
@@ -843,7 +835,7 @@ module TableLogic = Html_table
         end
     in
 
-    let close_dl fo =
+    let close_dl (fo : Htmlfmt.formatter) =
       fo.pop_attr [Margin 10];
       fo.close_paragraph();
       mach#remove_tag "dt";
@@ -862,7 +854,7 @@ module TableLogic = Html_table
     let anchor_link = ref (Hyper.default_link "") in
     let in_anchor = ref false in
 
-    let open_anchor fo tag =
+    let open_anchor (fo : Htmlfmt.formatter) tag =
       anchor_type := None;
       (*s: [[Html_disp.Make.init.open_anchor()]] look for NAME attribute *)
       (* is there a NAME attribute ? *)
@@ -902,14 +894,14 @@ module TableLogic = Html_table
           (* push_style fo "anchor" *)
         with Not_found ->
           (match !anchor_type with
-          | None -> raise (Invalid_Html "Missing NAME or HREF in <A>")
+          | None -> raise (Html.Invalid_Html "Missing NAME or HREF in <A>")
           | _ -> ()
           )
       end
       (*e: [[Html_disp.Make.init.open_anchor()]] look for HREF attribute *)
     in
 
-    let close_anchor fo =
+    let close_anchor (fo : Htmlfmt.formatter) =
       match !anchor_type with
       (*s: [[Html_disp.Make.init.close_anchor()]] match anchor type cases *)
       | Some NAME ->
@@ -922,7 +914,7 @@ module TableLogic = Html_table
           in_anchor := false;
           anchor_type := None
       (*e: [[Html_disp.Make.init.close_anchor()]] match anchor type cases *)
-      | None -> raise (Invalid_Html "Unmatched </A>")
+      | None -> raise (Html.Invalid_Html "Unmatched </A>")
     in
     mach#add_tag "a" open_anchor close_anchor;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
@@ -940,7 +932,7 @@ module TableLogic = Html_table
     mach#add_tag "hr"
       (fun fo tag -> 
          let width =
-           try length_of_string (Html.get_attribute tag "width")
+           try Html.length_of_string (Html.get_attribute tag "width")
            with Not_found -> Nolength 
          in
          let height =
@@ -996,7 +988,7 @@ module TableLogic = Html_table
            in          
            (*e: [[Html_disp.Make.init()]] IMG case, let alt *)
            let w = fo.create_embedded align width height in
-           let link = { 
+           let link = Hyper.{ 
              h_uri = src; 
              h_context = Some mach#base;
              h_method = GET; 
@@ -1008,7 +1000,7 @@ module TableLogic = Html_table
             *)
            let map =
              try 
-               let mapname = get_attribute tag "usemap"  in
+               let mapname = Html.get_attribute tag "usemap"  in
                Maps.ClientSide { 
                  h_uri = mapname;
                  h_context = Some mach#base;
@@ -1018,7 +1010,7 @@ module TableLogic = Html_table
              with Not_found -> 
                if !in_anchor 
                then
-                 if has_attribute tag "ismap"
+                 if Html.has_attribute tag "ismap"
                  then Maps.ServerSide !anchor_link
                  else Maps.Direct !anchor_link
                else NoMap
@@ -1033,7 +1025,7 @@ module TableLogic = Html_table
                embed_alt = alt
               }
          with Not_found -> (* only on SRC *)
-           raise (Invalid_Html "missing SRC in IMG"))
+           raise (Html.Invalid_Html "missing SRC in IMG"))
 
       ignore_close
     ;
@@ -1066,18 +1058,18 @@ module TableLogic = Html_table
     mach#add_tag "embed"
       (fun fo tag -> 
          try
-       let link = {
-         h_uri = get_attribute tag "src";
+       let link = Hyper.{
+         h_uri = Html.get_attribute tag "src";
          h_method = GET;
          h_context = Some mach#base;
          h_params = []} in
        let width =
-         try Some (int_of_string (get_attribute tag "width"))
+         try Some (int_of_string (Html.get_attribute tag "width"))
          with Not_found -> None
        and height =
-         try Some (int_of_string (get_attribute tag "height"))
+         try Some (int_of_string (Html.get_attribute tag "height"))
          with Not_found -> None
-       and alttxt = get_attribute tag "alt" in
+       and alttxt = Html.get_attribute tag "alt" in
 
        let fr = fo.create_embedded "" width height in
        mach#add_embedded {
@@ -1089,7 +1081,7 @@ module TableLogic = Html_table
           }
          with
        Not_found ->
-         raise (Invalid_Html ("SRC missing in EMBED")))
+         raise (Html.Invalid_Html ("SRC missing in EMBED")))
       ignore_close;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 good features *)
@@ -1101,7 +1093,7 @@ module TableLogic = Html_table
            (* the name of the map *)
            let absname = 
              try 
-          let name = get_attribute t "name" in
+          let name = Html.get_attribute t "name" in
           (* we must get a normalized name here *)
             Hyper.string_of {h_uri = "#"^name; h_context = Some mach#base;
                     h_method = GET; h_params = []}
@@ -1113,40 +1105,40 @@ module TableLogic = Html_table
            areas := [];
            mach#add_tag "area" 
           (fun _fo tag -> 
-             let shape = String.lowercase_ascii (get_attribute tag "shape")
+             let shape = String.lowercase_ascii (Html.get_attribute tag "shape")
              and href = 
-           try Some (get_attribute tag "href") with Not_found -> None
+           try Some (Html.get_attribute tag "href") with Not_found -> None
                  and coords =
-           try Maps.parse_coords (get_attribute tag "coords")
+           try Maps.parse_coords (Html.get_attribute tag "coords")
            with _ -> [] 
                  and alttxt =
-                   try get_attribute tag "alt" with Not_found -> ""
+                   try Html.get_attribute tag "alt" with Not_found -> ""
                  in
              let h_params =
-           try ["target", get_attribute tag "target"]
+           try ["target", Html.get_attribute tag "target"]
            with
              Not_found ->
                match mach#target with
                  Some s -> ["target", s]
                |	None -> []
              in
-                 match href with
-           None -> () (* this creates a HOLE. not yet supported *)
+             match href with
+             | None -> () (* this creates a HOLE. not yet supported *)
              | Some uri ->
-            let link = {h_uri = uri; h_context = Some mach#base;
-                    h_method = GET; h_params = h_params} in
-                    let area = 
+              let link = Hyper.{h_uri = uri; h_context = Some mach#base;
+                              h_method = GET; h_params = h_params} in
+              let area = 
               match shape with
-               "default" -> {area_kind = Default; area_coords = [];
-                     area_link = link; area_alt = alttxt}
-             | "rect" -> {area_kind = Rect; area_coords = coords;
-                  area_link = link; area_alt = alttxt}
-             | "circle" -> {area_kind = Circle; area_coords = coords;
-                    area_link = link; area_alt = alttxt}
-             | "poly" -> {area_kind = Poly; area_coords = coords;
-                  area_link = link; area_alt = alttxt} 
-             | _ -> {area_kind = Default; area_coords = [];
-                  area_link = link; area_alt = alttxt} in
+               "default" -> Maps.{area_kind = Default; area_coords = [];
+                                  area_link = link; area_alt = alttxt}
+             | "rect" -> Maps.{area_kind = Rect; area_coords = coords;
+                               area_link = link; area_alt = alttxt}
+             | "circle" -> Maps.{area_kind = Circle; area_coords = coords;
+                                 area_link = link; area_alt = alttxt}
+             | "poly" -> Maps.{area_kind = Poly; area_coords = coords;
+                               area_link = link; area_alt = alttxt} 
+             | _ -> Maps.{area_kind = Default; area_coords = [];
+                          area_link = link; area_alt = alttxt} in
                     areas := area :: !areas)
               ignore_close)
 
@@ -1158,10 +1150,10 @@ module TableLogic = Html_table
     mach#add_tag "basefont"
       (fun fo t -> 
          try
-           let n = int_of_string (get_attribute t "size") in
+           let n = int_of_string (Html.get_attribute t "size") in
            fo.set_defaults "font" [Font (FontIndex n)]
          with Not_found | Failure "int_of_string" ->
-           raise (Invalid_Html "invalide SIZE"))
+           raise (Html.Invalid_Html "invalide SIZE"))
       ignore_close;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     let fontchanges = ref [] in
@@ -1171,25 +1163,25 @@ module TableLogic = Html_table
          let attrs = [] in
          let attrs =
            try
-             let size = get_attribute t "size" in
+             let size = Html.get_attribute t "size" in
              let l = String.length size in
              if l = 0 
              then raise Not_found
              else 
                if size.[0] = '+' 
                then
-                 (Font (FontDelta (int_of_string (String.sub size 1 (pred l)))))
+                 (Htmlfmt.Font (FontDelta (int_of_string (String.sub size 1 (pred l)))))
                         :: attrs
                else 
                  if size.[0] = '-' 
-                 then (Font (FontDelta (int_of_string size)))::attrs
-                 else (Font (FontIndex (int_of_string size)))::attrs
+                 then (Htmlfmt.Font (FontDelta (int_of_string size)))::attrs
+                 else (Htmlfmt.Font (FontIndex (int_of_string size)))::attrs
            with Not_found | Failure _ -> attrs 
          in
          let attrs = 
             try
-              let color = get_attribute t "color" in
-              (FgColor color)::attrs
+              let color = Html.get_attribute t "color" in
+              (Htmlfmt.FgColor color)::attrs
             with Not_found -> attrs 
          in
          (* attrs may well be the empty list *)
@@ -1199,7 +1191,7 @@ module TableLogic = Html_table
 
       (fun fo -> 
          match !fontchanges with
-         | [] -> raise (Invalid_Html "unmatched </font>")
+         | [] -> raise (Html.Invalid_Html "unmatched </font>")
          | x::l -> 
              fontchanges := l;
              if x <> [] 
