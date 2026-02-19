@@ -1673,7 +1673,7 @@ let rec navigator (caps: < Cap.network; ..>)
     <<[[Mmm.navigator()]] keyboard shortcuts setting>>
     <<[[Mmm.navigator()]] widgets setting>>
 
-    Nav.absolutegoto nav (Url.string_of initial_url);
+    Nav.absolutegoto caps nav (Url.string_of initial_url);
     Some nav
 
   with e -> 
@@ -1762,13 +1762,14 @@ nav_viewer_frame = viewer_frame;
 \subsection{[[Nav.absolutegoto()]]}
 
 <<signature [[Nav.absolutegoto]]>>=
-val absolutegoto : t -> string -> unit
+val absolutegoto : < Cap.network; ..> ->
+  t -> string (* url *) -> unit
 @
 % navigator -> (enter on URL entry | explicit call)  -> <>
 <<function [[Nav.absolutegoto]]>>=
 (* Used outside an hyperlink *)
-let absolutegoto nav uri =
-  follow_link nav (Hyper.default_link uri)
+let absolutegoto (caps : < Cap.network; ..>) (nav : t) (uri : string) =
+  follow_link caps nav (Hyper.default_link uri)
 @
 %old: duplicated code
 %  let follow_link = 
@@ -1777,11 +1778,12 @@ let absolutegoto nav uri =
 %  in
 
 <<signature [[Nav.follow_link]]>>=
-val follow_link : t -> Hyper.link -> unit
+val follow_link : < Cap.network; ..> ->
+  t -> Hyper.link -> unit
 @
 <<function [[Nav.follow_link]]>>=
-let follow_link nav lk =
-  let caps = Cap.network_caps_UNSAFE () in
+let follow_link (caps : < Cap.network; ..>)
+     (nav : t) (lk : Hyper.link) : unit =
   lk |> request caps nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
       process_viewer true make_ctx nav wr dh
     )
@@ -2058,7 +2060,7 @@ let entryv = Textvariable.create_temporary top in
 (* URL display and edit *)
 let entry,e = 
   Frx_entry.new_label_entry vgroup (s_ "Open URL:") 
-    (fun url -> Nav.absolutegoto nav url)
+    (fun url -> Nav.absolutegoto caps nav url)
 in
 Entry.configure e [TextVariable entryv; TextWidth 40];
 @
@@ -2177,7 +2179,7 @@ let back () =
   match History.back hist with
   | None -> ()
   | Some (did, frag) -> 
-      if not (Nav.historygoto nav did frag true) 
+      if not (Nav.historygoto caps nav did frag true) 
       then History.forward hist |> ignore
 in
 @
@@ -2194,7 +2196,7 @@ let forward () =
   match History.forward hist with
   | None -> ()
   | Some (did, frag) -> 
-      if not (Nav.historygoto nav did frag true) 
+      if not (Nav.historygoto caps nav did frag true) 
       then History.back hist |> ignore
 in
 @
@@ -2212,7 +2214,7 @@ let homeb = Button.create_named buttons "home"
 
 <<function [[Mmm.navigator.gohome]]>>=
 let gohome () = 
-  Nav.absolutegoto nav !Mmmprefs.home
+  Nav.absolutegoto caps nav !Mmmprefs.home
 in
 @
 
@@ -2285,7 +2287,7 @@ let f () =
 let open_sel () =
   try 
     let url = Selection.get [] in
-    Nav.absolutegoto nav url
+    Nav.absolutegoto caps nav url
   with _ -> ()
 in
 @
@@ -2296,7 +2298,7 @@ let open_file () =
     | [] -> ()
     | [s] -> 
         let path = Msys.tilde_subst s in
-        Nav.absolutegoto nav ("file://localhost/"^path)
+        Nav.absolutegoto caps nav ("file://localhost/"^path)
     | _l -> raise (Failure "multiple selection")
    )
      "*" 
@@ -2389,7 +2391,7 @@ update_vhistory := (fun () ->
         Command (fun () ->
           let current = hist.h_current in
           History.set_current hist e;
-          if not (Nav.historygoto nav e.h_did e.h_fragment true)
+          if not (Nav.historygoto caps nav e.h_did e.h_fragment true)
           then History.set_current hist current
          )
         ]
@@ -2478,7 +2480,7 @@ Menubutton.configure helpb [Menu helpm];
 Menu.add_command helpm
   [Label (s_ "Version information");
    Command (fun () -> 
-      Nav.absolutegoto nav (Version.initurl (Lang.lang ())))];
+      Nav.absolutegoto caps nav (Version.initurl (Lang.lang ())))];
 Menu.add_command helpm
   [Label (s_ "Home Page of MMM");
    Command (fun () -> 
@@ -7206,7 +7208,7 @@ let f dh =
 
 
 <<function [[Nav.make_ctx]]>>=
-let make_ctx nav did = 
+let make_ctx (nav : t) (did : Document.id) : Viewers.context = 
   ((new stdctx(did, nav))#init :> Viewers.context)
 @
 
@@ -10901,7 +10903,8 @@ let forward h =
 
 % goback | goforward | reload -> <> (false when from reload, don't use cache)
 <<signature [[Nav.historygoto]]>>=
-val historygoto : t -> Document.id -> string option -> bool -> bool
+val historygoto : < Cap.network; ..> ->
+  t -> Document.id -> string option -> bool -> bool
 @
 % bool parameter is to usecache or not.
 % bool returned is everything when fine.
@@ -10909,18 +10912,18 @@ val historygoto : t -> Document.id -> string option -> bool -> bool
 
 <<function [[Nav.historygoto]]>>=
 (* Used by navigators for back/forward/reload *)
-let historygoto nav (did : Document.id) frag usecache =
-  Log.debug "historygoto";
+let historygoto (caps : < Cap.network; ..>)
+     (nav : t) (did : Document.id) frag (usecache : bool) : bool =
+  Logs.debug (fun m -> m "historygoto");
   if did.document_stamp = Document.no_stamp then begin
     (* we can safely consider this as normal navigation *)
-    let uri = 
+    let uri : string = 
       match frag with
       | None -> Url.string_of did.document_url
       | Some f -> sprintf "%s#%s" (Url.string_of did.document_url) f 
     in
     (* modify wr *)
-    let follow_link lk =
-      let caps = Cap.network_caps_UNSAFE () in
+    let follow_link (lk : Hyper.link) =
       lk |> request caps nav  
         (process_viewer false make_ctx) (* don't add to history *)
         (usecache,
@@ -11055,7 +11058,7 @@ let reload () =
     (* kill both in cache and in gcache *)
     Cache.kill did; 
     Gcache.remove hist.h_key did;
-    Nav.historygoto nav did frag false |> ignore
+    Nav.historygoto caps nav did frag false |> ignore
   end
   else error#f 
       (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
@@ -11069,7 +11072,7 @@ in
 let update (nocache : bool) =
   let did = hist.h_current.h_did in
   if did.document_stamp = Document.no_stamp then
-    Nav.update nav did nocache
+    Nav.update caps nav did nocache
   else (* POST result *)
     error#f (s_ "Can't update document\n(probably a POST request)")
 in

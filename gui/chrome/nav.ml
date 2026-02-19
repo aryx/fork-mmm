@@ -384,19 +384,20 @@ end
 (*e: class [[Nav.stdctx]] *)
 
 (*s: function [[Nav.make_ctx]] *)
-let make_ctx nav did = 
+let make_ctx (nav : t) (did : Document.id) : Viewers.context = 
   ((new stdctx(did, nav))#init :> Viewers.context)
 (*e: function [[Nav.make_ctx]] *)
 
 (*s: function [[Nav.save_link]] *)
 (* Simple wrappers *)
-let save_link nav whereto =
-  let caps = Cap.network_caps_UNSAFE () in
-  request caps nav (process_save whereto) (true, id_wr, nothing_specific)
+let save_link (caps : < Cap.network; ..>)
+     (nav : t) (whereto : (Unix.file_descr * bool) option) (lk : Hyper.link) :
+    unit =
+  request caps nav (process_save whereto) (true, id_wr, nothing_specific) lk
 (*e: function [[Nav.save_link]] *)
 (*s: function [[Nav.follow_link]] *)
-let follow_link nav lk =
-  let caps = Cap.network_caps_UNSAFE () in
+let follow_link (caps : < Cap.network; ..>)
+     (nav : t) (lk : Hyper.link) : unit =
   lk |> request caps nav (fun (nav : t) (wr : Www.request) (dh : Document.handle) -> 
       process_viewer true make_ctx nav wr dh
     )
@@ -411,24 +412,24 @@ let follow_link nav lk =
 
 (*s: function [[Nav.absolutegoto]] *)
 (* Used outside an hyperlink *)
-let absolutegoto nav uri =
-  follow_link nav (Hyper.default_link uri)
+let absolutegoto (caps : < Cap.network; ..>) (nav : t) (uri : string) =
+  follow_link caps nav (Hyper.default_link uri)
 (*e: function [[Nav.absolutegoto]] *)
     
 (*s: function [[Nav.historygoto]] *)
 (* Used by navigators for back/forward/reload *)
-let historygoto nav (did : Document.id) frag usecache =
-  Log.debug "historygoto";
+let historygoto (caps : < Cap.network; ..>)
+     (nav : t) (did : Document.id) frag (usecache : bool) : bool =
+  Logs.debug (fun m -> m "historygoto");
   if did.document_stamp = Document.no_stamp then begin
     (* we can safely consider this as normal navigation *)
-    let uri = 
+    let uri : string = 
       match frag with
       | None -> Url.string_of did.document_url
       | Some f -> sprintf "%s#%s" (Url.string_of did.document_url) f 
     in
     (* modify wr *)
-    let follow_link lk =
-      let caps = Cap.network_caps_UNSAFE () in
+    let follow_link (lk : Hyper.link) =
       lk |> request caps nav  
         (process_viewer false make_ctx) (* don't add to history *)
         (usecache,
@@ -457,7 +458,9 @@ let historygoto nav (did : Document.id) frag usecache =
 
 
 (*s: function [[Nav.update]] *)
-let update (nav : t) (did : Document.id) (nocache : bool) : unit =
+let update (caps: < Cap.network; ..>)
+    (nav : t) (did : Document.id) (nocache : bool) : unit =
+
   (* This gets called if answer is 200 but also 304 *)
   let process_update nav (wr : Www.request) (dh : Document.handle) =
     match dh.document_status with
@@ -484,13 +487,13 @@ let update (nav : t) (did : Document.id) (nocache : bool) : unit =
      wr.www_logging <- nav.nav_log;
      process_viewer add_hist make_ctx nav wr dh
   in
+
   try
     let doc = Cache.find did in
     try
       (* find the date of previous download, (or last-modified ?) *)
       let date_received = Http_headers.get_header "date" doc.document_headers in
       let follow_link =
-        let caps = Cap.network_caps_UNSAFE () in
         request caps nav process_update
         (false, (* we don't want to use cache here *)
          (* setup additional headers *)

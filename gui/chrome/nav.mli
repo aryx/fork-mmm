@@ -51,10 +51,12 @@ val display_headers : Document.handle -> unit
 val copy_link : t -> Hyper.link -> unit
 (*e: signature [[Nav.copy_link]] *)
 (*s: signature [[Nav.save_link]] *)
-val save_link : t -> (Unix.file_descr * bool) option -> Hyper.link -> unit
+val save_link : < Cap.network; ..> ->
+  t -> (Unix.file_descr * bool) option -> Hyper.link -> unit
 (*e: signature [[Nav.save_link]] *)
 (*s: signature [[Nav.follow_link]] *)
-val follow_link : t -> Hyper.link -> unit
+val follow_link : < Cap.network; ..> ->
+  t -> Hyper.link -> unit
 (*e: signature [[Nav.follow_link]] *)
 
 (*s: signature [[Nav.add_user_navigation]] *)
@@ -66,13 +68,16 @@ val make_ctx : t -> Document.id -> Viewers.context
 (*e: signature [[Nav.make_ctx]] *)
 
 (*s: signature [[Nav.absolutegoto]] *)
-val absolutegoto : t -> string -> unit
+val absolutegoto : < Cap.network; ..> ->
+  t -> string (* url *) -> unit
 (*e: signature [[Nav.absolutegoto]] *)
 (*s: signature [[Nav.historygoto]] *)
-val historygoto : t -> Document.id -> string option -> bool -> bool
+val historygoto : < Cap.network; ..> ->
+  t -> Document.id -> string option -> bool -> bool
 (*e: signature [[Nav.historygoto]] *)
 (*s: signature [[Nav.update]] *)
-val update : t -> Document.id -> bool -> unit
+val update : < Cap.network; ..> ->
+  t -> Document.id -> bool -> unit
 (*e: signature [[Nav.update]] *)
 
 (*s: signature [[Nav.dont_check_cache]] *)

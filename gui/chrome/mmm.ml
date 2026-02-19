@@ -263,7 +263,7 @@ let rec navigator (caps: < Cap.network; ..>)
       match History.back hist with
       | None -> ()
       | Some (did, frag) -> 
-          if not (Nav.historygoto nav did frag true) 
+          if not (Nav.historygoto caps nav did frag true) 
           then History.forward hist |> ignore
     in
     (*e: function [[Mmm.navigator.back]] *)
@@ -272,7 +272,7 @@ let rec navigator (caps: < Cap.network; ..>)
       match History.forward hist with
       | None -> ()
       | Some (did, frag) -> 
-          if not (Nav.historygoto nav did frag true) 
+          if not (Nav.historygoto caps nav did frag true) 
           then History.back hist |> ignore
     in
     (*e: function [[Mmm.navigator.forward]] *)
@@ -284,7 +284,7 @@ let rec navigator (caps: < Cap.network; ..>)
         (* kill both in cache and in gcache *)
         Cache.kill did; 
         Gcache.remove hist.h_key did;
-        Nav.historygoto nav did frag false |> ignore
+        Nav.historygoto caps nav did frag false |> ignore
       end
       else error#f 
           (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
@@ -294,7 +294,7 @@ let rec navigator (caps: < Cap.network; ..>)
     let update (nocache : bool) =
       let did = hist.h_current.h_did in
       if did.document_stamp = Document.no_stamp then
-        Nav.update nav did nocache
+        Nav.update caps nav did nocache
       else (* POST result *)
         error#f (s_ "Can't update document\n(probably a POST request)")
     in
@@ -317,7 +317,7 @@ let rec navigator (caps: < Cap.network; ..>)
     let open_sel () =
       try 
         let url = Selection.get [] in
-        Nav.absolutegoto nav url
+        Nav.absolutegoto caps nav url
       with _ -> ()
     in
     (*e: function [[Mmm.navigator.open_sel]] *)
@@ -327,7 +327,7 @@ let rec navigator (caps: < Cap.network; ..>)
         | [] -> ()
         | [s] -> 
             let path = Msys.tilde_subst s in
-            Nav.absolutegoto nav ("file://localhost/"^path)
+            Nav.absolutegoto caps nav ("file://localhost/"^path)
         | _l -> raise (Failure "multiple selection")
        )
          "*" 
@@ -360,7 +360,7 @@ let rec navigator (caps: < Cap.network; ..>)
     (*e: function [[Mmm.navigator.really_quit]] *)
     (*s: function [[Mmm.navigator.gohome]] *)
     let gohome () = 
-      Nav.absolutegoto nav !Mmmprefs.home
+      Nav.absolutegoto caps nav !Mmmprefs.home
     in
     (*e: function [[Mmm.navigator.gohome]] *)
     (*s: function [[Mmm.navigator.redisplay]] *)
@@ -556,7 +556,7 @@ let rec navigator (caps: < Cap.network; ..>)
             Command (fun () ->
               let current = hist.h_current in
               History.set_current hist e;
-              if not (Nav.historygoto nav e.h_did e.h_fragment true)
+              if not (Nav.historygoto caps nav e.h_did e.h_fragment true)
               then History.set_current hist current
              )
             ]
@@ -609,7 +609,7 @@ let rec navigator (caps: < Cap.network; ..>)
     Menu.add_command helpm
       [Label (s_ "Version information");
        Command (fun () -> 
-          Nav.absolutegoto nav (Version.initurl (Lang.lang ())))];
+          Nav.absolutegoto caps nav (Version.initurl (Lang.lang ())))];
     Menu.add_command helpm
       [Label (s_ "Home Page of MMM");
        Command (fun () -> 
@@ -646,7 +646,7 @@ let rec navigator (caps: < Cap.network; ..>)
     (* URL display and edit *)
     let entry,e = 
       Frx_entry.new_label_entry vgroup (s_ "Open URL:") 
-        (fun url -> Nav.absolutegoto nav url)
+        (fun url -> Nav.absolutegoto caps nav url)
     in
     Entry.configure e [TextVariable entryv; TextWidth 40];
     (*e: [[Mmm.navigator()]] setup open url entry *)
@@ -768,7 +768,7 @@ let rec navigator (caps: < Cap.network; ..>)
     (*e: [[Mmm.navigator()]] call [[touch_current]] to not swap displayed documents *)
     (*e: [[Mmm.navigator()]] widgets setting *)
 
-    Nav.absolutegoto nav (Url.string_of initial_url);
+    Nav.absolutegoto caps nav (Url.string_of initial_url);
     Some nav
 
   with e -> 
