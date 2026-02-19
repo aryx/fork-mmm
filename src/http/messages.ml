@@ -16,7 +16,7 @@
 
 (*s: type Messages.request *)
 (* Request-Line of a Request *)
-type request = {
+type request_line = {
   request_version: string;	(* HTTP/1.0 *)
   request_method : string;	(* GET, POST, etc... *)
 
@@ -26,7 +26,7 @@ type request = {
 
 (*s: type Messages.status *)
 (* Status-Line of a Response *)
-type status =  { 
+type status_line =  { 
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
@@ -46,8 +46,8 @@ type header = string
 
 (*s: type Messages.request_message *)
 (* HTTP-Message *)
-type request_message = {
-  request : request;
+type request = {
+  request : request_line;
   request_headers : header list;
   request_body : string;
   (*s: [[Messages.request_message]] other fields *)
@@ -58,8 +58,8 @@ type request_message = {
 (*e: type Messages.request_message *)
 
 (*s: type Messages.response_message *)
-type response_message = {
-  status : status;
+type response = {
+  status : status_line;
 
   response_headers : header list;
   response_body : string;        (* responde body is *not* the document body *)

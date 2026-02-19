@@ -5,7 +5,7 @@ exception Invalid_HTTP_header of string
 (*e: exception [[Http_headers.Invalid_HTTP_header]] *)
 
 (*s: signature [[Http_headers.parse_status]] *)
-val parse_status : string -> Messages.status
+val parse_status : string -> Messages.status_line
   (* Parses a Status-Line
      Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
      Raises [Invalid_HTTP_header "Status-Line"] 
@@ -13,7 +13,7 @@ val parse_status : string -> Messages.status
 (*e: signature [[Http_headers.parse_status]] *)
 
 (*s: signature [[Http_headers.parse_request]] *)
-val parse_request : string -> Messages.request
+val parse_request : string -> Messages.request_line
   (* Parses a Request-Line
      Request-Line = Method SP Request-URI SP HTTP-Version CRLF
      Raises [Invalid_HTTP_header "Request-Line"] *)
@@ -91,7 +91,7 @@ val status_msg : Messages.header list -> string
 
 (*s: signature [[Http_headers.http_status]] *)
 (* Common headers *)
-val http_status : int -> Messages.status
+val http_status : int -> Messages.status_line
   (* [http_status n] returns Status-Line for code [n] *)
 (*e: signature [[Http_headers.http_status]] *)
 (*s: signature [[Http_headers.status_message]] *)
