@@ -15,7 +15,6 @@ open Fpath_.Operators
  *  - open_in: for ??
  *)
 type caps = < 
-   Cap.stdout; Cap.stderr; 
    Cap.open_in;
    Cap.network
  >
@@ -59,7 +58,8 @@ let usage_str =
 (*e: constant [[Main.usage_str]] *)
 
 (*s: function [[Main.main]] *)
-let main (caps : < caps >) (argv : string array) : Exit.t =
+let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
+         (argv : string array) : Exit.t =
   (*s: [[Main.main()]] tk backends setup *)
   Error.default                    := new Tk_error.t Widget.default_toplevel;
   Condition.backend                := Tk_condition.backend ();
@@ -255,9 +255,10 @@ let main (caps : < caps >) (argv : string array) : Exit.t =
 (*e: function [[Main.main]] *)
       
 (*s: function [[Main.postmortem]] *)
-let postmortem (caps: < caps; ..>) (argv : string array) : Exit.t =
+let postmortem (caps: < caps; Cap.stdout; Cap.stderr; ..>) 
+               (argv : string array) : Exit.t =
   try 
-    main (caps :> caps) argv
+    main caps argv
   with
   | Dynlink.Error err ->
       Logs.err (fun m -> m "dynlink error = %s" (Dynlink.error_message err));
