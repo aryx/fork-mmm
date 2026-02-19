@@ -8814,7 +8814,7 @@ let scroll_image =
 
 
 <<function [[Htmlw.html_head_ui]]>>=
-let html_head_ui headers redisplay pscroll top ctx =
+let html_head_ui headers redisplay pscroll top (ctx : Viewers.context) =
   (* The frame for all head UI elements *)
   let headgroup = Frame.create_named top "head" [] in
   (* The menubar frame *)
@@ -8881,10 +8881,10 @@ let html_head_ui headers redisplay pscroll top ctx =
           and url = String.sub v (pos2+1) (String.length v - pos2 - 1) in
       Menu.add_command headersm 
         [Label txt;
-          Command (fun () -> ctx#goto {
-        h_uri = url;
-        h_context = Some (Url.string_of ctx#base.document_url);
-        h_method = GET;
+          Command (fun () -> ctx#goto Hyper.{
+            h_uri = url;
+            h_context = Some (Url.string_of ctx#base.document_url);
+            h_method = GET;
             h_params = []})]
     with Not_found | Failure "int_of_string" -> ()
     end
@@ -8935,9 +8935,9 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
       
   mach#add_tag "isindex"
     (fun _fo tag ->
-      let prompt = get_attribute tag "prompt" in
+      let prompt = Html.get_attribute tag "prompt" in
       let action s =
-    mach#ctx#goto { h_uri = "?" ^ Urlenc.encode s;
+         mach#ctx#goto Hyper.{ h_uri = "?" ^ Urlenc.encode s;
                h_context = Some mach#base;
                h_method = GET;
                h_params = []} in
@@ -8948,23 +8948,23 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
   mach#add_tag "link"
     (fun _fo tag ->
       try
-        let href = get_attribute tag "href" in
+        let href = Html.get_attribute tag "href" in
     let name = 
-      try get_attribute tag "title"
+      try Html.get_attribute tag "title"
       with Not_found ->
-        try get_attribute tag "rel"
+        try Html.get_attribute tag "rel"
         with Not_found -> 
-          try get_attribute tag "rev"
+          try Html.get_attribute tag "rev"
           with Not_found -> href in
     let h_params =
-      try ["target", get_attribute tag "target"]
+      try ["target", Html.get_attribute tag "target"]
       with
         Not_found ->
           match mach#target with
         Some s -> ["target", s]
           |	None -> []
         in
-        add_link name { h_uri = href; h_context = Some mach#base;
+        add_link name Hyper.{ h_uri = href; h_context = Some mach#base;
             h_method = GET; h_params = h_params}
       with
     Not_found -> () (* no href *))
@@ -8981,8 +8981,8 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
        try 
       old fo tag;
       add_header 
-        (get_attribute tag "http-equiv")
-        (get_attribute tag "content")
+        (Html.get_attribute tag "http-equiv")
+        (Html.get_attribute tag "content")
        with Not_found -> ())
       ignore_close;
   end;
@@ -8992,10 +8992,10 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     mach#add_tag "frame"
       (fun _fo tag ->
     try
-         let src = get_attribute tag "src" in
+         let src = Html.get_attribute tag "src" in
          let name =
         sprintf "Frame %s" 
-          (try get_attribute tag "name"
+          (try Html.get_attribute tag "name"
           with Not_found -> "unnamed")
       in
       add_link name { h_uri = src; h_context = Some mach#base;
@@ -9036,17 +9036,7 @@ let _ =
 
 <<display/htmlw.ml>>=
 open I18n
-open Printf
 open Tk
-open Html
-open Html_eval
-open Hyper
-open Document
-open Viewers
-open Htmlfmt
-open Feed
-open Embed
-open Htframe
 
 <<constant [[Htmlw.frames_as_links]]>>
 <<constant [[Htmlw.pscrolling]]>>
@@ -9086,7 +9076,7 @@ class  virtual viewer_globs ((ctx : Viewers.context),
 end
 
 (* We still need dh at construction for the definition of feed_red *)
-class  virtual html_parse (dh) =
+class  virtual html_parse ((dh : Document.handle)) =
  object (self)
 
   method virtual dh : Document.handle
@@ -9102,7 +9092,7 @@ class  virtual html_parse (dh) =
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
   method lexbuf = lexbuf  
 
-  val mutable lexer = sgml_lexer !Dtd.current
+  val mutable lexer = Html_eval.sgml_lexer !Dtd.current
 
   (* Japanese parse configuration *)
   val jpn_config = Japan.default_config ()
@@ -9112,7 +9102,7 @@ class  virtual html_parse (dh) =
     feed_read <-
        Japan.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
-    lexer <- sgml_lexer !Dtd.current;
+    lexer <- Html_eval.sgml_lexer !Dtd.current;
     lexbuf <- 
        Lexing.from_function (fun buf n -> 
      let r = feed_read#read buf 0 n in
@@ -9125,7 +9115,7 @@ class  virtual html_body () =
  object (self)
 
   method virtual mach : Html_disp.machine
-  method virtual ctx: context
+  method virtual ctx: Viewers.context
   method virtual frame : Widget.widget
 
   val current_scroll_mode = ref !pscrolling
@@ -9174,7 +9164,7 @@ end
 (* geek stuff *)
 class  virtual bored () =
  object (self)
-  method virtual ctx: context
+  method virtual ctx: Viewers.context
   method virtual mach: F.machine
 
   method bored_init hgbas =
@@ -12919,7 +12909,7 @@ let nothing_specific _nav _did _wr = raise Not_found
 
 <<function [[Nav.specific_viewer]]>>=
 (* check the widget cache *)
-let specific_viewer addhist = fun nav did wr ->
+let specific_viewer addhist = fun nav did (wr : Www.request) ->
   let di = Gcache.find nav.nav_id did in
   if addhist then nav.nav_add_hist did wr.www_fragment;
   (* make it our current displayed document, since it is available *)
@@ -12928,21 +12918,21 @@ let specific_viewer addhist = fun nav did wr ->
 
 <<function [[Nav.process_save]]>>=
 (* Specific handling of "save" requests *)
-let process_save dest = fun _nav wr dh ->
+let process_save dest = fun _nav wr (dh : Document.handle) ->
   match dh.document_status with
     200 -> Save.transfer wr dh dest
   | n ->
     if wr.www_error#choose 
         (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
-              (Url.string_of wr.www_url) n (status_msg dh.dh_headers))
+              (Url.string_of wr.www_url) n (Http_headers.status_msg dh.dh_headers))
     then Save.transfer wr dh dest
-    else dclose true dh
+    else Document.dclose true dh
 @
 
 <<function [[Nav.display_headers]]>>=
 (* Simple implementation of HEAD *)
 
-let display_headers dh =
+let display_headers (dh : Document.handle) =
   let mytop = Toplevel.create Widget.default_toplevel [] in
   Wm.title_set mytop 
       (sprintf "HEAD %s" (Url.string_of dh.document_id.document_url));
@@ -12957,22 +12947,22 @@ let display_headers dh =
 
 <<constant [[Nav.process_head]]>>=
 let process_head = fun _nav _wr dh ->
-  dclose true dh;
+  Document.dclose true dh;
   display_headers dh
 @
 
 <<function [[Nav.make_head]]>>=
 (* But for head, we need to change the hlink *)
-let make_head hlink =
+let make_head (hlink : Hyper.link) =
   { hlink with h_method = HEAD; }
 @
 
 <<function [[Nav.copy_link]]>>=
 (* Copying a link to the X Selection *)
-let copy_link nav h =
+let copy_link (nav : t) (h : Hyper.link) =
   try 
     Frx_selection.set (Hyper.string_of h)
-  with Invalid_link _msg ->
+  with Hyper.Invalid_link _msg ->
     nav.nav_error#f (s_ "Invalid link")
 @
 
@@ -12998,13 +12988,13 @@ let save_link nav whereto =
 
 
 <<function [[Nav.update]]>>=
-let update nav did nocache =
+let update (nav : t) (did : Document.id) (nocache : bool) : unit =
   (* This gets called if answer is 200 but also 304 *)
-  let process_update nav wr dh =
+  let process_update nav (wr : Www.request) (dh : Document.handle) =
     match dh.document_status with
       304 -> 
     Cache.patch dh.document_id dh.dh_headers;
-    dclose true dh;
+    Document.dclose true dh;
     begin try
       let di = Gcache.find nav.nav_id did in
       di#di_update
@@ -13029,7 +13019,7 @@ let update nav did nocache =
     let doc = Cache.find did in
     try
       (* find the date of previous download, (or last-modified ?) *)
-      let date_received = get_header "date" doc.document_headers in
+      let date_received = Http_headers.get_header "date" doc.document_headers in
       let follow_link =
         let caps = Cap.network_caps_UNSAFE () in
         request caps nav process_update
@@ -13055,20 +13045,10 @@ let update nav did nocache =
 %-------------------------------------------------------------
 
 <<gui/nav.ml>>=
-open I18n
-open Printf
-open Unix
-open Tk
-open Hyper
-open Www
-open Url
-
-open Document
-open Http_headers
-open Viewers
-open Embed
-
 (* Navigation *)
+
+open I18n
+open Tk
 
 <<type [[Nav.t]]>>
 

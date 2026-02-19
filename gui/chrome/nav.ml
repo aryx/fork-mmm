@@ -65,10 +65,12 @@ let dont_check_cache (wwwr : Www.request) =
    [wrapwr wr] : returns a modified wr
  *)
 let request (caps : < Cap.network; ..>) (nav : t)
-     process (usecache, wrapwr, specific) (lk : Hyper.link) =
+     process (usecache, wrapwr, specific) = 
+  fun (lk : Hyper.link) ->
 
   (*s: function [[Nav.request.retrieve_and_handle]] *)
   (* Normally execute the request and process its answer (dh) *)
+  (* handle_link -> handle_wr -> <> *)
   let rec retrieve_and_handle (wr : Www.request) =
     let cont = 
       Document.{ document_process = (fun dh ->
@@ -80,6 +82,7 @@ let request (caps : < Cap.network; ..>) (nav : t)
         );
       }
     in
+    (* ! Retrieve ! *)
     match Retrieve.f caps wr handle_link cont with
     | Retrieve.Started aborter -> 
         nav.nav_add_active wr.www_url aborter
@@ -222,7 +225,7 @@ let make_head (hlink : Hyper.link) =
 
 (*s: function [[Nav.copy_link]] *)
 (* Copying a link to the X Selection *)
-let copy_link nav h =
+let copy_link (nav : t) (h : Hyper.link) =
   try 
     Frx_selection.set (Hyper.string_of h)
   with Hyper.Invalid_link _msg ->
@@ -258,7 +261,8 @@ class stdctx (did, nav) =
 
     (* a new context for a toplevel window *)
     let make_ctx nav did = 
-      ((new stdctx(did, nav))#init :> Viewers.context) in
+      ((new stdctx(did, nav))#init :> Viewers.context)
+    in
 
     (* a new context for an embedded window *)
     let make_embed_ctx w targets = 
@@ -273,7 +277,8 @@ class stdctx (did, nav) =
           newctx#add_nav ("clearpointsto", g);
         with Not_found -> ()
       end;
-      (newctx#for_embed [] targets :> Viewers.context) in
+      (newctx#for_embed [] targets :> Viewers.context)
+    in
 
     (* by default, use the cache, don't touch the request *)
     let follow_link _ = 
@@ -291,7 +296,7 @@ class stdctx (did, nav) =
       (fun _ hlink -> f (make_head hlink))
     and new_link _ = nav.nav_new
     in 
-    let frame_goto targets (hlink : Hyper.link) =
+    let frame_goto (targets : Viewers.frame_targets) (hlink : Hyper.link) =
       let caps = Cap.network_caps_UNSAFE () in
       try
       (* target semantics PR-HTML 4.0 16.3.2 *)
@@ -433,7 +438,7 @@ let historygoto nav (did : Document.id) frag usecache =
 
 
 (*s: function [[Nav.update]] *)
-let update nav did nocache =
+let update (nav : t) (did : Document.id) (nocache : bool) : unit =
   (* This gets called if answer is 200 but also 304 *)
   let process_update nav (wr : Www.request) (dh : Document.handle) =
     match dh.document_status with
