@@ -72,7 +72,7 @@ module type S =
             (Url.t -> shared_data -> unit) -> progress_func -> unit
 
     val flush_delayed : delayed -> unit
-    val flush_one : delayed -> Url.t -> unit
+    val flush_one : < Cap.network > -> delayed -> Url.t -> unit
    
     val is_empty : delayed -> bool
     val maxactive : int ref

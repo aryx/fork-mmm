@@ -178,9 +178,10 @@ let put_alt (emb : Embed.obj) =
 let make_auto delayed emb =
   try
     let url = (Www.make emb.embed_hlink).www_url in
+    let caps = Cap.network_caps_UNSAFE () in
     bind emb.embed_frame
       (Glevents.get "loadimage")
-      (BindSet ([], (fun _ -> Img.ImageScheduler.flush_one delayed url)))
+      (BindSet ([], (fun _ -> Img.ImageScheduler.flush_one caps delayed url)))
   with
     e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
 (*e: function [[Imgload.make_auto]] *)

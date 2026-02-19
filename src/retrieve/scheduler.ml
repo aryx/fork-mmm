@@ -56,7 +56,7 @@ module type S = sig
     unit
 
   val flush_delayed : delayed -> unit
-  val flush_one : delayed -> Url.t -> unit
+  val flush_one : < Cap.network > -> delayed -> Url.t -> unit
   val is_empty : delayed -> bool
   val maxactive : int ref
   val maxsamehost : int ref
@@ -448,7 +448,7 @@ module Make (J : Data) = struct
     | Not_found -> Queue.add (wr, did, cont, progress) q
 
   (* Put the queue in the list of queues *)
-  let flush_delayed (q : delayed) =
+  let flush_delayed (q : delayed) : unit =
     (* Queue.iter (function (_,_,_,prog) -> prog None 0) q;(* create the gauge *) *)
     queues := !queues @ [ q ];
     let caps = Cap.network_caps_UNSAFE () in
@@ -457,7 +457,7 @@ module Make (J : Data) = struct
   (* Flush a particular request from a queue : we do it in place
      because we don't know if the queue has been put in the list yet
   *)
-  let flush_one l url  =
+  let flush_one (caps : < Cap.network >) (l : delayed) (url : Url.t) : unit  =
     let flushedqueue = Queue.create () and restqueue = Queue.create () in
     (* split in two *)
     l |> Queue.iter (function
@@ -473,7 +473,6 @@ module Make (J : Data) = struct
     Queue.clear l;
     restqueue |> Queue.iter (fun r -> Queue.add r l);
     (* try to process the flushed items *)
-    let caps = Cap.network_caps_UNSAFE () in
     next_request caps
 end
 (*e: retrieve/scheduler.ml *)
