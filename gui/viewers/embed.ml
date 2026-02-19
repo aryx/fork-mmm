@@ -4,9 +4,6 @@
 open Fpath_.Operators
 open I18n
 open Tk
-open Www
-open Hyper
-open Http_headers
 
 (* Assume any kind of data could be embedded 
  * The normal retrieval, used by the scheduler, makes its own decision
@@ -33,8 +30,8 @@ module EmbeddedData = struct
     | 200 -> begin
         try
           let doc = Cache.find dh.document_id in
-          let this_date = get_header "date" dh.dh_headers in
-          let cache_date = get_header "date" doc.document_headers in
+          let this_date = Http_headers.get_header "date" dh.dh_headers in
+          let cache_date = Http_headers.get_header "date" doc.document_headers in
           if this_date <> cache_date then raise Not_found else doc
         with
         | Not_found ->
@@ -84,7 +81,7 @@ let embedded_viewer (frame : Widget.widget) (ctx : Viewers.context)
   (* Destroy the alt window *)
   List.iter Tk.destroy (Winfo.children frame);
   try
-    let ctype = contenttype doc.document_headers in
+    let ctype = Http_headers.contenttype doc.document_headers in
     let (typ, subtyp), l = Lexheaders.media_type ctype in
     try
       let viewer =
@@ -105,10 +102,10 @@ let embedded_viewer (frame : Widget.widget) (ctx : Viewers.context)
       in
       let l = Label.create frame [ Text t ] in
       pack [ l ] []
-  | Invalid_HTTP_header e ->
+  | Http_headers.Invalid_HTTP_header e ->
       let t =
         s_ "Embed Error: malformed type %s (%s)"
-          (contenttype doc.document_headers)
+          (Http_headers.contenttype doc.document_headers)
           e
       in
       let l = Label.create frame [ Text t ] in
@@ -198,10 +195,10 @@ let add (caps : < Cap.network ; .. >) (emb : obj) =
         (* no viewer for this *)
         let t = s_ "Embed Error: no viewer for type %s" given_type in
         pack [ Label.create frame [ Text t ] ] []
-    | Invalid_request (w, msg) ->
+    | Www.Invalid_request (w, msg) ->
         let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
         pack [ Message.create frame [ Text t ] ] []
-    | Invalid_link _err ->
+    | Hyper.Invalid_link _err ->
         let t = s_ "Embed Error: invalid link" in
         pack [ Message.create frame [ Text t ] ] []
   with
@@ -217,10 +214,10 @@ let add (caps : < Cap.network ; .. >) (emb : obj) =
             (fun _url doc -> embedded_viewer frame embed_ctx doc)
           (Tk_progress.meter frame)
       with
-      | Invalid_request (w, msg) ->
+      | Www.Invalid_request (w, msg) ->
           let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
           pack [ Message.create frame [ Text t ] ] []
-      | Invalid_link _err ->
+      | Hyper.Invalid_link _err ->
           let t = s_ "Embed Error: invalid link" in
           pack [ Message.create frame [ Text t ] ] [])
 (*e: function [[Embed.add]] *)
@@ -230,8 +227,8 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
     (embed_ctx : Viewers.context) (doc : Document.t) notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
-    let date_received = get_header "date" doc.document_headers in
-    let rewrite_wr wr =
+    let date_received = Http_headers.get_header "date" doc.document_headers in
+    let rewrite_wr (wr : Www.request) =
       wr.www_headers <-
         ("If-Modified-Since: " ^ date_received) :: wr.www_headers;
       wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
@@ -241,7 +238,7 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx (newdoc : Document.t) =
       let newdate =
-        try get_header "date" newdoc.document_headers with
+        try Http_headers.get_header "date" newdoc.document_headers with
         | Not_found -> "foo"
       in
       if newdate <> date_received then begin
@@ -282,10 +279,10 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
           (* no viewer for this *)
           let t = s_ "Embed Error: no viewer for type %s" given_type in
           pack [ Label.create frame [ Text t ] ] []
-      | Invalid_request (w, msg) ->
+      | Www.Invalid_request (w, msg) ->
           let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
           pack [ Message.create frame [ Text t ] ] []
-      | Invalid_link _err ->
+      | Hyper.Invalid_link _err ->
           let t = s_ "Embed Error: invalid link" in
           pack [ Message.create frame [ Text t ] ] []
     with
@@ -302,10 +299,10 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
               (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
             (Tk_progress.meter frame)
         with
-        | Invalid_request (w, msg) ->
+        | Www.Invalid_request (w, msg) ->
             let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
             pack [ Message.create frame [ Text t ] ] []
-        | Invalid_link _err ->
+        | Hyper.Invalid_link _err ->
             let t = s_ "Embed Error: invalid link" in
             pack [ Message.create frame [ Text t ] ] [])
   with
