@@ -1,16 +1,6 @@
 (*s: display/htmlw.ml *)
 open I18n
-open Printf
 open Tk
-open Html
-open Html_eval
-open Hyper
-open Document
-open Viewers
-open Htmlfmt
-open Feed
-open Embed
-open Htframe
 
 (*s: constant [[Htmlw.frames_as_links]] *)
 (* Prefs globals *)
@@ -67,12 +57,12 @@ let progress_report top ctx =
   Pack.propagate_set f false;
 
   ctx#add_nav ("pointsto" ,
-                { hyper_visible = false;
+                Viewers.{ hyper_visible = false;
                   hyper_title = "Show target";
                   hyper_func = (fun _ h -> 
                     let target = 
                       try Hyper.string_of h
-                      with Invalid_link _msg -> "invalid link" 
+                      with Hyper.Invalid_link _msg -> "invalid link" 
                     in
                     pointsto target
                   )});
@@ -85,7 +75,7 @@ let progress_report top ctx =
 (*e: function [[Htmlw.progress_report]] *)
 
 (*s: function [[Htmlw.html_head_ui]] *)
-let html_head_ui headers redisplay pscroll top ctx =
+let html_head_ui headers redisplay pscroll top (ctx : Viewers.context) =
   (* The frame for all head UI elements *)
   let headgroup = Frame.create_named top "head" [] in
   (* The menubar frame *)
@@ -152,10 +142,10 @@ let html_head_ui headers redisplay pscroll top ctx =
           and url = String.sub v (pos2+1) (String.length v - pos2 - 1) in
       Menu.add_command headersm 
         [Label txt;
-          Command (fun () -> ctx#goto {
-        h_uri = url;
-        h_context = Some (Url.string_of ctx#base.document_url);
-        h_method = GET;
+          Command (fun () -> ctx#goto Hyper.{
+            h_uri = url;
+            h_context = Some (Url.string_of ctx#base.document_url);
+            h_method = GET;
             h_params = []})]
     with Not_found | Failure "int_of_string" -> ()
     end
@@ -206,9 +196,9 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
       
   mach#add_tag "isindex"
     (fun _fo tag ->
-      let prompt = get_attribute tag "prompt" in
+      let prompt = Html.get_attribute tag "prompt" in
       let action s =
-    mach#ctx#goto { h_uri = "?" ^ Urlenc.encode s;
+         mach#ctx#goto Hyper.{ h_uri = "?" ^ Urlenc.encode s;
                h_context = Some mach#base;
                h_method = GET;
                h_params = []} in
@@ -219,23 +209,23 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
   mach#add_tag "link"
     (fun _fo tag ->
       try
-        let href = get_attribute tag "href" in
+        let href = Html.get_attribute tag "href" in
     let name = 
-      try get_attribute tag "title"
+      try Html.get_attribute tag "title"
       with Not_found ->
-        try get_attribute tag "rel"
+        try Html.get_attribute tag "rel"
         with Not_found -> 
-          try get_attribute tag "rev"
+          try Html.get_attribute tag "rev"
           with Not_found -> href in
     let h_params =
-      try ["target", get_attribute tag "target"]
+      try ["target", Html.get_attribute tag "target"]
       with
         Not_found ->
           match mach#target with
         Some s -> ["target", s]
           |	None -> []
         in
-        add_link name { h_uri = href; h_context = Some mach#base;
+        add_link name Hyper.{ h_uri = href; h_context = Some mach#base;
             h_method = GET; h_params = h_params}
       with
     Not_found -> () (* no href *))
@@ -252,8 +242,8 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
        try 
       old fo tag;
       add_header 
-        (get_attribute tag "http-equiv")
-        (get_attribute tag "content")
+        (Html.get_attribute tag "http-equiv")
+        (Html.get_attribute tag "content")
        with Not_found -> ())
       ignore_close;
   end;
@@ -263,10 +253,10 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
     mach#add_tag "frame"
       (fun _fo tag ->
     try
-         let src = get_attribute tag "src" in
+         let src = Html.get_attribute tag "src" in
          let name =
         sprintf "Frame %s" 
-          (try get_attribute tag "name"
+          (try Html.get_attribute tag "name"
           with Not_found -> "unnamed")
       in
       add_link name { h_uri = src; h_context = Some mach#base;
@@ -293,7 +283,7 @@ class  virtual viewer_globs ((ctx : Viewers.context),
 end
 
 (* We still need dh at construction for the definition of feed_red *)
-class  virtual html_parse (dh) =
+class  virtual html_parse ((dh : Document.handle)) =
  object (self)
 
   method virtual dh : Document.handle
@@ -309,7 +299,7 @@ class  virtual html_parse (dh) =
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
   method lexbuf = lexbuf  
 
-  val mutable lexer = sgml_lexer !Dtd.current
+  val mutable lexer = Html_eval.sgml_lexer !Dtd.current
 
   (* Japanese parse configuration *)
   val jpn_config = Japan.default_config ()
@@ -319,7 +309,7 @@ class  virtual html_parse (dh) =
     feed_read <-
        Japan.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
-    lexer <- sgml_lexer !Dtd.current;
+    lexer <- Html_eval.sgml_lexer !Dtd.current;
     lexbuf <- 
        Lexing.from_function (fun buf n -> 
      let r = feed_read#read buf 0 n in
@@ -332,7 +322,7 @@ class  virtual html_body () =
  object (self)
 
   method virtual mach : Html_disp.machine
-  method virtual ctx: context
+  method virtual ctx: Viewers.context
   method virtual frame : Widget.widget
 
   val current_scroll_mode = ref !pscrolling
@@ -381,7 +371,7 @@ end
 (* geek stuff *)
 class  virtual bored () =
  object (self)
-  method virtual ctx: context
+  method virtual ctx: Viewers.context
   method virtual mach: F.machine
 
   method bored_init hgbas =
@@ -478,8 +468,8 @@ class display_html ((top : Widget.widget),
     if not !ignore_meta_charset then begin 
       mach#add_tag "meta" (fun _fo tag ->
        try 
-         let h = get_attribute tag "http-equiv" in
-         let v = get_attribute tag "content" in
+         let h = Html.get_attribute tag "http-equiv" in
+         let v = Html.get_attribute tag "content" in
          match String.lowercase_ascii h with
          | "content-type" ->
               begin try
@@ -575,7 +565,7 @@ class display_html ((top : Widget.widget),
         in
         (*s: [[Htmlw.display_html]] in feed, record possible errors after lexing *)
         warnings |> List.iter (fun (reason, pos) -> 
-          self#record_error (Loc(pos,succ pos)) reason
+          self#record_error (Html.Loc(pos,succ pos)) reason
         );
         (match correct with
         | Legal -> ()
@@ -596,7 +586,7 @@ class display_html ((top : Widget.widget),
          tokens |> List.iter (fun token -> 
            begin  
              try mach#send token
-             with Invalid_Html s -> self#record_error loc s
+             with Html.Invalid_Html s -> self#record_error loc s
            end;
            if token = EOF then begin
              pending <- false;
@@ -614,7 +604,7 @@ class display_html ((top : Widget.widget),
           (*e: [[Htmlw.display_html]] in feed, [[End_of_file]] exn handler, goto fragment *)
           (*e: [[Htmlw.display_html]] in feed, [[End_of_file]] exn handler *)
       (*s: [[Htmlw.display_html]] in feed, other exceptions handler *)
-      | Html_Lexing (s,n) ->
+      | Html.Html_Lexing (s,n) ->
           (* this should not happen if Lexhtml was debugged *)
           self#record_error (Html.Loc(n,n+1)) s
       (*x: [[Htmlw.display_html]] in feed, other exceptions handler *)
@@ -641,7 +631,7 @@ class display_html ((top : Widget.widget),
      *  event again during the processing of the event... 
      *)
     Frx_after.idle (fun () ->
-      mach#embedded |> List.iter (fun { embed_frame = f; _} ->
+      mach#embedded |> List.iter (fun Embed.{ embed_frame = f; _} ->
         Winfo.children f |> List.iter (Frx_synth.send "load_images")
       )
     )
@@ -652,7 +642,7 @@ class display_html ((top : Widget.widget),
     imgmanager#update_images caps;
 
     Frx_after.idle (fun () ->
-      mach#embedded |> List.iter (fun {embed_frame = f; _} ->
+      mach#embedded |> List.iter (fun Embed.{embed_frame = f; _} ->
         Winfo.children f |> List.iter (Frx_synth.send "update")
       )
     )
@@ -661,9 +651,10 @@ class display_html ((top : Widget.widget),
   method load_frames frames =
     (* all targets defined in all framesets in this document *)
     let targets = 
-      frames |> List.map (fun (frdesc, w) -> frdesc.frame_name, w) 
+      frames |> List.map (fun ((frdesc : Htframe.frame), w) -> 
+            frdesc.frame_name, w) 
     in
-    frames |> List.iter (fun (frdesc, w) ->
+    frames |> List.iter (fun ((frdesc : Htframe.frame), w) ->
       let thistargets =
            ("_self", w) (* ourselves *)
         :: ("_parent", Winfo.parent w) (* our direct parent *)
