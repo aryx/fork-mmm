@@ -184,10 +184,9 @@ let put_alt (emb : Embed.obj) =
 
 (*s: function [[Imgload.make_auto]] *)
 (* for delayed load, add binding *)
-let make_auto delayed (emb : Embed.obj) =
+let make_auto (caps : < Cap.network >) delayed (emb : Embed.obj) =
   try
     let url = (Www.make emb.embed_hlink).www_url in
-    let caps = Cap.network_caps_UNSAFE () in
     Tk.bind emb.embed_frame (Glevents.get "loadimage")
       (BindSet ([], fun _ -> Img.ImageScheduler.flush_one caps delayed url))
   with
@@ -298,7 +297,7 @@ class loader () =
     val mutable loaded = Www.UrlSet.empty
 
     (* default no_image implem *)
-    method add_image (emb : Embed.obj) : unit =
+    method add_image (_caps : < Cap.network >) (emb : Embed.obj) : unit =
       put_alt emb;
       (* make the alt widget*)
       make_map emb (* and possible bindings *)
@@ -312,10 +311,9 @@ class loader () =
     method private add_loaded (url : Url.t) : unit =
       loaded <- Www.UrlSet.add url loaded
 
-    method private activate (emb : Embed.obj) =
+    method private activate (caps : < Cap.network >) (emb : Embed.obj) =
       Logs.debug (fun m -> m "Activating image");
       try
-        let caps = Cap.network_caps_UNSAFE () in
         Img.get caps emb.embed_context#base emb.embed_hlink
           (fun url i ->
             display caps emb i;
@@ -326,8 +324,7 @@ class loader () =
           Logs.warn (fun m -> m "Can't load image (%s)" (Printexc.to_string e))
 
     (* called when ?? *)
-    method update_images =
-      let caps = Cap.network_caps_UNSAFE () in
+    method update_images (caps : < Cap.network >) : unit =
       Www.UrlSet.iter (Img.update caps) loaded
   end
 
@@ -336,9 +333,9 @@ class synchronous () =
   object
     inherit loader () as super
 
-    method! add_image (emb : Embed.obj) =
-      super#add_image emb;
-      super#activate emb
+    method! add_image (caps : < Cap.network >)(emb : Embed.obj) =
+      super#add_image caps emb;
+      super#activate caps emb
   end
 
 (* for AfterDocAuto *)
@@ -347,9 +344,8 @@ class auto () =
     inherit loader () as super
     val q = Img.ImageScheduler.new_delayed ()
 
-    method! add_image emb =
-      super#add_image emb;
-      let caps = Cap.network_caps_UNSAFE () in
+    method! add_image (caps : < Cap.network>) (emb : Embed.obj) =
+      super#add_image caps emb;
       try
         let wr = Www.make emb.embed_hlink in
         wr.www_headers <- "Accept: image/*" :: wr.www_headers;
@@ -371,9 +367,9 @@ class manual () =
   object
     inherit auto () as super
 
-    method! add_image emb =
-      super#add_image emb;
-      make_auto q emb
+    method! add_image (caps : < Cap.network >) (emb : Embed.obj) =
+      super#add_image caps emb;
+      make_auto caps q emb
 
     method! flush_images = ()
     method! load_images = Img.ImageScheduler.flush_delayed q

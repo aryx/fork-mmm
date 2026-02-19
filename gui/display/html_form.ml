@@ -118,7 +118,9 @@ mach#add_tag "form"
        | "TEXT" | "PASSWORD" ->  fm.text_input fr t
        | "CHECKBOX" -> fm.checkbox_input fr t
        | "RADIO" -> fm.radio_input fr t
-       | "IMAGE" -> mach#imgmanager#add_image (fm.image_input fr t)
+       | "IMAGE" -> 
+            let caps = Cap.network_caps_UNSAFE () in
+            mach#imgmanager#add_image caps (fm.image_input fr t)
        | "SUBMIT" -> fm.submit_input fr t
        | "RESET" -> fm.reset_input fr t
        (* TODO: file *)

@@ -10,10 +10,10 @@ val attempt_tables : bool ref
 (*s: signature class [[Html_disp.imgloader]] *)
 class  virtual imgloader : (unit) -> object
   (*s: [[Html_disp.imgloader]] virtual fields signatures *)
-  method virtual add_image : Embed.obj -> unit	 (* add one image *)
+  method virtual add_image : < Cap.network > -> Embed.obj -> unit
   method virtual flush_images : unit	         (* flush when document is loaded *)
   method virtual load_images : unit		 (* manual flush *)
-  method virtual update_images : unit
+  method virtual update_images : < Cap.network > -> unit
   (*e: [[Html_disp.imgloader]] virtual fields signatures *)
 end
 (*e: signature class [[Html_disp.imgloader]] *)

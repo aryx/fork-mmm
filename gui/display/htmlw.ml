@@ -648,7 +648,8 @@ class display_html ((top : Widget.widget),
   (*e: [[Htmlw.display_html]] load images methods *)
   (*s: [[Htmlw.display_html]] update embedded objects methods *)
   method di_update =
-    imgmanager#update_images;
+    let caps = Cap.network_caps_UNSAFE () in
+    imgmanager#update_images caps;
 
     Frx_after.idle (fun () ->
       mach#embedded |> List.iter (fun {embed_frame = f; _} ->

@@ -60,10 +60,10 @@ let roman n =
 class  virtual imgloader (_unit : unit) =
  object
   (*s: [[Html_disp.imgloader]] virtual fields signatures *)
-  method virtual add_image : Embed.obj -> unit	 (* add one image *)
+  method virtual add_image : < Cap.network > -> Embed.obj -> unit
   method virtual flush_images : unit	         (* flush when document is loaded *)
   method virtual load_images : unit		 (* manual flush *)
-  method virtual update_images : unit
+  method virtual update_images : < Cap.network > -> unit
   (*e: [[Html_disp.imgloader]] virtual fields signatures *)
 end
 (*e: class [[Html_disp.imgloader]] *)
@@ -380,7 +380,7 @@ module TableLogic = Html_table
 
   (*s: function [[Html_disp.Make.init]] *)
   (* Standard initialisation for HTML 2.0 (+bits of 3.2) *)
-  let init mach =
+  let init (mach : display_machine) =
     (*s: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* 5.1 HTML *)
     mach#add_tag "html" ignore_open ignore_close;
@@ -1024,7 +1024,8 @@ module TableLogic = Html_table
                else NoMap
            in
            (*e: [[Html_disp.Make.init()]] IMG case, let map *)
-           mach#imgmanager#add_image  
+           let caps = Cap.network_caps_UNSAFE () in
+           mach#imgmanager#add_image caps
              { embed_hlink = link;
                embed_frame = w;
                embed_context = mach#ctx#for_embed tag.attributes [];
