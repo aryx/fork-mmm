@@ -1,18 +1,8 @@
 (*s: gui/nav.ml *)
-open I18n
-open Printf
-open Unix
-open Tk
-open Hyper
-open Www
-open Url
-
-open Document
-open Http_headers
-open Viewers
-open Embed
-
 (* Navigation *)
+
+open I18n
+open Tk
 
 (*s: type [[Nav.t]] *)
 type t = {
@@ -58,7 +48,7 @@ exception Duplicate of Url.t
 
 (*s: function [[Nav.dont_check_cache]] *)
 (* Some requests should not be looked for in the cache *)
-let dont_check_cache wwwr =
+let dont_check_cache (wwwr : Www.request) =
   match wwwr.www_link.h_method with
   | POST _ -> true
   | _ -> false
@@ -79,9 +69,9 @@ let request (caps : < Cap.network; ..>) (nav : t)
 
   (*s: function [[Nav.request.retrieve_and_handle]] *)
   (* Normally execute the request and process its answer (dh) *)
-  let rec retrieve_and_handle wr =
+  let rec retrieve_and_handle (wr : Www.request) =
     let cont = 
-      { document_process = (fun dh ->
+      Document.{ document_process = (fun dh ->
           process nav wr dh;
           nav.nav_rem_active wr.www_url
         );
@@ -112,7 +102,7 @@ let request (caps : < Cap.network; ..>) (nav : t)
          else
            (*s: [[Nav.request.handle_wr()]] if use cache *)
            (* If the the document can be cached, then it is with no_stamp *)
-           let did = { document_url = wr.www_url; document_stamp = no_stamp } in
+           let did = Document.{ document_url = wr.www_url; document_stamp = no_stamp } in
            try
              specific nav did wr
            with Not_found ->
@@ -125,7 +115,7 @@ let request (caps : < Cap.network; ..>) (nav : t)
                    wr.www_error#f (s_
                     "Cache error occurred during save of temporary buffer (%s)"
                        s)
-               | Unix_error (e,fname,arg) ->
+               | Unix.Unix_error (e,fname,arg) ->
                    wr.www_error#f 
                      (s_ "Cache error occurred when opening temporary file\n%s: %s (%s)"
                             fname (Unix.error_message e) arg)
@@ -161,7 +151,7 @@ let nothing_specific _nav _did _wr = raise Not_found
 (*s: function [[Nav.process_viewer]] *)
 (* Specific handling of "view" requests *)
 let process_viewer addhist make_ctx = 
- fun nav _wr dh ->
+ fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
   match Viewers.view nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
@@ -177,7 +167,7 @@ let process_viewer addhist make_ctx =
 
 (*s: function [[Nav.specific_viewer]] *)
 (* check the widget cache *)
-let specific_viewer addhist = fun nav did wr ->
+let specific_viewer addhist = fun nav did (wr : Www.request) ->
   let di = Gcache.find nav.nav_id did in
   if addhist then nav.nav_add_hist did wr.www_fragment;
   (* make it our current displayed document, since it is available *)
@@ -187,21 +177,21 @@ let specific_viewer addhist = fun nav did wr ->
 
 (*s: function [[Nav.process_save]] *)
 (* Specific handling of "save" requests *)
-let process_save dest = fun _nav wr dh ->
+let process_save dest = fun _nav wr (dh : Document.handle) ->
   match dh.document_status with
     200 -> Save.transfer wr dh dest
   | n ->
     if wr.www_error#choose 
         (s_ "Request for %s\nreturned %d %s.\nDo you wish to save ?"
-              (Url.string_of wr.www_url) n (status_msg dh.dh_headers))
+              (Url.string_of wr.www_url) n (Http_headers.status_msg dh.dh_headers))
     then Save.transfer wr dh dest
-    else dclose true dh
+    else Document.dclose true dh
 (*e: function [[Nav.process_save]] *)
 
 (*s: function [[Nav.display_headers]] *)
 (* Simple implementation of HEAD *)
 
-let display_headers dh =
+let display_headers (dh : Document.handle) =
   let mytop = Toplevel.create Widget.default_toplevel [] in
   Wm.title_set mytop 
       (sprintf "HEAD %s" (Url.string_of dh.document_id.document_url));
@@ -216,13 +206,13 @@ let display_headers dh =
  
 (*s: constant [[Nav.process_head]] *)
 let process_head = fun _nav _wr dh ->
-  dclose true dh;
+  Document.dclose true dh;
   display_headers dh
 (*e: constant [[Nav.process_head]] *)
 
 (*s: function [[Nav.make_head]] *)
 (* But for head, we need to change the hlink *)
-let make_head hlink =
+let make_head (hlink : Hyper.link) =
   { hlink with h_method = HEAD; }
 (*e: function [[Nav.make_head]] *)
 
@@ -235,7 +225,7 @@ let make_head hlink =
 let copy_link nav h =
   try 
     Frx_selection.set (Hyper.string_of h)
-  with Invalid_link _msg ->
+  with Hyper.Invalid_link _msg ->
     nav.nav_error#f (s_ "Invalid link")
 (*e: function [[Nav.copy_link]] *)
 
@@ -273,7 +263,7 @@ class stdctx (did, nav) =
     (* a new context for an embedded window *)
     let make_embed_ctx w targets = 
       let targets = 
-        ("_self", w) :: ("_parent", Winfo.parent w) :: (frame_fugue targets) in
+        ("_self", w) :: ("_parent", Winfo.parent w) :: (Viewers.frame_fugue targets) in
       let newctx = (new stdctx(did,nav))#init in
       begin
         try 
@@ -301,7 +291,7 @@ class stdctx (did, nav) =
       (fun _ hlink -> f (make_head hlink))
     and new_link _ = nav.nav_new
     in 
-    let frame_goto targets hlink =
+    let frame_goto targets (hlink : Hyper.link) =
       let caps = Cap.network_caps_UNSAFE () in
       try
       (* target semantics PR-HTML 4.0 16.3.2 *)
@@ -403,9 +393,9 @@ let absolutegoto nav uri =
     
 (*s: function [[Nav.historygoto]] *)
 (* Used by navigators for back/forward/reload *)
-let historygoto nav did frag usecache =
+let historygoto nav (did : Document.id) frag usecache =
   Log.debug "historygoto";
-  if did.document_stamp = no_stamp then begin
+  if did.document_stamp = Document.no_stamp then begin
     (* we can safely consider this as normal navigation *)
     let uri = 
       match frag with
@@ -445,11 +435,11 @@ let historygoto nav did frag usecache =
 (*s: function [[Nav.update]] *)
 let update nav did nocache =
   (* This gets called if answer is 200 but also 304 *)
-  let process_update nav wr dh =
+  let process_update nav (wr : Www.request) (dh : Document.handle) =
     match dh.document_status with
       304 -> 
     Cache.patch dh.document_id dh.dh_headers;
-    dclose true dh;
+    Document.dclose true dh;
     begin try
       let di = Gcache.find nav.nav_id did in
       di#di_update
@@ -474,7 +464,7 @@ let update nav did nocache =
     let doc = Cache.find did in
     try
       (* find the date of previous download, (or last-modified ?) *)
-      let date_received = get_header "date" doc.document_headers in
+      let date_received = Http_headers.get_header "date" doc.document_headers in
       let follow_link =
         let caps = Cap.network_caps_UNSAFE () in
         request caps nav process_update
