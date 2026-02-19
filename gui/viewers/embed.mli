@@ -31,7 +31,6 @@ val add : < Cap.network; ..> ->
 (*e: signature [[Embed.add]] *)
 (*s: signature [[Embed.update]] *)
 val update : < Cap.network; ..> ->
-  Widget.widget -> Viewers.context -> Document.t -> (unit -> unit)
-    -> unit
+  Widget.widget -> Viewers.context -> Document.t -> (unit -> unit) -> unit
 (*e: signature [[Embed.update]] *)
 (*e: viewers/embed.mli *)

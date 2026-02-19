@@ -5084,166 +5084,185 @@ let embedded = (Hashtbl.create 101 : (string, obj) Hashtbl.t)
 
 <<function [[Embed.add_embed]]>>=
 (* add and notify *)
-let add_embed emb = 
+let add_embed (emb : obj) =
   Hashtbl.add embedded (Widget.name emb.embed_frame) emb;
   Frx_synth.send "setembed" emb.embed_frame
 @
 
 <<function [[Embed.when_destroyed]]>>=
 (* when the frame gets destroyed, remove us from the table *)
-let when_destroyed w =
-  Hashtbl.remove embedded (Widget.name w)
+let when_destroyed (w : Widget.widget) = Hashtbl.remove embedded (Widget.name w)
+
 @
 
 <<toplevel [[Embed._1]]>>=
-let _ =
-  Protocol.add_destroy_hook when_destroyed
+let _ = Protocol.add_destroy_hook when_destroyed
 @
 
 <<function [[Embed.add]]>>=
 (* Queueing an embed *)
-let add (caps : < Cap.network; ..>) (emb : obj) =
-  let { embed_hlink = link;
-        embed_frame = frame;
-        embed_context = embed_ctx;
-        embed_map = _m;
-        embed_alt = alt_txt} = emb 
+let add (caps : < Cap.network ; .. >) (emb : obj) =
+  let {
+    embed_hlink = link;
+    embed_frame = frame;
+    embed_context = embed_ctx;
+    embed_map = _m;
+    embed_alt = alt_txt;
+  } =
+    emb
   in
   (* Put up the ALT text *)
   List.iter Tk.destroy (Winfo.children frame);
-  pack [Label.create_named frame "alt" [Text alt_txt]][];
+  pack [ Label.create_named frame "alt" [ Text alt_txt ] ] [];
   (* Check if the type is defined and a viewer available *)
   try
-   let given_type = List.assoc "type" embed_ctx#params in
-   let ((typ,subtyp), parms) = Lexheaders.media_type given_type in
-   try
-     let viewer = 
-       try Hashtbl.find embedded_viewers (typ,subtyp)
-       with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
-     in
-       EmbeddedScheduler.add_request (caps :> < Cap.network >)
-       (Www.make link)
-       (embed_ctx#base)
-       (* the continuation: it will receive the document *)
-       (fun _url doc ->
-     let doc = Document.{
-       document_address = doc.document_address;
-       document_data = doc.document_data;
-       document_headers = Http_headers.merge_headers doc.document_headers
-                        ["Content-Type: " ^ given_type]
-       }  in
-         (* Destroy the alt window *)
-     List.iter Tk.destroy (Winfo.children frame);
-     (* Add to our table/notify *)
-     add_embed emb;
-     viewer parms frame embed_ctx doc)
-       (Tk_progress.meter frame)
-   with
-     Not_found -> (* no viewer for this *)
-      let t = s_ "Embed Error: no viewer for type %s" given_type in
-      pack[Label.create frame [Text t]][]
-   | Invalid_request (w,msg) ->
-       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-       pack [Message.create frame [Text t]][]
-   | Invalid_link _err ->
-       let t = s_ "Embed Error: invalid link" in
-       pack [Message.create frame [Text t ]][]
+    let given_type = List.assoc "type" embed_ctx#params in
+    let (typ, subtyp), parms = Lexheaders.media_type given_type in
+    try
+      let viewer =
+        try Hashtbl.find embedded_viewers (typ, subtyp) with
+        | Not_found -> Hashtbl.find embedded_viewers (typ, "*")
+      in
+      EmbeddedScheduler.add_request
+        (caps :> < Cap.network >)
+        (Www.make link) embed_ctx#base
+        (* the continuation: it will receive the document *)
+          (fun _url doc ->
+          let doc =
+            Document.
+              {
+                document_address = doc.document_address;
+                document_data = doc.document_data;
+                document_headers =
+                  Http_headers.merge_headers doc.document_headers
+                    [ "Content-Type: " ^ given_type ];
+              }
+          in
+          (* Destroy the alt window *)
+          List.iter Tk.destroy (Winfo.children frame);
+          (* Add to our table/notify *)
+          add_embed emb;
+          viewer parms frame embed_ctx doc)
+        (Tk_progress.meter frame)
+    with
+    | Not_found ->
+        (* no viewer for this *)
+        let t = s_ "Embed Error: no viewer for type %s" given_type in
+        pack [ Label.create frame [ Text t ] ] []
+    | Invalid_request (w, msg) ->
+        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+        pack [ Message.create frame [ Text t ] ] []
+    | Invalid_link _err ->
+        let t = s_ "Embed Error: invalid link" in
+        pack [ Message.create frame [ Text t ] ] []
   with
-     Not_found -> (* not type given, we have to retrieve to know *)
-       (* Firing the request *)
-       try
-     EmbeddedScheduler.add_request (caps :> < Cap.network >)
-     (Www.make link)
-     (embed_ctx#base)
-     (* the continuation: it will receive the document *)
-     (* In general, we don't know the type before we get the document *)
-     (fun _url doc -> embedded_viewer frame embed_ctx doc)
-     (Tk_progress.meter frame)
-       with
-     Invalid_request (w,msg) ->
-       let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-       pack [Message.create frame [Text t]][]
-       | Invalid_link _err ->
-       let t = s_ "Embed Error: invalid link" in
-       pack [Message.create frame [Text t ]][]
+  | Not_found -> (
+      (* not type given, we have to retrieve to know *)
+      (* Firing the request *)
+      try
+        EmbeddedScheduler.add_request
+          (caps :> < Cap.network >)
+          (Www.make link) embed_ctx#base
+          (* the continuation: it will receive the document *)
+          (* In general, we don't know the type before we get the document *)
+            (fun _url doc -> embedded_viewer frame embed_ctx doc)
+          (Tk_progress.meter frame)
+      with
+      | Invalid_request (w, msg) ->
+          let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+          pack [ Message.create frame [ Text t ] ] []
+      | Invalid_link _err ->
+          let t = s_ "Embed Error: invalid link" in
+          pack [ Message.create frame [ Text t ] ] [])
 @
 
 <<function [[Embed.update]]>>=
-let update (caps : < Cap.network; ..>)
-    (frame : Widget.widget) (embed_ctx : Viewers.context) (doc : Document.t)
-    notchanged =
+let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
+    (embed_ctx : Viewers.context) (doc : Document.t) notchanged =
   try
     (* find the date of previous download, (or last-modified ?) *)
     let date_received = get_header "date" doc.document_headers in
     let rewrite_wr wr =
-      wr.www_headers <- 
-     ("If-Modified-Since: "^date_received) :: wr.www_headers;
+      wr.www_headers <-
+        ("If-Modified-Since: " ^ date_received) :: wr.www_headers;
       wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
       wr
     in
     let link = Hyper.default_link (Url.string_of doc.document_address) in
     (* wrapped viewer : decide if we need to redisplay or not *)
     let smart_viewer stdviewer frame embed_ctx (newdoc : Document.t) =
-      let newdate = 
-    try get_header "date"  newdoc.document_headers with Not_found -> "foo"
-      in if newdate <> date_received then begin
-    List.iter Tk.destroy (Winfo.children frame);
-    stdviewer frame embed_ctx newdoc
-      end else notchanged()
+      let newdate =
+        try get_header "date" newdoc.document_headers with
+        | Not_found -> "foo"
+      in
+      if newdate <> date_received then begin
+        List.iter Tk.destroy (Winfo.children frame);
+        stdviewer frame embed_ctx newdoc
+      end
+      else notchanged ()
     in
-  (* Check if the type is defined and a viewer available *)
+    (* Check if the type is defined and a viewer available *)
     try
       let given_type = List.assoc "type" embed_ctx#params in
-      let ((typ,subtyp), parms) = Lexheaders.media_type given_type in
+      let (typ, subtyp), parms = Lexheaders.media_type given_type in
       try
-      let viewer = 
-      try Hashtbl.find embedded_viewers (typ,subtyp)
-      with Not_found -> Hashtbl.find embedded_viewers (typ, "*")
-      in
-       EmbeddedScheduler.add_request (caps :> < Cap.network >)
-       (rewrite_wr (Www.make link))
-       (embed_ctx#base)
-       (* the continuation: it will receive the document *)
-       (fun _url doc ->
-     let doc = Document.{
-       document_address = doc.document_address;
-       document_data = doc.document_data;
-       document_headers = Http_headers.merge_headers doc.document_headers
-                        ["Content-Type: " ^ given_type]
-       }  in
-     smart_viewer (viewer parms) frame embed_ctx doc)
-       (Tk_progress.meter frame)
+        let viewer =
+          try Hashtbl.find embedded_viewers (typ, subtyp) with
+          | Not_found -> Hashtbl.find embedded_viewers (typ, "*")
+        in
+        EmbeddedScheduler.add_request
+          (caps :> < Cap.network >)
+          (rewrite_wr (Www.make link))
+          embed_ctx#base
+          (* the continuation: it will receive the document *)
+            (fun _url doc ->
+            let doc =
+              Document.
+                {
+                  document_address = doc.document_address;
+                  document_data = doc.document_data;
+                  document_headers =
+                    Http_headers.merge_headers doc.document_headers
+                      [ "Content-Type: " ^ given_type ];
+                }
+            in
+            smart_viewer (viewer parms) frame embed_ctx doc)
+          (Tk_progress.meter frame)
       with
-      Not_found -> (* no viewer for this *)
-      let t = s_ "Embed Error: no viewer for type %s" given_type in
-      pack[Label.create frame [Text t]][]
-      | Invalid_request (w,msg) ->
-      let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-      pack [Message.create frame [Text t]][]
+      | Not_found ->
+          (* no viewer for this *)
+          let t = s_ "Embed Error: no viewer for type %s" given_type in
+          pack [ Label.create frame [ Text t ] ] []
+      | Invalid_request (w, msg) ->
+          let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+          pack [ Message.create frame [ Text t ] ] []
       | Invalid_link _err ->
-      let t = s_ "Embed Error: invalid link" in
-      pack [Message.create frame [Text t ]][]
+          let t = s_ "Embed Error: invalid link" in
+          pack [ Message.create frame [ Text t ] ] []
     with
-      Not_found -> (* not type given, we have to retrieve to know *)
-       (* Firing the request *)
+    | Not_found -> (
+        (* not type given, we have to retrieve to know *)
+        (* Firing the request *)
         try
-      EmbeddedScheduler.add_request (caps :> < Cap.network >)
-        (rewrite_wr (Www.make link))
-        (embed_ctx#base)
-     (* the continuation: it will receive the document *)
-     (* In general, we don't know the type before we get the document *)
-        (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
-        (Tk_progress.meter frame)
+          EmbeddedScheduler.add_request
+            (caps :> < Cap.network >)
+            (rewrite_wr (Www.make link))
+            embed_ctx#base
+            (* the continuation: it will receive the document *)
+            (* In general, we don't know the type before we get the document *)
+              (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
+            (Tk_progress.meter frame)
         with
-      Invalid_request (w,msg) ->
-        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-        pack [Message.create frame [Text t]][]
+        | Invalid_request (w, msg) ->
+            let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+            pack [ Message.create frame [ Text t ] ] []
         | Invalid_link _err ->
-        let t = s_ "Embed Error: invalid link" in
-        pack [Message.create frame [Text t ]][]
+            let t = s_ "Embed Error: invalid link" in
+            pack [ Message.create frame [ Text t ] ] [])
   with
-    Not_found -> (* Document has no Date: header *)
-      notchanged() 
+  | Not_found ->
+      (* Document has no Date: header *)
+      notchanged ()
 @
 
 
@@ -5253,7 +5272,6 @@ let update (caps : < Cap.network; ..>)
 (* Embedded documents *)
 
 open Fpath_.Operators
-
 open I18n
 open Tk
 open Www
@@ -5266,68 +5284,66 @@ open Http_headers
  * Thus, we want to decide here if we want to cache documents retrieved
  * via Embed.
  *)
-module EmbeddedData =
-  struct
+module EmbeddedData = struct
+  type t = Document.t
 
-    type t = Document.t
+  let cache_access url _referer =
+    let did = Document.{ document_url = url; document_stamp = no_stamp } in
+    (* look in the cache *)
+    Cache.find did
 
-    let cache_access url _referer =
-      let did =  Document.{document_url = url; document_stamp = no_stamp} in
-      (* look in the cache *)
-      Cache.find did
-
-    (* The document is here in the file. Either it's been cached, and
-       then we just get its cache value, or we add it to the cache 
-       dh is closed; we use only the headers
-       NOTE: if we are updating over an old version, fix the cache
-     *)
-    let load dh referers (file : Fpath.t) =
-      Retype.f dh;
-      match dh.document_status with
-    200 ->
-      begin try 
-        let doc = Cache.find dh.document_id in
-        let this_date = get_header "date" dh.dh_headers in
-        let cache_date = get_header "date" doc.document_headers in
-        if this_date <> cache_date then raise Not_found
-        else doc
-      with
-        Not_found ->
-          let doc = Document.{ document_address = dh.document_id.document_url;
-                 document_data = FileData (file, true);
-                 document_headers = dh.dh_headers} in
-          Cache.add dh.document_id doc;
-          Cache.finished dh.document_id;
-          doc
+  (* The document is here in the file. Either it's been cached, and
+     then we just get its cache value, or we add it to the cache
+     dh is closed; we use only the headers
+     NOTE: if we are updating over an old version, fix the cache
+  *)
+  let load dh referers (file : Fpath.t) =
+    Retype.f dh;
+    match dh.document_status with
+    | 200 -> begin
+        try
+          let doc = Cache.find dh.document_id in
+          let this_date = get_header "date" dh.dh_headers in
+          let cache_date = get_header "date" doc.document_headers in
+          if this_date <> cache_date then raise Not_found else doc
+        with
+        | Not_found ->
+            let doc =
+              Document.
+                {
+                  document_address = dh.document_id.document_url;
+                  document_data = FileData (file, true);
+                  document_headers = dh.dh_headers;
+                }
+            in
+            Cache.add dh.document_id doc;
+            Cache.finished dh.document_id;
+            doc
       end
-      |	304 -> (* return the previous version *)
-      begin try 
-        Msys.rm !!file;
-        cache_access dh.document_id.document_url (List.hd referers)
-      with
-        Not_found -> failwith "load"
+    | 304 -> begin
+        (* return the previous version *)
+        try
+          Msys.rm !!file;
+          cache_access dh.document_id.document_url (List.hd referers)
+        with
+        | Not_found -> failwith "load"
       end
+    | _ -> failwith "load"
 
-      |	_ -> failwith "load"
+  let error url _jobs =
+    Error.f (s_ "Can't find embedded document %s" (Url.string_of url))
 
-    let error url _jobs = 
-      Error.f (s_ "Can't find embedded document %s"  (Url.string_of url))
-
-    let error_msg (_,_) = ()
-  end
-
+  let error_msg (_, _) = ()
+end
 
 (* The embedded data scheduler *)
-module EmbeddedScheduler = Scheduler.Make(EmbeddedData)
-
+module EmbeddedScheduler = Scheduler.Make (EmbeddedData)
 
 <<constant [[Embed.embedded_viewers]]>>
-let add_viewer = Hashtbl.add embedded_viewers 
+let add_viewer = Hashtbl.add embedded_viewers
 and rem_viewer = Hashtbl.remove embedded_viewers
 
-
 <<function [[Embed.embedded_viewer]]>>
-
 
 <<type [[Embed.embobject]]>>
 
@@ -5339,7 +5355,6 @@ and rem_viewer = Hashtbl.remove embedded_viewers
 <<toplevel [[Embed._1]]>>
 
 <<function [[Embed.add]]>>
-
 
 <<function [[Embed.update]]>>
 @
