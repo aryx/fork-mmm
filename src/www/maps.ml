@@ -42,7 +42,7 @@ type map = area list
    maps for arbitrary embedded objects
  *)
 type t = 
-    ClientSide of Hyper.link		(* usemap link *)
+  | ClientSide of Hyper.link		(* usemap link *)
   | ServerSide of Hyper.link		(* ismap *)
   | Direct of Hyper.link			(* inside an anchor *)
   | NoMap				(* no additionnal navigation *)

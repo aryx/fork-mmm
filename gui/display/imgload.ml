@@ -91,11 +91,9 @@ let display (caps : < Cap.network ; .. >) (emb : Embed.obj)
       | _ ->
           (* in all other cases, get the alt label, and configure it *)
           (* WARNING: there may be an hypermenu here *)
-          List.iter
-            (function
-              | w -> (
-                  match Winfo.class_name w with
-                  | "Label" ->
+          (Winfo.children emb.embed_frame) |> List.iter (fun w ->
+             match Winfo.class_name w with
+             | "Label" ->
                       (* remove its border *)
                       Label.configure w [ BorderWidth (Pixels 0) ];
                       begin
@@ -145,8 +143,8 @@ let display (caps : < Cap.network ; .. >) (emb : Embed.obj)
                           end
                       end
                   | "Canvas" -> Tk.destroy w (* delete the progress meter *)
-                  | _ -> ()))
-            (Winfo.children emb.embed_frame)
+                  | _ -> ()
+               )
   end;
   if !prop then Pack.propagate_set emb.embed_frame true
 (*e: function [[Imgload.display]] *)
