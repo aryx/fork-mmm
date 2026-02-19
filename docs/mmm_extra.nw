@@ -12722,9 +12722,9 @@ val add: t -> Document.id -> string option -> unit
 val back: t -> (Document.id * string option) option
 val forward: t -> (Document.id * string option) option
 
-val contents: t -> history_entry list
+val contents: t -> entry list
 
-val set_current: t -> history_entry -> unit
+val set_current: t -> entry -> unit
 
 @
 
@@ -12747,21 +12747,21 @@ let contents h =
    obsolete entries is not simply the overwritten entries *)
 
 let obsolete current next =
-  let kept = ref DocumentIDSet.empty
-  and forgotten = ref DocumentIDSet.empty in
+  let kept = ref Document.DocumentIDSet.empty
+  and forgotten = ref Document.DocumentIDSet.empty in
   let rec back e =
-    kept := DocumentIDSet.add e.h_did !kept;
+    kept := Document.DocumentIDSet.add e.h_did !kept;
     match e.h_prev with
       None -> ()
     | Some e -> back e in
   let rec forw e =
-    forgotten := DocumentIDSet.add e.h_did !forgotten;
+    forgotten := Document.DocumentIDSet.add e.h_did !forgotten;
     match e.h_next with
       None -> ()
     | Some e -> forw e in
   back current;
   forw next;
-  DocumentIDSet.diff !forgotten !kept
+  Document.DocumentIDSet.diff !forgotten !kept
 @
 
 <<function [[History.add]]>>=
@@ -12797,7 +12797,7 @@ let add h did frag =
     let dropped = obsolete newe e in
     h.h_current.h_next <- Some newe;
     h.h_current <- newe;
-    DocumentIDSet.iter (Gcache.remove h.h_key) dropped
+    Document.DocumentIDSet.iter (Gcache.remove h.h_key) dropped
 @
 
 
@@ -12812,7 +12812,6 @@ let set_current h e =
 
 <<gui/history.ml>>=
 (* History *)
-open Document
 
 <<type [[History.history_entry]]>>
 
@@ -13045,14 +13044,25 @@ let update (nav : t) (did : Document.id) (nocache : bool) : unit =
 %-------------------------------------------------------------
 
 <<gui/nav.ml>>=
-(* Navigation *)
-
 open I18n
 open Tk
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Navigation *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 
 <<type [[Nav.t]]>>
 
 <<exception [[Nav.Duplicate]]>>
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (* Important note: we assume two requests on the same url are identical
    (when we control emission of requests). This is not the case for 
@@ -13063,7 +13073,15 @@ open Tk
 
 <<function [[Nav.dont_check_cache]]>>
 
+(*****************************************************************************)
+(* request() *)
+(*****************************************************************************)
+
 <<function [[Nav.request]]>>
+
+(*****************************************************************************)
+(* XXX *)
+(*****************************************************************************)
 
 <<function [[Nav.nothing_specific]]>>
 
@@ -13481,25 +13499,29 @@ and dtd_p = Dtd.names()
 
 <<gui/mmm.ml>>=
 open Fpath_.Operators
-open Common
 open I18n
-
 open Tk
-open History
-open Document
-open Nav
-open Www
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 (* The navigation window *)
+
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
 
 <<constant [[Mmm.hotlist]]>>
 <<constant [[Mmm.helpurl]]>>
 <<constant [[Mmm.initial_page]]>>
 <<constant [[Mmm.initial_geom]]>>
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 <<constant [[Mmm.home]]>>
       
-
 <<function [[Mmm.user_file]]>>
 
 <<constant [[Mmm.preferences]]>>
@@ -13520,6 +13542,10 @@ open Www
 <<constant [[Mmm.user_menus]]>>
 <<function [[Mmm.add_user_menu]]>>
 
+(*****************************************************************************)
+(* navigator() *)
+(*****************************************************************************)
+
 <<constant [[Mmm.navigators]]>>
 
 <<function [[Mmm.navigator]]>>
@@ -13529,6 +13555,10 @@ open Www
 
 <<function [[Mmm.new_window_set]]>>
 
+
+(*****************************************************************************)
+(* initial_navigator() *)
+(*****************************************************************************)
 
 <<constant [[Mmm.main_navigator]]>>
 
@@ -13661,7 +13691,6 @@ open Fpath_.Operators
  *  - open_in: for ??
  *)
 type caps = < 
-   Cap.stdout; Cap.stderr; 
    Cap.open_in;
    Cap.network
  >

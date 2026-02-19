@@ -1,25 +1,24 @@
 (*s: gui/history.ml *)
 (* History *)
-open Document
 
 (*s: type [[History.history_entry]] *)
 (* 
    Linear history: we keep going adding to the end of the list,
    EXCEPT when you go back and then on a new link.
 *)
-type history_entry = {
+type entry = {
   h_did : Document.id;
   h_fragment : string option;
 
-  h_prev : history_entry option;
-  mutable h_next : history_entry option
+  h_prev : entry option;
+  mutable h_next : entry option
   }
 (*e: type [[History.history_entry]] *)
 
 (*s: type [[History.t]] *)
 type t = {
-  mutable h_start : history_entry;
-  mutable h_current: history_entry;
+  mutable h_start : entry;
+  mutable h_current: entry;
 
   h_key : int;
   mutable h_first : bool
@@ -43,21 +42,21 @@ let contents h =
    obsolete entries is not simply the overwritten entries *)
 
 let obsolete current next =
-  let kept = ref DocumentIDSet.empty
-  and forgotten = ref DocumentIDSet.empty in
+  let kept = ref Document.DocumentIDSet.empty
+  and forgotten = ref Document.DocumentIDSet.empty in
   let rec back e =
-    kept := DocumentIDSet.add e.h_did !kept;
+    kept := Document.DocumentIDSet.add e.h_did !kept;
     match e.h_prev with
       None -> ()
     | Some e -> back e in
   let rec forw e =
-    forgotten := DocumentIDSet.add e.h_did !forgotten;
+    forgotten := Document.DocumentIDSet.add e.h_did !forgotten;
     match e.h_next with
       None -> ()
     | Some e -> forw e in
   back current;
   forw next;
-  DocumentIDSet.diff !forgotten !kept
+  Document.DocumentIDSet.diff !forgotten !kept
 (*e: function [[History.obsolete]] *)
 
 (*s: function [[History.add]] *)
@@ -93,7 +92,7 @@ let add h did frag =
     let dropped = obsolete newe e in
     h.h_current.h_next <- Some newe;
     h.h_current <- newe;
-    DocumentIDSet.iter (Gcache.remove h.h_key) dropped
+    Document.DocumentIDSet.iter (Gcache.remove h.h_key) dropped
 (*e: function [[History.add]] *)
 
 (*s: constant [[History.create]] *)

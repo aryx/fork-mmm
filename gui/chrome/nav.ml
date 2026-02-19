@@ -1,8 +1,15 @@
 (*s: gui/nav.ml *)
-(* Navigation *)
-
 open I18n
 open Tk
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Navigation *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 
 (*s: type [[Nav.t]] *)
 type t = {
@@ -39,6 +46,10 @@ type t = {
 exception Duplicate of Url.t
 (*e: exception [[Nav.Duplicate]] *)
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 (* Important note: we assume two requests on the same url are identical
    (when we control emission of requests). This is not the case for 
    POST requests, because we would need to check the POST data.
@@ -53,6 +64,10 @@ let dont_check_cache (wwwr : Www.request) =
   | POST _ -> true
   | _ -> false
 (*e: function [[Nav.dont_check_cache]] *)
+
+(*****************************************************************************)
+(* request() *)
+(*****************************************************************************)
 
 (*s: function [[Nav.request]] *)
 (* [request nav usecache wrapwr process specific] produces a function that
@@ -143,6 +158,10 @@ let request (caps : < Cap.network; ..>) (nav : t)
   (*e: function [[Nav.request.handle_link]] *)
   handle_link lk
 (*e: function [[Nav.request]] *)
+
+(*****************************************************************************)
+(* XXX *)
+(*****************************************************************************)
 
 (*s: function [[Nav.nothing_specific]] *)
 (*

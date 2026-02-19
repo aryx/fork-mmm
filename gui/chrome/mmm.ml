@@ -1,15 +1,16 @@
 (*s: gui/mmm.ml *)
 open Fpath_.Operators
-open Common
 open I18n
-
 open Tk
-open History
-open Document
-open Nav
-open Www
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 (* The navigation window *)
+
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
 
 (*s: constant [[Mmm.hotlist]] *)
 (* Preference settings *)
@@ -25,6 +26,10 @@ let initial_page : Url.t option ref = ref None
 let initial_geom = ref None
 (*e: constant [[Mmm.initial_geom]] *)
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 (*s: constant [[Mmm.home]] *)
 let home : Fpath.t =
   try
@@ -34,7 +39,6 @@ let home : Fpath.t =
     raise (Exit.ExitCode (-1))
 (*e: constant [[Mmm.home]] *)
       
-
 (*s: function [[Mmm.user_file]] *)
 let user_file (name : string) : Fpath.t =
   home / ".mmm" / name
@@ -126,6 +130,10 @@ let add_user_menu entry f =
   Frx_synth.broadcast "user_menu"
 (*e: function [[Mmm.add_user_menu]] *)
 
+(*****************************************************************************)
+(* navigator() *)
+(*****************************************************************************)
+
 (*s: constant [[Mmm.navigators]] *)
 (*
  * A navigator window
@@ -212,7 +220,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     let actives = (Hashtbl.create 37: (Url.t, Www.aborter) Hashtbl.t) in
     (*e: local [[Mmm.navigator.actives]] *)
     (*e: [[Mmm.navigator()]] locals before nav setting *)
-    let nav = { 
+    let nav = Nav.{ 
       (*s: [[Mmm.navigator()]] set nav fields *)
       nav_viewer_frame = viewer_frame;
       (*x: [[Mmm.navigator()]] set nav fields *)
@@ -254,7 +262,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
       match History.back hist with
       | None -> ()
       | Some (did, frag) -> 
-          if not (historygoto nav did frag true) 
+          if not (Nav.historygoto nav did frag true) 
           then History.forward hist |> ignore
     in
     (*e: function [[Mmm.navigator.back]] *)
@@ -263,7 +271,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
       match History.forward hist with
       | None -> ()
       | Some (did, frag) -> 
-          if not (historygoto nav did frag true) 
+          if not (Nav.historygoto nav did frag true) 
           then History.back hist |> ignore
     in
     (*e: function [[Mmm.navigator.forward]] *)
@@ -271,20 +279,20 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     let reload () =
       let did = hist.h_current.h_did in
       let frag = hist.h_current.h_fragment in
-      if did.document_stamp = no_stamp then begin
+      if did.document_stamp = Document.no_stamp then begin
         (* kill both in cache and in gcache *)
         Cache.kill did; 
         Gcache.remove hist.h_key did;
-        historygoto nav did frag false |> ignore
+        Nav.historygoto nav did frag false |> ignore
       end
       else error#f 
           (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
     in
     (*e: function [[Mmm.navigator.reload]] *)
     (*s: function [[Mmm.navigator.update]] *)
-    let update nocache =
+    let update (nocache : bool) =
       let did = hist.h_current.h_did in
-      if did.document_stamp = no_stamp then
+      if did.document_stamp = Document.no_stamp then
         Nav.update nav did nocache
       else (* POST result *)
         error#f (s_ "Can't update document\n(probably a POST request)")
@@ -308,7 +316,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     let open_sel () =
       try 
         let url = Selection.get [] in
-        absolutegoto nav url
+        Nav.absolutegoto nav url
       with _ -> ()
     in
     (*e: function [[Mmm.navigator.open_sel]] *)
@@ -318,7 +326,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
         | [] -> ()
         | [s] -> 
             let path = Msys.tilde_subst s in
-            absolutegoto nav ("file://localhost/"^path)
+            Nav.absolutegoto nav ("file://localhost/"^path)
         | _l -> raise (Failure "multiple selection")
        )
          "*" 
@@ -351,7 +359,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     (*e: function [[Mmm.navigator.really_quit]] *)
     (*s: function [[Mmm.navigator.gohome]] *)
     let gohome () = 
-      absolutegoto nav !Mmmprefs.home
+      Nav.absolutegoto nav !Mmmprefs.home
     in
     (*e: function [[Mmm.navigator.gohome]] *)
     (*s: function [[Mmm.navigator.redisplay]] *)
@@ -536,7 +544,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     update_vhistory := (fun () ->
       Tk.destroy !hmenu;
       hmenu := Menu.create_named navm "history" [];
-      History.contents hist |> List.iter (fun e ->
+      History.contents hist |> List.iter (fun (e : History.entry) ->
         let label = 
            Url.string_of e.h_did.document_url ^
            (match e.h_fragment with None -> "" | Some f -> "#"^f) ^
@@ -547,7 +555,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
             Command (fun () ->
               let current = hist.h_current in
               History.set_current hist e;
-              if not (historygoto nav e.h_did e.h_fragment true)
+              if not (Nav.historygoto nav e.h_did e.h_fragment true)
               then History.set_current hist current
              )
             ]
@@ -599,7 +607,8 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     (*s: Help menu elements *)
     Menu.add_command helpm
       [Label (s_ "Version information");
-       Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
+       Command (fun () -> 
+          Nav.absolutegoto nav (Version.initurl (Lang.lang ())))];
     Menu.add_command helpm
       [Label (s_ "Home Page of MMM");
        Command (fun () -> 
@@ -758,7 +767,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     (*e: [[Mmm.navigator()]] call [[touch_current]] to not swap displayed documents *)
     (*e: [[Mmm.navigator()]] widgets setting *)
 
-    absolutegoto nav (Url.string_of initial_url);
+    Nav.absolutegoto nav (Url.string_of initial_url);
     Some nav
 
   with e -> 
@@ -793,12 +802,16 @@ and new_window_sel () =
 (*e: function [[Mmm.new_window_set]] *)
 
 
+(*****************************************************************************)
+(* initial_navigator() *)
+(*****************************************************************************)
+
 (*s: constant [[Mmm.main_navigator]] *)
 let main_navigator = ref None
 (*e: constant [[Mmm.main_navigator]] *)
 
 (*s: function [[Mmm.initial_navigator]] *)
-let initial_navigator (preffile : Fpath.t) init_url =
+let initial_navigator (preffile : Fpath.t) (init_url : string option) =
   (*s: [[Mmm.initial_navigator()]] set preferences *)
   preferences := Mmmprefs.f preffile;
   !preferences();

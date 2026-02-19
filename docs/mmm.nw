@@ -1292,7 +1292,8 @@ let init_urls = ref [] in
 
 % _ -> Main.postmortem -> <>
 <<function [[Main.main]]>>=
-let main (caps : < caps >) (argv : string array) : Exit.t =
+let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
+         (argv : string array) : Exit.t =
   <<[[Main.main()]] tk backends setup>>
 
   (* As always, we must parse argument first, using references... *)
@@ -1581,7 +1582,7 @@ val initial_navigator :
 @
 % main -> <>
 <<function [[Mmm.initial_navigator]]>>=
-let initial_navigator (preffile : Fpath.t) init_url =
+let initial_navigator (preffile : Fpath.t) (init_url : string option) =
   <<[[Mmm.initial_navigator()]] set preferences>>
   <<[[Mmm.initial_navigator()]] set initial page based on [[init_url]]>>
   main_navigator :=
@@ -1633,7 +1634,7 @@ Lexurl.make ("file://localhost" ^ path)
 \subsection{[[Mmm.navigator()]] and [[Nav.t]]}
 
 <<signature [[Mmm.navigator]]>>=
-val navigator : bool -> Url.t -> Nav.t option
+val navigator : bool (* is_main_window *) -> Url.t -> Nav.t option
 @
 % bool is for main_window (was called has_tachy)
 
@@ -1661,7 +1662,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     let viewer_frame = Frame.create_named top "viewer" [] in
     
     <<[[Mmm.navigator()]] locals before nav setting>>
-    let nav = { 
+    let nav = Nav.{ 
       <<[[Mmm.navigator()]] set nav fields>>
     }
     in
@@ -1669,7 +1670,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     <<[[Mmm.navigator()]] keyboard shortcuts setting>>
     <<[[Mmm.navigator()]] widgets setting>>
 
-    absolutegoto nav (Url.string_of initial_url);
+    Nav.absolutegoto nav (Url.string_of initial_url);
     Some nav
 
   with e -> 
@@ -1938,7 +1939,7 @@ let id_wr wr = wr
 \section{The event loop}
 
 <<function [[Main.safe_loop]]>>=
-let rec safe_loop() =
+let rec safe_loop () =
   try
     Printexc.print Tk.mainLoop () (* prints and reraises *)
   with
@@ -2173,7 +2174,7 @@ let back () =
   match History.back hist with
   | None -> ()
   | Some (did, frag) -> 
-      if not (historygoto nav did frag true) 
+      if not (Nav.historygoto nav did frag true) 
       then History.forward hist |> ignore
 in
 @
@@ -2190,7 +2191,7 @@ let forward () =
   match History.forward hist with
   | None -> ()
   | Some (did, frag) -> 
-      if not (historygoto nav did frag true) 
+      if not (Nav.historygoto nav did frag true) 
       then History.back hist |> ignore
 in
 @
@@ -2208,7 +2209,7 @@ let homeb = Button.create_named buttons "home"
 
 <<function [[Mmm.navigator.gohome]]>>=
 let gohome () = 
-  absolutegoto nav !Mmmprefs.home
+  Nav.absolutegoto nav !Mmmprefs.home
 in
 @
 
@@ -2281,7 +2282,7 @@ let f () =
 let open_sel () =
   try 
     let url = Selection.get [] in
-    absolutegoto nav url
+    Nav.absolutegoto nav url
   with _ -> ()
 in
 @
@@ -2292,7 +2293,7 @@ let open_file () =
     | [] -> ()
     | [s] -> 
         let path = Msys.tilde_subst s in
-        absolutegoto nav ("file://localhost/"^path)
+        Nav.absolutegoto nav ("file://localhost/"^path)
     | _l -> raise (Failure "multiple selection")
    )
      "*" 
@@ -2374,7 +2375,7 @@ let hmenu = ref (Menu.create_named navm "history" []) in
 update_vhistory := (fun () ->
   Tk.destroy !hmenu;
   hmenu := Menu.create_named navm "history" [];
-  History.contents hist |> List.iter (fun e ->
+  History.contents hist |> List.iter (fun (e : History.entry) ->
     let label = 
        Url.string_of e.h_did.document_url ^
        (match e.h_fragment with None -> "" | Some f -> "#"^f) ^
@@ -2385,7 +2386,7 @@ update_vhistory := (fun () ->
         Command (fun () ->
           let current = hist.h_current in
           History.set_current hist e;
-          if not (historygoto nav e.h_did e.h_fragment true)
+          if not (Nav.historygoto nav e.h_did e.h_fragment true)
           then History.set_current hist current
          )
         ]
@@ -2473,7 +2474,8 @@ Menubutton.configure helpb [Menu helpm];
 <<Help menu elements>>=
 Menu.add_command helpm
   [Label (s_ "Version information");
-   Command (fun () -> absolutegoto nav (Version.initurl (Lang.lang ())))];
+   Command (fun () -> 
+      Nav.absolutegoto nav (Version.initurl (Lang.lang ())))];
 Menu.add_command helpm
   [Label (s_ "Home Page of MMM");
    Command (fun () -> 
@@ -10833,8 +10835,8 @@ end
 
 <<type [[History.t]]>>=
 type t = {
-  mutable h_start : history_entry;
-  mutable h_current: history_entry;
+  mutable h_start : entry;
+  mutable h_current: entry;
 
   h_key : int;
   mutable h_first : bool
@@ -10848,12 +10850,12 @@ type t = {
    Linear history: we keep going adding to the end of the list,
    EXCEPT when you go back and then on a new link.
 *)
-type history_entry = {
+type entry = {
   h_did : Document.id;
   h_fragment : string option;
 
-  h_prev : history_entry option;
-  mutable h_next : history_entry option
+  h_prev : entry option;
+  mutable h_next : entry option
   }
 @
 % why not use list? 
@@ -11046,11 +11048,11 @@ let reloadb = Button.create_named buttons
 let reload () =
   let did = hist.h_current.h_did in
   let frag = hist.h_current.h_fragment in
-  if did.document_stamp = no_stamp then begin
+  if did.document_stamp = Document.no_stamp then begin
     (* kill both in cache and in gcache *)
     Cache.kill did; 
     Gcache.remove hist.h_key did;
-    historygoto nav did frag false |> ignore
+    Nav.historygoto nav did frag false |> ignore
   end
   else error#f 
       (s_ "Document cannot be reloaded from its url\n(probably a POST request)")
@@ -11061,9 +11063,9 @@ in
 % ??? -> <>
 % see also update_true alias
 <<function [[Mmm.navigator.update]]>>=
-let update nocache =
+let update (nocache : bool) =
   let did = hist.h_current.h_did in
-  if did.document_stamp = no_stamp then
+  if did.document_stamp = Document.no_stamp then
     Nav.update nav did nocache
   else (* POST result *)
     error#f (s_ "Can't update document\n(probably a POST request)")
@@ -14074,9 +14076,10 @@ let _ =
 @
 
 <<function [[Main.postmortem]]>>=
-let postmortem (caps: < caps; ..>) (argv : string array) : Exit.t =
+let postmortem (caps: < caps; Cap.stdout; Cap.stderr; ..>) 
+               (argv : string array) : Exit.t =
   try 
-    main (caps :> caps) argv
+    main caps argv
   with
   | Dynlink.Error err ->
       Logs.err (fun m -> m "dynlink error = %s" (Dynlink.error_message err));
