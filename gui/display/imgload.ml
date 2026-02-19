@@ -1,12 +1,4 @@
 (*s: display/imgload.ml *)
-open Printf
-open Tk
-open Tkanim
-open Www
-open Uri
-open Maps
-open Embed
-open Img
 
 (*s: type Imgload.mode (./display/imgload.ml) *)
 (* Images are embedded objects, with a twist *)
@@ -29,14 +21,14 @@ let gif_anim_auto = ref false
 
 (*s: function [[Imgload.display]] *)
 (* Utilities *)
-let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
+let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : Tkanim.imageType) =
   let prop = ref false in
   begin
   if Winfo.exists emb.embed_frame then
   match emb.embed_map with
     ClientSide hlink -> (* kill'em all *)
       begin try
-    List.iter destroy (Winfo.children emb.embed_frame);
+    List.iter Tk.destroy (Winfo.children emb.embed_frame);
     let w, h =
      match i with
        Still x -> 
@@ -50,7 +42,7 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
            [Width (Pixels w); Height (Pixels h)] in
     prop := true; (*fit the size to the image*)
     Tk.bindtags c ((WidgetBindings emb.embed_frame)::Tk.bindtags_get c);
-      pack [c][];
+      Tk.pack [c][];
     let ii = Canvas.create_image c (Pixels 0) (Pixels 0)
                    [Anchor NW] in
     begin
@@ -60,9 +52,9 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
           begin
         let f = Tkanim.animate_canvas_item c ii anm in
         (* binding on c is bad... *)
-        bind c (Glevents.get "stopanim") (BindSet ([], (fun _ ->
+        Tk.bind c (Glevents.get "stopanim") (BindSet ([], (fun _ ->
           f false)));
-        bind c (Glevents.get "restartanim") (BindSet ([], (fun _ ->
+        Tk.bind c (Glevents.get "restartanim") (BindSet ([], (fun _ ->
           f true)));
         (* I am sure it doesn't work *)
         Canvas.configure c [Cursor (XCursor "watch")];
@@ -75,7 +67,7 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
     let name =
       match uri.uri_fragment with 
       | None -> uri.uri_url
-      | Some frag -> sprintf "%s#%s" uri.uri_url frag
+      | Some frag -> Printf.sprintf "%s#%s" uri.uri_url frag
     in
       match Maps.get name with
         KnownMap m -> Cmap.gfx_mode emb m c
@@ -108,7 +100,7 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
         | _ -> () (*We cannot restore the origianl size of the window...*)
         end;
         (* Utility to copy the img url in the selection buffer *)
-        bind w (Glevents.get "copyimgurl")
+        Tk.bind w (Glevents.get "copyimgurl")
           (BindSet ([], (fun _ ->
         emb.embed_context#invoke "copy" emb.embed_hlink)));
         (* Updating an image *)
@@ -116,7 +108,7 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
           try 
         let url = 
           Lexurl.make (Hyper.resolve emb.embed_hlink).uri_url in
-         bind w (Glevents.get "updateimage")
+         Tk.bind w (Glevents.get "updateimage")
           (BindSet ([], (fun _ -> Img.update caps url)))
           with
         Url.Url_Lexing _ -> ()
@@ -125,16 +117,16 @@ let display (caps : < Cap.network; ..>) (emb : Embed.obj) (i : imageType) =
     | Animated anm -> 
         begin
           let f = Tkanim.animate w anm in
-          bind w (Glevents.get "stopanim") (BindSet ([], (fun _ ->
+          Tk.bind w (Glevents.get "stopanim") (BindSet ([], (fun _ ->
         f false)));
-          bind w (Glevents.get "restartanim") (BindSet ([], (fun _ ->
+          Tk.bind w (Glevents.get "restartanim") (BindSet ([], (fun _ ->
         f true)));
         Label.configure w [Cursor (XCursor "watch")];
           if !gif_anim_auto then f false;
           prop := true (*fit the size to the image*)
         end
     end
-      |	"Canvas" -> destroy w (* delete the progress meter *)
+      |	"Canvas" -> Tk.destroy w (* delete the progress meter *)
       |	_ -> ())
       (Winfo.children emb.embed_frame)
   end;
@@ -147,7 +139,7 @@ let put_alt (emb : Embed.obj) =
   let m = Label.create_named emb.embed_frame "alt" [Text emb.embed_alt] in
   (* make sure all bindings we put on the frame are attached there *)
   Tk.bindtags m ((WidgetBindings emb.embed_frame)::Tk.bindtags_get m);
-  pack [m][Fill Fill_Both; Expand true];
+  Tk.pack [m][Fill Fill_Both; Expand true];
   if not (Pack.propagate_get emb.embed_frame) then begin (* with width and height *)
     if Winfo.reqwidth emb.embed_frame < Winfo.reqwidth m then
       Frame.configure emb.embed_frame [Width (Pixels (Winfo.reqwidth m))];
@@ -175,15 +167,16 @@ let put_alt (emb : Embed.obj) =
 
 (*s: function [[Imgload.make_auto]] *)
 (* for delayed load, add binding *)
-let make_auto delayed emb =
+let make_auto delayed (emb : Embed.obj) =
   try
     let url = (Www.make emb.embed_hlink).www_url in
     let caps = Cap.network_caps_UNSAFE () in
-    bind emb.embed_frame
+    Tk.bind emb.embed_frame
       (Glevents.get "loadimage")
       (BindSet ([], (fun _ -> Img.ImageScheduler.flush_one caps delayed url)))
   with
-    e -> Log.f (sprintf "Can't compute image link (%s)" (Printexc.to_string e))
+    e -> Logs.warn ( fun m -> m "Can't compute image link (%s)" 
+                                  (Printexc.to_string e))
 (*e: function [[Imgload.make_auto]] *)
 
 (* for manual load, add binding
@@ -200,22 +193,22 @@ let make_manual emb =
 (*s: function [[Imgload.make_map]] *)
 (* If the object is clickable, make it visible *)
 
-let make_map emb =
+let make_map (emb : Embed.obj) =
   let visible = [
-    BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2)); 
+    Tk.BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2)); 
     Relief (Tkresource.relief "clickableRelief" Raised); 
     Cursor (XCursor (Tkresource.string "clickableCursor" "hand2"));
     Background (NamedColor (Tkresource.string "clickableBackground" "white"))]
   and visible_map = [
-    BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2)); 
+    Tk.BorderWidth (Pixels (Tkresource.int "clickableBorderWidth" 2)); 
     Relief (Tkresource.relief "clickableRelief" Raised); 
     Cursor (XCursor (Tkresource.string "clickableMapCursor" "left_ptr"));
     Background (NamedColor (Tkresource.string "clickableBackground" "white"))]
   in
   let reconfigure_frame f =
-    let internal_width = try int_of_string (cget f CWidth) with _ -> 0 
-    and internal_height = try int_of_string (cget f CHeight) with _ -> 0
-    and border_width = try int_of_string (cget f CBorderWidth) with _ -> 0
+    let internal_width = try int_of_string (Tk.cget f CWidth) with _ -> 0 
+    and internal_height = try int_of_string (Tk.cget f CHeight) with _ -> 0
+    and border_width = try int_of_string (Tk.cget f CBorderWidth) with _ -> 0
     in
     if internal_width = 0 || internal_height = 0 then ()
     else
@@ -237,7 +230,7 @@ let make_map emb =
       let name =
         match uri.uri_fragment with 
           None -> uri.uri_url
-        | Some frag -> sprintf "%s#%s" uri.uri_url frag in
+        | Some frag -> Printf.sprintf "%s#%s" uri.uri_url frag in
       begin match Maps.get name with
         KnownMap m -> Cmap.alt_mode emb m l
       | RequestedMap event ->
@@ -271,7 +264,7 @@ let make_map emb =
 (* The default behavior, for no_images *)
 class loader () =
  object (self)
-  val mutable loaded = UrlSet.empty
+  val mutable loaded = Www.UrlSet.empty
 
   (* default no_image implem *)
   method add_image (emb : Embed.obj) : unit =
@@ -285,7 +278,7 @@ class loader () =
   method load_images = ()
 
   method private add_loaded (url : Url.t) : unit = 
-    loaded <- UrlSet.add url loaded
+    loaded <- Www.UrlSet.add url loaded
 
   method private activate (emb : Embed.obj) =
     Logs.debug (fun m -> m "Activating image");
@@ -303,7 +296,7 @@ class loader () =
   (* called when ?? *)
   method update_images = 
     let caps = Cap.network_caps_UNSAFE () in
-    UrlSet.iter (Img.update caps) loaded
+    Www.UrlSet.iter (Img.update caps) loaded
 end
 
 (* for DuringDoc *)
@@ -320,7 +313,7 @@ end
 class auto () =
  object (self)
   inherit loader () as super
-  val q = ImageScheduler.new_delayed()
+  val q = Img.ImageScheduler.new_delayed()
 
   method! add_image emb =
      super#add_image emb;
@@ -328,7 +321,7 @@ class auto () =
      try
        let wr = Www.make emb.embed_hlink in
        wr.www_headers <- "Accept: image/*" :: wr.www_headers;
-       ImageScheduler.add_delayed q
+       Img.ImageScheduler.add_delayed q
      wr
      emb.embed_context#base
      (fun url i -> 
@@ -339,7 +332,7 @@ class auto () =
        e -> Logs.warn (fun m -> m "Can't compute image link (%s)"
                          (Printexc.to_string e))
 
-  method! flush_images = ImageScheduler.flush_delayed q
+  method! flush_images = Img.ImageScheduler.flush_delayed q
 end
 
 (* for AfterDocManual *)
@@ -353,7 +346,7 @@ class manual () =
  
   method! flush_images = ()
 
-  method! load_images = ImageScheduler.flush_delayed q
+  method! load_images = Img.ImageScheduler.flush_delayed q
 end
 
 (*s: function [[Imgload.create]] *)
