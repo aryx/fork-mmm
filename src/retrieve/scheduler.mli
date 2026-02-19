@@ -49,6 +49,7 @@ module type S =
   sig
     type shared_data
 
+    (* ?? -> <> -> Retrieve.f -> Http.req (via protos) *)
     val add_request : < Cap.network > ->
         Www.request -> Document.id ->
         (Url.t -> shared_data -> unit) -> progress_func -> unit

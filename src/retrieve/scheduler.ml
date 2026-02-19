@@ -189,12 +189,11 @@ module Make (J : Data) = struct
     next_request caps
 
   (* error during data downloading *)
-  and error (url : Url.t) (job : job) =
+  and error (caps : < Cap.network; .. >) (url : Url.t) (job : job) =
     job.stop ();
     J.error url job.conts;
     if !debug then
       Logs.warn (fun m -> m "Retrieval of %s failed\n" (Url.string_of url));
-    let caps = Cap.network_caps_UNSAFE () in
     next_request caps
 
   (* process_request always follows pick, thus hostcount has always been
@@ -243,7 +242,10 @@ module Make (J : Data) = struct
             (* We are now going to run the retrieval process *)
 
             (* Continuations for the retrieval *)
-            let handle_data dh =
+            (* TODO: remove those nested function, move out and pass down
+             * necessary closed arguments
+             *)
+            let handle_data (dh : Document.handle) =
               (* add more things to do in stop *)
               let oldstop = job.stop in
               job.stop <-
@@ -265,7 +267,7 @@ module Make (J : Data) = struct
                 end;
 
                 (* actually start sucking data *)
-                dh.document_feed.feed_schedule (fun _ ->
+                dh.document_feed.feed_schedule (fun () ->
                     try
                       let n = dh.document_feed.feed_read buffer 0 2048 in
 
@@ -323,40 +325,41 @@ module Make (J : Data) = struct
                         Logs.err (fun m -> m "Unix error (%s) in scheduler %s %s"
                                               (Unix.error_message code) s s');
                         close_out oc;
-                        error url job
+                        error caps url job
                     | Sys_error s ->
                         Logs.err (fun m -> m "IO error (%s) in scheduler" s);
                         close_out oc;
-                        error url job
+                        error caps url job
                     | e ->
                         Logs.err (fun m -> m
                           "Bug in scheduler %s" (Printexc.to_string e));
                         close_out oc;
-                        error url job)
+                        error caps url job)
               with
               (* error creating tmp file *)
               | Sys_error s ->
                   Logs.err (fun m -> m "Can't create temporary file (%s)" s);
-                  error url job
+                  error caps url job
               | e ->
                   Logs.err (fun m -> m "Bug in scheduler %s" (Printexc.to_string e));
-                  error url job
+                  error caps url job
+
+
             (* Data has moved. The best way to do this properly is to
                reschedule the job conts as new requests *)
-            and retry_data hlink =
+            and retry_data (hlink : Hyper.link) =
               try
                 job.stop ();
                 let newr = Www.make hlink in
                 newr.www_error <- wr.www_error;
                 newr.www_logging <- wr.www_logging;
-                List.iter
-                  (fun (did, (cont, prog)) ->
+                job.conts |> List.iter (fun (did, (cont, prog)) ->
                     add_request caps newr did cont prog)
-                  job.conts
               with
               (* can't proceed with retry *)
-              | _ -> error url job
+              | _ -> error caps url job
             in
+
 
             (* Okay, go for the retrieval now *)
             try
@@ -364,7 +367,7 @@ module Make (J : Data) = struct
                 Retrieve.f caps wr retry_data
                   {
                     document_process = handle_data;
-                    document_finish = (fun f -> if f then error url job);
+                    document_finish = (fun f -> if f then error caps url job);
                   }
               with
               | Retrieve.Started _ -> ()
@@ -382,7 +385,7 @@ module Make (J : Data) = struct
             | Www.Invalid_request (w, msg) ->
                 (* retrieve failed *)
                 J.error_msg (w, msg);
-                error url job
+                error caps url job
           end)
 
   (*
@@ -394,11 +397,9 @@ module Make (J : Data) = struct
     (* For all queues, for all request in the queue, if the request matches
        the predicate, it is removed from the queue. *)
     queues :=
-      !queues
-      |> List.map (fun q ->
+      !queues |> List.map (fun q ->
              let newq = Queue.create () in
-             q
-             |> Queue.iter (function
+             q |> Queue.iter (function
                   | _wr, didr, _cont, _progress when did = didr -> ()
                   | r -> Queue.add r newq);
              newq);
@@ -408,16 +409,16 @@ module Make (J : Data) = struct
     *)
     let rem = ref [] in
     (* jobs to kill *)
-    Hashtbl.iter
+    actives |> Hashtbl.iter
       (fun _url job ->
         try
           job.conts <- Mlist.except_assoc did job.conts;
           if job.conts = [] then rem := job :: !rem
         with
-        | Not_found -> ())
-      actives;
+        | Not_found -> ()
+    );
     (* each stop closes the cnx properly and remove the job from actives *)
-    List.iter (fun job -> job.stop ()) !rem;
+    !rem |> List.iter (fun job -> job.stop ());
     if !rem <> [] then
       let caps = Cap.network_caps_UNSAFE () in
       next_request caps
@@ -459,19 +460,18 @@ module Make (J : Data) = struct
   let flush_one l url  =
     let flushedqueue = Queue.create () and restqueue = Queue.create () in
     (* split in two *)
-    Queue.iter
-      (function
+    l |> Queue.iter (function
         | (wr : Www.request), did, cont, prog when wr.www_url = url ->
             prog None 0;
             (* create the gauge *)
             Queue.add (wr, did, cont, prog) flushedqueue
-        | r -> Queue.add r restqueue)
-      l;
+        | r -> Queue.add r restqueue
+    );
     (* the flushed goes at the beginning *)
     queues := flushedqueue :: !queues;
     (* copy back the remaining in l (MUST BE THE SAME l) *)
     Queue.clear l;
-    Queue.iter (fun r -> Queue.add r l) restqueue;
+    restqueue |> Queue.iter (fun r -> Queue.add r l);
     (* try to process the flushed items *)
     let caps = Cap.network_caps_UNSAFE () in
     next_request caps
