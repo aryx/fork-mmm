@@ -176,9 +176,7 @@ let add (caps : < Cap.network ; .. >) (emb : obj) =
           (fun _url doc ->
           let doc =
             Document.
-              {
-                document_address = doc.document_address;
-                document_data = doc.document_data;
+              { doc with
                 document_headers =
                   Http_headers.merge_headers doc.document_headers
                     [ "Content-Type: " ^ given_type ];
