@@ -871,8 +871,8 @@ type handle = {
 
 <<type [[Messages.request_message]]>>=
 (* HTTP-Message *)
-type request_message = {
-  request : request;
+type request = {
+  request : request_line;
   request_headers : header list;
   request_body : string;
   <<[[Messages.request_message]] other fields>>
@@ -886,7 +886,7 @@ type request_message = {
 
 <<type [[Messages.request]]>>=
 (* Request-Line of a Request *)
-type request = {
+type request_line = {
   request_version: string;	(* HTTP/1.0 *)
   request_method : string;	(* GET, POST, etc... *)
 
@@ -899,8 +899,8 @@ type request = {
 \subsection{Responses}
 
 <<type [[Messages.response_message]]>>=
-type response_message = {
-  status : status;
+type response = {
+  status : status_line;
 
   response_headers : header list;
   response_body : string;        (* responde body is *not* the document body *)
@@ -913,7 +913,7 @@ type response_message = {
 
 <<type [[Messages.status]]>>=
 (* Status-Line of a Response *)
-type status =  { 
+type status_line =  { 
     status_version : string;	(* HTTP/1.0 *)
     status_code : int;		(* http return codes *)
     status_message : string	(* http return message *)
@@ -5003,7 +5003,7 @@ let html_indent name level =
 
 % ??? -> <>
 <<signature [[Http_headers.parse_request]]>>=
-val parse_request : string -> Messages.request
+val parse_request : string -> Messages.request_line
   (* Parses a Request-Line
      Request-Line = Method SP Request-URI SP HTTP-Version CRLF
      Raises [Invalid_HTTP_header "Request-Line"] *)
@@ -5039,7 +5039,7 @@ let parse_request s =
 
 % Http.process_response -> <>
 <<signature [[Http_headers.parse_status]]>>=
-val parse_status : string -> Messages.status
+val parse_status : string -> Messages.status_line
   (* Parses a Status-Line
      Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
      Raises [Invalid_HTTP_header "Status-Line"] 
@@ -5078,7 +5078,7 @@ let parse_status s =
 
 <<signature [[Http_headers.http_status]]>>=
 (* Common headers *)
-val http_status : int -> Messages.status
+val http_status : int -> Messages.status_line
   (* [http_status n] returns Status-Line for code [n] *)
 @
 %less: when need to build a status ourselves? parse_status I understand
