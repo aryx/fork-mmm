@@ -25,7 +25,7 @@ val initial_geom : string option ref
 val add_user_menu : string -> (Viewers.context -> unit) -> unit
 (*e: signature [[Mmm.add_user_menu]] *)
 (*s: signature [[Mmm.navigator]] *)
-val navigator : bool -> Url.t -> Nav.t option
+val navigator : bool (* is_main_window *) -> Url.t -> Nav.t option
 (*e: signature [[Mmm.navigator]] *)
 (*s: signature [[Mmm.new_window_initial]] *)
 val new_window_initial : unit -> unit

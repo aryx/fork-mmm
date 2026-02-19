@@ -24,7 +24,7 @@ type caps = <
 (*****************************************************************************)
 
 (*s: function [[Main.safe_loop]] *)
-let rec safe_loop() =
+let rec safe_loop () =
   try
     Printexc.print Tk.mainLoop () (* prints and reraises *)
   with
