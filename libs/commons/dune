@@ -12,13 +12,13 @@
   Console
   Logs Logs_
   Exit Exception
-  Chan FS IO Tmp
+  Chan FS Tmp ; IO
   Cmd Proc
   ; Date Bits Rune ; Date also in misc/, Rune
   ; Fpath included here (different from xix dune file)
   Fpath Fpath_ ; Ftype
   Arg_
-  Arch OS Endian
+  ; Arch OS Endian
  )
  ;(inline_tests)
  ;(preprocess
