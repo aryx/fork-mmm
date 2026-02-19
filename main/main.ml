@@ -227,7 +227,7 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
   (*s: [[Main.main()]] mmm server initialisation *)
   (* This must occur after most initialisations *)
   if !accept_external 
-  then Cci.init();
+  then Cci.init caps;
   (*e: [[Main.main()]] mmm server initialisation *)
   (*e: [[Main.main()]] initialisation *)
 
@@ -242,7 +242,7 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
     (*e: [[Main.main()]] user preferences file *)
   in
   (* Start the initial navigator *)
-  Mmm.initial_navigator user_preferences_file url_opt;
+  Mmm.initial_navigator caps user_preferences_file url_opt;
 
   safe_loop();
   (*s: [[Main.main()]] after event loop, if debug mode *)

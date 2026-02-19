@@ -3,14 +3,15 @@ open Fpath_.Operators
 open I18n
 open Tk
 open Unix
-open Hyper
+
+(* pad: CCI = Common Client Interface? *)
 
 (*s: function [[Cci.handler]] *)
 (* CCI was cool, but nobody implements it anymore. More over,
  * it's trivial to fork mmm_remote and let the protocol be managed
  * by it *)
 
-let handler fd line =
+let handler (caps: < Cap.network; ..>) (fd : Unix.file_descr) (line : string) =
   let len = String.length line in 
   if len > 4 && String.sub line 0 4 = "GET " then begin
     let url = String.sub line 4 (len - 4) in
@@ -42,16 +43,16 @@ let handler fd line =
   end else if len > 8 && String.sub line 0 8 = "DISPLAY " then begin
     let url = String.sub line 8 (len - 8) in
     close fd;
-    ignore (Mmm.navigator false (Lexurl.make url))
+    ignore (Mmm.navigator caps false (Lexurl.make url))
   end else begin (* assume DISPLAY (backward compatibility) *)
     close fd;
-    ignore (Mmm.navigator false (Lexurl.make line))
+    ignore (Mmm.navigator caps false (Lexurl.make line))
   end
 (*e: function [[Cci.handler]] *)
 
 (*s: function [[Cci.init]] *)
 (* External requests *)
-let init () =
+let init (caps : < Cap.network; .. >) =
  let file = Mmm.user_file "remote" in
  try
   let socket = socket PF_UNIX SOCK_STREAM 0 in
@@ -80,7 +81,7 @@ let init () =
        (fun () -> 
       try 
           let fd,_ = accept socket in
-       handler fd (Munix.read_line fd)
+          handler caps fd (Munix.read_line fd)
       with _ -> ());
     at_exit (fun () -> Msys.rm !!file)
  with e ->

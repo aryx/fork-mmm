@@ -5,7 +5,7 @@ val user_file : string -> Fpath.t
 (*e: signature [[Mmm.user_file]] *)
 
 (*s: signature [[Mmm.initial_navigator]] *)
-val initial_navigator : 
+val initial_navigator : < Cap.network; .. > ->
   Fpath.t (* preference file *) -> string (* url *) option -> unit
 (*e: signature [[Mmm.initial_navigator]] *)
 (*s: signature [[Mmm.main_navigator]] *)
@@ -25,13 +25,16 @@ val initial_geom : string option ref
 val add_user_menu : string -> (Viewers.context -> unit) -> unit
 (*e: signature [[Mmm.add_user_menu]] *)
 (*s: signature [[Mmm.navigator]] *)
-val navigator : bool (* is_main_window *) -> Url.t -> Nav.t option
+val navigator : < Cap.network; .. > ->
+  bool (* is_main_window *) -> Url.t -> Nav.t option
 (*e: signature [[Mmm.navigator]] *)
 (*s: signature [[Mmm.new_window_initial]] *)
-val new_window_initial : unit -> unit
+(* ?? *)
+val new_window_initial : < Cap.network; ..> -> unit
 (*e: signature [[Mmm.new_window_initial]] *)
 (*s: signature [[Mmm.new_window_sel]] *)
-val new_window_sel : unit -> unit
+(* ?? *)
+val new_window_sel : < Cap.network; ..> -> unit
 (*e: signature [[Mmm.new_window_sel]] *)
 (*s: signature [[Mmm.change_tachy]] *)
 val change_tachy : (Widget.widget -> Low.tachymeter) -> unit

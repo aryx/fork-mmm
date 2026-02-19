@@ -142,7 +142,8 @@ let navigators = ref 0
 (*e: constant [[Mmm.navigators]] *)
 
 (*s: function [[Mmm.navigator]] *)
-let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
+let rec navigator (caps: < Cap.network; ..>)
+        (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
   (*s: [[Mmm.navigator()]] new navigator hook *)
   incr navigators;
   (*e: [[Mmm.navigator()]] new navigator hook *)
@@ -241,7 +242,7 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
       nav_new = (fun link ->
          try
            let wwwr = Plink.make link in
-           navigator false wwwr.www_url |> ignore
+           navigator caps false wwwr.www_url |> ignore
          with Hyper.Invalid_link _msg -> 
            error#f (s_ "Invalid link")
       );
@@ -393,16 +394,16 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     (*e: function [[Mmm.navigator.view_source]] *)
     (*x: [[Mmm.navigator()]] nested functions *)
     let new_window () =
-         navigator false hist.h_current.h_did.document_url |> ignore
+         navigator caps false hist.h_current.h_did.document_url |> ignore
     in
     let new_window_initial () =
-         navigator false initial_url |> ignore
+         navigator caps false initial_url |> ignore
     in
     let new_window_sel () =
       try 
          let url = Selection.get [] in
-         navigator false (Lexurl.make url) |> ignore
-      with _ -> navigator false initial_url |> ignore
+         navigator caps false (Lexurl.make url) |> ignore
+      with _ -> navigator caps false initial_url |> ignore
     in
     (*e: [[Mmm.navigator()]] nested functions *)
     (*s: [[Mmm.navigator()]] keyboard shortcuts setting *)
@@ -612,11 +613,11 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
     Menu.add_command helpm
       [Label (s_ "Home Page of MMM");
        Command (fun () -> 
-         navigator false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
+         navigator caps false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
     (*x: Help menu elements *)
     Menu.add_command helpm
       [Label (s_ "Help on MMM"); 
-       Command (fun () -> navigator false !helpurl |> ignore)];
+       Command (fun () -> navigator caps false !helpurl |> ignore)];
     (*e: Help menu elements *)
     (*e: [[Mmm.navigator()]] Help menu *)
     (*s: [[Mmm.navigator()]] User menu *)
@@ -788,17 +789,17 @@ let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
 
 
 (*s: function [[Mmm.new_window_initial]] *)
-and new_window_initial () =
- navigator false 
+and new_window_initial (caps: < Cap.network; ..>) =
+ navigator caps false 
    (match !initial_page with | Some u -> u | None -> assert false) |> ignore
 (*e: function [[Mmm.new_window_initial]] *)
 
 (*s: function [[Mmm.new_window_set]] *)
-and new_window_sel () =
+and new_window_sel (caps: < Cap.network; ..>) =
   try 
     let url = Selection.get [] in
-    navigator false (Lexurl.make url) |> ignore
-  with _ -> new_window_initial ()
+    navigator caps false (Lexurl.make url) |> ignore
+  with _ -> new_window_initial caps
 (*e: function [[Mmm.new_window_set]] *)
 
 
@@ -811,7 +812,8 @@ let main_navigator = ref None
 (*e: constant [[Mmm.main_navigator]] *)
 
 (*s: function [[Mmm.initial_navigator]] *)
-let initial_navigator (preffile : Fpath.t) (init_url : string option) =
+let initial_navigator (caps : < Cap.network; ..>)
+    (preffile : Fpath.t) (init_url : string option) =
   (*s: [[Mmm.initial_navigator()]] set preferences *)
   preferences := Mmmprefs.f preffile;
   !preferences();
@@ -835,7 +837,7 @@ let initial_navigator (preffile : Fpath.t) (init_url : string option) =
   );
   (*e: [[Mmm.initial_navigator()]] set initial page based on [[init_url]] *)
   main_navigator :=
-     navigator true 
+     navigator caps true 
        (match !initial_page with Some u -> u | None -> assert false)
 (*e: function [[Mmm.initial_navigator]] *)
 (*e: gui/mmm.ml *)

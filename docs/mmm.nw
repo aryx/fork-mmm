@@ -1322,7 +1322,7 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
     <<[[Main.main()]] user preferences file>>
   in
   (* Start the initial navigator *)
-  Mmm.initial_navigator user_preferences_file url_opt;
+  Mmm.initial_navigator caps user_preferences_file url_opt;
 
   safe_loop();
   <<[[Main.main()]] after event loop, if debug mode>>
@@ -1577,16 +1577,17 @@ get an updated copy.
 
 % file pref and url opt
 <<signature [[Mmm.initial_navigator]]>>=
-val initial_navigator : 
+val initial_navigator : < Cap.network; .. > ->
   Fpath.t (* preference file *) -> string (* url *) option -> unit
 @
 % main -> <>
 <<function [[Mmm.initial_navigator]]>>=
-let initial_navigator (preffile : Fpath.t) (init_url : string option) =
+let initial_navigator (caps : < Cap.network; ..>)
+    (preffile : Fpath.t) (init_url : string option) =
   <<[[Mmm.initial_navigator()]] set preferences>>
   <<[[Mmm.initial_navigator()]] set initial page based on [[init_url]]>>
   main_navigator :=
-     navigator true 
+     navigator caps true 
        (match !initial_page with Some u -> u | None -> assert false)
 @
 %old: used to return !main_navigator, but it was ignored anyway
@@ -1634,13 +1635,15 @@ Lexurl.make ("file://localhost" ^ path)
 \subsection{[[Mmm.navigator()]] and [[Nav.t]]}
 
 <<signature [[Mmm.navigator]]>>=
-val navigator : bool (* is_main_window *) -> Url.t -> Nav.t option
+val navigator : < Cap.network; .. > ->
+  bool (* is_main_window *) -> Url.t -> Nav.t option
 @
 % bool is for main_window (was called has_tachy)
 
 % main -> Mmm.initial_navigator -> <>(, true, )
 <<function [[Mmm.navigator]]>>=
-let rec navigator (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
+let rec navigator (caps: < Cap.network; ..>)
+        (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
   <<[[Mmm.navigator()]] new navigator hook>>
 
   (* The first navigator is named, so we can put special information in
@@ -2479,7 +2482,7 @@ Menu.add_command helpm
 Menu.add_command helpm
   [Label (s_ "Home Page of MMM");
    Command (fun () -> 
-     navigator false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
+     navigator caps false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
 @
 
 <<signature [[Version.home]]>>=
@@ -11272,46 +11275,48 @@ nav_new : Hyper.link -> unit;
 nav_new = (fun link ->
    try
      let wwwr = Plink.make link in
-     navigator false wwwr.www_url |> ignore
+     navigator caps false wwwr.www_url |> ignore
    with Hyper.Invalid_link _msg -> 
      error#f (s_ "Invalid link")
 );
 @
 
 <<signature [[Mmm.new_window_initial]]>>=
-val new_window_initial : unit -> unit
+(* ?? *)
+val new_window_initial : < Cap.network; ..> -> unit
 @
 <<signature [[Mmm.new_window_sel]]>>=
-val new_window_sel : unit -> unit
+(* ?? *)
+val new_window_sel : < Cap.network; ..> -> unit
 @
 
 <<function [[Mmm.new_window_initial]]>>=
-and new_window_initial () =
- navigator false 
+and new_window_initial (caps: < Cap.network; ..>) =
+ navigator caps false 
    (match !initial_page with | Some u -> u | None -> assert false) |> ignore
 @
 
 <<function [[Mmm.new_window_set]]>>=
-and new_window_sel () =
+and new_window_sel (caps: < Cap.network; ..>) =
   try 
     let url = Selection.get [] in
-    navigator false (Lexurl.make url) |> ignore
-  with _ -> new_window_initial ()
+    navigator caps false (Lexurl.make url) |> ignore
+  with _ -> new_window_initial caps
 @
 
 
 <<[[Mmm.navigator()]] nested functions>>=
 let new_window () =
-     navigator false hist.h_current.h_did.document_url |> ignore
+     navigator caps false hist.h_current.h_did.document_url |> ignore
 in
 let new_window_initial () =
-     navigator false initial_url |> ignore
+     navigator caps false initial_url |> ignore
 in
 let new_window_sel () =
   try 
      let url = Selection.get [] in
-     navigator false (Lexurl.make url) |> ignore
-  with _ -> navigator false initial_url |> ignore
+     navigator caps false (Lexurl.make url) |> ignore
+  with _ -> navigator caps false initial_url |> ignore
 in
 @
 
@@ -11455,7 +11460,7 @@ let helpurl = function
 <<Help menu elements>>=
 Menu.add_command helpm
   [Label (s_ "Help on MMM"); 
-   Command (fun () -> navigator false !helpurl |> ignore)];
+   Command (fun () -> navigator caps false !helpurl |> ignore)];
 @
 % false means not toplevel, no_tachy
 
@@ -12048,7 +12053,7 @@ let accept_external = ref false in
 <<[[Main.main()]] mmm server initialisation>>=
 (* This must occur after most initialisations *)
 if !accept_external 
-then Cci.init();
+then Cci.init caps;
 @
 
 \subsection{Client}
