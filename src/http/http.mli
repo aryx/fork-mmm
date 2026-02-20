@@ -37,5 +37,6 @@ val always_proxy: bool ref
 val send_referer: bool ref
 val user_agent: string ref
 val timeout: int ref
+
 val verbose: bool ref
 (*e: http/http.mli *)

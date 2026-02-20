@@ -3137,7 +3137,7 @@ rule challenge = parse
       challenge_params = params}
     }
 
- | _ { raise (Invalid_HTTP_header "auth-scheme expected")}
+ | _ { raise (Http_headers.Invalid_header "auth-scheme expected")}
 
 and quotedstring = parse
    '"' [^ '"' '\000'-'\031' '\127'-'\255' ]* '"'
@@ -3145,7 +3145,7 @@ and quotedstring = parse
          String.sub t 1 (String.length t - 2)
      }
  
- | _ { raise (Invalid_HTTP_header "quotedstring expected") }
+ | _ { raise (Invalid_header "quotedstring expected") }
 
 <<function [[Lexheaders.token]]>>
 
@@ -3154,14 +3154,14 @@ and quotedstring = parse
 (* LWS *)
 and lws = parse
    ("\r\n")? [' ' '\t']+ { () }
-  | _ { raise (Invalid_HTTP_header "LWS expected")}
+  | _ { raise (Invalid_header "LWS expected")}
 
 <<function [[Lexheaders.starlws]]>>
 
 and realm = parse
    ['R' 'r']['E' 'e']['A' 'a']['L' 'l']['M' 'm']'='
      { quotedstring lexbuf }
- | _ { raise (Invalid_HTTP_header "realm expected") }
+ | _ { raise (Invalid_header "realm expected") }
 
 
 and authparam = parse
@@ -3179,7 +3179,7 @@ and authparam = parse
 
 and lit_slash = parse
     '/' { () }
- |  _  { raise (Invalid_HTTP_header "= expected") }
+ |  _  { raise (Invalid_header "= expected") }
 
 
 <<function [[Lexheaders.media_parameters]]>>
@@ -3245,6 +3245,7 @@ val always_proxy: bool ref
 val send_referer: bool ref
 val user_agent: string ref
 val timeout: int ref
+
 val verbose: bool ref
 @
 
@@ -3254,17 +3255,16 @@ val verbose: bool ref
 %-------------------------------------------------------------
 
 <<http/http.ml>>=
-(* Retrieve an HTTP document *)
 open I18n
-open Unix
-open Www
-open Hyper
-open Auth
-open Document
-open Feed
-open Messages
-open Http_headers
-open Url
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Retrieve an HTTP document *)
+
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
 
 <<constant [[Http.always_proxy]]>>
 <<constant [[Http.timeout]]>>
@@ -3274,19 +3274,34 @@ open Url
 
 <<constant [[Http.verbose]]>>
 
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 <<exception [[Http.HTTP_error]]>>
 
 <<type [[Http.status]]>>
 
 <<class [[Http.cnx]]>>
 
+(*****************************************************************************)
+(* Raw connect *)
+(*****************************************************************************)
 
 <<function [[Http.tcp_connect]]>>
+
+(*****************************************************************************)
+(* Headers *)
+(*****************************************************************************)
 
 <<constant [[Http.send_referer]]>>
 <<constant [[Http.user_agent]]>>
 
 <<function [[Http.std_request_headers]]>>
+
+(*****************************************************************************)
+(* Request helpers *)
+(*****************************************************************************)
 
 <<function [[Http.full_request]]>>
 
@@ -3302,13 +3317,16 @@ open Url
 
 <<function [[Http.read_headers]]>>
 
+(*****************************************************************************)
+(* Responses *)
+(*****************************************************************************)
 
 <<function [[Http.process_response]]>>
 
 (* The same for HTTP 0.9, so we directly call the continuation *)
-and process_response09  wwwr cont cnx =
+and process_response09  wwwr (cont : Document.continuation) cnx =
    let dh =
-       { document_id = document_id wwwr;
+       Document.{ document_id = document_id wwwr;
          document_referer = wwwr.www_link.h_context;
          document_status = 200;
          dh_headers = ["Content-Type: text/html"];
@@ -3318,6 +3336,10 @@ and process_response09  wwwr cont cnx =
    in
    cnx#set_status Discharged;
    cont.document_process dh
+
+(*****************************************************************************)
+(* Requests part2 *)
+(*****************************************************************************)
 
 <<function [[Http.async_request]]>>
 
@@ -3331,7 +3353,7 @@ and start_request09 proxy_mode wwwr cont cnx =
 
 <<function [[Http.proxy_request]]>>
 
-and proxy_request09 caps wr cont =
+and proxy_request09 caps (wr : Www.request) cont =
   tcp_connect caps !proxy !proxy_port wr.www_logging
           (start_request09 true wr cont)
           (failed_request wr cont.document_finish)
@@ -3365,7 +3387,10 @@ and request09 caps wr cont =
     else 
       raise (HTTP_error (s_ "INTERNAL ERROR\nHttp.request09 (not a distant http url): %s" (Url.string_of wr.www_url)))
 
-(* Wrappers returning the abort callback *)
+(*****************************************************************************)
+(* Entry points *)
+(*****************************************************************************)
+
 <<function [[Http.req]]>>
 <<function [[Http.prox_req]]>>
 @
@@ -3927,7 +3952,6 @@ open Hyper
 open Www
 open Url
 open Messages
-open Http_headers
 open Http
 open Document
 open Feed
@@ -4071,30 +4095,48 @@ open Common
 %-------------------------------------------------------------
 
 <<retrieve/retrieve.ml>>=
-(* Document retrieval *)
 open Common
 open I18n
-open Printf
-open Www
-open Hyper
-open Url
-open Http
-open Auth
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Document retrieval *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 <<type [[Retrieve.retrievalStatus]]>>
 
 <<type [[Retrieve.behaviour]]>>
 
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
 <<constant [[Retrieve.http_process]]>>
 
 <<constant [[Retrieve.add_http_processor]]>>
 
+(*****************************************************************************)
+(* Cache *)
+(*****************************************************************************)
 <<function [[Retrieve.wrap_cache]]>>
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 <<function [[Retrieve.http_check]]>>
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 
 <<function [[Retrieve.f]]>>
 
+
+(*****************************************************************************)
+(* Response code -> behavior *)
+(*****************************************************************************)
 
 (* In all the following, we avoid popping up dialog boxes, and use
  * wwwr logging instead. Otherwise we might get too verbose for
@@ -4323,7 +4365,7 @@ module ImageData =
           | _,_ -> Low.busy tk_load_other !!file
         with
         | Not_found -> Low.busy tk_load_other !!file 
-        | Http_headers.Invalid_HTTP_header _ -> Msys.rm !!file; broken_data
+        | Http_headers.Invalid_header _ -> Msys.rm !!file; broken_data
           in
       if !verbose 
       then Logs.info (fun m -> m "Loaded %s as %s" !!file (Url.string_of url));

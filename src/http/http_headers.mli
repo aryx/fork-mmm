@@ -1,7 +1,7 @@
 (*s: http/http_headers.mli *)
 
 (*s: exception [[Http_headers.Invalid_HTTP_header]] *)
-exception Invalid_HTTP_header of string
+exception Invalid_header of string
 (*e: exception [[Http_headers.Invalid_HTTP_header]] *)
 
 (*s: signature [[Http_headers.parse_status]] *)

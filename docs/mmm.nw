@@ -5028,9 +5028,9 @@ let parse_request s =
          { request_version = s;
            request_method = m;
            request_uri = "/" }
-  | _ -> raise (Invalid_HTTP_header "Request-Line")
+  | _ -> raise (Invalid_header "Request-Line")
  with
-   Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
+   Failure "int_of_string" -> raise (Invalid_header "Request-Line")
 @
 %less: could call parse_method here no? and have typed request_method
 %less: aspectize http 0.9?
@@ -5062,8 +5062,8 @@ let parse_status s =
            { status_version = v;
              status_code = int_of_string c;
              status_message = "empty" }
-    | _ -> raise (Invalid_HTTP_header "Status-Line")
-   with Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
+    | _ -> raise (Invalid_header "Status-Line")
+   with Failure "int_of_string" -> raise (Invalid_header "Status-Line")
  else (* 0.9, dammit *)
    raise Not_found
 @
@@ -5246,7 +5246,7 @@ and token = parse
       '\000'-'\031'
       '(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' ' ' '\t']+
       { Lexing.lexeme lexbuf }
-  | _ { raise (Invalid_HTTP_header "token expected") }
+  | _ { raise (Invalid_header "token expected") }
 @
 <<function [[Lexheaders.starlws]]>>=
 (* *LWS *)
@@ -5274,7 +5274,7 @@ and media_parameters = parse
 <<function [[Lexheaders.lit_equal]]>>=
 and lit_equal = parse
 | '=' { () }
-|  _  { raise (Invalid_HTTP_header "= expected") }
+|  _  { raise (Invalid_header "= expected") }
 @
 
 <<function [[Lexheaders.value]]>>=
@@ -5288,7 +5288,7 @@ and value = parse
       '\000'-'\031'
       '(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' ' ' '\t']+
    { Lexing.lexeme lexbuf }
-| _ { raise (Invalid_HTTP_header "value expected") }
+| _ { raise (Invalid_header "value expected") }
 @
 
 \subsubsection{Content length}
@@ -5354,6 +5354,7 @@ type status =
  *   we must catch here all errors due to protocols and remove the
  *   cnx from the set of active cnx.
  *)
+(* Nav.request -> <> -> Http.req (via Protos.get) -> Http.tcp_connect *)
 and f (caps : < Cap.network; ..>) 
       (request : Www.request) (retry : Hyper.link -> unit) 
       (cont : Document.continuation) : status = 
@@ -5371,13 +5372,13 @@ and f (caps : < Cap.network; ..>)
    with 
    | Not_found ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, s_ "unknown protocol"))
+       raise (Www.Invalid_request (request, s_ "unknown protocol"))
    | Http.HTTP_error s ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, s_ "HTTP Error \"%s\"" s))
+       raise (Www.Invalid_request (request, s_ "HTTP Error \"%s\"" s))
    | File.File_error s ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, s))
+       raise (Www.Invalid_request (request, s))
    end
 @
 
@@ -5409,12 +5410,14 @@ type behaviour =
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
+(* f -> Http.req (via protos) cont -> <> (via cont.document_process) -> codex *)
 let rec http_check (caps: < Cap.network; .. > )
          cache (retry : Hyper.link -> unit)
          (cont : Document.continuation) (wwwr : Www.request)
-         (dh : Document.handle) =
+         (dh : Document.handle) : unit =
   Logs.debug (fun m -> m "Retrieve.http_check");
   try (* the appropriate behavior *)
+    (* alt: just have a single function matching on code *)
     let behav = Hashtbl.find http_process dh.document_status in
     match behav wwwr dh with
     | Ok -> 
@@ -5452,10 +5455,13 @@ let rec http_check (caps: < Cap.network; .. > )
 % Retrieve.f -> http_check -> <> (-> Retype.f)
 <<function [[Retrieve.wrap_cache]]>>=
 (* What do we cache ? : text/html and text/plain in memory *)
-let wrap_cache cache (dh : Document.handle) =
+let wrap_cache cache (dh : Document.handle) : Document.handle =
   Logs.debug (fun m -> m "Wrapping cache for %s(%d)"
              (Url.string_of dh.document_id.document_url)
              dh.document_id.document_stamp);
+  (* infer content-type and content-encoding using filename extension of
+   * document if content-type was not specified in the headers
+   *)
   Retype.f dh;
   try
     match Lexheaders.media_type (Http_headers.contenttype dh.dh_headers) with
@@ -5486,7 +5492,6 @@ let wrap_cache cache (dh : Document.handle) =
 let http_process : 
   (int, Www.request -> Document.handle -> behaviour) Hashtbl.t = 
   Hashtbl_.create ()
-   
 @
 % pass handler so can access the headers
 
@@ -5916,6 +5921,8 @@ val req: < Cap.network; ..> ->
 %(* Wrappers returning the abort callback *)
 % wr = web request, cont = continuation
 <<function [[Http.req]]>>=
+(* Wrappers returning the abort callback *)
+(* Retrieve.f -> <> (via protos) -> ... -> cont.document_process *)
 let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
   let cnx = request caps wr cont in
   (fun () -> cnx#abort)
@@ -5928,6 +5935,10 @@ let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
 (* Issueing request, with the "retry" logic (unless is "always proxy" mode, 
    we attempt first to connect directly to the host, and if it fails,
    we retry through the proxy
+ *)
+(* Retrieve.f -> req (via protos) -> <> -> tcp_connect -> 
+ * start_request (via contf) -> async_request -> process_response ->
+ * cont.document_process
  *)
 and request (caps : < Cap.network; ..>)
     (wr : Www.request) (cont : Document.continuation) : cnx =
@@ -5968,8 +5979,9 @@ and request (caps : < Cap.network; ..>)
 <<function [[Http.tcp_connect]]>>=
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
+(* req | proxy_req -> request | proxy_request -> <> *)
 let tcp_connect (caps : < Cap.network; ..>)
-    (server_name : string) (port : int) logf cont error =
+    (server_name : string) (port : int) logf contf errorf =
 
   (*  Find the inet address *)
   let server_addr : Unix.inet_addr =
@@ -5982,7 +5994,7 @@ let tcp_connect (caps : < Cap.network; ..>)
   let sock = Unix.socket PF_INET SOCK_STREAM 0 in
   Unix.clear_nonblock sock;
   Unix.set_nonblock sock; (* set to non-blocking *)
-  let cnx = new cnx (sock, error "User abort") in
+  let cnx = new cnx (sock, errorf "User abort") in
   logf (s_ "Contacting host...");
   try
     begin try
@@ -5995,16 +6007,16 @@ let tcp_connect (caps : < Cap.network; ..>)
       (* because we need to return cnx *)
       Timer_.set 10 (fun () -> 
         (* ! calling the continuation, e.g. start_request *)
-        cont cnx
+        contf cnx
       );
       cnx
-    with Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
+    with Unix.Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
       <<[[Http.tcp_connect()]] if unix error when connect>>
     end
-  with Unix_error(e,fn,_) ->  (* other errors in connect *)
+  with Unix.Unix_error(e,fn,_) ->  (* other errors in connect *)
     cnx#close;
     raise (HTTP_error (s_ "Cannot establish connection\n%s:%s"
-                             (error_message e) fn))
+                             (Unix.error_message e) fn))
 @
 
 \subsubsection{[[cnx]]}
@@ -6041,7 +6053,7 @@ class cnx (sock, finish) =
 
   method close =
     if not fdclosed then begin
-      close fd;
+      Unix.close fd;
       fdclosed <- true
     end
 
@@ -6083,12 +6095,12 @@ with Not_found ->
      Fileevent_.remove_fileoutput sock;
      Unix.clear_nonblock sock; (* return to blocking mode *)
      begin try (* But has there been a cnx actually *)
-       let _ = getpeername sock in
+       let _ = Unix.getpeername sock in
        logf (s_ "connection established");
-       cont cnx
-     with Unix_error(ENOTCONN, "getpeername", _) ->
+       contf cnx
+     with Unix.Unix_error(ENOTCONN, "getpeername", _) ->
        cnx#close;
-       error (s_ "Connection refused to %s" server_name) false
+       errorf (s_ "Connection refused to %s" server_name) false
       end
    );
   <<[[Http.tcp_connect()]] setup timeout>>
@@ -6113,7 +6125,7 @@ Timer_.set (1000 * !timeout)
      then begin
        Fileevent_.remove_fileoutput sock;
        cnx#close;
-       error (s_ "Timeout during connect to %s" server_name) false
+       errorf (s_ "Timeout during connect to %s" server_name) false
       end
   );
 @
@@ -6167,10 +6179,11 @@ and async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
 % Http.req -> tcp_connect -> start_request -> async_request -> <>
 <<function [[Http.full_request]]>>=
 (* 'w' is the writer that will fill a buffer set in the caller *)
+(* request -> tcp_connect -> start_request (via cont) -> async_request -> <> *)
 let full_request (w : string -> unit) (proxy_mode : bool) (wwwr : Www.request) : unit = 
   let url : string = 
     <<[[Http.full_request()]] url value if proxy mode>>
-    else distant_path wwwr.www_url 
+    else Url.distant_path wwwr.www_url 
   in
   <<[[Http.full_request()]] helper functions>>
   match wwwr.www_link.h_method with
@@ -6230,7 +6243,7 @@ let write_other_headers () =
   (* If no Accept given in request, write default one *)
   begin
     try
-      get_header "accept" wwwr.www_headers |> ignore
+      Http_headers.get_header "accept" wwwr.www_headers |> ignore
     with Not_found -> w "Accept: */*\r\n"
   end
 in
@@ -6317,7 +6330,7 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
   wwwr.www_logging (s_ "Reading headers...");
 
   let dh = 
-    { document_id = document_id wwwr;
+    Document.{ document_id = document_id wwwr;
       document_referer = wwwr.www_link.h_context;
       document_fragment = wwwr.www_fragment;
 
@@ -6343,7 +6356,7 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
 % seems to call the continuation only for error cases
 
 <<[[Http.status]] cases>>=
-| Reading of handle 
+| Reading of Document.handle 
 @
 
 \subsection{Reading headers}
@@ -6391,7 +6404,7 @@ let read_headers fd previous =
      if l.[0] = ' ' || l.[0] = '\t' 
      then  (* continuation *)
        match previous with
-       | [] -> raise (Invalid_HTTP_header ("invalid continuation " ^ l))
+       | [] -> raise (Http_headers.Invalid_header ("invalid continuation " ^ l))
        | s :: rest -> (s^l) :: rest
       else l :: previous
 @
@@ -6437,14 +6450,14 @@ let read_headers fd previous =
 @
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
-| Unix_error(e,_,_) ->
+| Unix.Unix_error(e,_,_) ->
     cnx#abort;
     wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url 
-                           (error_message e))
+                           (Unix.error_message e))
 @
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
-| Invalid_HTTP_header s ->
+| Http_headers.Invalid_header s ->
     cnx#abort;
     wwwr.www_error#f (s_ "Error while reading headers of %s\n%s" url s)
 @
@@ -6507,7 +6520,7 @@ let merge_headers oldh newh =
         let _d = get_header t newh in
       filter acc l
        with
-          Invalid_HTTP_header _ -> 
+          Invalid_header _ -> 
           Log.debug (sprintf "Dumping invalid header (%s)" s);
               filter acc l
         | Not_found -> filter (s::acc) l in
@@ -6523,7 +6536,7 @@ val header_type : string -> string
 let header_type s =
   match Str.bounded_split (regexp "[:]") s 2 with
   | [t;_] -> String.lowercase_ascii t
-  | _ -> raise (Invalid_HTTP_header s)
+  | _ -> raise (Invalid_header s)
 @
 
 
@@ -6541,10 +6554,9 @@ let remove_headers hs names =
       try
        let t = header_type h in
          if List.mem t names then rem acc l
-     else rem (h::acc) l
-      with
-        Invalid_HTTP_header s ->
-      Log.debug (sprintf "Dumping invalid header (%s)" s);
+         else rem (h::acc) l
+       with Invalid_header s ->
+          Log.debug (sprintf "Dumping invalid header (%s)" s);
           rem acc l
 
    in rem [] hs
@@ -6817,7 +6829,7 @@ let reset () =
 @
 
 <<[[Viewers.view]] exn handler 2>>=
-| Http_headers.Invalid_HTTP_header e ->
+| Http_headers.Invalid_header e ->
     ctx#log (s_ "Malformed type: %s" e);
     unknown frame ctx dh
 | Not_found -> 
@@ -7431,7 +7443,7 @@ Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype ->
   try
     let (typ,sub), _pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) External
-  with Http_headers.Invalid_HTTP_header e ->
+  with Http_headers.Invalid_header e ->
     !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
@@ -7567,7 +7579,7 @@ Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype ->
   try
     let (typ,sub),_pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) Save
-  with Http_headers.Invalid_HTTP_header e ->
+  with Http_headers.Invalid_header e ->
     Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
@@ -10448,7 +10460,7 @@ let embedded_viewer (frame : Widget.widget) (ctx : Viewers.context)
       in
       let l = Label.create frame [ Text t ] in
       pack [ l ] []
-  | Http_headers.Invalid_HTTP_header e ->
+  | Http_headers.Invalid_header e ->
       let t =
         s_ "Embed Error: malformed type %s (%s)"
           (Http_headers.contenttype doc.document_headers)
@@ -11552,7 +11564,7 @@ let request wr cont =
       begin
       (* check if this is an update *)
         try 
-          let since = get_header "if-modified-since" wr.www_headers in
+          let since = Http_headers.get_header "if-modified-since" wr.www_headers in
           let ht = Lexdate.ht_of_string since in
           let filet = Http_date.ht_of_stamp st.st_mtime in
           if Http_date.compare filet ht > 0
@@ -11866,6 +11878,7 @@ val proxy_req: < Cap.network; ..> ->
 @
 
 <<function [[Http.prox_req]]>>=
+(* Retrieve.f -> <> (via protos) *)
 and proxy_req caps wr cont = 
   let cnx = proxy_request caps wr cont in
   (fun () -> cnx#abort)
@@ -13145,7 +13158,7 @@ in
 <<[[Http.full_request()]] helper functions>>=
 (* For proxy, we don't wait until we get an authorization error *)
 let write_proxy_auth () =
-  let authspace = {
+  let authspace = Auth.{
     auth_proxy = true;
     auth_host = !proxy;
     auth_port = !proxy_port;
@@ -13517,8 +13530,8 @@ let ask_proxy_auth (wr : Www.request) (dh : Document.handle) =
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   Auth.check wr challenge
       {auth_proxy = true;
-       auth_host = !proxy;
-       auth_port = !proxy_port;
+       auth_host = !Http.proxy;
+       auth_port = !Http.proxy_port;
        auth_dir = "";
        auth_realm = ""}
 @
@@ -13875,7 +13888,7 @@ let fake_cgi wwwr cont path =
             if dh.dh_headers = [] then begin
             (* it should be the HTTP Status-Line *)
             let l = Low.read_line cmd_in in
-              dh.document_status <- (parse_status l).status_code;
+              dh.document_status <- (Http_headers.parse_status l).status_code;
               dh.dh_headers <- [l] (* keep it there *)
             end
           else 
@@ -13894,7 +13907,7 @@ let fake_cgi wwwr cont path =
                dclose true dh;
                raise (File_error (s_ 
                   "Error while reading headers of %s\n%s" path "(read)"))
-           | Invalid_HTTP_header s ->
+           | Http_headers.Invalid_header s ->
                dclose true dh;
                raise (File_error (s_ 
                       "Error while reading headers of %s\n%s" path s))
@@ -14607,7 +14620,7 @@ exception Invalid_Html of string
 \subsection{HTTP}
 
 <<exception [[Http_headers.Invalid_HTTP_header]]>>=
-exception Invalid_HTTP_header of string
+exception Invalid_header of string
 @
 
 <<exception [[Http.HTTP_error]]>>=

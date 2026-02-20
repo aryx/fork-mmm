@@ -5,7 +5,7 @@ open Mstring
 open Messages
 
 (*s: exception [[Http_headers.Invalid_HTTP_header]] *)
-exception Invalid_HTTP_header of string
+exception Invalid_header of string
 (*e: exception [[Http_headers.Invalid_HTTP_header]] *)
 
 (*s: function [[Http_headers.parse_status]] *)
@@ -25,8 +25,8 @@ let parse_status s =
            { status_version = v;
              status_code = int_of_string c;
              status_message = "empty" }
-    | _ -> raise (Invalid_HTTP_header "Status-Line")
-   with Failure "int_of_string" -> raise (Invalid_HTTP_header "Status-Line")
+    | _ -> raise (Invalid_header "Status-Line")
+   with Failure "int_of_string" -> raise (Invalid_header "Status-Line")
  else (* 0.9, dammit *)
    raise Not_found
 (*e: function [[Http_headers.parse_status]] *)
@@ -49,9 +49,9 @@ let parse_request s =
          { request_version = s;
            request_method = m;
            request_uri = "/" }
-  | _ -> raise (Invalid_HTTP_header "Request-Line")
+  | _ -> raise (Invalid_header "Request-Line")
  with
-   Failure "int_of_string" -> raise (Invalid_HTTP_header "Request-Line")
+   Failure "int_of_string" -> raise (Invalid_header "Request-Line")
 (*e: function [[Http_headers.parse_request]] *)
 
 
@@ -95,7 +95,7 @@ let get_multi_header field_name =
 let header_type s =
   match Str.bounded_split (regexp "[:]") s 2 with
   | [t;_] -> String.lowercase_ascii t
-  | _ -> raise (Invalid_HTTP_header s)
+  | _ -> raise (Invalid_header s)
 (*e: function [[Http_headers.header_type]] *)
 
 (*s: function [[Http_headers.merge_headers]] *)
@@ -112,7 +112,7 @@ let merge_headers oldh newh =
         let _d = get_header t newh in
       filter acc l
        with
-          Invalid_HTTP_header _ -> 
+          Invalid_header _ -> 
           Log.debug (sprintf "Dumping invalid header (%s)" s);
               filter acc l
         | Not_found -> filter (s::acc) l in
@@ -128,10 +128,9 @@ let remove_headers hs names =
       try
        let t = header_type h in
          if List.mem t names then rem acc l
-     else rem (h::acc) l
-      with
-        Invalid_HTTP_header s ->
-      Log.debug (sprintf "Dumping invalid header (%s)" s);
+         else rem (h::acc) l
+       with Invalid_header s ->
+          Log.debug (sprintf "Dumping invalid header (%s)" s);
           rem acc l
 
    in rem [] hs

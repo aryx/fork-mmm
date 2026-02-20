@@ -140,7 +140,7 @@ module ImageData =
           | _,_ -> Low.busy tk_load_other !!file
         with
         | Not_found -> Low.busy tk_load_other !!file 
-        | Http_headers.Invalid_HTTP_header _ -> Msys.rm !!file; broken_data
+        | Http_headers.Invalid_header _ -> Msys.rm !!file; broken_data
           in
       if !verbose 
       then Logs.info (fun m -> m "Loaded %s as %s" !!file (Url.string_of url));

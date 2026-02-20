@@ -373,7 +373,7 @@ and view frame ctx dh =
     (*e: [[Viewers.view]] exn handler 1 *)
   with 
   (*s: [[Viewers.view]] exn handler 2 *)
-  | Http_headers.Invalid_HTTP_header e ->
+  | Http_headers.Invalid_header e ->
       ctx#log (s_ "Malformed type: %s" e);
       unknown frame ctx dh
   | Not_found -> 
@@ -406,7 +406,7 @@ let reset () =
     try
       let (typ,sub), _pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
-    with Http_headers.Invalid_HTTP_header e ->
+    with Http_headers.Invalid_header e ->
       !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*x: [[Viewers.reset()]] setting other viewers *)
@@ -414,7 +414,7 @@ let reset () =
     try
       let (typ,sub),_pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) Save
-    with Http_headers.Invalid_HTTP_header e ->
+    with Http_headers.Invalid_header e ->
       Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*e: [[Viewers.reset()]] setting other viewers *)

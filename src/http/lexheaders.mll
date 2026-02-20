@@ -29,7 +29,7 @@ rule challenge = parse
       challenge_params = params}
     }
 
- | _ { raise (Invalid_HTTP_header "auth-scheme expected")}
+ | _ { raise (Http_headers.Invalid_header "auth-scheme expected")}
 
 and quotedstring = parse
    '"' [^ '"' '\000'-'\031' '\127'-'\255' ]* '"'
@@ -37,7 +37,7 @@ and quotedstring = parse
          String.sub t 1 (String.length t - 2)
      }
  
- | _ { raise (Invalid_HTTP_header "quotedstring expected") }
+ | _ { raise (Invalid_header "quotedstring expected") }
 
 (*s: function [[Lexheaders.token]] *)
 and token = parse
@@ -45,7 +45,7 @@ and token = parse
       '\000'-'\031'
       '(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' ' ' '\t']+
       { Lexing.lexeme lexbuf }
-  | _ { raise (Invalid_HTTP_header "token expected") }
+  | _ { raise (Invalid_header "token expected") }
 (*e: function [[Lexheaders.token]] *)
 
 (*s: function [[Lexheaders.value]] *)
@@ -59,13 +59,13 @@ and value = parse
       '\000'-'\031'
       '(' ')' '<' '>' '@' ',' ';' ':' '\\' '"' '/' '[' ']' '?' '=' ' ' '\t']+
    { Lexing.lexeme lexbuf }
-| _ { raise (Invalid_HTTP_header "value expected") }
+| _ { raise (Invalid_header "value expected") }
 (*e: function [[Lexheaders.value]] *)
  
 (* LWS *)
 and lws = parse
    ("\r\n")? [' ' '\t']+ { () }
-  | _ { raise (Invalid_HTTP_header "LWS expected")}
+  | _ { raise (Invalid_header "LWS expected")}
 
 (*s: function [[Lexheaders.starlws]] *)
 (* *LWS *)
@@ -77,7 +77,7 @@ and starlws = parse
 and realm = parse
    ['R' 'r']['E' 'e']['A' 'a']['L' 'l']['M' 'm']'='
      { quotedstring lexbuf }
- | _ { raise (Invalid_HTTP_header "realm expected") }
+ | _ { raise (Invalid_header "realm expected") }
 
 
 and authparam = parse
@@ -94,12 +94,12 @@ and authparam = parse
 (*s: function [[Lexheaders.lit_equal]] *)
 and lit_equal = parse
 | '=' { () }
-|  _  { raise (Invalid_HTTP_header "= expected") }
+|  _  { raise (Invalid_header "= expected") }
 (*e: function [[Lexheaders.lit_equal]] *)
 
 and lit_slash = parse
     '/' { () }
- |  _  { raise (Invalid_HTTP_header "= expected") }
+ |  _  { raise (Invalid_header "= expected") }
 
 
 (*s: function [[Lexheaders.media_parameters]] *)

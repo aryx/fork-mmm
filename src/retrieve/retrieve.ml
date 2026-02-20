@@ -1,14 +1,15 @@
 (*s: retrieve/retrieve.ml *)
-(* Document retrieval *)
 open Common
 open I18n
-open Printf
-open Www
-open Hyper
-open Url
-open Http
-open Auth
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Document retrieval *)
+
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
 (*s: type [[Retrieve.retrievalStatus]] *)
 type status =
  | Started of Www.aborter
@@ -30,6 +31,9 @@ type behaviour =
    (* restart the same request, but apply transformation on the continuation *)
 (*e: type [[Retrieve.behaviour]] *)
 
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
 (*s: constant [[Retrieve.http_process]] *)
 (*
  * Provision for user (re)definition of behaviours.
@@ -37,19 +41,24 @@ type behaviour =
 let http_process : 
   (int, Www.request -> Document.handle -> behaviour) Hashtbl.t = 
   Hashtbl_.create ()
-   
 (*e: constant [[Retrieve.http_process]] *)
 
 (*s: constant [[Retrieve.add_http_processor]] *)
 let add_http_processor = Hashtbl.add http_process
 (*e: constant [[Retrieve.add_http_processor]] *)
 
+(*****************************************************************************)
+(* Cache *)
+(*****************************************************************************)
 (*s: function [[Retrieve.wrap_cache]] *)
 (* What do we cache ? : text/html and text/plain in memory *)
-let wrap_cache cache (dh : Document.handle) =
+let wrap_cache cache (dh : Document.handle) : Document.handle =
   Logs.debug (fun m -> m "Wrapping cache for %s(%d)"
              (Url.string_of dh.document_id.document_url)
              dh.document_id.document_stamp);
+  (* infer content-type and content-encoding using filename extension of
+   * document if content-type was not specified in the headers
+   *)
   Retype.f dh;
   try
     match Lexheaders.media_type (Http_headers.contenttype dh.dh_headers) with
@@ -69,18 +78,23 @@ let wrap_cache cache (dh : Document.handle) =
   with Not_found -> dh
 (*e: function [[Retrieve.wrap_cache]] *)
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 (*s: function [[Retrieve.http_check]] *)
 (* 
  * Dispatch according to status code
  *  retry: how to re-emit a request
  *  cont: what to do with the response 
  *)
+(* f -> Http.req (via protos) cont -> <> (via cont.document_process) -> codex *)
 let rec http_check (caps: < Cap.network; .. > )
          cache (retry : Hyper.link -> unit)
          (cont : Document.continuation) (wwwr : Www.request)
-         (dh : Document.handle) =
+         (dh : Document.handle) : unit =
   Logs.debug (fun m -> m "Retrieve.http_check");
   try (* the appropriate behavior *)
+    (* alt: just have a single function matching on code *)
     let behav = Hashtbl.find http_process dh.document_status in
     match behav wwwr dh with
     | Ok -> 
@@ -114,12 +128,17 @@ let rec http_check (caps: < Cap.network; .. > )
       cont.document_process dh
 (*e: function [[Retrieve.http_check]] *)
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
+
 (*s: function [[Retrieve.f]] *)
 (*
  * Emitting a request:
  *   we must catch here all errors due to protocols and remove the
  *   cnx from the set of active cnx.
  *)
+(* Nav.request -> <> -> Http.req (via Protos.get) -> Http.tcp_connect *)
 and f (caps : < Cap.network; ..>) 
       (request : Www.request) (retry : Hyper.link -> unit) 
       (cont : Document.continuation) : status = 
@@ -137,16 +156,20 @@ and f (caps : < Cap.network; ..>)
    with 
    | Not_found ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, s_ "unknown protocol"))
+       raise (Www.Invalid_request (request, s_ "unknown protocol"))
    | Http.HTTP_error s ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, s_ "HTTP Error \"%s\"" s))
+       raise (Www.Invalid_request (request, s_ "HTTP Error \"%s\"" s))
    | File.File_error s ->
        Www.rem_active_cnx request.www_url;
-       raise (Invalid_request (request, s))
+       raise (Www.Invalid_request (request, s))
    end
 (*e: function [[Retrieve.f]] *)
 
+
+(*****************************************************************************)
+(* Response code -> behavior *)
+(*****************************************************************************)
 
 (* In all the following, we avoid popping up dialog boxes, and use
  * wwwr logging instead. Otherwise we might get too verbose for
@@ -272,8 +295,8 @@ let ask_proxy_auth (wr : Www.request) (dh : Document.handle) =
     Lexheaders.challenge (Lexing.from_string rawchallenge) in
   Auth.check wr challenge
       {auth_proxy = true;
-       auth_host = !proxy;
-       auth_port = !proxy_port;
+       auth_host = !Http.proxy;
+       auth_port = !Http.proxy_port;
        auth_dir = "";
        auth_realm = ""}
 (*e: function [[Retrieve.ask_proxy_auth]] *)

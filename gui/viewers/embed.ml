@@ -102,7 +102,7 @@ let embedded_viewer (frame : Widget.widget) (ctx : Viewers.context)
       in
       let l = Label.create frame [ Text t ] in
       pack [ l ] []
-  | Http_headers.Invalid_HTTP_header e ->
+  | Http_headers.Invalid_header e ->
       let t =
         s_ "Embed Error: malformed type %s (%s)"
           (Http_headers.contenttype doc.document_headers)

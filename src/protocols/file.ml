@@ -8,7 +8,6 @@ open Hyper
 open Www
 open Url
 open Messages
-open Http_headers
 open Http
 open Document
 open Feed
@@ -159,7 +158,7 @@ let fake_cgi wwwr cont path =
             if dh.dh_headers = [] then begin
             (* it should be the HTTP Status-Line *)
             let l = Low.read_line cmd_in in
-              dh.document_status <- (parse_status l).status_code;
+              dh.document_status <- (Http_headers.parse_status l).status_code;
               dh.dh_headers <- [l] (* keep it there *)
             end
           else 
@@ -178,7 +177,7 @@ let fake_cgi wwwr cont path =
                dclose true dh;
                raise (File_error (s_ 
                   "Error while reading headers of %s\n%s" path "(read)"))
-           | Invalid_HTTP_header s ->
+           | Http_headers.Invalid_header s ->
                dclose true dh;
                raise (File_error (s_ 
                       "Error while reading headers of %s\n%s" path s))
@@ -246,7 +245,7 @@ let request wr cont =
       begin
       (* check if this is an update *)
         try 
-          let since = get_header "if-modified-since" wr.www_headers in
+          let since = Http_headers.get_header "if-modified-since" wr.www_headers in
           let ht = Lexdate.ht_of_string since in
           let filet = Http_date.ht_of_stamp st.st_mtime in
           if Http_date.compare filet ht > 0
