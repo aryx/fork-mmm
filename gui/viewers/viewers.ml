@@ -14,6 +14,8 @@ open I18n
 (*****************************************************************************)
 
 (*s: type [[Viewers.vparams]] *)
+(* list of additionnal parameters for the viewer, according to its
+   activation point *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
 (*e: type [[Viewers.vparams]] *)
@@ -148,6 +150,9 @@ let di_compare di di' =
   Stdlib.compare di'#di_last_used di#di_last_used
 (*e: function [[Viewers.di_compare]] *)
 
+(*****************************************************************************)
+(* External viewer *)
+(*****************************************************************************)
 (* 
  * The default external viewer
  *)
@@ -284,7 +289,7 @@ let rem_viewer ctype =
 (*e: function [[Viewers.rem_viewer]] *)
 
 (*****************************************************************************)
-(* Some viewers *)
+(* Interactive viewer *)
 (*****************************************************************************)
 
 (*s: function [[Viewers.unknown]] *)
@@ -304,7 +309,8 @@ let rec unknown (frame : Widget.widget) (ctx : context) (dh : Document.handle)
     if Frx_req.open_simple_synchronous (s_ "MIME type") v then
        let ctype = Textvariable.get v in
        dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
-       view frame ctx dh
+       (* try again *)
+       f frame ctx dh
     else begin
        Save.interactive (fun _ -> ()) dh;
        None
@@ -337,7 +343,8 @@ and interactive frame (ctx : context) (dh : Document.handle) (ctype : string)
         let ctype = Textvariable.get v 
         in
         dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
-        view frame ctx dh
+        (* try again *)
+        f frame ctx dh
       else begin
         Save.interactive (fun _ -> ()) dh;
         None
@@ -353,8 +360,11 @@ and interactive frame (ctx : context) (dh : Document.handle) (ctype : string)
 (*****************************************************************************)
 
 (*s: function [[Viewers.view]] *)
-(* the meat *)
-and view frame (ctx : context) (dh : Document.handle) : display_info option =
+(* the meat (was called view) *)
+(* Nav.absolutegoto -> Nav.request -> Nav.process_viewer (via process) -> <>
+ *   -> Plain.viewer | Htmlw.viewer (via viewers) 
+ *)
+and f frame (ctx : context) (dh : Document.handle) : display_info option =
   try 
     let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
@@ -421,11 +431,11 @@ let add_builtin t v =
 (*e: function [[Viewers.add_builtin]] *)
 
 (*s: function [[Viewers.reset]] *)
+(* ?? -> <> *)
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
-  (*pr2_gen builtin_viewers;*)
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
 
@@ -436,7 +446,7 @@ let reset () =
       let (typ,sub), _pars = Lexheaders.media_type ctype in
       Hashtbl.add viewers (typ,sub) External
     with Http_headers.Invalid_header e ->
-      !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
+      Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
   );
   (*x: [[Viewers.reset()]] setting other viewers *)
   Tkresource.stringlist "savedTypes" [] |> List.iter (fun ctype -> 

@@ -117,7 +117,7 @@ val reset : unit -> unit
 
 (* !!! main entry point!!!! *)
 (*s: signature [[Viewers.view]] *)
-val view : Widget.widget -> context -> Document.handle -> display_info option
+val f : Widget.widget -> context -> Document.handle -> display_info option
 (*e: signature [[Viewers.view]] *)
 
 

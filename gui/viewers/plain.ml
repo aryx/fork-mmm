@@ -1,10 +1,13 @@
 (*s: viewers/plain.ml *)
 open Tk
-open Unix
-open Frx_text
-open Document
 
-open Feed
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Display_info for "text/plain" *)
+(*****************************************************************************)
 
 (*s: class [[Plain.plain]] *)
 class display_plain ((top : Widget.widget),
@@ -37,7 +40,7 @@ class display_plain ((top : Widget.widget),
   (*e: [[Plain.plain]] frame widget methods *)
   (*s: [[Plain.plain]] init method *)
   method init =
-    Log.debug "Plain#init";
+    Logs.debug (fun m -> m "Plain#init");
     (*s: [[Plain.plain#init]] set header widgets *)
     (*
     let hgbas, progf = Htmlw.progress_report frame ctx in
@@ -105,7 +108,7 @@ class display_plain ((top : Widget.widget),
           lastwascr := flag;
           self#add_text s
         end
-      with Unix_error(_,_,_) ->
+      with Unix.Unix_error(_,_,_) ->
          self#set_progress size (-1);
          self#di_abort
       (*e: [[Plain.plain#init]] feed schedule callback *)
@@ -119,7 +122,7 @@ class display_plain ((top : Widget.widget),
     else
       if Winfo.exists tw then begin
         Text.configure tw [State Normal];
-        Text.insert tw textEnd s [];
+        Text.insert tw Frx_text.textEnd s [];
         Text.configure tw [State Disabled]
       end
   (*e: [[Plain.plain]] adding text method *)
@@ -177,17 +180,23 @@ class display_plain ((top : Widget.widget),
 end
 (*e: class [[Plain.plain]] *)
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 (*s: function [[Plain.display_plain]] *)
 (* Viewing text/plain *)
-
-let display_plain _mediapars top vcontext dh =
-  let viewer = new display_plain (top,vcontext,dh) in
-  viewer#init;
-  Some (viewer :> Viewers.display_info)
+(* old: was called display_plain *)
+(* Viewer.view -> <> (via Viewers.viewers) *)
+let viewer _mediapars 
+    (top : Widget.widget) (vcontext : Viewers.context) (dh : Document.handle) :
+     Viewers.display_info option =
+  let disp = new display_plain (top,vcontext,dh) in
+  disp#init;
+  Some (disp :> Viewers.display_info)
 (*e: function [[Plain.display_plain]] *)
 
 (*s: toplevel [[Plain._1]] *)
 let _ =
-  Viewers.add_builtin ("text","plain") display_plain
+  Viewers.add_builtin ("text","plain") viewer
 (*e: toplevel [[Plain._1]] *)
 (*e: viewers/plain.ml *)

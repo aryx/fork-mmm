@@ -937,12 +937,12 @@ type header = string
 % http://en.wikipedia.org/wiki/Internet_media_type
 % ex: "text/html", "text/plain"
 <<type [[Http_headers.media_type]]>>=
+(* type/sub, ex: ?? *)
 type media_type = string * string
 @
 
 % ex: text/html; charset=UTF-8
 <<type [[Http_headers.media_parameter]]>>=
-(* Media types *)
 type media_parameter = string * string
 @
 
@@ -1896,11 +1896,14 @@ let rec retrieve_and_handle (wr : Www.request) =
 % Nav.absolutegoto | ... -> Nav.request -> <> 
 %  (as Nav.request.process <- follow_link (<>) <- Nav.absolutegoto )
 <<function [[Nav.process_viewer]]>>=
-(* Specific handling of "view" requests *)
+(* Specific handling of "view" requests 
+ * Nav.absolutegoto -> Nav.follow_link -> Nav.request <> -> <> (via process)
+ *  -> Viewers.f -> Htmlw.viewer | Plan.viewer
+*)
 let process_viewer addhist make_ctx = 
  fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
-  match Viewers.view nav.nav_viewer_frame ctx dh with
+  match Viewers.f nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
   | Some di ->
       <<[[Nav.process_viewer()]] add in cache and history the document>>
@@ -6695,7 +6698,7 @@ val make_ctx : < Cap.network; ..> ->
   t -> Document.id -> Viewers.context
 @
 <<signature [[Viewers.view]]>>=
-val view : Widget.widget -> context -> Document.handle -> display_info option
+val f : Widget.widget -> context -> Document.handle -> display_info option
 @
 % important for browser to give hooks to view different kinds
 % of documents, for instance chrome allow to open pdf by calling
@@ -6706,17 +6709,20 @@ val view : Widget.widget -> context -> Document.handle -> display_info option
 
 % Nav.request -> ... document_finish continuation -> Nav.process_viewer  -> <>
 <<function [[Viewers.view]]>>=
-(* the meat *)
-and view frame ctx dh =
+(* the meat (was called view) *)
+(* Nav.absolutegoto -> Nav.request -> Nav.process_viewer (via process) -> <>
+ *   -> Plain.viewer | Htmlw.viewer (via viewers) 
+ *)
+and f frame (ctx : context) (dh : Document.handle) : display_info option =
   try 
     let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
-      Log.debug (spf "Viewers.view %s/%s" typ sub);
+      Logs.debug (fun m -> m "Viewers.view %s/%s" typ sub);
       let viewer =
         try Hashtbl.find viewers (typ,sub)
         with Not_found -> 
-          Log.debug (spf "Viewer.view: didn't find viewer for %s/%s" typ sub);
+          Logs.warn (fun m -> m "didn't find viewer for %s/%s" typ sub);
           Hashtbl.find viewers (typ,"*")
       in
       match viewer with
@@ -6731,7 +6737,8 @@ and view frame ctx dh =
 \subsection{[[Viewers.viewers]]}
 
 <<constant [[Viewers.viewers]]>>=
-let viewers = (Hashtbl.create 17: (Http_headers.media_type, spec) Hashtbl.t)
+let viewers : (Http_headers.media_type, spec) Hashtbl.t = 
+  Hashtbl_.create ()
 @
 
 <<type [[Viewers.spec]]>>=
@@ -6791,11 +6798,11 @@ val reset : unit -> unit
 @
 % ??? -> <>
 <<function [[Viewers.reset]]>>=
+(* ?? -> <> *)
 let reset () =
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
-  (*pr2_gen builtin_viewers;*)
   (* Restore the builtin viewers *)
   List.iter (fun (x,y) -> add_viewer x y) !builtin_viewers;
 
@@ -6818,7 +6825,7 @@ let reset () =
 
 <<[[Viewers.view]] exn handler 1>>=
 | Failure "too late" -> (* custom for our internal viewers *)
-    dclose true dh;
+    Document.dclose true dh;
     Document.destroy_log dh false;
     None
 @
@@ -6834,7 +6841,8 @@ let reset () =
 @
 
 <<function [[Viewers.unknown]]>>=
-let rec unknown frame ctx dh =
+let rec unknown (frame : Widget.widget) (ctx : context) (dh : Document.handle)
+   : display_info option =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Warning")
          (s_ "No MIME type given for the document\n%s"
@@ -6849,13 +6857,14 @@ let rec unknown frame ctx dh =
     if Frx_req.open_simple_synchronous (s_ "MIME type") v then
        let ctype = Textvariable.get v in
        dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
-       view frame ctx dh
+       (* try again *)
+       f frame ctx dh
     else begin
        Save.interactive (fun _ -> ()) dh;
        None
     end
  | 1 -> Save.interactive (fun _ -> ()) dh; None
- | 2 -> dclose true dh; None
+ | 2 -> Document.dclose true dh; None
  | _ -> assert false (* property of dialogs *)
 @
 
@@ -6865,18 +6874,21 @@ let rec unknown frame ctx dh =
 
 <<toplevel [[Plain._1]]>>=
 let _ =
-  Viewers.add_builtin ("text","plain") display_plain
+  Viewers.add_builtin ("text","plain") viewer
 @
 
 % Nav.request -async-> Nav.process_viewer -> Viewers.view -> <> 
 %   (as viewer <- Hashtbl.find viewers <- Plain_1)
 <<function [[Plain.display_plain]]>>=
 (* Viewing text/plain *)
-
-let display_plain _mediapars top vcontext dh =
-  let viewer = new display_plain (top,vcontext,dh) in
-  viewer#init;
-  Some (viewer :> Viewers.display_info)
+(* old: was called display_plain *)
+(* Viewer.view -> <> (via Viewers.viewers) *)
+let viewer _mediapars 
+    (top : Widget.widget) (vcontext : Viewers.context) (dh : Document.handle) :
+     Viewers.display_info option =
+  let disp = new display_plain (top,vcontext,dh) in
+  disp#init;
+  Some (disp :> Viewers.display_info)
 @
 
 % display_plain -> <>
@@ -6932,7 +6944,7 @@ val mutable (*private*) tw = Widget.default_toplevel
 % display_plain -> <>
 <<[[Plain.plain]] init method>>=
 method init =
-  Log.debug "Plain#init";
+  Logs.debug (fun m -> m "Plain#init");
   <<[[Plain.plain#init]] set header widgets>>
 
   (* Scrollable text widget *)
@@ -6984,7 +6996,7 @@ try
     lastwascr := flag;
     self#add_text s
   end
-with Unix_error(_,_,_) ->
+with Unix.Unix_error(_,_,_) ->
    self#set_progress size (-1);
    self#di_abort
 @
@@ -6997,7 +7009,7 @@ method add_text s =
   else
     if Winfo.exists tw then begin
       Text.configure tw [State Normal];
-      Text.insert tw textEnd s [];
+      Text.insert tw Frx_text.textEnd s [];
       Text.configure tw [State Disabled]
     end
 @
@@ -7029,16 +7041,20 @@ Frx_text.addsearch text;
 
 <<toplevel [[Htmlw._1]]>>=
 let _ =
-  Viewers.add_builtin ("text","html") display_html
+  Viewers.add_builtin ("text","html") viewer
 @
 
 % Viewers.view -> <> (as viewer <- Hashtbl.find viewers <- Plain_1)
 <<function [[Htmlw.display_html]]>>=
-let display_html mediapars top ctx dh =
+(* Nav.absolutegoto -> Nav.request -> Nav.process_viewer (via process) ->
+ *  Viewers.f -> <> (via viewers)
+ *)
+let viewer : Viewers.t = 
+ fun mediapars top (ctx : Viewers.context) (dh : Document.handle) ->
   let imgmanager = Imgload.create() in
-  let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
-  viewer#init true;
-  Some (viewer :> Viewers.display_info)
+  let disp = new display_html (top,ctx,mediapars,imgmanager,dh) in
+  disp#init true;
+  Some (disp :> Viewers.display_info)
 @
 
 \section{MIME types}
@@ -7348,6 +7364,7 @@ end
 @
 
 <<class [[Viewers.context]]>>=
+(* The context given to a viewer *)
 class virtual context ((did : Document.id), 
                        (v : vparams)) =
  object (self : 'a)
@@ -7439,7 +7456,7 @@ Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype ->
     let (typ,sub), _pars = Lexheaders.media_type ctype in
     Hashtbl.add viewers (typ,sub) External
   with Http_headers.Invalid_header e ->
-    !Error.default#f (s_ "Invalid MIME type %s\n%s" ctype e)
+    Error.f (s_ "Invalid MIME type %s\n%s" ctype e)
 );
 @
 
@@ -7458,7 +7475,7 @@ Tkresource.stringlist "externalViewers" [] |> List.iter (fun ctype ->
  * NOTE: There are sometimes weird errors when the child dumps core
  *     	 between fork/exec with no apparent reason (on SunOS4.1 only)
  *)
-let extern dh ctype =
+let extern (dh : Document.handle) (ctype : string) : unit =
   let (pin, pout) = Unix.pipe() in
   (* children must not keep pout open *)
   Unix.set_close_on_exec pout;
@@ -7490,7 +7507,7 @@ let extern dh ctype =
           try
             let n = dh.document_feed.feed_read buffer 0 4096 in
             if n = 0 then begin
-              dclose true dh;
+              Document.dclose true dh;
               Unix.close pout;
               Document.end_log dh (s_ "End of transmission")
             end else begin
@@ -7501,7 +7518,7 @@ let extern dh ctype =
           with Unix.Unix_error(e,_,_) ->
             Log.f (sprintf "Error writing to viewer (%s)"
                     (Unix.error_message e));
-            dclose true dh;
+            Document.dclose true dh;
             kill();
             Unix.close pout;
             Document.destroy_log dh false;
@@ -7531,7 +7548,8 @@ let extern dh ctype =
 
 
 <<function [[Viewers.interactive]]>>=
-and interactive frame ctx dh ctype =
+and interactive frame (ctx : context) (dh : Document.handle) (ctype : string) 
+   : display_info option =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Viewers")
          (s_
@@ -7552,14 +7570,15 @@ and interactive frame ctx dh ctype =
         let ctype = Textvariable.get v 
         in
         dh.dh_headers <- ("Content-Type: " ^ ctype) :: dh.dh_headers;
-        view frame ctx dh
+        (* try again *)
+        f frame ctx dh
       else begin
         Save.interactive (fun _ -> ()) dh;
         None
       end
   | 1 -> extern (Decoders.insert dh) ctype; None
   | 2 -> Save.interactive (fun _ -> ()) dh; None
-  | 3 -> dclose true dh; None
+  | 3 -> Document.dclose true dh; None
   | _ -> assert false (* property of dialogs *)
 @
 
@@ -10344,6 +10363,8 @@ method params : vparams
 @
 
 <<type [[Viewers.vparams]]>>=
+(* list of additionnal parameters for the viewer, according to its
+   activation point *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
 @

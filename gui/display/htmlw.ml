@@ -2,6 +2,14 @@
 open I18n
 open Tk
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+
 (*s: constant [[Htmlw.frames_as_links]] *)
 (* Prefs globals *)
 let frames_as_links = ref false
@@ -12,6 +20,10 @@ let pscrolling = ref false
 (*s: constant [[Htmlw.ignore_meta_charset]] *)
 let ignore_meta_charset = ref false
 (*e: constant [[Htmlw.ignore_meta_charset]] *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (*s: constant [[Htmlw.scroll_icon]] *)
 let scroll_icon ="
@@ -398,6 +410,10 @@ class  virtual bored () =
 
 end
 
+(*****************************************************************************)
+(* Display_info *)
+(*****************************************************************************)
+
 (*s: class [[Htmlw.display_html]] *)
 class display_html ((top : Widget.widget),
                     (ctx : Viewers.context),
@@ -758,41 +774,50 @@ class display_html ((top : Widget.widget),
 
 end
 (*e: class [[Htmlw.display_html]] *)
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
       
 (*s: function [[Htmlw.display_html]] *)
-let display_html mediapars top ctx dh =
+(* Nav.absolutegoto -> Nav.request -> Nav.process_viewer (via process) ->
+ *  Viewers.f -> <> (via viewers)
+ *)
+let viewer : Viewers.t = 
+ fun mediapars top (ctx : Viewers.context) (dh : Document.handle) ->
   let imgmanager = Imgload.create() in
-  let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
-  viewer#init true;
-  Some (viewer :> Viewers.display_info)
+  let disp = new display_html (top,ctx,mediapars,imgmanager,dh) in
+  disp#init true;
+  Some (disp :> Viewers.display_info)
 (*e: function [[Htmlw.display_html]] *)
 
 (*s: function [[Htmlw.embedded_html]] *)
 (* TODO: we should be able to share the imgmanager, but I don't see
  *  where we can get it from (except by adding something in ctx)
  *)
-let embedded_html mediapars top ctx doc =
+let embedded_viewer =
+ fun mediapars top (ctx : Viewers.context) (doc : Document.t) ->
   let imgmanager = Imgload.create() in
   let dh = Decoders.insert (Cache.make_embed_handle doc) in
   let ctx = ctx#in_embed dh.document_id in
-  let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
-  viewer#init false;
-  pack [viewer#di_widget][Expand true; Fill Fill_Both];
+  let disp = new display_html (top,ctx,mediapars,imgmanager,dh) in
+  disp#init false;
+  pack [disp#di_widget][Expand true; Fill Fill_Both];
   let caps = Cap.network_caps_UNSAFE () in
   (* set for events *)
-  Frx_synth.bind viewer#di_widget "load_images" 
-    (fun _top -> viewer#di_load_images);
-  Frx_synth.bind viewer#di_widget "update" 
-    (fun _ -> Embed.update caps top ctx doc (fun () -> viewer#di_update))
+  Frx_synth.bind disp#di_widget "load_images" 
+    (fun _top -> disp#di_load_images);
+  Frx_synth.bind disp#di_widget "update" 
+    (fun _ -> Embed.update caps top ctx doc (fun () -> disp#di_update))
 (*e: function [[Htmlw.embedded_html]] *)
 
 (*s: toplevel [[Htmlw._1]] *)
 let _ =
-  Viewers.add_builtin ("text","html") display_html
+  Viewers.add_builtin ("text","html") viewer
 (*e: toplevel [[Htmlw._1]] *)
 (*s: toplevel [[Htmlw._2]] *)
 let _ =
-  Embed.add_viewer ("text", "html") embedded_html
+  Embed.add_viewer ("text", "html") embedded_viewer
 (*e: toplevel [[Htmlw._2]] *)
 
 (*e: display/htmlw.ml *)

@@ -2969,6 +2969,7 @@ let expires hs =
 
 <<type [[Http_headers.authChallenge]]>>
 
+(* Media types *)
 <<type [[Http_headers.media_parameter]]>>
 <<type [[Http_headers.media_type]]>>
 
@@ -5671,9 +5672,6 @@ type hyper_func = {
 
 <<type [[Viewers.hyper_func]]>>
 
-(* list of additionnal parameters for the viewer, according to its
-   activation point *)
-
 <<signature class [[Viewers.context]]>>
 
 <<signature class [[Viewers.display_info]]>>
@@ -5728,15 +5726,20 @@ let _extern_batch dh ctype =
 %-------------------------------------------------------------
 
 <<viewers/viewers.ml>>=
-(*
- * Multimedia
- *)
 open Common
 open I18n
 
-open Document
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(*
+ * Multimedia
+ *)
 
-(* The context given to a viewer *)
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 <<type [[Viewers.vparams]]>>
 <<type [[Viewers.frame_targets]]>>
 
@@ -5756,8 +5759,15 @@ class  virtual display_info () =
   <<[[Viewers.display_info]] graphic cache methods>>
 end
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 <<function [[Viewers.di_compare]]>>
 
+(*****************************************************************************)
+(* External viewer *)
+(*****************************************************************************)
 (* 
  * The default external viewer
  *)
@@ -5767,6 +5777,10 @@ end
 <<function [[Viewers.extern_batch]]>>
 
 <<function [[Viewers.extern]]>>
+
+(*****************************************************************************)
+(* Types part 2 *)
+(*****************************************************************************)
 
 (*
  * Viewer control
@@ -5791,11 +5805,23 @@ end
 
 <<function [[Viewers.rem_viewer]]>>
 
+(*****************************************************************************)
+(* Interactive viewer *)
+(*****************************************************************************)
+
 <<function [[Viewers.unknown]]>>
 
 <<function [[Viewers.interactive]]>>
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
 <<function [[Viewers.view]]>>
+
+(*****************************************************************************)
+(* Builtin viewers global *)
+(*****************************************************************************)
 
 <<constant [[Viewers.builtin_viewers]]>>
 <<function [[Viewers.add_builtin]]>>
@@ -5813,14 +5839,20 @@ end
 
 <<viewers/plain.ml>>=
 open Tk
-open Unix
-open Frx_text
-open Document
 
-open Feed
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Display_info for "text/plain" *)
+(*****************************************************************************)
 
 <<class [[Plain.plain]]>>
 
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 <<function [[Plain.display_plain]]>>
 
 <<toplevel [[Plain._1]]>>
@@ -8780,12 +8812,8 @@ val html_head_ui :
 @
 
 <<signature [[Htmlw.display_html]]>>=
-(* [html_head_ui headers redisplay scrollmode top ctx]
-   returns 
-   hgroup, set_title, add_link, add_header, add_extra_header
-*)
-
-val display_html : Viewers.t
+(* automatically added to list of viewers via toplevel stmt *)
+val viewer : Viewers.t
 @
 
 
@@ -9038,25 +9066,26 @@ let head_hook (headgroup,set_title,add_link,add_header) mach =
 (* TODO: we should be able to share the imgmanager, but I don't see
  *  where we can get it from (except by adding something in ctx)
  *)
-let embedded_html mediapars top ctx doc =
+let embedded_viewer =
+ fun mediapars top (ctx : Viewers.context) (doc : Document.t) ->
   let imgmanager = Imgload.create() in
   let dh = Decoders.insert (Cache.make_embed_handle doc) in
   let ctx = ctx#in_embed dh.document_id in
-  let viewer = new display_html (top,ctx,mediapars,imgmanager,dh) in
-  viewer#init false;
-  pack [viewer#di_widget][Expand true; Fill Fill_Both];
+  let disp = new display_html (top,ctx,mediapars,imgmanager,dh) in
+  disp#init false;
+  pack [disp#di_widget][Expand true; Fill Fill_Both];
   let caps = Cap.network_caps_UNSAFE () in
   (* set for events *)
-  Frx_synth.bind viewer#di_widget "load_images" 
-    (fun _top -> viewer#di_load_images);
-  Frx_synth.bind viewer#di_widget "update" 
-    (fun _ -> Embed.update caps top ctx doc (fun () -> viewer#di_update))
+  Frx_synth.bind disp#di_widget "load_images" 
+    (fun _top -> disp#di_load_images);
+  Frx_synth.bind disp#di_widget "update" 
+    (fun _ -> Embed.update caps top ctx doc (fun () -> disp#di_update))
 @
 
 
 <<toplevel [[Htmlw._2]]>>=
 let _ =
-  Embed.add_viewer ("text", "html") embedded_html
+  Embed.add_viewer ("text", "html") embedded_viewer
 @
 
 
@@ -9066,9 +9095,21 @@ let _ =
 open I18n
 open Tk
 
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Globals *)
+(*****************************************************************************)
+
 <<constant [[Htmlw.frames_as_links]]>>
 <<constant [[Htmlw.pscrolling]]>>
 <<constant [[Htmlw.ignore_meta_charset]]>>
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 <<constant [[Htmlw.scroll_icon]]>>
 
@@ -9219,7 +9260,15 @@ class  virtual bored () =
 
 end
 
+(*****************************************************************************)
+(* Display_info *)
+(*****************************************************************************)
+
 <<class [[Htmlw.display_html]]>>
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
       
 <<function [[Htmlw.display_html]]>>
 
@@ -13084,7 +13133,7 @@ open Tk
 <<exception [[Nav.Duplicate]]>>
 
 (*****************************************************************************)
-(* Helpers *)
+(* Cache helpers *)
 (*****************************************************************************)
 
 (* Important note: we assume two requests on the same url are identical
@@ -13108,6 +13157,10 @@ open Tk
 
 <<function [[Nav.nothing_specific]]>>
 
+(*****************************************************************************)
+(* Running viewers *)
+(*****************************************************************************)
+
 <<function [[Nav.process_viewer]]>>
 
 <<function [[Nav.specific_viewer]]>>
@@ -13115,15 +13168,19 @@ open Tk
 
 <<function [[Nav.process_save]]>>
 
+(*****************************************************************************)
+(* Head ?? *)
+(*****************************************************************************)
+
 <<function [[Nav.display_headers]]>>
  
 <<constant [[Nav.process_head]]>>
 
 <<function [[Nav.make_head]]>>
 
-(*
- *  Other handlers, less general
- *)
+(*****************************************************************************)
+(* Other handlers, less general *)
+(*****************************************************************************)
 
 <<function [[Nav.copy_link]]>>
 
@@ -13132,9 +13189,17 @@ open Tk
 
 <<function [[Nav.id_wr]]>>
 
+(*****************************************************************************)
+(* stdctx *)
+(*****************************************************************************)
+
 <<class [[Nav.stdctx]]>>
 
 <<function [[Nav.make_ctx]]>>
+
+(*****************************************************************************)
+(* Follow/save links *)
+(*****************************************************************************)
 
 <<function [[Nav.save_link]]>>
 <<function [[Nav.follow_link]]>>
@@ -13146,7 +13211,6 @@ open Tk
 <<function [[Nav.absolutegoto]]>>
     
 <<function [[Nav.historygoto]]>>
-
 
 <<function [[Nav.update]]>>
 @

@@ -37,11 +37,7 @@ val html_head_ui :
 *)
 (*e: signature [[Htmlw.html_head_ui]] *)
 (*s: signature [[Htmlw.display_html]] *)
-(* [html_head_ui headers redisplay scrollmode top ctx]
-   returns 
-   hgroup, set_title, add_link, add_header, add_extra_header
-*)
-
-val display_html : Viewers.t
+(* automatically added to list of viewers via toplevel stmt *)
+val viewer : Viewers.t
 (*e: signature [[Htmlw.display_html]] *)
 (*e: display/htmlw.mli *)

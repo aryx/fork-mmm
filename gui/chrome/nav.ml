@@ -47,7 +47,7 @@ exception Duplicate of Url.t
 (*e: exception [[Nav.Duplicate]] *)
 
 (*****************************************************************************)
-(* Helpers *)
+(* Cache helpers *)
 (*****************************************************************************)
 
 (* Important note: we assume two requests on the same url are identical
@@ -170,12 +170,19 @@ let request (caps : < Cap.network; ..>) (nav : t)
 let nothing_specific _nav _did _wr = raise Not_found
 (*e: function [[Nav.nothing_specific]] *)
 
+(*****************************************************************************)
+(* Running viewers *)
+(*****************************************************************************)
+
 (*s: function [[Nav.process_viewer]] *)
-(* Specific handling of "view" requests *)
+(* Specific handling of "view" requests 
+ * Nav.absolutegoto -> Nav.follow_link -> Nav.request <> -> <> (via process)
+ *  -> Viewers.f -> Htmlw.viewer | Plan.viewer
+*)
 let process_viewer addhist make_ctx = 
  fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
-  match Viewers.view nav.nav_viewer_frame ctx dh with
+  match Viewers.f nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
   | Some di ->
       (*s: [[Nav.process_viewer()]] add in cache and history the document *)
@@ -210,6 +217,10 @@ let process_save dest = fun _nav wr (dh : Document.handle) ->
     else Document.dclose true dh
 (*e: function [[Nav.process_save]] *)
 
+(*****************************************************************************)
+(* Head ?? *)
+(*****************************************************************************)
+
 (*s: function [[Nav.display_headers]] *)
 (* Simple implementation of HEAD *)
 
@@ -238,9 +249,9 @@ let make_head (hlink : Hyper.link) =
   { hlink with h_method = HEAD; }
 (*e: function [[Nav.make_head]] *)
 
-(*
- *  Other handlers, less general
- *)
+(*****************************************************************************)
+(* Other handlers, less general *)
+(*****************************************************************************)
 
 (*s: function [[Nav.copy_link]] *)
 (* Copying a link to the X Selection *)
@@ -262,6 +273,10 @@ let add_user_navigation (s : string) (f : Viewers.hyper_func) =
 (*s: function [[Nav.id_wr]] *)
 let id_wr wr = wr
 (*e: function [[Nav.id_wr]] *)
+
+(*****************************************************************************)
+(* stdctx *)
+(*****************************************************************************)
 
 (*s: class [[Nav.stdctx]] *)
 (* WARNING: we take copies of these objects, so "self" must *not* be
@@ -393,6 +408,10 @@ let make_ctx (caps : < Cap.network; ..>) (nav : t) (did : Document.id) : Viewers
   ((new stdctx caps (did, nav))#init :> Viewers.context)
 (*e: function [[Nav.make_ctx]] *)
 
+(*****************************************************************************)
+(* Follow/save links *)
+(*****************************************************************************)
+
 (*s: function [[Nav.save_link]] *)
 (* Simple wrappers *)
 let save_link (caps : < Cap.network; ..>)
@@ -460,7 +479,6 @@ let historygoto (caps : < Cap.network; ..>)
       false
    end
 (*e: function [[Nav.historygoto]] *)
-
 
 (*s: function [[Nav.update]] *)
 let update (caps: < Cap.network; ..>)
