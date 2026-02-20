@@ -1,13 +1,18 @@
 (*s: viewers/viewers.ml *)
-(*
- * Multimedia
- *)
 open Common
 open I18n
 
-open Document
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(*
+ * Multimedia
+ *)
 
-(* The context given to a viewer *)
+(*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
 (*s: type [[Viewers.vparams]] *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
@@ -47,6 +52,7 @@ type hyper_func = {
 (*e: type [[Viewers.hyper_func]] *)
 
 (*s: class [[Viewers.context]] *)
+(* The context given to a viewer *)
 class virtual context ((did : Document.id), 
                        (v : vparams)) =
  object (self : 'a)
@@ -132,6 +138,10 @@ class  virtual display_info () =
   (*e: [[Viewers.display_info]] graphic cache methods *)
 end
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
 (*s: function [[Viewers.di_compare]] *)
 let di_compare di di' = 
   (*di#di_last_used > di'#di_last_used*)
@@ -171,7 +181,7 @@ let _extern_batch dh ctype =
  * NOTE: There are sometimes weird errors when the child dumps core
  *     	 between fork/exec with no apparent reason (on SunOS4.1 only)
  *)
-let extern dh ctype =
+let extern (dh : Document.handle) (ctype : string) : unit =
   let (pin, pout) = Unix.pipe() in
   (* children must not keep pout open *)
   Unix.set_close_on_exec pout;
@@ -203,7 +213,7 @@ let extern dh ctype =
           try
             let n = dh.document_feed.feed_read buffer 0 4096 in
             if n = 0 then begin
-              dclose true dh;
+              Document.dclose true dh;
               Unix.close pout;
               Document.end_log dh (s_ "End of transmission")
             end else begin
@@ -214,13 +224,17 @@ let extern dh ctype =
           with Unix.Unix_error(e,_,_) ->
             Log.f (sprintf "Error writing to viewer (%s)"
                     (Unix.error_message e));
-            dclose true dh;
+            Document.dclose true dh;
             kill();
             Unix.close pout;
             Document.destroy_log dh false;
             Error.f (s_ "Error during retrieval of %s" url)
        )
 (*e: function [[Viewers.extern]] *)
+
+(*****************************************************************************)
+(* Types part 2 *)
+(*****************************************************************************)
 
 (*
  * Viewer control
@@ -254,7 +268,8 @@ type spec =
 (*e: type [[Viewers.spec]] *)
 
 (*s: constant [[Viewers.viewers]] *)
-let viewers = (Hashtbl.create 17: (Http_headers.media_type, spec) Hashtbl.t)
+let viewers : (Http_headers.media_type, spec) Hashtbl.t = 
+  Hashtbl_.create ()
 (*e: constant [[Viewers.viewers]] *)
 
 (*s: function [[Viewers.add_viewer]] *)
@@ -268,8 +283,13 @@ let rem_viewer ctype =
   Hashtbl.remove viewers ctype
 (*e: function [[Viewers.rem_viewer]] *)
 
+(*****************************************************************************)
+(* Some viewers *)
+(*****************************************************************************)
+
 (*s: function [[Viewers.unknown]] *)
-let rec unknown frame ctx dh =
+let rec unknown (frame : Widget.widget) (ctx : context) (dh : Document.handle)
+   : display_info option =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Warning")
          (s_ "No MIME type given for the document\n%s"
@@ -290,12 +310,13 @@ let rec unknown frame ctx dh =
        None
     end
  | 1 -> Save.interactive (fun _ -> ()) dh; None
- | 2 -> dclose true dh; None
+ | 2 -> Document.dclose true dh; None
  | _ -> assert false (* property of dialogs *)
 (*e: function [[Viewers.unknown]] *)
 
 (*s: function [[Viewers.interactive]] *)
-and interactive frame ctx dh ctype =
+and interactive frame (ctx : context) (dh : Document.handle) (ctype : string) 
+   : display_info option =
   match Frx_dialog.f frame (Mstring.gensym "error")
          (s_ "MMM Viewers")
          (s_
@@ -323,22 +344,26 @@ and interactive frame ctx dh ctype =
       end
   | 1 -> extern (Decoders.insert dh) ctype; None
   | 2 -> Save.interactive (fun _ -> ()) dh; None
-  | 3 -> dclose true dh; None
+  | 3 -> Document.dclose true dh; None
   | _ -> assert false (* property of dialogs *)
 (*e: function [[Viewers.interactive]] *)
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
 (*s: function [[Viewers.view]] *)
 (* the meat *)
-and view frame ctx dh =
+and view frame (ctx : context) (dh : Document.handle) : display_info option =
   try 
     let ctype = Http_headers.contenttype dh.dh_headers in
     let (typ, sub), pars = Lexheaders.media_type ctype in
     try (* Get the viewer *)
-      Log.debug (spf "Viewers.view %s/%s" typ sub);
+      Logs.debug (fun m -> m "Viewers.view %s/%s" typ sub);
       let viewer =
         try Hashtbl.find viewers (typ,sub)
         with Not_found -> 
-          Log.debug (spf "Viewer.view: didn't find viewer for %s/%s" typ sub);
+          Logs.warn (fun m -> m "didn't find viewer for %s/%s" typ sub);
           Hashtbl.find viewers (typ,"*")
       in
       match viewer with
@@ -362,7 +387,7 @@ and view frame ctx dh =
     with
     (*s: [[Viewers.view]] exn handler 1 *)
     | Failure "too late" -> (* custom for our internal viewers *)
-        dclose true dh;
+        Document.dclose true dh;
         Document.destroy_log dh false;
         None
     (*x: [[Viewers.view]] exn handler 1 *)
@@ -382,6 +407,10 @@ and view frame ctx dh =
       unknown frame ctx dh
   (*e: [[Viewers.view]] exn handler 2 *)
 (*e: function [[Viewers.view]] *)
+
+(*****************************************************************************)
+(* Builtin viewers global *)
+(*****************************************************************************)
 
 (*s: constant [[Viewers.builtin_viewers]] *)
 let builtin_viewers = ref []

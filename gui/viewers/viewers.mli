@@ -1,6 +1,8 @@
 (*s: viewers/viewers.mli *)
 
 (*s: type [[Viewers.vparams]] *)
+(* list of additionnal parameters for the viewer, according to its
+   activation point *)
 (* hyper functions are: "goto", "save", "gotonew" *)
 type vparams = (string * string) list
 (*e: type [[Viewers.vparams]] *)
@@ -16,9 +18,6 @@ type hyper_func = {
   hyper_func : frame_targets -> Hyper.link -> unit
 }
 (*e: type [[Viewers.hyper_func]] *)
-
-(* list of additionnal parameters for the viewer, according to its
-   activation point *)
 
 (*s: signature class [[Viewers.context]] *)
 (* The context given to a viewer *)
