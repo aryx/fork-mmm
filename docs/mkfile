@@ -44,8 +44,8 @@ SRC= \
   src/globals/version.mli\
   src/globals/version.ml\
   \
-  src/url/uri.mli\
-  src/url/uri.ml\
+  src/www/uri.mli\
+  src/www/uri.ml\
   src/url/url.mli\
   src/url/url.ml\
   src/url/urlenc.mli\

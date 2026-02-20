@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= url.ml uri.ml urlenc.ml lexurl.ml
+SRC= url.ml urlenc.ml lexurl.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=

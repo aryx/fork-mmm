@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= hyper.ml www.ml document.ml maps.ml
+SRC= uri.ml hyper.ml www.ml document.ml maps.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
