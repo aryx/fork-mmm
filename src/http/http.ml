@@ -367,7 +367,8 @@ let read_headers fd previous =
 
 (*s: function [[Http.process_response]] *)
 (* Read headers and run continuation *)
-let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
+(* tcp_connect -> <> (via contf) *)
+let process_response (wwwr : Www.request) (cont : Document.continuation) =
  fun (cnx : cnx) ->
   let url : string = Url.string_of wwwr.www_url in
   wwwr.www_logging (s_ "Reading headers...");
@@ -397,6 +398,7 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
            match 
             wwwr.www_error#ari (s_ "Timeout while waiting for headers of %s" url) 
            with
+           (* TODO: use proper enum for www_error#ari return type *)
            | 0 -> (* abort *) if !stuck then cnx#abort
            | 1 -> (* retry *) timout ()
            | 2 -> (* ignore *) ()
@@ -427,18 +429,12 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
            dh.document_feed.feed_unschedule();
            cnx#set_status Discharged;
 
-           (* ! call the continuation, e.g. MMM stuff? *)
+           (* ! call the continuation, finally! *)
            cont.document_process dh
+
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
-           (*
-           dclose false dh; (* keep it an active cnx since we are retrying *)
-
-           let newcnx = request09 caps wwwr cont in
-           (* the guy up there has the old one !*)
-           cnx#set_fd newcnx#fd
-           *)
-           failwith "HTTP 0.9 not handled"
+           failwith "HTTP 0.9 not handled anymore"
        (*x: [[Http.process_response()]] feed schedule callback failure cases *)
        | Unix.Unix_error(e,_,_) ->
            cnx#abort;
@@ -456,19 +452,21 @@ let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
        (*e: [[Http.process_response()]] reading headers *)
 (*e: function [[Http.process_response]] *)
 
-(* The same for HTTP 0.9, so we directly call the continuation *)
-and process_response09  wwwr (cont : Document.continuation) cnx =
-   let dh =
-       Document.{ document_id = document_id wwwr;
-         document_referer = wwwr.www_link.h_context;
-         document_status = 200;
-         dh_headers = ["Content-Type: text/html"];
-         document_feed = Feed.of_fd cnx#fd;
-         document_fragment = wwwr.www_fragment;
-         document_logger = tty_logger} 
-   in
-   cnx#set_status Discharged;
-   cont.document_process dh
+(* old: The same for HTTP 0.9, there was no header
+ * so we could call directly the continuation
+ * and process_response09  wwwr (cont : Document.continuation) cnx =
+ *    let dh =
+ *        Document.{ document_id = document_id wwwr;
+ *          document_referer = wwwr.www_link.h_context;
+ *          document_status = 200;
+ *          dh_headers = ["Content-Type: text/html"];
+ *          document_feed = Feed.of_fd cnx#fd;
+ *          document_fragment = wwwr.www_fragment;
+ *          document_logger = tty_logger} 
+ *    in
+ *    cnx#set_status Discharged;
+ *    cont.document_process dh
+ *)
 
 (*****************************************************************************)
 (* Requests part2 *)
@@ -480,7 +478,7 @@ and process_response09  wwwr (cont : Document.continuation) cnx =
  *   NOTE: tk doesn't allow two handles on the same fd, thus use CPS
  *         so that reading response is our continuation
  *)
-and async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
+let async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
   let b = Ebuffer.create 1024 in
   full_request (fun x -> Ebuffer.output_string b x) proxy_mode wwwr;
   let req = Ebuffer.get b in
@@ -504,29 +502,20 @@ and async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
 
 (* wrappers for request/response transaction *)
 (*s: function [[Http.start_request]] *)
-and start_request (proxy_mode : bool) (wwwr : Www.request)
+let start_request (proxy_mode : bool) (wwwr : Www.request)
      (cont : Document.continuation) =
  fun (cnx : cnx) ->
   async_request proxy_mode wwwr 
      (fun cnx -> process_response wwwr cont cnx) cnx
 (*e: function [[Http.start_request]] *)
 
-and start_request09 proxy_mode wwwr cont cnx =
-  async_request proxy_mode wwwr (process_response09 wwwr cont) cnx
-
-
 (*s: function [[Http.proxy_request]] *)
 (* Process an HTTP request using the proxy. We pass on the continuation *)
-and proxy_request caps (wr : Www.request) (cont : Document.continuation) =
+let proxy_request caps (wr : Www.request) (cont : Document.continuation) =
   tcp_connect caps !proxy !proxy_port wr.www_logging
        (start_request true wr cont)
        (failed_request wr cont.document_finish)
 (*e: function [[Http.proxy_request]] *)
-
-and proxy_request09 caps (wr : Www.request) cont =
-  tcp_connect caps !proxy !proxy_port wr.www_logging
-          (start_request09 true wr cont)
-          (failed_request wr cont.document_finish)
 
 (*s: function [[Http.request]] *)
 (* Issueing request, with the "retry" logic (unless is "always proxy" mode, 
@@ -537,7 +526,7 @@ and proxy_request09 caps (wr : Www.request) cont =
  * start_request (via contf) -> async_request -> process_response ->
  * cont.document_process
  *)
-and request (caps : < Cap.network; ..>)
+let request (caps : < Cap.network; ..>)
     (wr : Www.request) (cont : Document.continuation) : cnx =
   (*s: [[Http.request()]] if always proxy *)
   if !always_proxy 
@@ -571,38 +560,10 @@ and request (caps : < Cap.network; ..>)
              "INTERNAL ERROR\nHttp.request (not a distant http url): %s" 
                (Url.string_of wr.www_url)))
 (*e: function [[Http.request]] *)
-(* HTTP 0.9 ?? TODO? delete? obsolete?  *)
-and request09 caps wr cont =
-  if !always_proxy 
-  then proxy_request09 caps wr cont
-  else 
-    let urlp = wr.www_url in
-    if urlp.protocol = HTTP then
-      let host = 
-        match urlp.host with
-        | Some h -> h 
-        | _ -> raise (HTTP_error (s_ "Missing host in url"))
-      in
-      let port = 
-        match urlp.port with
-        | Some p -> p
-        | None -> 80  (* default http port *)
-      in
-      try 
-       tcp_connect caps host port wr.www_logging
-        (start_request09 false wr cont)
-        (failed_request wr cont.document_finish)
-      with HTTP_error _ ->
-        tcp_connect caps !proxy !proxy_port wr.www_logging
-               (start_request09 true wr cont)
-              (failed_request wr cont.document_finish)
-    else 
-      raise (HTTP_error (s_ "INTERNAL ERROR\nHttp.request09 (not a distant http url): %s" (Url.string_of wr.www_url)))
 
 (*****************************************************************************)
 (* Entry points *)
 (*****************************************************************************)
-
 (*s: function [[Http.req]] *)
 (* Wrappers returning the abort callback *)
 (* Retrieve.f -> <> (via protos) -> ... -> cont.document_process *)
@@ -612,7 +573,7 @@ let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
 (*e: function [[Http.req]] *)
 (*s: function [[Http.prox_req]] *)
 (* Retrieve.f -> <> (via protos) *)
-and proxy_req caps wr cont = 
+let proxy_req caps wr cont = 
   let cnx = proxy_request caps wr cont in
   (fun () -> cnx#abort)
 (*e: function [[Http.prox_req]] *)
