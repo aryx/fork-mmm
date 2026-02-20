@@ -63,7 +63,7 @@ type continuation = {
     (* What to do one we have a dh on the real document *)
 
   document_finish :  bool -> unit
-    (* What to do if a request does not yield a document *)
+    (* What to do if a request does not yield a document. bool = ???? *)
 }
 (*e: type [[Document.document_continuation]] *)
 
@@ -82,8 +82,7 @@ type data =
 type t = {
   document_headers : string list; (* e.g. Content-type: text/html *)
   mutable document_data : data;
-
-  document_address : Url.t; (* origin? *)
+  document_address : Url.t;
 }
 (*e: type [[Document.document]] *)
 

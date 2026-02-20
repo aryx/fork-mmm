@@ -11,7 +11,7 @@ open Url
 (* This is currently for HTTP and derived, but ... *)
 (* Contains only the one we support *)
 type link_method =
-   GET 
+ | GET 
  | POST of string
  (*s: [[Hyper.link_method]] other cases *)
  | HEAD
@@ -40,7 +40,7 @@ type link = {
 
 (*s: type [[Hyper.link_error]] *)
 type link_error =
-    LinkResolve of string
+  | LinkResolve of string
   | UrlLexing of string * int
 (*e: type [[Hyper.link_error]] *)
 

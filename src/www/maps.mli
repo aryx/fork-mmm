@@ -37,7 +37,7 @@ type t =
 (*s: type [[Maps.map_status]] *)
 (* The table of client-side image maps *)
 type map_status =
-   KnownMap of map
+ | KnownMap of map
  | RequestedMap of string
 (*e: type [[Maps.map_status]] *)
 

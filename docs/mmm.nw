@@ -484,7 +484,7 @@ type link = {
 (* This is currently for HTTP and derived, but ... *)
 (* Contains only the one we support *)
 type link_method =
-   GET 
+ | GET 
  | POST of string
  <<[[Hyper.link_method]] other cases>>
 @
@@ -593,8 +593,7 @@ let sp = Str.regexp "[ \t\n]"
 type t = {
   document_headers : string list; (* e.g. Content-type: text/html *)
   mutable document_data : data;
-
-  document_address : Url.t; (* origin? *)
+  document_address : Url.t;
 }
 @
 %note that it's a mutable field!
@@ -787,7 +786,7 @@ type continuation = {
     (* What to do one we have a dh on the real document *)
 
   document_finish :  bool -> unit
-    (* What to do if a request does not yield a document *)
+    (* What to do if a request does not yield a document. bool = ???? *)
 }
 @
 %less: could defined a type abort = Abort and then
@@ -5940,7 +5939,7 @@ let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
  * start_request (via contf) -> async_request -> process_response ->
  * cont.document_process
  *)
-and request (caps : < Cap.network; ..>)
+let request (caps : < Cap.network; ..>)
     (wr : Www.request) (cont : Document.continuation) : cnx =
   <<[[Http.request()]] if always proxy>>
   else 
@@ -6134,7 +6133,7 @@ Timer_.set (1000 * !timeout)
 
 % tcp_connect -> <>
 <<function [[Http.start_request]]>>=
-and start_request (proxy_mode : bool) (wwwr : Www.request)
+let start_request (proxy_mode : bool) (wwwr : Www.request)
      (cont : Document.continuation) =
  fun (cnx : cnx) ->
   async_request proxy_mode wwwr 
@@ -6149,7 +6148,7 @@ and start_request (proxy_mode : bool) (wwwr : Www.request)
  *   NOTE: tk doesn't allow two handles on the same fd, thus use CPS
  *         so that reading response is our continuation
  *)
-and async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
+let async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
   let b = Ebuffer.create 1024 in
   full_request (fun x -> Ebuffer.output_string b x) proxy_mode wwwr;
   let req = Ebuffer.get b in
@@ -6324,7 +6323,8 @@ let failed_request (wr : Www.request) finish =
 % async_request (via its continuation passed in start_request) -> <>
 <<function [[Http.process_response]]>>=
 (* Read headers and run continuation *)
-let rec process_response (wwwr : Www.request) (cont : Document.continuation) =
+(* tcp_connect -> <> (via contf) *)
+let process_response (wwwr : Www.request) (cont : Document.continuation) =
  fun (cnx : cnx) ->
   let url : string = Url.string_of wwwr.www_url in
   wwwr.www_logging (s_ "Reading headers...");
@@ -6420,8 +6420,9 @@ let read_headers fd previous =
     dh.document_feed.feed_unschedule();
     cnx#set_status Discharged;
 
-    (* ! call the continuation, e.g. MMM stuff? *)
+    (* ! call the continuation, finally! *)
     cont.document_process dh
+
 @
 %less: not a big fan of using exn again for non exception cases
 % but instead regular flow.
@@ -6439,14 +6440,7 @@ let read_headers fd previous =
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
 | Not_found -> (* that's what parse_status raises. HTTP/0.9 dammit *)
-    (*
-    dclose false dh; (* keep it an active cnx since we are retrying *)
-
-    let newcnx = request09 caps wwwr cont in
-    (* the guy up there has the old one !*)
-    cnx#set_fd newcnx#fd
-    *)
-    failwith "HTTP 0.9 not handled"
+    failwith "HTTP 0.9 not handled anymore"
 @
 
 <<[[Http.process_response()]] feed schedule callback failure cases>>=
@@ -6485,6 +6479,7 @@ let rec timout () =
          match 
           wwwr.www_error#ari (s_ "Timeout while waiting for headers of %s" url) 
          with
+         (* TODO: use proper enum for www_error#ari return type *)
          | 0 -> (* abort *) if !stuck then cnx#abort
          | 1 -> (* retry *) timout ()
          | 2 -> (* ignore *) ()
@@ -9824,7 +9819,7 @@ type t =
 <<type [[Maps.map_status]]>>=
 (* The table of client-side image maps *)
 type map_status =
-   KnownMap of map
+ | KnownMap of map
  | RequestedMap of string
 @
 
@@ -11879,7 +11874,7 @@ val proxy_req: < Cap.network; ..> ->
 
 <<function [[Http.prox_req]]>>=
 (* Retrieve.f -> <> (via protos) *)
-and proxy_req caps wr cont = 
+let proxy_req caps wr cont = 
   let cnx = proxy_request caps wr cont in
   (fun () -> cnx#abort)
 @
@@ -12412,7 +12407,7 @@ proxy_request caps wr cont
 
 <<function [[Http.proxy_request]]>>=
 (* Process an HTTP request using the proxy. We pass on the continuation *)
-and proxy_request caps (wr : Www.request) (cont : Document.continuation) =
+let proxy_request caps (wr : Www.request) (cont : Document.continuation) =
   tcp_connect caps !proxy !proxy_port wr.www_logging
        (start_request true wr cont)
        (failed_request wr cont.document_finish)
@@ -14595,7 +14590,7 @@ exception Invalid_link of link_error
 
 <<type [[Hyper.link_error]]>>=
 type link_error =
-    LinkResolve of string
+  | LinkResolve of string
   | UrlLexing of string * int
 @
 
