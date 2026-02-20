@@ -186,10 +186,11 @@ end
 (*s: function [[Plain.display_plain]] *)
 (* Viewing text/plain *)
 (* old: was called display_plain *)
-(* Viewer.view -> <> (via Viewers.viewers) *)
-let viewer _mediapars 
+(* Viewer.f -> <> (via Viewers.viewers) *)
+let viewer : Viewers.t =
+ fun _mediapars 
     (top : Widget.widget) (vcontext : Viewers.context) (dh : Document.handle) :
-     Viewers.display_info option =
+     Viewers.display_info option ->
   let disp = new display_plain (top,vcontext,dh) in
   disp#init;
   Some (disp :> Viewers.display_info)
