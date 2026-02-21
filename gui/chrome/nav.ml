@@ -16,7 +16,7 @@ type t = {
   nav_viewer_frame : Widget.widget;
 
   (* Nav.absolutegoto -> request -> process_viewer -> <> *)
-  nav_show_current: Viewers.display_info -> string option -> unit;
+  nav_show_current: Viewers.display_info -> string option (* frag *) -> unit;
 
   (*s: [[Nav.t]] manage history methods *)
   nav_add_hist : Document.id -> string option -> unit;
@@ -182,6 +182,7 @@ let nothing_specific _nav _did _wr = raise Not_found
 let process_viewer addhist make_ctx = 
  fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
+  (* ! Viewers ! *)
   match Viewers.f nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
   | Some di ->

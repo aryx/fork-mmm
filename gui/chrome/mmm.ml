@@ -103,6 +103,7 @@ let display (di : Viewers.display_info) =
   then pack [di#di_widget][Fill Fill_Both; Expand true]
   else Error.f "fatal error: window was destroyed";
 
+  (*s: [[Mmm.display()]] adjust title toplevel *)
   let tl = Winfo.toplevel di#di_widget in
   let title = s_ "MMM Browser@%s" di#di_title in
   if Widget.known_class tl = "toplevel" 
@@ -110,6 +111,7 @@ let display (di : Viewers.display_info) =
     Wm.title_set tl title; 
     Wm.iconname_set tl title
   end
+  (*e: [[Mmm.display()]] adjust title toplevel *)
 (*e: function [[Mmm.display]] *)
 
 (*****************************************************************************)
@@ -177,9 +179,9 @@ let rec navigator (caps: < Cap.network; ..>)
   (*e: [[Mmm.navigator()]] setup top packing *)
 
   (*s: [[Mmm.navigator()]] locals *)
-  let entryv = Textvariable.create_temporary top in
-  (*x: [[Mmm.navigator()]] locals *)
   let current_di : Viewers.display_info option ref = ref None in
+  (*x: [[Mmm.navigator()]] locals *)
+  let entryv = Textvariable.create_temporary top in
   (*x: [[Mmm.navigator()]] locals *)
   let update_vhistory = ref (fun () -> ()) (* duh *) in
   (*e: [[Mmm.navigator()]] locals *)
@@ -196,6 +198,9 @@ let rec navigator (caps: < Cap.network; ..>)
     (*e: local [[Mmm.navigator.hist]] *)
     (*s: local function [[Mmm.navigator.show_current]] *)
     (* Change view, independently of history manip *)
+    (* Nav.absolutegoto -> Nav.request -> Nav.process_viewer -> <>
+     *   (as Nav.nav_show_current) 
+     *)
     let show_current (di : Viewers.display_info) (frag : string option) =
       (*s: [[Mmm.navigator.show_current()]] start hook *)
       di#di_touch;

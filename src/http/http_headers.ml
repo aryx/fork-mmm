@@ -210,10 +210,11 @@ type authChallenge =
 
 (* Media types *)
 (*s: type [[Http_headers.media_parameter]] *)
+(* ex: ?? *)
 type media_parameter = string * string
 (*e: type [[Http_headers.media_parameter]] *)
 (*s: type [[Http_headers.media_type]] *)
-(* type/sub, ex: ?? *)
+(* type/sub, ex: text/html, images/gif, applications/postscript *)
 type media_type = string * string
 (*e: type [[Http_headers.media_type]] *)
 

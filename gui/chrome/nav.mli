@@ -4,7 +4,7 @@ type t = {
   nav_viewer_frame : Widget.widget;
 
   (* Nav.absolutegoto -> request -> process_viewer -> <> *)
-  nav_show_current: Viewers.display_info -> string option -> unit;
+  nav_show_current: Viewers.display_info -> string option (* frag *) -> unit;
 
   (*s: [[Nav.t]] manage history methods *)
   nav_add_hist : Document.id -> string option -> unit;

@@ -140,6 +140,8 @@ Here are other candidates that were considered but ultimately discarded:
 % already lots of LOC actually
 % https://github.com/servo/servo/wiki/Design
 
+% elinks?
+
 \end{itemize}
 
 %other:
@@ -386,9 +388,10 @@ let version_number =
 % (not too bad syntax)
 
 <<type [[Url.t]]>>=
-(* URLs as defined by RFC 1738 *)
-
-(* Not all components are used for all protocols. See RFC. *)
+(* URLs as defined by RFC 1738. Not all components are used for all protocols.
+ * The order of the fields below correspond to the actual order in the string:
+ *   <protocol>:<user><password>//<host>:<port>/<path>?<search>
+*)
 type t = 
   { mutable protocol : protocol;
 
@@ -552,7 +555,6 @@ val make : Hyper.link -> request
 let make (hlink : Hyper.link) : request =
   let absuri = Hyper.resolve hlink in 
   let url : Url.t = Lexurl.make absuri.uri_url in
-  (* TODO: rewrite to not abuse Not_found for regular path *)
   try (* search for space in network URI *)
     if List.mem url.protocol [FILE; MAILTO] 
     then raise Not_found
@@ -563,6 +565,7 @@ let make (hlink : Hyper.link) : request =
       in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
   with Not_found -> 
+    (* regular code path, everything is normal, we didn't find (bad) spaces *)
     { www_link = hlink;
 
       www_url = url; (* should not fail ? *)
@@ -758,6 +761,8 @@ val get: Url.protocol ->
 %old: the unit -> unit is actually a returned aborter hook! so caller
 %  can abort the request, so I did a type instead of having unit -> unit
 
+\subsection{[[Protos.protos]]}
+
 <<constant [[Protos.protos]]>>=
 let protos : (Url.protocol, 
              (< Cap.network > -> Www.request -> Document.continuation -> Www.aborter) * 
@@ -853,6 +858,8 @@ type handle = {
 
 \section{HTTP}
 
+% one of the protos is Http.req!
+
 % previous section were generic request/response,
 % here are the specifics for the http protocol
 
@@ -938,12 +945,13 @@ type header = string
 % http://en.wikipedia.org/wiki/Internet_media_type
 % ex: "text/html", "text/plain"
 <<type [[Http_headers.media_type]]>>=
-(* type/sub, ex: ?? *)
+(* type/sub, ex: text/html, images/gif, applications/postscript *)
 type media_type = string * string
 @
 
 % ex: text/html; charset=UTF-8
 <<type [[Http_headers.media_parameter]]>>=
+(* ex: ?? *)
 type media_parameter = string * string
 @
 
@@ -951,13 +959,38 @@ type media_parameter = string * string
 
 \section{Viewers}
 
-% have seen retriever, now see (generic) viewer, which
+% have seen generic (multi protocol) Retrieve.f, 
+% now see generic (multi content type) Viewer.f, which
 % are usually the code is the document continuation
 % that will get the document handle and do stuff
 
 % to operate it will be passed a context to do its job
 % (in addition to the document handle), and will return
 % a display_info
+
+<<type [[Viewers.t]]>>=
+(* Definition of an internal viewer *)
+type t = 
+    Http_headers.media_parameter list -> 
+    (Widget.widget ->  context -> Document.handle -> display_info option)
+@
+
+
+\subsection{[[Viewers.viewers]]}
+
+<<constant [[Viewers.viewers]]>>=
+let viewers : (Http_headers.media_type, spec) Hashtbl.t = 
+  Hashtbl_.create ()
+@
+
+<<type [[Viewers.spec]]>>=
+type spec =
+  | Internal of t
+  | External
+  <<[[Viewers.spec]] other cases>>
+@
+% External     (* pass to metamail *)
+
 
 \subsection{[[Viewers.context]]}
 
@@ -984,7 +1017,7 @@ end
 %(* Standard hyper functions are: "goto", "save", "gotonew" *)
 
 
-%XXX
+%XXX ??? when is this called ? why need pass down in context to viewer?
 <<[[Viewers.context]] hypertext methods signatures>>=
 method goto    : Hyper.link -> unit
 method gotonew : Hyper.link -> unit
@@ -1055,6 +1088,8 @@ method virtual di_widget : Widget.widget
 
 \subsection{HTML}
 
+% actually not really a token because tag is complex with
+%  attributes in it
 <<type [[Html.token]]>>=
 type token =
  | Doctype of string
@@ -1119,6 +1154,9 @@ type attribute_value = string
 \section{DOM}
 
 %https://dom.spec.whatwg.org/
+
+
+
 
 \section{HTML display}
 
@@ -1283,6 +1321,17 @@ end
 
 
 \chapter{[[main()]]}
+
+<<type [[Main.caps]]>>=
+(* Need:
+ *  - Cap.network: obviously, this is a Web browser
+ *  - open_in: for ??
+ *)
+type caps = < 
+   Cap.open_in;
+   Cap.network
+ >
+@
 
 <<[[Main.main()]] locals>>=
 let init_urls = ref [] in
@@ -1740,7 +1789,7 @@ type t = {
   nav_viewer_frame : Widget.widget;
 
   (* Nav.absolutegoto -> request -> process_viewer -> <> *)
-  nav_show_current: Viewers.display_info -> string option -> unit;
+  nav_show_current: Viewers.display_info -> string option (* frag *) -> unit;
 
   <<[[Nav.t]] manage history methods>>
   <<[[Nav.t]] manage active connections methods>>
@@ -1799,6 +1848,12 @@ let follow_link (caps : < Cap.network; ..>)
 % true is to add in history, but when we don't want to history?
 % when we actually go back and do a historygoto!
 %less: when process_viewer is passed another make_ctx? could inline then?
+
+%toc:
+% Fundamental functions: 
+%  - request (ultimately Retrieve.f),
+%  - process_viewer (ultimately Viewers.f)
+%    and make_ctx
 
 \subsection{[[Nav.request()]]}
 
@@ -1899,7 +1954,7 @@ let rec retrieve_and_handle (wr : Www.request) =
 %todo: why pass process to Nav.request? it changes? It's not
 % always process_viewer?
 
-\subsubsection{[[Nav.process_viewer()]]}
+\subsection{[[Nav.process_viewer()]]}
 
 % Nav.absolutegoto | ... -> Nav.request -> <> 
 %  (as Nav.request.process <- follow_link (<>) <- Nav.absolutegoto )
@@ -1911,6 +1966,7 @@ let rec retrieve_and_handle (wr : Www.request) =
 let process_viewer addhist make_ctx = 
  fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
+  (* ! Viewers ! *)
   match Viewers.f nav.nav_viewer_frame ctx dh with
   | None -> () (* external viewer *)
   | Some di ->
@@ -1929,7 +1985,79 @@ let process_viewer addhist make_ctx =
 
 %less: _wr is not used, anyway info is in dh no?
 
-\subsubsection{XXX}
+\subsection{[[Mmm.show_current()]]}
+
+% Nav.absolutegoto -> request -async-> process_viewer -> <>
+% second argument is fragment
+<<[[Mmm.navigator()]] set nav fields>>=
+nav_show_current = show_current;
+@
+<<local function [[Mmm.navigator.show_current]]>>=
+(* Change view, independently of history manip *)
+(* Nav.absolutegoto -> Nav.request -> Nav.process_viewer -> <>
+ *   (as Nav.nav_show_current) 
+ *)
+let show_current (di : Viewers.display_info) (frag : string option) =
+  <<[[Mmm.navigator.show_current()]] start hook>>
+  <<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>
+  display di;
+  <<[[Mmm.navigator.show_current()]] goto fragment>>
+  <<[[Mmm.navigator.show_current()]] end hook>>
+in
+@
+%less: need to set entryv? should be good already no?
+% or is it if we switch?
+
+<<function [[Mmm.display]]>>=
+let display (di : Viewers.display_info) = 
+  if Winfo.exists di#di_widget
+  then pack [di#di_widget][Fill Fill_Both; Expand true]
+  else Error.f "fatal error: window was destroyed";
+
+  <<[[Mmm.display()]] adjust title toplevel>>
+@
+
+% but where trigger actual display? ?? when build the display_info
+%  it will create the widget and the graphics are in di#di_widget!
+
+
+<<[[Mmm.display()]] adjust title toplevel>>=
+let tl = Winfo.toplevel di#di_widget in
+let title = s_ "MMM Browser@%s" di#di_title in
+if Widget.known_class tl = "toplevel" 
+then begin 
+  Wm.title_set tl title; 
+  Wm.iconname_set tl title
+end
+@
+
+<<[[Mmm.navigator()]] locals>>=
+let current_di : Viewers.display_info option ref = ref None in
+@
+
+<<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>=
+(match !current_di with
+| Some olddi when olddi != di -> undisplay olddi
+| _ -> ()
+);
+current_di := Some di;
+@
+
+<<function [[Mmm.undisplay]]>>=
+let undisplay (di : Viewers.display_info) = 
+  if Winfo.exists di#di_widget 
+  then Pack.forget [di#di_widget]
+@
+
+<<[[Mmm.navigator.show_current()]] end hook>>=
+(* Bof *)
+Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
+@
+
+
+\subsection{[[Mmm.make_ctx()]]}
+
+\subsection{XXX}
 
 <<[[Nav.follow_link]] extra arguments to Nav.request>>=
 (true, id_wr, specific_viewer true)
@@ -2074,70 +2202,10 @@ let entry,e =
 in
 Entry.configure e [TextVariable entryv; TextWidth 40];
 @
-% absolutegoto()!
+% Nav.absolutegoto()!!! fundamental feature of Web browser
 
 
-\section{Display}
-
-% Nav.absolutegoto -> request -async-> process_viewer -> <>
-% second argument is fragment
-<<[[Mmm.navigator()]] set nav fields>>=
-nav_show_current = show_current;
-@
-% Nav.absolutegoto -> request -> process_viewer -> <> (as Nav.nav_show_current)
-<<local function [[Mmm.navigator.show_current]]>>=
-(* Change view, independently of history manip *)
-let show_current (di : Viewers.display_info) (frag : string option) =
-  <<[[Mmm.navigator.show_current()]] start hook>>
-  <<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>
-  display di;
-  <<[[Mmm.navigator.show_current()]] goto fragment>>
-  <<[[Mmm.navigator.show_current()]] end hook>>
-in
-@
-%less: need to set entryv? should be good already no?
-% or is it if we switch?
-
-<<function [[Mmm.display]]>>=
-let display (di : Viewers.display_info) = 
-  if Winfo.exists di#di_widget
-  then pack [di#di_widget][Fill Fill_Both; Expand true]
-  else Error.f "fatal error: window was destroyed";
-
-  let tl = Winfo.toplevel di#di_widget in
-  let title = s_ "MMM Browser@%s" di#di_title in
-  if Widget.known_class tl = "toplevel" 
-  then begin 
-    Wm.title_set tl title; 
-    Wm.iconname_set tl title
-  end
-@
-
-
-
-
-<<[[Mmm.navigator()]] locals>>=
-let current_di : Viewers.display_info option ref = ref None in
-@
-
-<<[[Mmm.navigator.show_current()]] possibly undisplay previous displayinfo>>=
-(match !current_di with
-| Some olddi when olddi != di -> undisplay olddi
-| _ -> ()
-);
-current_di := Some di;
-@
-
-<<function [[Mmm.undisplay]]>>=
-let undisplay (di : Viewers.display_info) = 
-  if Winfo.exists di#di_widget 
-  then Pack.forget [di#di_widget]
-@
-
-<<[[Mmm.navigator.show_current()]] end hook>>=
-(* Bof *)
-Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
-@
+\section{Canvas}
 
 
 \section{History}
@@ -6713,7 +6781,7 @@ val f : Widget.widget -> context -> Document.handle -> display_info option
 % adobe
 %less: why need to pass the widget? it's already in the context
 
-\section{[[Viewers.view()]]}
+\section{[[Viewers.f()]]}
 
 % Nav.request -> ... document_finish continuation -> Nav.process_viewer  -> <>
 <<function [[Viewers.view]]>>=
@@ -6744,25 +6812,6 @@ and f frame (ctx : context) (dh : Document.handle) : display_info option =
 
 \subsection{[[Viewers.viewers]]}
 
-<<constant [[Viewers.viewers]]>>=
-let viewers : (Http_headers.media_type, spec) Hashtbl.t = 
-  Hashtbl_.create ()
-@
-
-<<type [[Viewers.spec]]>>=
-type spec =
-  | Internal of t
-  | External
-  <<[[Viewers.spec]] other cases>>
-@
-% External     (* pass to metamail *)
-
-<<type [[Viewers.t]]>>=
-(* Definition of an internal viewer *)
-type t = 
-    Http_headers.media_parameter list -> 
-    (Widget.widget ->  context -> Document.handle -> display_info option)
-@
 
 
 <<signature [[Viewers.add_viewer]]>>=
@@ -7662,7 +7711,7 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 @
 % ???
 
-\section{The viewer, [[Htmlw.display_html]]}
+\section{The display, [[Htmlw.display_html]]}
 % The display info
 
 % see previously display_html(), the viewer for text/html content type
@@ -11513,7 +11562,7 @@ Menu.add_command helpm
 % false means not toplevel, no_tachy
 
 \section{Extra Protocols}
-
+%alt: put different chapter
 
 \subsection{[[file://]]}
 
@@ -13953,6 +14002,7 @@ let fake_cgi wwwr cont path =
 
 
 \section{Applets}
+%alt: separate chapter
 % and modules
 
 <<[[Http_headers.suffixes]] elements>>=

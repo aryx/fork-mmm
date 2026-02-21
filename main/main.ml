@@ -10,6 +10,7 @@ open Fpath_.Operators
 (*****************************************************************************)
 (* Types and constants *)
 (*****************************************************************************)
+(*s: type [[Main.caps]] *)
 (* Need:
  *  - Cap.network: obviously, this is a Web browser
  *  - open_in: for ??
@@ -18,6 +19,7 @@ type caps = <
    Cap.open_in;
    Cap.network
  >
+(*e: type [[Main.caps]] *)
 
 (*****************************************************************************)
 (* Helpers *)

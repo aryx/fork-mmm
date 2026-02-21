@@ -15,9 +15,10 @@ val string_of_protocol: protocol -> string
 (*e: signature [[Url.string_of_protocol]] *)
 
 (*s: type [[Url.t]] *)
-(* URLs as defined by RFC 1738 *)
-
-(* Not all components are used for all protocols. See RFC. *)
+(* URLs as defined by RFC 1738. Not all components are used for all protocols.
+ * The order of the fields below correspond to the actual order in the string:
+ *   <protocol>:<user><password>//<host>:<port>/<path>?<search>
+*)
 type t = 
   { mutable protocol : protocol;
 

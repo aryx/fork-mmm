@@ -37,7 +37,6 @@ let sp = Str.regexp "[ \t\n]"
 let make (hlink : Hyper.link) : request =
   let absuri = Hyper.resolve hlink in 
   let url : Url.t = Lexurl.make absuri.uri_url in
-  (* TODO: rewrite to not abuse Not_found for regular path *)
   try (* search for space in network URI *)
     if List.mem url.protocol [FILE; MAILTO] 
     then raise Not_found
@@ -48,6 +47,7 @@ let make (hlink : Hyper.link) : request =
       in
       raise (Hyper.Invalid_link (Hyper.UrlLexing ("suspicious white space", n)))
   with Not_found -> 
+    (* regular code path, everything is normal, we didn't find (bad) spaces *)
     { www_link = hlink;
 
       www_url = url; (* should not fail ? *)
