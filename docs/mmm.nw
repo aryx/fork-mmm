@@ -740,6 +740,7 @@ let find did =
 % should be document option no?
 
 \section{Protocols and document flow}
+%alt: remove intermediate section, can fit well with Document above?
 
 % seen (generic) request, and (generic) data response,
 % how connect(generically)? two steps, first retrieve, then view.

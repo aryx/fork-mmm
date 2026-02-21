@@ -37,6 +37,8 @@
 _build
 
 #external/ocamltk
+/external/ocamltk/confdefs.h
+/external/ocamltk/config.cache
 #external/stdlib/*
 
 /docs/lineage.dot
@@ -44,7 +46,7 @@ _build
 /docs/mmm-*.pdf
 
 # ocamldoc
-*Fig_graph_ml.pdf
+#*Fig_graph_ml.pdf
 
 # lexers
 /languages/html/lexhtml.ml
