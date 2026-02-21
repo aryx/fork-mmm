@@ -32,7 +32,6 @@ val wait : t -> unit
 <<signature [[Condition.set]]>>=
 val set : t -> unit
 @
-
 <<signature [[Condition.free]]>>=
 val free : t -> unit
 @
@@ -5370,9 +5369,6 @@ val transfer : Www.request -> Document.handle -> (Unix.file_descr * bool) option
 val tofile : (string -> unit) -> Document.handle -> string -> string -> unit
 @
 
-<<signature [[Save.document]]>>=
-val document : Document.id -> string option -> unit
-@
 
 <<signature [[Save.print_command]]>>=
 val print_command : string ref

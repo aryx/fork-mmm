@@ -122,9 +122,10 @@ Here are other candidates that were considered but ultimately discarded:
 
 \item mosaic
 % maybe good. but 130 000 LOC (vs 30 000 LOC for mmm)
+% added images (actually Viola added images first?)
 
 \item gecko (firefox)
-% descendant of mosaic, netscape, introduced IMG
+% descendant of mosaic, netscape
 % huge now
 
 \item khtml/webkit/blink (kconqueror, safari, chrome)
@@ -153,7 +154,7 @@ Here are other candidates that were considered but ultimately discarded:
 %   https://github.com/chrisdone/vado
 
 
-% see wikipedia page on history of web browser, pretty good,I have it printed.
+% see wikipedia page on history of web browser, pretty good, I have it printed.
 %todo: my todo-browser/ somewhere
 
 %todo:
@@ -203,7 +204,9 @@ I would like to thank of course Francois Rouaix
 the main author of MMM.
 
 
+%******************************************************************************
 \chapter{Overview}
+%******************************************************************************
 
 \section{Web browser principles}
 
@@ -368,7 +371,9 @@ let version_number =
 
 %###############################################################################
 
+%******************************************************************************
 \chapter{Core Data Structures}
+%******************************************************************************
 
 % url -> uri -> link -> request, bigger and bigger structure
 % and then
@@ -384,13 +389,11 @@ let version_number =
 %https://eager.io/blog/the-history-of-the-url-domain-and-protocol/
 
 \subsection{URLs and protocols}
-% =~ protocol://user:pass@host:port/path?search
-% (not too bad syntax)
 
 <<type [[Url.t]]>>=
 (* URLs as defined by RFC 1738. Not all components are used for all protocols.
  * The order of the fields below correspond to the actual order in the string:
- *   <protocol>:<user><password>//<host>:<port>/<path>?<search>
+ *   <protocol>://<user>:<password>@<host>:<port>/<path>?<search>
 *)
 type t = 
   { mutable protocol : protocol;
@@ -541,9 +544,8 @@ www_url : Url.t;	          (* parsed version *)
 www_fragment : string option; (* because viewer is passed down *)
 @
 %fragment is for the URI, the #xxx
-%less: merge www_url in link?
 
-% we start to have methods here! a request is somethinf alive!
+% we start to have methods here! a request is something alive!
 % it can have errors, and we need to log what is happening.
 % will see in appendix those aspects though.
 
@@ -578,7 +580,8 @@ let make (hlink : Hyper.link) : request =
       www_error = !Error.default
     }
 @
-%todo: abuse exn too much, the regular flow is actually the exceptional flow
+% abuse exn too much? the regular flow is actually the exceptional flow
+% but true that lots of idioms/conventions using Not_found later so maybe ok.
 
 <<constant [[Www.sp]]>>=
 let sp = Str.regexp "[ \t\n]"
@@ -670,7 +673,7 @@ let document_id wwwr =
 module DocumentIDSet =
   Set.Make(struct type t = id let compare = compare end)
 @
-
+%TODO: remove functor, use Set_.t
 
 \subsection{Document cache}
 
@@ -728,7 +731,7 @@ let max_lastused = 100000000000.0
 
 <<function [[Cache.find]]>>=
 (* Find a document*)
-let find did =
+let find (did : Document.id) : Document.t =
   let entry = List.assoc did !memory in
   entry.cache_lastused <- Unix.time();
   if entry.cache_pending 
@@ -744,6 +747,7 @@ let find did =
 
 \section{Protocols and document flow}
 %alt: remove intermediate section, can fit well with Document above?
+% hmm but Protos.protos is important! a bit like Viewers.viewers
 
 % seen (generic) request, and (generic) data response,
 % how connect(generically)? two steps, first retrieve, then view.
@@ -780,6 +784,7 @@ let get = Hashtbl.find protos
 %@
 
 % Protos.get return a "retriever" and a "cacher"
+%TODO: define record with those 2 names?
 
 \subsection{Document continuation}
 
@@ -827,7 +832,9 @@ type continuation = {
 type handle = {
   document_id : id;
 
-  (* this should help to know what to do even if have not the data yet *)
+  (* this should help to know what to do even if have not the data yet.
+   * Those are response headers.
+   *)
   mutable dh_headers : string list;
     (* HTTP headers of document, or faked ones *)
 
@@ -838,7 +845,7 @@ type handle = {
 }
 @
 % the retriever does not actually completely retrieve the data,
-% it opens a connextion and give a handler to the caller (usually
+% it opens a connexion and give a handler to the caller (usually
 % a viewer) that can then fetch the data and process it)
 
 %why not take Www.request and put it here? so less need to
@@ -863,7 +870,7 @@ type handle = {
 % previous section were generic request/response,
 % here are the specifics for the http protocol
 
-% apparently mmm handles http 1.0 and 0.9
+% apparently mmm handles http 1.0 and 0.9 (update: I've removed 0.9)
 % there is also 1.1.
 % 2.0 just got published I think
 
@@ -874,7 +881,7 @@ type handle = {
 
 \subsection{Requests}
 
-%todo: rename messages.mli to http_messages.mli?
+%less: rename messages.mli to http_messages.mli?
 
 <<type [[Messages.request_message]]>>=
 (* HTTP-Message *)
@@ -901,7 +908,6 @@ type request_line = {
 }
 @
 %less: why not use method type for request_method instead of a string?
-
 
 \subsection{Responses}
 
@@ -1016,8 +1022,10 @@ end
 @
 %(* Standard hyper functions are: "goto", "save", "gotonew" *)
 
+% base to get Document.id, minimum so can set title based on url for example
 
-%XXX ??? when is this called ? why need pass down in context to viewer?
+TODO XXX ??? when is this called ? why need pass down in context to viewer?
+
 <<[[Viewers.context]] hypertext methods signatures>>=
 method goto    : Hyper.link -> unit
 method gotonew : Hyper.link -> unit
@@ -1034,7 +1042,7 @@ method hyper_funs : (string * hyper_func) list
 \subsection{[[Viewers.display_info]]}
 
 % this is what will be returned by function like
-% display_html given a Viewers.viewer_context
+% display_html given a Viewers.viewer_context and the actual document handle
 
 <<signature class [[Viewers.display_info]]>>=
 class  virtual display_info : (unit) -> object ('a)
@@ -1195,7 +1203,7 @@ type formatter = {
 @
 
 
-\ifallcode
+XXX
 <<[[Htmlfmt.formatter]] other methods>>=
 (* Predefined Images *)
 <<[[Htmlfmt.formatter]] predefined images methods>>
@@ -1206,7 +1214,7 @@ type formatter = {
 (* Re-centering on a fragment *)
 <<[[Htmlfmt.formatter]] fragment method>>
 @
-\fi
+
 
 
 <<constant [[Html_disp.default_fo]]>>=
@@ -1297,14 +1305,14 @@ method virtual formatter : Htmlfmt.formatter
 % anyway
 
 
-\ifallcode
+
 <<class [[Html_disp.machine]]>>=
 class  virtual machine (_unit : unit) =
  object
    <<[[Html_disp.machine]] virtual fields signatures>>
 end
 @
-\fi
+
 
 
 
@@ -1320,7 +1328,9 @@ end
 
 
 
+%******************************************************************************
 \chapter{[[main()]]}
+%******************************************************************************
 
 <<type [[Main.caps]]>>=
 (* Need:
@@ -1380,8 +1390,15 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
 %$
 
 
+% file pref and url opt
+<<signature [[Mmm.initial_navigator]]>>=
+val initial_navigator : < Cap.network; .. > ->
+  Fpath.t (* preference file *) -> string (* url *) option -> unit
+@
 
-\ifallcode
+
+
+XXX
 <<[[Main.main()]] tk backends setup>>=
 Error.default                    := new Tk_error.t Widget.default_toplevel;
 Condition.backend                := Tk_condition.backend ();
@@ -1398,7 +1415,7 @@ Auth.open_passwd_ref             := Frx_req.open_passwd;
 Auth.edit_backend                := Tk_auth.edit;
 Mailto.internal_backend          := Tk_mailto.internal;
 @
-\fi
+
 
 
 
@@ -1624,16 +1641,11 @@ get an updated copy.
 %  (* Start the initial navigator *)
 %  Mmm.initial_navigator user_preferences_file url_opt |> ignore;
 
-% file pref and url opt
-<<signature [[Mmm.initial_navigator]]>>=
-val initial_navigator : < Cap.network; .. > ->
-  Fpath.t (* preference file *) -> string (* url *) option -> unit
-@
 % main -> <>
 <<function [[Mmm.initial_navigator]]>>=
 (* main -> <> -> navigator *)
 let initial_navigator (caps : < Cap.network; ..>)
-    (preffile : Fpath.t) (init_url : string option) =
+    (preffile : Fpath.t) (init_url : string option) : unit =
   <<[[Mmm.initial_navigator()]] set preferences>>
   <<[[Mmm.initial_navigator()]] set initial page based on [[init_url]]>>
   main_navigator :=
@@ -1645,6 +1657,13 @@ let initial_navigator (caps : < Cap.network; ..>)
 
 % main_navigator will be described far later, it's for multi windows
 % navigator
+
+<<signature [[Mmm.navigator]]>>=
+val navigator : < Cap.network; .. > ->
+  bool (* is_main_window *) -> Url.t -> Nav.t option
+@
+% bool is for main_window (was called has_tachy)
+
 
 % the set preferences will be exposed in extra features,
 % let's focus for now on initial URL and navigator call
@@ -1682,13 +1701,10 @@ Lexurl.make ("file://localhost" ^ path)
 %    $ ./mmm docs/website/tech.html
 % cool :)
 
+% will trigger the FILE protocol and protocols/File.ml proto retriever
+
 \subsection{[[Mmm.navigator()]] and [[Nav.t]]}
 
-<<signature [[Mmm.navigator]]>>=
-val navigator : < Cap.network; .. > ->
-  bool (* is_main_window *) -> Url.t -> Nav.t option
-@
-% bool is for main_window (was called has_tachy)
 
 % main -> Mmm.initial_navigator -> <>(, true, )
 <<function [[Mmm.navigator]]>>=
@@ -1743,7 +1759,13 @@ let rec navigator (caps: < Cap.network; ..>)
 
 % absolutegoto!! initiate the whole thing!
 
-\ifallcode
+<<signature [[Nav.absolutegoto]]>>=
+val absolutegoto : < Cap.network; ..> ->
+  t -> string (* url *) -> unit
+@
+
+
+
 <<[[Mmm.navigator()]] locals before nav setting>>=
 <<local [[Mmm.navigator.hist]]>>
 <<local function [[Mmm.navigator.show_current]]>>
@@ -1778,7 +1800,7 @@ let rec navigator (caps: < Cap.network; ..>)
 <<function [[Mmm.navigator.view_source]]>>
 @
 
-\fi
+
 
 %\subsection{[[Nav.t]]}
 
@@ -1808,14 +1830,12 @@ type t = {
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_viewer_frame = viewer_frame;
 @
+% viewer_frame created before
+
 
 
 \subsection{[[Nav.absolutegoto()]]}
 
-<<signature [[Nav.absolutegoto]]>>=
-val absolutegoto : < Cap.network; ..> ->
-  t -> string (* url *) -> unit
-@
 % navigator -> (enter on URL entry | explicit call)  -> <>
 <<function [[Nav.absolutegoto]]>>=
 (* Used outside an hyperlink *)
@@ -1855,8 +1875,6 @@ let follow_link (caps : < Cap.network; ..>)
 %  - process_viewer (ultimately Viewers.f)
 %    and make_ctx
 
-\subsection{[[Nav.request()]]}
-
 <<signature [[Nav.request]]>>=
 val request : < Cap.network; ..> ->
   t -> (t -> Www.request -> Document.handle -> unit) ->
@@ -1865,6 +1883,14 @@ val request : < Cap.network; ..> ->
   unit
 @
 %old: wow, complicated type, so I changed order and LP aspectize the hooks!
+
+<<signature [[Nav.make_ctx]]>>=
+val make_ctx : < Cap.network; ..> ->
+  t -> Document.id -> Viewers.context
+@
+
+\subsection{[[Nav.request()]]}
+
 
 % so take a callback taking 
 %  - a context (Nav.t), 
@@ -1951,6 +1977,9 @@ let rec retrieve_and_handle (wr : Www.request) =
 % will see Retrieve.f later      
 % will see the nave_rem_active later? or put it here maybe?
 
+% pass down handle_link again?? it's for retry_link, which
+% is useful for ?? for redirect?
+
 %todo: why pass process to Nav.request? it changes? It's not
 % always process_viewer?
 
@@ -1958,12 +1987,13 @@ let rec retrieve_and_handle (wr : Www.request) =
 
 % Nav.absolutegoto | ... -> Nav.request -> <> 
 %  (as Nav.request.process <- follow_link (<>) <- Nav.absolutegoto )
+% control-flow and data-flow to fully understand with those callbacks and continuations
 <<function [[Nav.process_viewer]]>>=
 (* Specific handling of "view" requests 
  * Nav.absolutegoto -> Nav.follow_link -> Nav.request <> -> <> (via process)
  *  -> Viewers.f -> Htmlw.viewer | Plan.viewer
 *)
-let process_viewer addhist make_ctx = 
+let process_viewer (addhist : bool) make_ctx = 
  fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
   (* ! Viewers ! *)
@@ -2049,13 +2079,241 @@ let undisplay (di : Viewers.display_info) =
   then Pack.forget [di#di_widget]
 @
 
+XXX
 <<[[Mmm.navigator.show_current()]] end hook>>=
 (* Bof *)
 Textvariable.set entryv (Url.string_of hist.h_current.h_did.document_url)
 @
 
 
-\subsection{[[Mmm.make_ctx()]]}
+\subsection{[[make_ctx()]]}
+
+<<function [[Nav.make_ctx]]>>=
+let make_ctx (caps : < Cap.network; ..>)
+     (nav : t) (did : Document.id) : Viewers.context = 
+  ((new stdctx caps (did, nav))#init :> Viewers.context)
+@
+
+XXX SPLIT
+
+
+<<class [[Viewers.context]]>>=
+(* The context given to a viewer *)
+class virtual context ((did : Document.id), 
+                       (v : vparams)) =
+ object (self : 'a)
+
+  val base = did
+  method base = base
+
+  val viewer_params = v
+  method params = viewer_params
+
+  val mutable (*private*) funs = ([] : (string * hyper_func ) list)
+  method hyper_funs = funs
+
+  val targets = []
+
+  method goto hlink    = self#invoke "goto" hlink
+  method gotonew hlink = self#invoke "gotonew" hlink
+  method save hlink    = self#invoke "save" hlink
+
+  method invoke name hlink =
+    try (List.assoc name funs).hyper_func targets hlink
+    with Not_found -> ()
+
+  method add_nav (fname, hf) =
+    funs <- (fname, hf) :: funs
+
+  (* apply this on a copy ! *)
+  method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
+    {< viewer_params = vparams; 
+       targets = 
+         let _oldtargets = targets in (* for debug *)
+          match newtargets with 
+          (* keep exactly the same environment *)
+          | [] -> targets 
+          (* assume I'm given new _self and _parent *)
+          | l -> l @ frame_fugue targets 
+    >}
+  method in_embed did =
+    {< base = did >}
+
+  method virtual log : string -> unit
+end
+@
+%(*
+%    (* for debug *)
+%    let _oldtargetsTODO = targets in
+%    let res = 
+%      match newtargets with 
+%      | [] -> 
+%          (* keep exactly the same environment *)
+%          targets
+%      | l -> 
+%          (* assume I'm given new _self and _parent *)
+%      l @ frame_fugue targets 
+%    in
+%     (self#with_target res)#with_viewer_params vparams
+%*)
+%    (* old:
+%       {< 
+%       targets = res;
+%       viewer_params = vparams;       
+%       >}
+%    *)
+%    (* pad: the code below works perfectly but when I want to do 
+%     * make dotall I get an error because ocamldoc -pp camlp4o (which
+%     * I need for certain files) has a type error on this file
+%     * at this line. Indeed when run
+%     * 
+%     *   ocamldoc -pp camlp4o -I ../commons -I ../globals -I ../www -I ../http -I ../protocols -I ../retrieve -I /home/pad/packages/Linux/stow/ocaml-3.12/lib/ocaml/camltk viewers.ml
+%     * 
+%     * manually camlp4 geneate a weird thing for the code below.
+%     * so I just introduced those ugly with_target and with_viewer
+%     * to avoid the pb. UGLY
+%     * 
+%     *)
+%
+%
+%  (* pad: this is just because of some bugs in camlp4o *)
+%  method with_target: frame_targets -> 'a
+%  method with_viewer_params: (string * string) list -> 'a
+
+
+
+
+% who does not use a standard context?
+% pass empty list empty vparams?
+<<class [[Nav.stdctx]]>>=
+(* WARNING: we take copies of these objects, so "self" must *not* be
+ * captured in a closure (it would always point to the old object).
+ * A new object is created for each new top viewer (follow_link).
+ * AND for each frame_goto operation.
+ *)
+class stdctx (caps : < Cap.network; ..>) (did, nav) =
+ object (self)
+  inherit Viewers.context (did, []) as super
+  (* val did = did *)
+  (* val nav = nav *)  
+
+  method log = nav.nav_log
+  method init =
+
+    (* a new context for a toplevel window *)
+    let make_ctx (caps : < Cap.network; ..>) nav did = 
+      ((new stdctx caps (did, nav))#init :> Viewers.context)
+    in
+
+    (* a new context for an embedded window *)
+    let make_embed_ctx (w : Widget.widget) (targets : Viewers.frame_targets) 
+        : Viewers.context = 
+      let targets = 
+        ("_self", w) :: ("_parent", Winfo.parent w) :: (Viewers.frame_fugue targets) in
+      let newctx = (new stdctx caps (did,nav))#init in
+      begin
+        try 
+          let f = List.assoc "pointsto" self#hyper_funs in
+          let g = List.assoc "clearpointsto" self#hyper_funs in
+          newctx#add_nav ("pointsto", f);
+          newctx#add_nav ("clearpointsto", g);
+        with Not_found -> ()
+      end;
+      (newctx#for_embed [] targets :> Viewers.context)
+    in
+
+    (* by default, use the cache, don't touch the request *)
+    let follow_link (caps : < Cap.network; ..>) _ = 
+      request caps nav (process_viewer true (make_ctx caps))
+        (true, id_wr, specific_viewer true)
+
+    and save_link (caps : < Cap.network; ..>) _ =
+      request caps nav (process_save None) (true, id_wr, nothing_specific)
+
+    and copy_link _ = 
+      copy_link nav
+
+    and head_link (caps : < Cap.network; ..>) = 
+      let f = request caps nav process_head (true, id_wr, nothing_specific) in
+      (fun _ hlink -> f (make_head hlink))
+
+    and new_link _ = nav.nav_new
+
+    in 
+
+    let frame_goto ( caps : < Cap.network; .. > )
+         (targets : Viewers.frame_targets) (hlink : Hyper.link) =
+      try
+      (* target semantics PR-HTML 4.0 16.3.2 *)
+       match List.assoc "target" hlink.h_params with
+       | "_blank" ->
+        let w = Toplevel.create Widget.default_toplevel [] in
+        Embed.add caps { 
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+       | "_self" ->
+        let w = List.assoc "_self" targets in
+        Embed.add caps {
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+       | "_top" -> follow_link caps targets hlink
+       | "_parent" ->
+        let w = List.assoc "_parent" targets in
+        Embed.add caps { 
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+       | s ->
+        let w = List.assoc s targets in
+        Embed.add caps {
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+      with
+       Not_found -> (* if we are in a frame, it is available as _self *)
+      try
+        let w = List.assoc "_self" targets in
+        Embed.add caps {
+        embed_hlink = hlink;
+        embed_frame = w;
+        embed_context = make_embed_ctx w targets;
+        embed_map = Maps.NoMap;
+        embed_alt = "" }
+      with
+        Not_found -> follow_link caps targets hlink
+    in
+
+    !user_navigation |> List.iter super#add_nav;
+
+    ["copy", copy_link, s_ "Copy this Link to clipboard";
+     "head", head_link caps, s_ "Headers of document";
+     "save", save_link caps, s_ "Save this Link";
+     "gotonew", new_link, s_ "New window with this Link";
+     "goto", frame_goto caps, s_ "Open this Link";
+    ] |> List.iter (fun (name, f, txt) ->
+        self#add_nav (name, { hyper_visible = true; 
+                              hyper_func = f; 
+                              hyper_title = txt })
+    );
+    self
+
+end
+@
+
+
+
+
+
 
 \subsection{XXX}
 
@@ -2095,9 +2353,10 @@ let rec safe_loop () =
 @
 
 
+%******************************************************************************
 \chapter{Navigator Interface}
+%******************************************************************************
 % The chrome
-% gui/
 
 \section{Layout}
 
@@ -2219,7 +2478,7 @@ then nav.nav_add_hist dh.document_id dh.document_fragment;
 % want to consider it as part of history
 
 <<[[Nav.t]] manage history methods>>=
-nav_add_hist : Document.id -> string option -> unit;
+nav_add_hist : Document.id -> string (* fragment *) option -> unit;
 @
 <<[[Mmm.navigator()]] set nav fields>>=
 nav_add_hist = add_hist;
@@ -2262,6 +2521,9 @@ let back () =
 in
 @
 
+% see historygoto later in advanced feature chapter
+
+
 \subsection{Forward button}
 
 <<[[Mmm.navigator()]] navigation buttons>>=
@@ -2295,7 +2557,7 @@ let gohome () =
   Nav.absolutegoto caps nav !Mmmprefs.home
 in
 @
-
+% Mmmprefs.home also used for init_url if not specified by user
 
 <<signature [[Mmmprefs.home]]>>=
 val home : string ref
@@ -2304,6 +2566,9 @@ val home : string ref
 (* There is no right place for this *)
 let home = ref ""
 @
+
+TODO: so why go to mmm homepage by default???
+special magic somewhere?
 
  
 \section{Menus}
@@ -2391,11 +2656,21 @@ let save () =
   Save.document hist.h_current.h_did None 
 in
 @
+% None??
+
+<<signature [[Save.document]]>>=
+val document : Document.id -> string option -> unit
+@
+
+
+% printing
 <<function [[Mmm.navigator.print]]>>=
 let print () = 
   Save.document hist.h_current.h_did (Some (sprintf "|%s" !Save.print_command))
 in
 @
+
+
 
 <<function [[Mmm.navigator.close]]>>=
 let close () =
@@ -2477,6 +2752,7 @@ update_vhistory := (fun () ->
     Menu.configure_cascade navm (Pattern (s_ "History")) [Menu !hmenu]
 );
 @
+% why use ref for update_vhistory ?
 
 % use forward ref because this will be called later
 % navigator | ... -> <>
@@ -2529,6 +2805,9 @@ configure_menu_elements docm [
 %  below
 
 % will see those features in Extra features chapter
+% in Lifecycle control
+
+
 
 \subsection{Other menu}
 
@@ -2559,11 +2838,14 @@ Menu.add_command helpm
   [Label (s_ "Version information");
    Command (fun () -> 
       Nav.absolutegoto caps nav (Version.initurl (Lang.lang ())))];
+@
+<<Help menu elements>>=
 Menu.add_command helpm
   [Label (s_ "Home Page of MMM");
    Command (fun () -> 
      navigator caps false (Lexurl.make (Version.home_mmm (Lang.lang ()))) |>ignore)];
 @
+% false because not top_window this time
 
 <<signature [[Version.home]]>>=
 val home_mmm : string -> string    (* MMM home page *)
@@ -2581,6 +2863,7 @@ let home_mmm = function
 
 % important to give feedback to the user!
 % not just progress bar but also what is done
+% also allows to see what is under the cursor if click
 
 <<[[Mmm.navigator()]] navigation buttons>>=
 let loggingb = Label.create_named buttons "logging"
@@ -2706,7 +2989,9 @@ in
 
 
 
+%******************************************************************************
 \chapter{Parsing}
+%******************************************************************************
 % www/ html/ http/
 
 \section{URLs}
@@ -5400,7 +5685,9 @@ let contentencoding =
 
 
 
+%******************************************************************************
 \chapter{Retrieving}
+%******************************************************************************
 %Retrieving Documents
 % retrieve/
 % put before http
@@ -5482,6 +5769,7 @@ type behaviour =
 
 \subsection{[[Retrieve.http_check()]]}
 
+% rename? Retrieve.process_status_code?
 <<function [[Retrieve.http_check]]>>=
 (* 
  * Dispatch according to status code
@@ -5634,6 +5922,7 @@ let _code400 _wr _dh = Error (s_ "Bad Request")
 *)
 module UrlSet = Set.Make(struct type t = Url.t let compare = compare end)
 @
+%TODO Set_.t
 
 <<constant [[Www.active_connexions]]>>=
 let active_connexions = ref UrlSet.empty
@@ -5685,11 +5974,12 @@ type t = {
 @
 
 
-
-
 <<signature [[Feed.of_fd]]>>=
 val of_fd : Unix.file_descr -> t
 @
+
+XXX split and understand
+
 % ??? -> <>
 <<function [[Feed.of_fd]]>>=
 (* We should distinguish internal/external connections *)
@@ -5874,6 +6164,7 @@ val get : <Cap.network; ..> ->
    Scheduler.progress_func -> unit
 @
 
+XXX ??
 <<signature [[Img.update]]>>=
 val update : < Cap.network; ..> ->
   Url.t -> unit
@@ -5891,6 +6182,7 @@ let get (caps : < Cap.network; ..>) (did : Document.id) (link : Hyper.link) cont
 
 
 <<function [[Img.update]]>>=
+(* ??? -> <> *)
 let update (caps : < Cap.network; ..>) (url : Url.t) : unit =
   try
     let (oldi, refs, headers) = ImageData.direct_cache_access url in
@@ -5945,7 +6237,9 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 @
 
 
+%******************************************************************************
 \chapter{HTTP}
+%******************************************************************************
 %Communication Protocol
 % http/
 
@@ -5992,11 +6286,7 @@ let _ = Hashtbl.add protos Url.HTTP (Http.req, Cache.tobuffer)
 val req: < Cap.network; ..> ->
   Www.request -> Document.continuation -> Www.aborter
 @
-%todo: do a Aborted and type aborter = abort -> unit?
-% so here we return an aborter
 
-% ??? (via Protos.get HTTP) -> <>
-%(* Wrappers returning the abort callback *)
 % wr = web request, cont = continuation
 <<function [[Http.req]]>>=
 (* Wrappers returning the abort callback *)
@@ -6015,8 +6305,8 @@ let req caps (wr : Www.request) (cont : Document.continuation) : Www.aborter =
    we retry through the proxy
  *)
 (* Retrieve.f -> req (via protos) -> <> -> tcp_connect -> 
- * start_request (via contf) -> async_request -> process_response ->
- * cont.document_process
+ *  start_request (via contf) -> async_request -> process_response ->
+ *   cont.document_process
  *)
 let request (caps : < Cap.network; ..>)
     (wr : Www.request) (cont : Document.continuation) : cnx =
@@ -6363,6 +6653,8 @@ in
 
 
 \subsubsection{[[HEAD]]}
+
+% when this is used? Who is doing HEAD request?
 
 <<[[Hyper.link_method]] other cases>>=
 | HEAD
@@ -6751,7 +7043,9 @@ let ht_of_stamp ut =
      }
 @
 
+%******************************************************************************
 \chapter{Viewers}
+%******************************************************************************
 % viewers/, content-type based viewer dispatcher
 
 %reput process_viewer():
@@ -6769,10 +7063,6 @@ let ht_of_stamp ut =
 %    di#di_fragment frag;
 
 
-<<signature [[Nav.make_ctx]]>>=
-val make_ctx : < Cap.network; ..> ->
-  t -> Document.id -> Viewers.context
-@
 <<signature [[Viewers.view]]>>=
 val f : Widget.widget -> context -> Document.handle -> display_info option
 @
@@ -6810,9 +7100,8 @@ and f frame (ctx : context) (dh : Document.handle) : display_info option =
 @
 
 
-\subsection{[[Viewers.viewers]]}
-
-
+%alt: \subsection{[[Viewers.viewers]]}
+% now in core DS
 
 <<signature [[Viewers.add_viewer]]>>=
 val add_viewer : Http_headers.media_type -> t -> unit
@@ -6876,7 +7165,7 @@ let reset () =
     viewer pars frame ctx (Decoders.insert dh)
 @
 
-% will see later other cases, for Externak and more
+% will see later other cases, for External and more
 
 \subsection{Error management}
 
@@ -6927,7 +7216,7 @@ let rec unknown (frame : Widget.widget) (ctx : context) (dh : Document.handle)
 
 \section{Content types}
 
-\subsection{[[text/plain]], [[display_plain()]]}
+\subsection{[[text/plain]], [[Plain.viewer()]]}
 
 <<toplevel [[Plain._1]]>>=
 let _ =
@@ -6990,6 +7279,7 @@ val frame =
   then failwith "too late"
   else Frame.create top [Class "Plain"]
 method frame = frame
+
 method di_widget = frame
 @
 
@@ -7093,7 +7383,7 @@ Frx_text.addsearch text;
 @
 
 
-\subsection{[[text/html]], [[display_html()]]}
+\subsection{[[text/html]], [[Htmlw.viewer()]]}
 
 % htmlw = html viewer
 
@@ -7177,7 +7467,7 @@ let _ =
 @
 % cmo, hehe :)
 
-\subsection{[[-suffixes]]}
+\subsection{[[mmm -suffixes]]}
 
 <<[[Main.main()]] locals>>=
 let sufxfile = ref (Mmm.user_file "mime.types") in
@@ -7285,223 +7575,8 @@ let f dh =
 % put merging headers here?
 
 
-\section{[[Nav.stdctx]]}
-
-
-
-<<function [[Nav.make_ctx]]>>=
-let make_ctx (caps : < Cap.network; ..>) (nav : t) (did : Document.id) : Viewers.context = 
-  ((new stdctx caps (did, nav))#init :> Viewers.context)
-@
-
-% who does not use a standard context?
-% pass empty list empty vparams?
-<<class [[Nav.stdctx]]>>=
-(* WARNING: we take copies of these objects, so "self" must *not* be
- * captured in a closure (it would always point to the old object).
- * A new object is created for each new top viewer (follow_link).
- * AND for each frame_goto operation.
- *)
-class stdctx (caps : < Cap.network; ..>) (did, nav) =
- object (self)
-  inherit Viewers.context (did, []) as super
-  (* val did = did *)
-  (* val nav = nav *)  
-
-  method log = nav.nav_log
-  method init =
-
-    (* a new context for a toplevel window *)
-    let make_ctx (caps : < Cap.network; ..>) nav did = 
-      ((new stdctx caps (did, nav))#init :> Viewers.context)
-    in
-
-    (* a new context for an embedded window *)
-    let make_embed_ctx (w : Widget.widget) (targets : Viewers.frame_targets) 
-        : Viewers.context = 
-      let targets = 
-        ("_self", w) :: ("_parent", Winfo.parent w) :: (Viewers.frame_fugue targets) in
-      let newctx = (new stdctx caps (did,nav))#init in
-      begin
-        try 
-          let f = List.assoc "pointsto" self#hyper_funs in
-          let g = List.assoc "clearpointsto" self#hyper_funs in
-          newctx#add_nav ("pointsto", f);
-          newctx#add_nav ("clearpointsto", g);
-        with Not_found -> ()
-      end;
-      (newctx#for_embed [] targets :> Viewers.context)
-    in
-
-    (* by default, use the cache, don't touch the request *)
-    let follow_link (caps : < Cap.network; ..>) _ = 
-      request caps nav (process_viewer true (make_ctx caps))
-        (true, id_wr, specific_viewer true)
-
-    and save_link (caps : < Cap.network; ..>) _ =
-      request caps nav (process_save None) (true, id_wr, nothing_specific)
-
-    and copy_link _ = 
-      copy_link nav
-
-    and head_link (caps : < Cap.network; ..>) = 
-      let f = request caps nav process_head (true, id_wr, nothing_specific) in
-      (fun _ hlink -> f (make_head hlink))
-
-    and new_link _ = nav.nav_new
-
-    in 
-
-    let frame_goto ( caps : < Cap.network; .. > )
-         (targets : Viewers.frame_targets) (hlink : Hyper.link) =
-      try
-      (* target semantics PR-HTML 4.0 16.3.2 *)
-       match List.assoc "target" hlink.h_params with
-       | "_blank" ->
-        let w = Toplevel.create Widget.default_toplevel [] in
-        Embed.add caps { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | "_self" ->
-        let w = List.assoc "_self" targets in
-        Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | "_top" -> follow_link caps targets hlink
-       | "_parent" ->
-        let w = List.assoc "_parent" targets in
-        Embed.add caps { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | s ->
-        let w = List.assoc s targets in
-        Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-      with
-       Not_found -> (* if we are in a frame, it is available as _self *)
-      try
-        let w = List.assoc "_self" targets in
-        Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-      with
-        Not_found -> follow_link caps targets hlink
-    in
-
-    !user_navigation |> List.iter super#add_nav;
-
-    ["copy", copy_link, s_ "Copy this Link to clipboard";
-     "head", head_link caps, s_ "Headers of document";
-     "save", save_link caps, s_ "Save this Link";
-     "gotonew", new_link, s_ "New window with this Link";
-     "goto", frame_goto caps, s_ "Open this Link";
-    ] |> List.iter (fun (name, f, txt) ->
-        self#add_nav (name, { hyper_visible = true; 
-                              hyper_func = f; 
-                              hyper_title = txt })
-    );
-    self
-
-end
-@
-
-<<class [[Viewers.context]]>>=
-(* The context given to a viewer *)
-class virtual context ((did : Document.id), 
-                       (v : vparams)) =
- object (self : 'a)
-
-  val base = did
-  method base = base
-
-  val viewer_params = v
-  method params = viewer_params
-
-  val mutable (*private*) funs = ([] : (string * hyper_func ) list)
-  method hyper_funs = funs
-
-  val targets = []
-
-  method goto hlink    = self#invoke "goto" hlink
-  method gotonew hlink = self#invoke "gotonew" hlink
-  method save hlink    = self#invoke "save" hlink
-  method invoke name hlink =
-    try (List.assoc name funs).hyper_func targets hlink
-    with Not_found -> ()
-
-  method add_nav (fname, hf) =
-    funs <- (fname, hf) :: funs
-
-  (* apply this on a copy ! *)
-  method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
-    {< viewer_params = vparams; 
-       targets = 
-         let _oldtargets = targets in (* for debug *)
-          match newtargets with 
-          (* keep exactly the same environment *)
-          | [] -> targets 
-          (* assume I'm given new _self and _parent *)
-          | l -> l @ frame_fugue targets 
-    >}
-  method in_embed did =
-    {< base = did >}
-
-  method virtual log : string -> unit
-end
-@
-%(*
-%    (* for debug *)
-%    let _oldtargetsTODO = targets in
-%    let res = 
-%      match newtargets with 
-%      | [] -> 
-%          (* keep exactly the same environment *)
-%          targets
-%      | l -> 
-%          (* assume I'm given new _self and _parent *)
-%      l @ frame_fugue targets 
-%    in
-%     (self#with_target res)#with_viewer_params vparams
-%*)
-%    (* old:
-%       {< 
-%       targets = res;
-%       viewer_params = vparams;       
-%       >}
-%    *)
-%    (* pad: the code below works perfectly but when I want to do 
-%     * make dotall I get an error because ocamldoc -pp camlp4o (which
-%     * I need for certain files) has a type error on this file
-%     * at this line. Indeed when run
-%     * 
-%     *   ocamldoc -pp camlp4o -I ../commons -I ../globals -I ../www -I ../http -I ../protocols -I ../retrieve -I /home/pad/packages/Linux/stow/ocaml-3.12/lib/ocaml/camltk viewers.ml
-%     * 
-%     * manually camlp4 geneate a weird thing for the code below.
-%     * so I just introduced those ugly with_target and with_viewer
-%     * to avoid the pb. UGLY
-%     * 
-%     *)
-%
-%
-%  (* pad: this is just because of some bugs in camlp4o *)
-%  method with_target: frame_targets -> 'a
-%  method with_viewer_params: (string * string) list -> 'a
+%alt: \section{[[Nav.stdctx]]}
+% now earlier in chapter main()
 
 
 
@@ -7700,7 +7775,9 @@ let rec interactive cont dh =
 
 
 
+%******************************************************************************
 \chapter{HTML Display}
+%******************************************************************************
 % display/, html layout engine
 
 
@@ -7711,7 +7788,7 @@ Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 @
 % ???
 
-\section{The display, [[Htmlw.display_html]]}
+\section{The display info, [[Htmlw.display_html]]}
 % The display info
 
 % see previously display_html(), the viewer for text/html content type
@@ -7789,7 +7866,7 @@ terminated <- false;
 set_progress <- Progress.no_meter;
 @
 
-% mach for machine, vague
+% mach for display machine, vague
 <<[[Htmlw.display_html]] private fields>>=
 val mutable mach = F.create (ctx, imgmanager)
 @
@@ -7867,7 +7944,7 @@ method init full =
    )
 @
 
-
+% flush_images!
 
 <<[[Htmlw.display_html]] in feed, [[End_of_file]] exn handler>>=
 self#set_progress (Some red) red;
@@ -10113,6 +10190,8 @@ mach#add_tag "style"
 
 \subsection{[[<script>]]}
 
+% haha, "obnoxious" :)
+
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 obnoxious features *)
 mach#add_tag "script"
@@ -10340,7 +10419,7 @@ method add_extra_header = add_extra_header
 @
 
 
-\subsection{Error magagment}
+\subsection{Error management}
 
 <<[[Htmlw.display_html]] private fields>>=
 val (*private*) errors = ref []
@@ -10381,7 +10460,9 @@ warnings |> List.iter (fun (reason, pos) ->
     self#finish true
 @
 
+%******************************************************************************
 \chapter{Embedded Elements}
+%******************************************************************************
 
 \section{Overview}
 
@@ -10544,8 +10625,11 @@ let embedded_viewer (frame : Widget.widget) (ctx : Viewers.context)
       pack [ l ] []
 @
 
+%******************************************************************************
 \chapter{Images}
-% include in previous chapter? section of embed?
+%******************************************************************************
+%alt: include in previous chapter? section of embed?
+% seems pretty important and special to deserve its own chapter?
 
 <<[[Html_disp.machine]] image methods>>=
 method virtual imgmanager : imgloader
@@ -10609,14 +10693,14 @@ method virtual load_images : unit		 (* manual flush *)
 method virtual update_images : < Cap.network > -> unit
 @
 
-\ifallcode
+
 <<class [[Html_disp.imgloader]]>>=
 class  virtual imgloader (_unit : unit) =
  object
   <<[[Html_disp.imgloader]] virtual fields signatures>>
 end
 @
-\fi
+
 
 % display_html -> <>
 <<signature [[Imgload.create]]>>=
@@ -10639,7 +10723,9 @@ end
 
 
 
+%******************************************************************************
 \chapter{CSS}
+%******************************************************************************
 
 % visual guide to most popular properties:
 %http://cssreference.io/
@@ -10658,7 +10744,10 @@ end
 
 \section{Parsing}
 
+
+%******************************************************************************
 \chapter{Javascript}
+%******************************************************************************
 
 \section{Lexing}
 
@@ -10666,7 +10755,109 @@ end
 
 
 
+%******************************************************************************
+\chapter{Applets}
+%******************************************************************************
+% and modules
+
+<<[[Http_headers.suffixes]] elements>>=
+"cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+@
+
+<<[[Main.main()]] applet system initialisation>>=
+(* The applet system.
+ * This loads the local modules also, so any setup that might be
+ * overriden by a local module should happen before here.
+ * However, preference initialisation must happen *after* initialisation
+ * of the applet system
+ *)
+!Version.applet_init !modules;
+@
+
+<<[[Main.main()]] locals>>=
+let modules = ref true in
+@
+<<[[Main.main()]] command line options>>=
+"-nomodule", Arg.Unit (fun () -> modules := false),
+" Don't load initial modules";
+@
+
+
+
+<<signature [[Version.applet_init]]>>=
+(*-*)
+val applet_init : (bool -> unit) ref
+@
+<<constant [[Version.applet_init]]>>=
+(* Make it easier to compile both bytecode and native versions *)
+let applet_init = ref (fun _ -> ())
+@
+
+
+<<[[Mmm.navigator()]] User menu>>=
+(* User menu, extensible by applets *)
+let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
+
+let userm = ref (Menu.create_named userb "menu" []) in
+let reset_user_menu _ =
+  Tk.destroy !userm;
+  userm := Menu.create_named userb "menu" [];
+  !user_menus |> List.iter (fun (entry, f) ->
+      Menu.add_command !userm 
+           [Label entry; 
+            Command (fun () -> f (Nav.make_ctx caps nav hist.h_current.h_did))]
+  );
+  Menubutton.configure userb [Menu !userm] 
+in
+reset_user_menu();
+Frx_synth.bind userb "user_menu" reset_user_menu;
+@
+
+
+
+
+<<signature [[Mmm.add_user_menu]]>>=
+(* Used for applets *)
+val add_user_menu : string -> (Viewers.context -> unit) -> unit
+@
+
+<<constant [[Mmm.user_menus]]>>=
+(* User defined menus *)
+let user_menus = ref []
+@
+<<function [[Mmm.add_user_menu]]>>=
+let add_user_menu entry f = 
+  user_menus := (entry,(fun x -> try f x with _ ->())) :: !user_menus;
+  Frx_synth.broadcast "user_menu"
+@
+
+
+
+<<signature [[Html_disp.add_hook]]>>=
+val add_hook: (machine -> unit) -> unit
+@
+<<function [[Html_disp.add_hook]]>>=
+let add_hook f = 
+  user_hooks := f :: !user_hooks
+@
+% dead?
+
+<<constant [[Html_disp.user_hooks]]>>=
+(* Hooks for applets/modules. Control is made elsewhere *)
+let user_hooks = ref []
+@
+
+<<[[Html_disp.Make.create()]] run user hooks>>=
+!user_hooks |> List.iter (fun f -> f (mach :> machine));
+@
+
+%\section{Modules}?
+% separate from Applets?
+
+
+%******************************************************************************
 \chapter{Concurrency}
+%******************************************************************************
 % important in browser context, servo was actually started just for that.
 % could also have an isolation chapter?
 
@@ -10808,7 +10999,9 @@ let start_tachy () =
 let container_frame = ref None
 @
 
+%******************************************************************************
 \chapter{Extra features}
+%******************************************************************************
 
 \section{Fragment navigation}
 
@@ -11421,7 +11614,7 @@ in
 
 % important, like in efuns
 
-\subsection{Preference file, [[-prefs]]}
+\subsection{Preference file, [[mmm -prefs]]}
 <<constant [[Mmm.preferences]]>>=
 (* placeholder for preference panel *)
 let preferences = ref (fun () -> ())
@@ -11472,7 +11665,7 @@ let home : Fpath.t =
 localize !preffile
 @
 
-\subsection{Initial geometry, [[-geometry]]}
+\subsection{Initial geometry, [[mmm -geometry]]}
 
 <<signature [[Mmm.initial_geom]]>>=
 val initial_geom : string option ref
@@ -11494,7 +11687,7 @@ let initial_geom = ref None
 
 \section{TK customization}
 
-\subsection{Color palette, [[-palette]]}
+\subsection{Color palette, [[mmm -palette]]}
 
 <<[[Main.main()]] resource initialisation>>=
 begin match !palette with
@@ -11512,7 +11705,7 @@ let palette = ref None in
 " <color> Tk Palette";
 @
 
-\subsection{Click to follow, [[-clicktofocus]]}
+\subsection{Click to follow, [[mmm -clicktofocus]]}
 
 <<[[Main.main()]] tk initialisation>>=
 if not !clicktofocus 
@@ -11528,7 +11721,7 @@ let clicktofocus = ref false in
 @
 
 
-\section{Help URL, [[-helpurl]]}
+\section{Help URL, [[mmm -helpurl]]}
 
 <<signature [[Mmm.helpurl]]>>=
 (* Preferences, options *)
@@ -12203,7 +12396,9 @@ let _ =
 @
 
 
+%******************************************************************************
 \chapter{Developer tools}
+%******************************************************************************
 
 \section{View source}
 
@@ -12213,9 +12408,7 @@ let _ =
 
 <<function [[Mmm.navigator.view_source]]>>=
 let view_source () =     
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_source
+  !current_di |> Option.iter (fun di -> di#di_source)
 in
 @
 
@@ -12227,6 +12420,7 @@ method virtual di_source : unit 	        (* source viewer *)
 <<[[Plain.plain]] other methods or fields>>=
 method di_source = ()
 @
+% no need return source, you already see the source of the .txt file
 
 <<[[Htmlw.display_html]] other methods or fields>>=
 method di_source = self#source
@@ -12251,7 +12445,7 @@ val view:
 @
 % argh, very complicated signature
 
-% apparently it also allow to modify the html!
+% apparently it also allow to modify the html! nice! mmm is also an html editor!
 
 <<function [[Source.view]]>>=
 (* Commit modifies the cache *)
@@ -12433,7 +12627,9 @@ let view attach did redisplay errors annotations _coding =
 
 
 
+%******************************************************************************
 \chapter{Advanced Topics}
+%******************************************************************************
 
 \section{Proxy}
 
@@ -12442,6 +12638,7 @@ let view attach did redisplay errors annotations _coding =
 % but also to easily access other protocols,
 %  e.g. if don't handle ftp://, then can ask the proxy
 %  to translate that into http for us! cool feature.
+% TODO: actually works? demo of ftp: via http: ? proxy address?
 
 <<signature [[Http.proxy_xxx]]>>=
 val proxy: string ref
@@ -14000,105 +14197,6 @@ let fake_cgi wwwr cont path =
 % they are used for images and many things, can't be just
 % postponed to an advanced topic
 
-
-\section{Applets}
-%alt: separate chapter
-% and modules
-
-<<[[Http_headers.suffixes]] elements>>=
-"cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
-@
-
-<<[[Main.main()]] applet system initialisation>>=
-(* The applet system.
- * This loads the local modules also, so any setup that might be
- * overriden by a local module should happen before here.
- * However, preference initialisation must happen *after* initialisation
- * of the applet system
- *)
-!Version.applet_init !modules;
-@
-
-<<[[Main.main()]] locals>>=
-let modules = ref true in
-@
-<<[[Main.main()]] command line options>>=
-"-nomodule", Arg.Unit (fun () -> modules := false),
-" Don't load initial modules";
-@
-
-
-
-<<signature [[Version.applet_init]]>>=
-(*-*)
-val applet_init : (bool -> unit) ref
-@
-<<constant [[Version.applet_init]]>>=
-(* Make it easier to compile both bytecode and native versions *)
-let applet_init = ref (fun _ -> ())
-@
-
-
-<<[[Mmm.navigator()]] User menu>>=
-(* User menu, extensible by applets *)
-let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
-
-let userm = ref (Menu.create_named userb "menu" []) in
-let reset_user_menu _ =
-  Tk.destroy !userm;
-  userm := Menu.create_named userb "menu" [];
-  !user_menus |> List.iter (fun (entry, f) ->
-      Menu.add_command !userm 
-           [Label entry; 
-            Command (fun () -> f (Nav.make_ctx caps nav hist.h_current.h_did))]
-  );
-  Menubutton.configure userb [Menu !userm] 
-in
-reset_user_menu();
-Frx_synth.bind userb "user_menu" reset_user_menu;
-@
-
-
-
-
-<<signature [[Mmm.add_user_menu]]>>=
-(* Used for applets *)
-val add_user_menu : string -> (Viewers.context -> unit) -> unit
-@
-
-<<constant [[Mmm.user_menus]]>>=
-(* User defined menus *)
-let user_menus = ref []
-@
-<<function [[Mmm.add_user_menu]]>>=
-let add_user_menu entry f = 
-  user_menus := (entry,(fun x -> try f x with _ ->())) :: !user_menus;
-  Frx_synth.broadcast "user_menu"
-@
-
-
-
-<<signature [[Html_disp.add_hook]]>>=
-val add_hook: (machine -> unit) -> unit
-@
-<<function [[Html_disp.add_hook]]>>=
-let add_hook f = 
-  user_hooks := f :: !user_hooks
-@
-% dead?
-
-<<constant [[Html_disp.user_hooks]]>>=
-(* Hooks for applets/modules. Control is made elsewhere *)
-let user_hooks = ref []
-@
-
-<<[[Html_disp.Make.create()]] run user hooks>>=
-!user_hooks |> List.iter (fun f -> f (mach :> machine));
-@
-
-%\section{Modules}?
-% separate from Applets?
-
 \section{Signals}
 
 <<[[Main.main()]] signal handling>>=
@@ -14107,7 +14205,9 @@ Sys.catch_break true;
 Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 @
 
+%******************************************************************************
 \chapter{Conclusion}
+%******************************************************************************
 
 
 %related: 
@@ -14116,10 +14216,13 @@ Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 
 
 
-
+%###############################################################################
 \appendix
+%###############################################################################
 
+%******************************************************************************
 \chapter{Debugging}
+%******************************************************************************
 
 %less: split debugging and logging?
 
@@ -14578,9 +14681,13 @@ let print = function
   | EOF -> eprintf "EOF\n"
 @
 
+%******************************************************************************
 \chapter{Profiling}
+%******************************************************************************
 
+%******************************************************************************
 \chapter{Error Management}
+%******************************************************************************
 
 \section{[[Error.t]]}
 
@@ -14703,11 +14810,14 @@ exception HTTP_error of string
 @
 
 
+%******************************************************************************
 \chapter{A Preferences Library}
-
+%******************************************************************************
 % actually it's from Tk
 
+%******************************************************************************
 \chapter{Standard Library}
+%******************************************************************************
 %alt: (Not so) Standard Library
 
 %<<constant Common.spf>>=
@@ -15208,7 +15318,9 @@ let rec compare_time = function
 
 
 
+%******************************************************************************
 \chapter{Extra Code}
+%******************************************************************************
 
 #include "mmm_extra.nw"
 
@@ -15261,6 +15373,4 @@ This index is generated automatically.
 %******************************************************************************
 % Postlude
 %******************************************************************************
-
 \end{document}
-
