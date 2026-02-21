@@ -1582,6 +1582,7 @@ val initial_navigator : < Cap.network; .. > ->
 @
 % main -> <>
 <<function [[Mmm.initial_navigator]]>>=
+(* main -> <> -> navigator *)
 let initial_navigator (caps : < Cap.network; ..>)
     (preffile : Fpath.t) (init_url : string option) =
   <<[[Mmm.initial_navigator()]] set preferences>>
@@ -1642,6 +1643,7 @@ val navigator : < Cap.network; .. > ->
 
 % main -> Mmm.initial_navigator -> <>(, true, )
 <<function [[Mmm.navigator]]>>=
+(* (main -> initial_navigator) | navigator -> <> -> Nav.absolutegoto *)
 let rec navigator (caps: < Cap.network; ..>)
         (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
   <<[[Mmm.navigator()]] new navigator hook>>
@@ -1768,6 +1770,11 @@ val absolutegoto : < Cap.network; ..> ->
 % navigator -> (enter on URL entry | explicit call)  -> <>
 <<function [[Nav.absolutegoto]]>>=
 (* Used outside an hyperlink *)
+(* main -> Mmm.initial_navigator -> Mmm.navigator -> <> -> follow_link -> 
+ *  request -> Retrieve.f -> Http.req (via protos) -> 
+ *   process_viewer (via cont) -> 
+ *    Viewer.f (as di); nav.nav_show_current di -> Mmm.show_current
+ *)
 let absolutegoto (caps : < Cap.network; ..>) (nav : t) (uri : string) =
   follow_link caps nav (Hyper.default_link uri)
 @
