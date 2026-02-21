@@ -49,6 +49,10 @@ let user_file (name : string) : Fpath.t =
 let preferences = ref (fun () -> ())
 (*e: constant [[Mmm.preferences]] *)
 
+(*****************************************************************************)
+(* Tachy *)
+(*****************************************************************************)
+
 (*s: constant [[Mmm.container_frame]] *)
 (* Tachymeter support
  * [container_frame] is the parent frame for displaying a tachymeter
@@ -83,6 +87,10 @@ let start_tachy () =
    | None -> ()
 (*e: function [[Mmm.start_tachy]] *)
 
+(*****************************************************************************)
+(* Display/undisplay *)
+(*****************************************************************************)
+
 (* Switching current viewers in the browser *)
 (*s: function [[Mmm.undisplay]] *)
 let undisplay (di : Viewers.display_info) = 
@@ -103,6 +111,10 @@ let display (di : Viewers.display_info) =
     Wm.iconname_set tl title
   end
 (*e: function [[Mmm.display]] *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (*s: function [[Mmm.quit]] *)
 let quit (confirm : bool) =
@@ -142,6 +154,7 @@ let navigators = ref 0
 (*e: constant [[Mmm.navigators]] *)
 
 (*s: function [[Mmm.navigator]] *)
+(* (main -> initial_navigator) | navigator -> <> -> Nav.absolutegoto *)
 let rec navigator (caps: < Cap.network; ..>)
         (is_main_window: bool) (initial_url : Url.t) : Nav.t option =
   (*s: [[Mmm.navigator()]] new navigator hook *)
@@ -812,6 +825,7 @@ let main_navigator = ref None
 (*e: constant [[Mmm.main_navigator]] *)
 
 (*s: function [[Mmm.initial_navigator]] *)
+(* main -> <> -> navigator *)
 let initial_navigator (caps : < Cap.network; ..>)
     (preffile : Fpath.t) (init_url : string option) =
   (*s: [[Mmm.initial_navigator()]] set preferences *)

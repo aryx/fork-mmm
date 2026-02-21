@@ -436,6 +436,11 @@ let follow_link (caps : < Cap.network; ..>)
 
 (*s: function [[Nav.absolutegoto]] *)
 (* Used outside an hyperlink *)
+(* main -> Mmm.initial_navigator -> Mmm.navigator -> <> -> follow_link -> 
+ *  request -> Retrieve.f -> Http.req (via protos) -> 
+ *   process_viewer (via cont) -> 
+ *    Viewer.f (as di); nav.nav_show_current di -> Mmm.show_current
+ *)
 let absolutegoto (caps : < Cap.network; ..>) (nav : t) (uri : string) =
   follow_link caps nav (Hyper.default_link uri)
 (*e: function [[Nav.absolutegoto]] *)
