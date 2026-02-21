@@ -512,6 +512,8 @@ let default_link uri = {
 %less: rename default to mk ?
 %pad: I added this function to factorize boilerplate code
 
+% when you click on a link, by default it's a GET without any params
+
 \subsection{Web requests}
 % =~ link + some state info in the browser (e.g. authentification, cookie?)
 %  in a header
@@ -978,9 +980,9 @@ type media_parameter = string * string
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
-    (Widget.widget ->  context -> Document.handle -> display_info option)
+    (Widget.widget -> context -> Document.handle -> display_info option)
 @
-
+% from document handle you'll be able to read the data
 
 \subsection{[[Viewers.viewers]]}
 
@@ -1030,13 +1032,89 @@ TODO XXX ??? when is this called ? why need pass down in context to viewer?
 method goto    : Hyper.link -> unit
 method gotonew : Hyper.link -> unit
 method save    : Hyper.link -> unit
-method invoke  : string -> Hyper.link -> unit    
 @
 
 <<[[Viewers.context]] hypertext methods signatures>>=
+method invoke  : string -> Hyper.link -> unit    
 method add_nav    : string * hyper_func -> unit
 method hyper_funs : (string * hyper_func) list
 @
+
+
+
+<<class [[Viewers.context]]>>=
+(* The context given to a viewer *)
+class virtual context ((did : Document.id), 
+                       (v : vparams)) =
+ object (self : 'a)
+
+  val base = did
+  method base = base
+
+  val viewer_params = v
+  method params = viewer_params
+
+  val mutable (*private*) funs = ([] : (string * hyper_func ) list)
+  method hyper_funs = funs
+
+  val targets = []
+
+  method goto hlink    = self#invoke "goto" hlink
+  method gotonew hlink = self#invoke "gotonew" hlink
+  method save hlink    = self#invoke "save" hlink
+
+  method invoke name hlink =
+    try (List.assoc name funs).hyper_func targets hlink
+    with Not_found -> ()
+
+  method add_nav (fname, hf) =
+    funs <- (fname, hf) :: funs
+
+  <<method [[Viewers.context.for_embed]]>>
+  <<method [[Viewers.context.in_embed]]>>
+
+  method virtual log : string -> unit
+end
+@
+%(*
+%    (* for debug *)
+%    let _oldtargetsTODO = targets in
+%    let res = 
+%      match newtargets with 
+%      | [] -> 
+%          (* keep exactly the same environment *)
+%          targets
+%      | l -> 
+%          (* assume I'm given new _self and _parent *)
+%      l @ frame_fugue targets 
+%    in
+%     (self#with_target res)#with_viewer_params vparams
+%*)
+%    (* old:
+%       {< 
+%       targets = res;
+%       viewer_params = vparams;       
+%       >}
+%    *)
+%    (* pad: the code below works perfectly but when I want to do 
+%     * make dotall I get an error because ocamldoc -pp camlp4o (which
+%     * I need for certain files) has a type error on this file
+%     * at this line. Indeed when run
+%     * 
+%     *   ocamldoc -pp camlp4o -I ../commons -I ../globals -I ../www -I ../http -I ../protocols -I ../retrieve -I /home/pad/packages/Linux/stow/ocaml-3.12/lib/ocaml/camltk viewers.ml
+%     * 
+%     * manually camlp4 geneate a weird thing for the code below.
+%     * so I just introduced those ugly with_target and with_viewer
+%     * to avoid the pb. UGLY
+%     * 
+%     *)
+%
+%
+%  (* pad: this is just because of some bugs in camlp4o *)
+%  method with_target: frame_targets -> 'a
+%  method with_viewer_params: (string * string) list -> 'a
+
+
 
 
 \subsection{[[Viewers.display_info]]}
@@ -1843,6 +1921,7 @@ nav_viewer_frame = viewer_frame;
  *  request -> Retrieve.f -> Http.req (via protos) -> 
  *   process_viewer (via cont) -> 
  *    Viewer.f (as di); nav.nav_show_current di -> Mmm.show_current
+ * 'open URL:' entry | Mmm.navigator.open_sel | ... -> <>
  *)
 let absolutegoto (caps : < Cap.network; ..>) (nav : t) (uri : string) =
   follow_link caps nav (Hyper.default_link uri)
@@ -2094,93 +2173,6 @@ let make_ctx (caps : < Cap.network; ..>)
   ((new stdctx caps (did, nav))#init :> Viewers.context)
 @
 
-XXX SPLIT
-
-
-<<class [[Viewers.context]]>>=
-(* The context given to a viewer *)
-class virtual context ((did : Document.id), 
-                       (v : vparams)) =
- object (self : 'a)
-
-  val base = did
-  method base = base
-
-  val viewer_params = v
-  method params = viewer_params
-
-  val mutable (*private*) funs = ([] : (string * hyper_func ) list)
-  method hyper_funs = funs
-
-  val targets = []
-
-  method goto hlink    = self#invoke "goto" hlink
-  method gotonew hlink = self#invoke "gotonew" hlink
-  method save hlink    = self#invoke "save" hlink
-
-  method invoke name hlink =
-    try (List.assoc name funs).hyper_func targets hlink
-    with Not_found -> ()
-
-  method add_nav (fname, hf) =
-    funs <- (fname, hf) :: funs
-
-  (* apply this on a copy ! *)
-  method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
-    {< viewer_params = vparams; 
-       targets = 
-         let _oldtargets = targets in (* for debug *)
-          match newtargets with 
-          (* keep exactly the same environment *)
-          | [] -> targets 
-          (* assume I'm given new _self and _parent *)
-          | l -> l @ frame_fugue targets 
-    >}
-  method in_embed did =
-    {< base = did >}
-
-  method virtual log : string -> unit
-end
-@
-%(*
-%    (* for debug *)
-%    let _oldtargetsTODO = targets in
-%    let res = 
-%      match newtargets with 
-%      | [] -> 
-%          (* keep exactly the same environment *)
-%          targets
-%      | l -> 
-%          (* assume I'm given new _self and _parent *)
-%      l @ frame_fugue targets 
-%    in
-%     (self#with_target res)#with_viewer_params vparams
-%*)
-%    (* old:
-%       {< 
-%       targets = res;
-%       viewer_params = vparams;       
-%       >}
-%    *)
-%    (* pad: the code below works perfectly but when I want to do 
-%     * make dotall I get an error because ocamldoc -pp camlp4o (which
-%     * I need for certain files) has a type error on this file
-%     * at this line. Indeed when run
-%     * 
-%     *   ocamldoc -pp camlp4o -I ../commons -I ../globals -I ../www -I ../http -I ../protocols -I ../retrieve -I /home/pad/packages/Linux/stow/ocaml-3.12/lib/ocaml/camltk viewers.ml
-%     * 
-%     * manually camlp4 geneate a weird thing for the code below.
-%     * so I just introduced those ugly with_target and with_viewer
-%     * to avoid the pb. UGLY
-%     * 
-%     *)
-%
-%
-%  (* pad: this is just because of some bugs in camlp4o *)
-%  method with_target: frame_targets -> 'a
-%  method with_viewer_params: (string * string) list -> 'a
-
-
 
 
 % who does not use a standard context?
@@ -2205,22 +2197,7 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
       ((new stdctx caps (did, nav))#init :> Viewers.context)
     in
 
-    (* a new context for an embedded window *)
-    let make_embed_ctx (w : Widget.widget) (targets : Viewers.frame_targets) 
-        : Viewers.context = 
-      let targets = 
-        ("_self", w) :: ("_parent", Winfo.parent w) :: (Viewers.frame_fugue targets) in
-      let newctx = (new stdctx caps (did,nav))#init in
-      begin
-        try 
-          let f = List.assoc "pointsto" self#hyper_funs in
-          let g = List.assoc "clearpointsto" self#hyper_funs in
-          newctx#add_nav ("pointsto", f);
-          newctx#add_nav ("clearpointsto", g);
-        with Not_found -> ()
-      end;
-      (newctx#for_embed [] targets :> Viewers.context)
-    in
+    <<nested function [[Nav.stdctx.init.make_embed]]>>
 
     (* by default, use the cache, don't touch the request *)
     let follow_link (caps : < Cap.network; ..>) _ = 
@@ -2228,7 +2205,8 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
         (true, id_wr, specific_viewer true)
 
     and save_link (caps : < Cap.network; ..>) _ =
-      request caps nav (process_save None) (true, id_wr, nothing_specific)
+      request caps nav (process_save None)
+         (true, id_wr, nothing_specific)
 
     and copy_link _ = 
       copy_link nav
@@ -2241,57 +2219,7 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
 
     in 
 
-    let frame_goto ( caps : < Cap.network; .. > )
-         (targets : Viewers.frame_targets) (hlink : Hyper.link) =
-      try
-      (* target semantics PR-HTML 4.0 16.3.2 *)
-       match List.assoc "target" hlink.h_params with
-       | "_blank" ->
-        let w = Toplevel.create Widget.default_toplevel [] in
-        Embed.add caps { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | "_self" ->
-        let w = List.assoc "_self" targets in
-        Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | "_top" -> follow_link caps targets hlink
-       | "_parent" ->
-        let w = List.assoc "_parent" targets in
-        Embed.add caps { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-       | s ->
-        let w = List.assoc s targets in
-        Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-      with
-       Not_found -> (* if we are in a frame, it is available as _self *)
-      try
-        let w = List.assoc "_self" targets in
-        Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
-      with
-        Not_found -> follow_link caps targets hlink
-    in
+    <<nested function [[Nav.stdctx.init.frame_goto]]>>
 
     !user_navigation |> List.iter super#add_nav;
 
@@ -2310,8 +2238,11 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
 end
 @
 
+% user_navigation?
 
-
+% what if comment this List.iter and add_nav? can't click on links?
+% how can I activate save? right click on link?
+% then could be moved to advanced features?
 
 
 
@@ -2764,26 +2695,6 @@ let update_vhistory = ref (fun () -> ()) (* duh *) in
 !update_vhistory();
 @
 
-
-%\subsection{Applet user menu}
-% see later
-
-% (*      Menu.add_command othersm
-%     [Label (s_ "Caml Modules"); 
-%      Command (fun _ -> Applets.edit())];
-%    Menu.add_command othersm
-%     [Label (s_ "Load Caml Extension");
-%   Command (fun _ ->
-%              Fileselect.f (s_ "Load Caml Extension")
-%          (function [] -> ()
-%                  | [s] -> Applets.load_local s
-%              | l -> raise (Failure "multiple selection"))
-%          "*.cmo"
-%          ""
-%          false
-%          false)
-%      ];
-% *)
 
 
 \subsection{Document menu}
@@ -5721,8 +5632,9 @@ type status =
  *)
 (* Nav.request -> <> -> Http.req (via Protos.get) -> Http.tcp_connect *)
 and f (caps : < Cap.network; ..>) 
-      (request : Www.request) (retry : Hyper.link -> unit) 
-      (cont : Document.continuation) : status = 
+    (request : Www.request)
+    (retry : Hyper.link -> unit) 
+    (cont : Document.continuation) : status = 
   Logs.debug (fun m -> m "Retrieve.f on %s" (Url.string_of request.www_url));
   if Www.is_active_cnx request.www_url
   then InUse
@@ -5778,8 +5690,10 @@ type behaviour =
  *)
 (* f -> Http.req (via protos) cont -> <> (via cont.document_process) -> codex *)
 let rec http_check (caps: < Cap.network; .. > )
-         cache (retry : Hyper.link -> unit)
-         (cont : Document.continuation) (wwwr : Www.request)
+         cache 
+         (retry : Hyper.link -> unit)
+         (cont : Document.continuation) 
+         (wwwr : Www.request)
          (dh : Document.handle) : unit =
   Logs.debug (fun m -> m "Retrieve.http_check");
   try (* the appropriate behavior *)
@@ -5868,6 +5782,7 @@ val add_http_processor :
 <<constant [[Retrieve.add_http_processor]]>>=
 let add_http_processor = Hashtbl.add http_process
 @
+%alt: just write an http_process function with a big match
 
 <<toplevel [[Retrieve._1]]>>=
 (* 400 : proxies do return this code when they can satisfy the request,
@@ -6438,7 +6353,7 @@ class cnx (sock, finish) =
     end
 end
 @
-% ugly, could simplify?
+% ugly, could simplify? use regular record, no need those setter/getter boilerplate
 
 
 \subsubsection{Error management}
@@ -7282,6 +7197,8 @@ method frame = frame
 
 method di_widget = frame
 @
+% why this intermediate frame? because computed once and saved
+% whereas di_widget is a method called each time?
 
 <<[[Plain.plain]] private fields>>=
 (* text widget, will be set to the proper value in init() *)
@@ -7848,7 +7765,7 @@ method frame = frame
 
 method di_widget = frame
 @
-
+% similar to text/plain viewers code
 
 <<[[Htmlw.display_html]] private fields>>=
 val mutable init_mode = true
@@ -9824,21 +9741,21 @@ end;
 mach#add_tag "embed"
   (fun fo tag -> 
      try
-   let link = Hyper.{
-     h_uri = Html.get_attribute tag "src";
-     h_method = GET;
-     h_context = Some mach#base;
-     h_params = []} in
-   let width =
-     try Some (int_of_string (Html.get_attribute tag "width"))
-     with Not_found -> None
-   and height =
-     try Some (int_of_string (Html.get_attribute tag "height"))
-     with Not_found -> None
-   and alttxt = Html.get_attribute tag "alt" in
+       let link = Hyper.{
+         h_uri = Html.get_attribute tag "src";
+         h_method = GET;
+         h_context = Some mach#base;
+         h_params = []} in
+       let width =
+        try Some (int_of_string (Html.get_attribute tag "width"))
+        with Not_found -> None
+       and height =
+         try Some (int_of_string (Html.get_attribute tag "height"))
+         with Not_found -> None
+       and alttxt = Html.get_attribute tag "alt" in
 
-   let fr = fo.create_embedded "" width height in
-   mach#add_embedded {
+       let fr = fo.create_embedded "" width height in
+       mach#add_embedded {
        embed_hlink = link;
        embed_frame = fr;
        embed_context = mach#ctx#for_embed tag.attributes [];
@@ -9846,8 +9763,8 @@ mach#add_tag "embed"
        embed_alt = alttxt
       }
      with
-   Not_found ->
-     raise (Html.Invalid_Html ("SRC missing in EMBED")))
+      Not_found ->
+       raise (Html.Invalid_Html ("SRC missing in EMBED")))
   ignore_close;
 @
 
@@ -10476,6 +10393,99 @@ warnings |> List.iter (fun (reason, pos) ->
 
 \section{XXX}
 
+<<method [[Viewers.context.for_embed]]>>=
+(* apply this on a copy ! *)
+method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
+  {< viewer_params = vparams; 
+     targets = 
+       let _oldtargets = targets in (* for debug *)
+        match newtargets with 
+        (* keep exactly the same environment *)
+        | [] -> targets 
+        (* assume I'm given new _self and _parent *)
+        | l -> l @ frame_fugue targets 
+  >}
+@
+
+<<method [[Viewers.context.in_embed]]>>=
+method in_embed did =
+  {< base = did >}
+@
+
+<<nested function [[Nav.stdctx.init.make_embed]]>>=
+(* a new context for an embedded window *)
+let make_embed_ctx (w : Widget.widget) (targets : Viewers.frame_targets) 
+    : Viewers.context = 
+  let targets = 
+    ("_self", w) :: ("_parent", Winfo.parent w) :: (Viewers.frame_fugue targets) in
+  let newctx = (new stdctx caps (did,nav))#init in
+  begin
+    try 
+      let f = List.assoc "pointsto" self#hyper_funs in
+      let g = List.assoc "clearpointsto" self#hyper_funs in
+      newctx#add_nav ("pointsto", f);
+      newctx#add_nav ("clearpointsto", g);
+    with Not_found -> ()
+  end;
+  (newctx#for_embed [] targets :> Viewers.context)
+in
+@
+
+
+<<nested function [[Nav.stdctx.init.frame_goto]]>>=
+let frame_goto ( caps : < Cap.network; .. > )
+     (targets : Viewers.frame_targets) (hlink : Hyper.link) =
+  try
+  (* target semantics PR-HTML 4.0 16.3.2 *)
+   match List.assoc "target" hlink.h_params with
+   | "_blank" ->
+    let w = Toplevel.create Widget.default_toplevel [] in
+    Embed.add caps { 
+     embed_hlink = hlink;
+     embed_frame = w;
+     embed_context = make_embed_ctx w targets;
+     embed_map = Maps.NoMap;
+     embed_alt = "" }
+   | "_self" ->
+    let w = List.assoc "_self" targets in
+    Embed.add caps {
+     embed_hlink = hlink;
+     embed_frame = w;
+     embed_context = make_embed_ctx w targets;
+     embed_map = Maps.NoMap;
+     embed_alt = "" }
+   | "_top" -> follow_link caps targets hlink
+   | "_parent" ->
+    let w = List.assoc "_parent" targets in
+    Embed.add caps { 
+     embed_hlink = hlink;
+     embed_frame = w;
+     embed_context = make_embed_ctx w targets;
+     embed_map = Maps.NoMap;
+     embed_alt = "" }
+   | s ->
+    let w = List.assoc s targets in
+    Embed.add caps {
+     embed_hlink = hlink;
+     embed_frame = w;
+     embed_context = make_embed_ctx w targets;
+     embed_map = Maps.NoMap;
+     embed_alt = "" }
+  with
+   Not_found -> (* if we are in a frame, it is available as _self *)
+  try
+    let w = List.assoc "_self" targets in
+    Embed.add caps {
+     embed_hlink = hlink;
+     embed_frame = w;
+     embed_context = make_embed_ctx w targets;
+     embed_map = Maps.NoMap;
+     embed_alt = "" }
+  with
+    Not_found -> follow_link caps targets hlink
+in
+@
+
 <<[[Html_disp.machine]] embedded fields>>=
 method virtual add_embedded : Embed.obj -> unit
 method virtual embedded : Embed.obj list
@@ -10794,6 +10804,27 @@ let applet_init = ref (fun _ -> ())
 @
 
 
+%\subsection{Applet user menu}
+% see later
+
+% (*      Menu.add_command othersm
+%     [Label (s_ "Caml Modules"); 
+%      Command (fun _ -> Applets.edit())];
+%    Menu.add_command othersm
+%     [Label (s_ "Load Caml Extension");
+%   Command (fun _ ->
+%              Fileselect.f (s_ "Load Caml Extension")
+%          (function [] -> ()
+%                  | [s] -> Applets.load_local s
+%              | l -> raise (Failure "multiple selection"))
+%          "*.cmo"
+%          ""
+%          false
+%          false)
+%      ];
+% *)
+
+
 <<[[Mmm.navigator()]] User menu>>=
 (* User menu, extensible by applets *)
 let userb = Menubutton.create_named mbar "user" [Text (s_ "User")] in
@@ -10982,9 +11013,7 @@ let tachy_maker = ref About.create_tachy
 
 <<function [[Mmm.start_tachy]]>>=
 let start_tachy () = 
-  match !container_frame with
-   | Some f -> Low.cur_tachy := !tachy_maker f
-   | None -> ()
+  !container_frame |> Option.iter (fun f -> Low.cur_tachy := !tachy_maker f)
 @
 
 <<constant [[Mmm.container_frame]]>>=
@@ -11260,15 +11289,13 @@ let abort () =
     aborter()
   );
   Hashtbl.clear actives;
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_abort
+  !current_di |> Option.iter (fun di -> di#di_abort)
 in
 @
 
 
 <<local [[Mmm.navigator.actives]]>>=
-let actives = (Hashtbl.create 37: (Url.t, Www.aborter) Hashtbl.t) in
+let actives : (Url.t, Www.aborter) Hashtbl.t = Hashtbl_.create () in
 @
 %less: type? url * aborter! introduce type!
 
@@ -11379,9 +11406,7 @@ method virtual di_redisplay : unit		(* redisplay *)
 
 <<function [[Mmm.navigator.redisplay]]>>=
 let redisplay () =
-  match !current_di with
-  | None -> ()
-  | Some di -> di#di_redisplay
+  !current_di |> Option.iter (fun di -> di#di_redisplay)
 in
 @
 
@@ -12152,6 +12177,8 @@ let proxy_req caps wr cont =
 @
 % see Advanced topics chapter on proxy and the proxy_request function
 
+% the gdr-fr article cite an article about proxy saying they can be
+% used for old protocols
 
 \subsection{[[ftp://]]}
 
@@ -14031,6 +14058,8 @@ nav_id = hist.h_key;
 @
 
 \section{Frames}
+% move in earlier chapter when talking about the different tags,
+% do its own section
 
 % they are actually obsolete in html5!
 
@@ -14193,7 +14222,7 @@ let fake_cgi wwwr cont path =
 
 
 
-%\section{Embedded objects}
+%alt: \section{Embedded objects}
 % they are used for images and many things, can't be just
 % postponed to an advanced topic
 
