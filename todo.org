@@ -1,20 +1,109 @@
 * Big plan
 
 ** TODO changes.txt
+https
+applets
 
 ** Overview
 
 ** Later
 
+*** incorporate ideas from browser-engineering book?
+try to port to OCaml the ideas and code of the browser-engineering book?
+especially css and javascript (and dom)!
+
+"just need a Javascript interpreter and TLS library"
+
+
+*** incorporate mothra/abaco/libhtml/webfs ideas?
+
+
+*** incorporate my pfff/semgrep html/css/js parsers?
+
+
+*** css
+
+*** js
+
 * Now
 #See also Browser.nw section in plan9/todo.txt
 
+** understand 
+
+*** understand the embed things
+why Htmlw.embedded_viewer interface different from Htmlw.viewer?
+again, -> <> ??
+
+
+** internals
+
+*** FUN add capabilities
+#and uncomment gradually in semgrep.sonnet and remove hardcoded excludes
+
+DONE Cap.argv
+SEMI Cap.exit (easy, switch to exn from Exit module or nosemgrep: annot in fork)
+Cap.forkew in tk/img.ml (djpeg?)
+Cap.fork in low.ml
+Cap.wait in low.ml and mailto.ml
+Cap.kill in viewers.ml and cache.ml
+Cap.env (DISPLAY) in many files
+DONE Cap.network!!!
+
+*** less: move Mmm.show_current out of nested func
+
+*** RELAX use Set_.t instead of functors and Document.DocumentIdSet ...
+just Document.idSet alias
+same with Www.UrlSet -> Www.urlSet
+
+*** RELAX remove misc/Log.ml
+
+*** class -> record in Low.ml (or Tachymeter_infra.ml)
+
+*** class -> record in error.ml
+like in condition.ml with backend ref
+
+*** Version.init_xxx in separate Init.ml or Default.ml
+and where is used init_url? ok stored in cache, but
+why requested by default?
+
+*** move Www.is_active_cnx to separate module? Cnx.ml? 
+but then confusing with class cnx? and what about Feed?
+move in src/core ? 
+
+*** less: start use capitalized module name, a la Martin
+
+*** rename Low.ml to Tachy.ml or Tachy_infra.ml? Tachymeter_core.ml ? or keep?
+and split for add_fileinput and remove_fileinput in separate module?
+why need that? for select() of Tk safe loop?
+or merge with Filevent_.ml! 
+
+and move fork in munix.ml? why need sys_exit external?
+
+*** remove all those classes?
+all those self#xxx, hard to follow responsibilities
+
+deobjectify?
+so can be processed by ocaml light :)
+
+*** use threads? can simplify the code? 
+or too hard to cooperate with Tk safe loop?
+
+** build infra
+
+*** less: try compile mmm on macOS
+needed conf-tk, conf-tcl (enable depext), which installs
+xquartz
+
+but tk path? tcl path? site.config to modify? add a macos.config?
+
+
+
 ** bugs (tk prototype)
 
-*** ./mmm docs/website/index.html segfault!!!!
+*** still? ./mmm docs/website/index.html segfault!!!!
 file://localhost/home/pad/size.txt
 
-*** bug!!!: why file: events works and http: does not, I have to switch
+*** still? bug!!!: why file: events works and http: does not, I have to switch
 back and forth to the app to get the events flushed for http
 stuff
 
@@ -27,9 +116,7 @@ should use the referer path to generate the right urls
 * Later
 
 ** gtk/cairo prototype
-make a mimimal version, no menus, just rendering of an url?
-or goes with tk. It's not that bad actually, if I find
-the way to fix the flush event bug.
+#make a mimimal version, no menus, just rendering of an url?
 
 *** get text/plain working now that I fixed the issue with -linkall
 
@@ -63,16 +150,6 @@ just redirect to cairo?
 actually Safari has this now?
 
 *** save full history!
-
-** internals
-
-*** remove all those classes?
-all those self#xxx, hard to follow responsibilities
-
-deobjectify?
-so can be processed by ocaml light :)
-
-*** use threads? can simplify the code?
 
 ** misc
 
