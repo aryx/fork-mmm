@@ -14,13 +14,12 @@
 <<commons/fileevent_.ml>>=
 @
 
-%external
+\section{[[core/]]}
 
-\section{[[misc/]]}
-
-\subsection{[[misc/condition.mli]]}
+\subsection{[[core/condition.mli]]}
 
 %todo: replaced with the one in ocaml?
+% Tk hooks?
 
 <<signature [[Condition.create]]>>=
 val create : unit -> t
@@ -35,7 +34,6 @@ val set : t -> unit
 <<signature [[Condition.free]]>>=
 val free : t -> unit
 @
-
 
 %-------------------------------------------------------------
 
@@ -58,12 +56,11 @@ val backend: condition_backend ref
 @
 
 
-\subsection{[[misc/condition.ml]]}
+\subsection{[[core/condition.ml]]}
 
 <<type [[Condition.t]]>>=
 type t = string
 @
-
 
 %-------------------------------------------------------------
 
@@ -109,30 +106,20 @@ let free s =
 
 \subsection{[[misc/date.mli]]}
 
-%-------------------------------------------------------------
-
 <<commons/date.mli>>=
 <<copyright header v6>>
 
 <<signature [[Date.asc_wkday]]>>
-
 <<signature [[Date.asc_month]]>>
-
 <<signature [[Date.asc]]>>
-
 <<signature [[Date.asc_now]]>>
 
 <<signature [[Date.commonlog]]>>
 
 <<signature [[Date.compare_time]]>>
-
 @
 
-
 \subsection{[[misc/date.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/date.ml>>=
 <<copyright header v6>>
@@ -141,16 +128,11 @@ open Printf
 open Unix
 
 <<function [[Date.asc_wkday]]>>
-
 <<function [[Date.asc_month]]>>
-
 <<function [[Date.asc]]>>
-
 <<function [[Date.asc_now]]>>
 
-
 <<function [[Date.commonlog]]>>
-
 
 <<function [[Date.compare_time]]>>
 @
@@ -158,55 +140,12 @@ open Unix
 
 \subsection{[[misc/ebuffer.mli]]}
 
-%todo: replaced with the one in ocaml? buffer.mli
-
-<<signature [[Ebuffer.create]]>>=
-val create : int -> t
-  (* [create n] creates a buffer with initial size [n] *)
-@
-
-<<signature [[Ebuffer.output_string]]>>=
-val output_string : t -> string -> unit
-  (* [output_string buf s] appends [s] to [buf] *)
-@
-
-<<signature [[Ebuffer.output_char]]>>=
-val output_char : t -> char -> unit
-  (* [output_char buf c] appends [c] to [buf] *)
-@
-
-<<signature [[Ebuffer.output]]>>=
-val output : t -> string -> int -> int -> unit
-  (* [output buf s offs len] appends [len] characters of [s], starting
-     at offset [offs] to [buf].
-     Raises [Invalid_argument] if [offs] and [len] do not designate a
-     valid substring of [s] *)
-@
-
-<<signature [[Ebuffer.get]]>>=
-val get : t -> string
-  (* [get buf] returns the current contents of [buf] *)
-@
-
-<<signature [[Ebuffer.used]]>>=
-val used : t -> int
-  (* [used buf] returns the current length of [buf] *)
-@
-
-<<signature [[Ebuffer.reset]]>>=
-val reset : t -> unit
-  (* [reset buf] emties [buf] *)  
-@
-
-
-%-------------------------------------------------------------
-
 <<commons/ebuffer.mli>>=
 <<copyright header v6>>
 
 (* Extensible buffers *)
 
-type t 
+<<signature [[Ebuffer.t]] abstract>>
 
 <<signature [[Ebuffer.create]]>>
 
@@ -220,88 +159,7 @@ type t
 <<signature [[Ebuffer.reset]]>>
 @
 
-
 \subsection{[[misc/ebuffer.ml]]}
-
-<<type [[Ebuffer.t]]>>=
-(* Extensible buffers *)
-type t = {
-    mutable buffer : bytes;
-    mutable pos : int;
-    mutable len : int}
-@
-
-<<function [[Ebuffer.create]]>>=
-let create n = {
-   buffer = Bytes.create n;
-   pos = 0;
-   len = n
-   }
-@
-
-<<function [[Ebuffer.reset]]>>=
-let reset buf =
-    buf.pos <- 0
-@
-
-<<function [[Ebuffer.newsize]]>>=
-let newsize old added =
-  if added < old then old + old
-  else old + old + added
-@
-
-<<function [[Ebuffer.output_string]]>>=
-let output_string buf s =
-  let l = String.length s in
-  if buf.pos + l > buf.len then begin
-    let size = newsize buf.len l in
-    let news = Bytes.create size in
-      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
-      buf.buffer <- news;
-      buf.len <- size
-    end;
-  Bytes.unsafe_blit_string s 0 buf.buffer buf.pos l;
-  buf.pos <- buf.pos + l
-@
-
-<<function [[Ebuffer.output_char]]>>=
-let output_char buf c =
-  if buf.pos >= buf.len then begin
-    let size = newsize buf.len 1 in
-    let news = Bytes.create size in
-      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
-      buf.buffer <- news;
-      buf.len <- size
-    end;
-  Bytes.set buf.buffer buf.pos c;
-  buf.pos <- buf.pos + 1
-@
-
-<<function [[Ebuffer.output]]>>=
-let output buf s ofs l =
-  if buf.pos + l > buf.len then begin
-    let size = newsize buf.len l in
-    let news = Bytes.create size in
-      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
-      buf.buffer <- news;
-      buf.len <- size
-    end;
-  String.blit s ofs buf.buffer buf.pos l;
-  buf.pos <- buf.pos + l
-@
-
-<<function [[Ebuffer.get]]>>=
-let get buf = 
-  Bytes.sub_string buf.buffer 0 buf.pos
-@
-
-<<function [[Ebuffer.used]]>>=
-let used buf =
-  buf.pos
-@
-
-
-%-------------------------------------------------------------
 
 <<commons/ebuffer.ml>>=
 <<copyright header v6>>
@@ -319,18 +177,12 @@ let used buf =
 
 <<function [[Ebuffer.output]]>>
 
-
 <<function [[Ebuffer.get]]>>
 
 <<function [[Ebuffer.used]]>>
 @
 
-
 \subsection{[[misc/error.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<commons/error.mli>>=
 
@@ -342,14 +194,9 @@ let used buf =
 <<signature [[Error.ok]]>>
 <<signature [[Error.choose]]>>
 <<signature [[Error.ari]]>>
-
 @
 
-
 \subsection{[[misc/error.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/error.ml>>=
 open Common
@@ -460,14 +307,10 @@ val sprintf: ('a, unit, string) format -> 'a
 (***********************************************************************)
 
 <<signature [[I18nprintf.fprintf]]>>
-
 <<signature [[I18nprintf.printf]]>>
-
 <<signature [[I18nprintf.eprintf]]>>
-
 <<signature [[I18nprintf.sprintf]]>>
 @
-
 
 \subsection{[[misc/i18nprintf.ml]]}
 
@@ -714,12 +557,9 @@ module type S =
   end
 
 module Make(Ord: Map.OrderedType): (S with type key = Ord.t)
-
 @
 
-
 \subsection{[[misc/ibtree.ml]]}
-
 
 %-------------------------------------------------------------
 
@@ -915,19 +755,15 @@ end
 @
 
 
-\subsection{[[misc/lang.mli]]}
+\subsection{[[i18n/lang.mli]]}
 
 %todo: remove?
 
-%-------------------------------------------------------------
-
 <<commons/lang.mli>>=
 <<signature [[Lang.lang]]>>
-
 @
 
-
-\subsection{[[misc/lang.ml]]}
+\subsection{[[i18n/lang.ml]]}
 
 
 %(* mmm uses this function and Jtk.is_japanse_mode also. *)
@@ -943,15 +779,11 @@ end
 <<function [[Lang.lang]]>>
 
 (* detect and set LANG information *)
-
 @
 
 
-
 \subsection{[[misc/log.mli]]}
-
-
-%-------------------------------------------------------------
+%TODO: delete this module, use Logs instead
 
 <<commons/log.mli>>=
 <<signature [[Log.debug_mode]]>>
@@ -960,25 +792,19 @@ end
 <<signature [[Log.debug]]>>
 @
 
-
 \subsection{[[misc/log.ml]]}
 
-
-%-------------------------------------------------------------
-
 <<commons/log.ml>>=
-
 
 <<constant [[Log.debug_mode]]>>
 
 <<function [[Log.f]]>>
 
 <<function [[Log.debug]]>>
-
 @
 
 
-\subsection{[[misc/low.mli]]}
+\subsection{[[core/low.mli]]}
 
 %todo: replace with unix?
 
@@ -1051,7 +877,7 @@ val update_idletasks_backend: (unit -> unit) ref
 @
 
 
-\subsection{[[misc/low.ml]]}
+\subsection{[[core/low.ml]]}
 
 <<constant [[Low.cur_tachy]]>>=
 let cur_tachy = ref (new no_tachy :> tachymeter)
@@ -1152,9 +978,6 @@ let pending_read = ref 0
 <<commons/low.ml>>=
 (* Wrapping of some low-level functions *)
 
-
-
-
 (* Tachymeter support *)
 class  virtual tachymeter = object
   method virtual report_cnx : int -> unit     (* displays number of active cnx *)
@@ -1181,7 +1004,6 @@ end
 <<global [[Low.sample_read]]>>
 
 <<function [[Low.read]]>>
-
 
 (*
  * Read a line (terminated by \n or \r\n).
@@ -1235,18 +1057,11 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 let update_idletasks_backend = 
   ref (fun _ -> failwith "no update_idletasks defined")
 
-
 <<constant [[Low.last_update]]>>
 <<function [[Low.update_idletasks]]>>
-
-
 @
 
-
 \subsection{[[misc/mlist.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/mlist.mli>>=
 <<signature [[Mlist.hdn]]>>
@@ -1259,38 +1074,25 @@ let update_idletasks_backend =
 <<signature [[Mlist.do_listi]]>>
 @
 
-
 \subsection{[[misc/mlist.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/mlist.ml>>=
 (*
  * List utilities
  *)
-<<function [[Mlist.tln]]>>
 
+<<function [[Mlist.tln]]>>
 <<function [[Mlist.hdn]]>>
 
 <<function [[Mlist.except_assoc]]>>
-
 <<function [[Mlist.exceptq]]>>
-
-
 
 <<function [[Mlist.rev_do_list]]>>
 
-
 <<function [[Mlist.do_listi]]>>
-
 @
 
-
 \subsection{[[misc/mstring.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/mstring.mli>>=
 <<signature [[Mstring.split_str]]>>
@@ -1311,11 +1113,7 @@ let update_idletasks_backend =
 <<signature [[Mstring.norm_crlf]]>>
 @
 
-
 \subsection{[[misc/mstring.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/mstring.ml>>=
 (*
@@ -1327,13 +1125,10 @@ let update_idletasks_backend =
 <<function [[Mstring.get_suffix]]>>
 
 <<function [[Mstring.hex_to_dec]]>>
-
 <<function [[Mstring.dec_to_hex]]>>
-
 <<function [[Mstring.hex_to_string]]>>
 
 <<constant [[Mstring.gensym]]>>
-
 <<function [[Mstring.egensym]]>>
 
 <<function [[Mstring.rem_trailing_sp]]>>
@@ -1341,17 +1136,9 @@ let update_idletasks_backend =
 <<function [[Mstring.catenate_sep]]>>
 
 <<function [[Mstring.norm_crlf]]>>
-
-
-
 @
 
-
 \subsection{[[misc/msys.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<commons/msys.mli>>=
 <<copyright header v6>>
@@ -1365,15 +1152,10 @@ let update_idletasks_backend =
 <<signature [[Msys.mktemp]]>>
 @
 
-
 \subsection{[[misc/msys.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/msys.ml>>=
 <<copyright header v6>>
-
 
 open Unix
 
@@ -1393,10 +1175,7 @@ open Unix
 <<constant [[Msys.mktemp]]>>
 @
 
-
 \subsection{[[misc/i18n.mli]]}
-
-
 
 %-------------------------------------------------------------
 
@@ -1620,16 +1399,9 @@ open Unix
 <<constant [[Munix.vars]]>>
 
 <<function [[Munix.system_eval]]>>
-
 @
 
-
 \subsection{[[misc/feed.mli]]}
-
-
-
-
-%-------------------------------------------------------------
 
 <<commons/feed.mli>>=
 <<type [[Feed.internal]]>>
@@ -1640,12 +1412,7 @@ open Unix
 <<signature [[Feed.internal]]>>
 @
 
-
 \subsection{[[misc/feed.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<commons/feed.ml>>=
 <<type [[Feed.internal]]>>
@@ -1655,76 +1422,12 @@ open Unix
 <<function [[Feed.of_fd]]>>
  
 <<function [[Feed.internal]]>>
-
 @
 
 
 \subsection{[[tk/glevents.mli]]}
 
 %\subsection{[[Glevents]]}
-
-<<signature [[Glevents.get]]>>=
-val get : string -> (modifier list * xEvent) list 
-@
-
-<<signature [[Glevents.reset]]>>=
-val reset : unit -> unit
-@
-
-<<constant [[Glevents.events]]>>=
-(* A global table for describing events
- * TODO: use virtual events because here we don't change bindings in 
- * place after a preference reload
- *)
-
-let events = Hashtbl.create 37
-@
-
-<<constant [[Glevents.builtin_defaults]]>>=
-let builtin_defaults = [
-
-  (* tachymeter bindings *)
-  "tachy_about", [[], ButtonPressDetail 3];
-  "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
-  "tachy_new", [[], ButtonPressDetail 1];
-  "tachy_sel", [[], ButtonPressDetail 2];
-
-  (* bindings on inlined images *)
-  "loadimage", [[Control], ButtonPressDetail 1];
-  "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
-  "stopanim",  [[], ButtonPressDetail 2];
-  "restartanim", [[Shift], ButtonPressDetail 2];
-  "copyimgurl", [[], ButtonPressDetail 2];
-  "updateimage", [[Shift], ButtonPressDetail 2];
-
-  (* anchor bindings *)
-  "goto", [[], ButtonPressDetail 1];
-  "save", [[Shift], ButtonPressDetail 1];
-  "gotonew", [[], ButtonPressDetail 3];
-  "hypermenu", [[Control], ButtonPressDetail 1];
-]
-@
-% ???
-
-<<constant [[Glevents.get]]>>=
-let get = Hashtbl.find events
-@
-
-<<function [[Glevents.reset]]>>=
-(* This is for preferences *)
-let reset () =
-  Hashtbl.clear events;
-  (* Now: for all names defined in defaults, check a possible overriding value
-     in resources *)
-  List.iter (fun (name,default) ->
-    Hashtbl.add events 
-      name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
-    builtin_defaults
-@
-
-
-
-
 
 %-------------------------------------------------------------
 
@@ -1735,11 +1438,7 @@ open Tk
 <<signature [[Glevents.reset]]>>
 @
 
-
 \subsection{[[tk/glevents.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<commons/glevents.ml>>=
 open Printf
@@ -1752,14 +1451,10 @@ open Tk
 <<constant [[Glevents.get]]>>
 
 <<function [[Glevents.reset]]>>
-    
-  
 @
 
 
 \subsection{[[misc/hotlist.ml]]}
-
-%-------------------------------------------------------------
 
 <<commons/hotlist.ml>>=
 open I18n
@@ -1768,14 +1463,9 @@ open I18n
 <<function [[Hotlist.f]]>>
 @
 
-
-
 \section{[[globals/]]}
 
 \subsection{[[globals/version.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<globals/version.mli>>=
 <<signature [[Version.number]]>>
@@ -1790,12 +1480,7 @@ open I18n
 <<signature [[Version.applet_init]]>>
 @
 
-
 \subsection{[[globals/version.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<globals/version.ml>>=
 (* To merge FR and JP strings correctly, you have to encode the characters
@@ -1820,14 +1505,9 @@ open I18n
 <<constant [[Version.applet_init]]>>
 @
 
-
 \section{[[www/]]}
 
 \subsection{[[www/uri.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<www/uri.mli>>=
 <<type [[Uri.abs_uri]]>>
@@ -1835,15 +1515,9 @@ open I18n
 <<signature [[Uri.is_absolute]]>>
 @
 
-
 \subsection{[[www/uri.ml]]}
 
-
-%-------------------------------------------------------------
-
 <<www/uri.ml>>=
-
-
 
 <<type [[Uri.abs_uri]]>>
 
@@ -1852,9 +1526,6 @@ open I18n
 
 
 \subsection{[[www/url.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<www/url.mli>>=
 <<type [[Url.protocol]]>>
@@ -1868,24 +1539,14 @@ open I18n
 <<signature [[Url.distant_path]]>>
 
 <<exception [[Url.Url_Lexing]]>>
-
-
 @
-
 
 \subsection{[[www/url.ml]]}
 
-
-
-%-------------------------------------------------------------
-
 <<www/url.ml>>=
 
-
 <<type [[Url.protocol]]>>
-
 <<function [[Url.string_of_protocol]]>>
-
 
 <<type [[Url.t]]>>
 
@@ -1895,14 +1556,9 @@ open I18n
 <<function [[Url.string_of]]>>
 
 <<function [[Url.distant_path]]>>
-
 @
 
-
 \subsection{[[www/urlenc.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<www/urlenc.mli>>=
 <<copyright header v6>>
@@ -1917,11 +1573,7 @@ open I18n
 <<signature [[Urlenc.unquote]]>>
 @
 
-
 \subsection{[[www/urlenc.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<www/urlenc.ml>>=
 <<copyright header v6>>
@@ -1941,16 +1593,10 @@ open Mstring
 <<constant [[Urlenc.strict_form_standard]]>>
 
 <<function [[Urlenc.form_encode]]>>
-
 <<constant [[Urlenc.form_decode]]>>
-         
 @
 
-
 \subsection{[[www/lexurl.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<www/lexurl.mli>>=
 <<signature [[Lexurl.f]]>>
@@ -1961,25 +1607,15 @@ open Mstring
 <<signature [[Lexurl.normalize]]>>
 @
 
-
-
 \subsection{[[www/lexurl.mll]]}
-
-%-------------------------------------------------------------
 
 <<www/lexurl.mll>>=
 {
-
-
-
 open Mlist
-
 open Url
 
 <<function [[Lexurl.normalize_port]]>>
-
 <<function [[Lexurl.normalize_host]]>>
-
 }
 
 <<function [[Lexurl.f]]>>
@@ -1998,8 +1634,6 @@ open Url
 
 <<function [[Lexurl.make]]>>
 
-
-
 <<function [[Lexurl.remove_dots]]>>
 
 <<function [[Lexurl.maken]]>>
@@ -2009,12 +1643,7 @@ open Url
 }
 @
 
-
 \subsection{[[www/hyper.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<www/hyper.mli>>=
 (* An hypertext(media) link on the Web *)
@@ -2037,12 +1666,7 @@ open Url
 <<signature [[Hyper.string_of]]>>
 @
 
-
 \subsection{[[www/hyper.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<www/hyper.ml>>=
 open I18n
@@ -2073,11 +1697,7 @@ open Url
 <<function [[Hyper.string_of]]>>
 @
 
-
 \subsection{[[www/maps.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<www/maps.mli>>=
 <<type [[Maps.area_kind]]>>
@@ -2097,12 +1717,7 @@ val broadcast_backend: (string -> unit) ref
 <<signature [[Maps.add]]>>
 @
 
-
 \subsection{[[www/maps.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<www/maps.ml>>=
 open Printf
@@ -2143,11 +1758,7 @@ let broadcast_backend = ref (fun _ev -> failwith "no broadcast defined")
 <<function [[Maps.get]]>>
 @
 
-
 \subsection{[[www/www.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<www/www.mli>>=
 <<type [[Www.request]]>>
@@ -2164,15 +1775,9 @@ module UrlSet : Set.S with type elt = Url.t
 <<signature [[Www.rem_active_cnx]]>>
 
 <<type [[Www.aborter]]>>
-
 @
 
-
 \subsection{[[www/www.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<www/www.ml>>=
 
@@ -2183,8 +1788,6 @@ module UrlSet : Set.S with type elt = Url.t
 <<constant [[Www.sp]]>>
 
 <<function [[Www.make]]>>
- 
-
 
 <<module Www.UrlSet>>
 
@@ -2192,15 +1795,9 @@ module UrlSet : Set.S with type elt = Url.t
 <<functions [[Www.xxx_active_cnx]]>>
 
 <<type [[Www.aborter]]>>
-
 @
 
-
 \subsection{[[www/document.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<www/document.mli>>=
 <<type [[Document.document_id]]>>
@@ -2234,11 +1831,7 @@ val add_log_backend: (handle -> string -> (unit -> unit) -> unit) ref
 <<signature [[Document.document_id]]>>
 @
 
-
 \subsection{[[www/document.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<www/document.ml>>=
 open Feed
@@ -2277,15 +1870,11 @@ let add_log_backend = ref (fun _ _ _ -> failwith "no add_log defined")
 <<function [[Document.add_log]]>>
 <<functions [[Document.xxx_log]]>>
 <<function [[Document.end_log]]>>
-
 @
-
 
 \section{[[html/]]}
 
 \subsection{[[html/dtd.mli]]}
-
-%-------------------------------------------------------------
 
 <<html/dtd.mli>>=
 module Elements : Set.S with type elt = string
@@ -2307,10 +1896,7 @@ module Elements : Set.S with type elt = string
 <<signature [[Dtd.dump]]>>
 @
 
-
 \subsection{[[html/dtd.ml]]}
-
-%-------------------------------------------------------------
 
 <<html/dtd.ml>>=
 open Printf
@@ -2321,12 +1907,10 @@ open Printf
 
 <<function [[Dtd.name]]>>
 
-
 <<function [[Dtd.sol]]>>
 <<function [[Dtd.sos]]>>
 
 <<constant [[Dtd.dtd20]]>>
-
 
 <<function [[Dtd.dump]]>>
 
@@ -2345,11 +1929,11 @@ open Printf
 
 <<toplevel [[Dtd._1]]>>
 
+
 <<constant [[Dtd.dtd32f]]>>
 
 <<toplevel [[Dtd._2]]>>
 @
-
 
 \subsection{[[html/html.mli]]}
 
@@ -2362,7 +1946,6 @@ val beautify2 : string -> string
 val issp : string -> bool
   (* [issp s] is true if s is formed only of SP *)
 @
-
 
 %-------------------------------------------------------------
 
@@ -2406,12 +1989,9 @@ val issp : string -> bool
 <<type [[Html.length]]>>
       
 <<signature [[Html.length_of_string]]>>
-
 @
 
-
 \subsection{[[html/html.ml]]}
-
 
 %?? -> <> 
 <<function [[Html.beautify2]]>>=
@@ -2436,7 +2016,6 @@ let issp s =
   with
     Failure "subliminal" -> false
 @
-
 
 %-------------------------------------------------------------
 
@@ -2467,7 +2046,6 @@ open Printf
 <<function [[Html.print]]>>
 
 <<function [[Html.beautify]]>>
-
 <<function [[Html.beautify2]]>>
 
 
@@ -2485,22 +2063,14 @@ open Printf
 <<constant [[Html.default_attributes]]>>
 
 <<function [[Html.get_attribute]]>>
-
 <<function [[Html.has_attribute]]>>
 
 <<type [[Html.length]]>>
 
 <<function [[Html.length_of_string]]>>
-
 @
 
-
 \subsection{[[html/lexhtml.mli]]}
-
-
-
-
-%-------------------------------------------------------------
 
 <<html/lexhtml.mli>>=
 <<signature [[Lexhtml.strict]]>>
@@ -2548,15 +2118,11 @@ open Html
 
 <<function [[Lexhtml.ampersand]]>>
 
-
 <<function [[Lexhtml.opentag]]>>
-
 <<function [[Lexhtml.closetag]]>>
 
 <<function [[Lexhtml.attrib]]>>
-
 <<function [[Lexhtml.tagattrib]]>>
-
 <<function [[Lexhtml.attribvalue]]>>
 
 
@@ -2567,16 +2133,9 @@ open Html
 <<function [[Lexhtml.skip_to_close]]>>
 
 <<function [[Lexhtml.cdata]]>>
-
 @
 
-
-
 \subsection{[[html/html_eval.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<html/html_eval.mli>>=
 <<signature [[Html_eval.debug]]>>
@@ -2589,11 +2148,7 @@ open Html
 <<signature [[Html_eval.automat]]>>
 @
 
-
 \subsection{[[html/html_eval.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<html/html_eval.ml>>=
 open Printf
@@ -2612,7 +2167,6 @@ open Dtd
 <<function [[Html_eval.dump_stack]]>>
 
 <<function [[Html_eval.ominimize]]>>
-
 <<function [[Html_eval.cminimize]]>>
 
 <<function [[Html_eval.is_cdata]]>>
@@ -2624,15 +2178,10 @@ open Dtd
 
 <<function [[Html_eval.sgml_lexer]] ([[html/html_eval.ml]])>>
   
-  
 <<function [[Html_eval.automat]]>>
 @
 
-
 \subsection{[[html/htparse.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<html/htparse.ml>>=
 (* Testing the HTML Lexer/evaluator *)
@@ -2667,9 +2216,6 @@ open Printf
 
 \subsection{[[http/base64.mli]]}
 
-
-%-------------------------------------------------------------
-
 <<http/base64.mli>>=
 <<copyright header v6>>
 
@@ -2677,11 +2223,7 @@ open Printf
 <<signature [[Base64.decode]]>>
 @
 
-
 \subsection{[[http/base64.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<http/base64.ml>>=
 <<copyright header v6>>
@@ -2691,20 +2233,13 @@ open Printf
 
 <<function [[Base64.decode]]>>
 
-
 <<constant [[Base64.char64]]>>
 <<toplevel [[Base64._2]]>>
 
 <<function [[Base64.encode]]>>
-
 @
 
-
 \subsection{[[http/http_date.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<http/http_date.mli>>=
 <<copyright header v6>>
@@ -2726,11 +2261,7 @@ open Printf
 <<signature [[Http_date.ht_of_stamp]]>>
 @
 
-
 \subsection{[[http/http_date.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<http/http_date.ml>>=
 <<copyright header v6>>
@@ -2756,12 +2287,7 @@ open Date
 <<function [[Http_date.ht_of_stamp]]>>
 @
 
-
 \subsection{[[http/messages.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<http/messages.mli>>=
 <<copyright header v6>>
@@ -2774,21 +2300,17 @@ open Date
 
 <<type [[Messages.header]]>>
 
-
 (* HTTP messages: requests and responses
  *  What a client sends to a server is called a request 
  *  What a server answers is called a response
  *)
-
 <<type [[Messages.request_message]]>>
 
 <<type [[Messages.response_message]]>>
-
 @
 
 
 \subsection{[[http/http_headers.mli]]}
-
 
 <<signature [[Http_headers.location]]>>=
 val location : Messages.header list -> string
@@ -2810,12 +2332,9 @@ val status_message : int -> string
   (* [status_message n] returns Reason-Phrase for code [n] *)
 @
 
-
-
 <<signature [[Http_headers.hints]]>>=
 val hints : string -> Messages.header list
 @
-
 
 %-------------------------------------------------------------
 
@@ -2871,10 +2390,7 @@ val hints : string -> Messages.header list
 <<signature [[Http_headers.read_suffix_file]]>>
 @
 
-
 \subsection{[[http/http_headers.ml]]}
-
-
 
 <<function [[Http_headers.status_msg]]>>=
 let rec status_msg = function
@@ -2899,16 +2415,6 @@ let rec rem_contentencoding = function
  | h::l when is_contentencoding h -> l
  | x::l -> x :: rem_contentencoding l
 @
-
-
-
-
-
-
-
-
-
-
 
 %-------------------------------------------------------------
 
@@ -2958,8 +2464,6 @@ let expires hs =
 
 <<function [[Http_headers.rem_contentencoding]]>>
 
-
-
 (* 
  * Details for specific headers
  *)
@@ -2986,28 +2490,20 @@ let expires hs =
 <<function [[Http_headers.hints]]>>
 
 
-
 <<constant [[Http_headers.status_messages]]>>
 <<toplevel [[Http_headers._2]]>>
 
 <<function [[Http_headers.status_message]]>>
 
 <<function [[Http_headers.http_status]]>>
-
-
 @
 
 
 \subsection{[[http/auth.mli]]}
 
-
-
-%-------------------------------------------------------------
-
 <<http/auth.mli>>=
 
 <<type [[Auth.authSpace]]>>
-
 
 <<signature [[Auth.lifetime]]>>
 <<signature [[Auth.auth_file]]>>
@@ -3035,20 +2531,13 @@ val open_passwd_ref: (string -> string * string) ref
 <<signature [[Auth.check]]>>
 @
 
-
 \subsection{[[http/auth.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<http/auth.ml>>=
 (* HTTP Basic Authentication *)
 open I18n
-
 open Unix
 open Http_headers
-
 open Www
 
 <<type [[Auth.authSpace]]>>
@@ -3086,22 +2575,15 @@ let edit_backend = ref (fun _ -> failwith "no Auth.edit defined")
 
 <<function [[Auth.load]]>>
 
-
 <<function [[Auth.init]]>>
-       
 @
 
-
 \subsection{[[http/lexheaders.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<http/lexheaders.mli>>=
 
 <<signature [[Lexheaders.media_type]]>>
 <<signature [[Lexheaders.challenge]]>>
-
 @
 
 \subsection{[[http/lexheaders.mll]]}
@@ -3187,45 +2669,26 @@ and lit_slash = parse
 <<function [[Lexheaders.media_type]] lexer>>
 
 {
-
 <<function [[Lexheaders.media_type]]>>
-
 }
 @
 
-
 \subsection{[[http/retype.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<http/retype.mli>>=
 <<signature [[Retype.f]]>>
-
 @
 
-
 \subsection{[[http/retype.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<http/retype.ml>>=
 open Document
 open Http_headers
 
 <<function [[Retype.f]]>>
-
-
 @
 
-
 \subsection{[[http/http.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<http/http.mli>>=
 
@@ -3250,9 +2713,6 @@ val verbose: bool ref
 @
 
 \subsection{[[http/http.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<http/http.ml>>=
 open I18n
@@ -3305,7 +2765,6 @@ open I18n
 
 <<function [[Http.full_request]]>>
 
-
 <<function [[Http.failed_request]]>>
 
 
@@ -3345,7 +2804,6 @@ open I18n
 
 <<function [[Http.async_request]]>>
 
-
 (* wrappers for request/response transaction *)
 <<function [[Http.start_request]]>>
 
@@ -3362,11 +2820,9 @@ open I18n
 
 
 
-
 \section{[[protocols/]]}
 
 \subsection{[[protocols/cache.mli]]}
-
 
 <<signature [[Cache.history_mode]]>>=
 val history_mode : bool ref
@@ -3377,8 +2833,6 @@ val max_documents : int ref
 <<signature [[Cache.cleann]]>>=
 val cleann : int ref
 @
-
-
 
 
 <<type [[Cache.cache_fill]]>>=
@@ -3869,10 +3323,6 @@ and current = ref 0
 
 \subsection{[[protocols/file.mli]]}
 
-
-
-%-------------------------------------------------------------
-
 <<protocols/file.mli>>=
 <<signature [[File.request]]>>
 <<exception [[File.File_error]]>>
@@ -3884,9 +3334,7 @@ val binary_path: string list ref
 <<signature [[File.pref_set]]>>
 @
 
-
 \subsection{[[protocols/file.ml]]}
-
 
 % ???
 <<signature [[File.pref_init]]>>=
@@ -3946,8 +3394,6 @@ open Feed
 
 \subsection{[[protocols/mailto.ml]]}
 
-%-------------------------------------------------------------
-
 <<protocols/mailto.ml>>=
 (* mailto: *)
 open I18n
@@ -3974,10 +3420,8 @@ open Url
 <<function [[Mailto.f]]>>
 @
 
-
 \subsection{[[protocols/protos.mli]]}
 
-%-------------------------------------------------------------
 
 <<protocols/protos.mli>>=
 
@@ -3987,9 +3431,6 @@ open Url
 \subsection{[[protocols/protos.ml]]}
 
 %todo: no protos.mli?
-
-
-%-------------------------------------------------------------
 
 <<protocols/protos.ml>>=
 open Common
@@ -4012,21 +3453,12 @@ open Common
 
 \subsection{[[retrieve/progress.mli]]}
 
-
-
-%-------------------------------------------------------------
-
 <<retrieve/progress.mli>>=
 <<signature [[Progress.no_meter]]>>
 <<signature [[Progress.meter]]>>
 @
 
-
 \subsection{[[retrieve/progress.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<retrieve/progress.ml>>=
 <<constant [[Progress.no_meter]]>>
@@ -4034,11 +3466,7 @@ open Common
 <<function [[Progress.meter]]>>
 @
 
-
 \subsection{[[retrieve/retrieve.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<retrieve/retrieve.mli>>=
 (* Document retrieval *)
@@ -4052,12 +3480,7 @@ open Common
 <<signature [[Retrieve.add_http_processor]]>>
 @
 
-
 \subsection{[[retrieve/retrieve.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<retrieve/retrieve.ml>>=
 open Common
@@ -4095,9 +3518,7 @@ open I18n
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-
 <<function [[Retrieve.f]]>>
-
 
 (*****************************************************************************)
 (* Response code -> behavior *)
@@ -4136,14 +3557,7 @@ Because of recursive update, this has moved elsewhere.
 <<toplevel [[Retrieve._1]]>>
 @
 
-
 \subsection{[[retrieve/img.mli]]}
-
-<<signature [[Img.gif_anim_load]]>>=
-val gif_anim_load : bool ref
-@
-
-
 
 %-------------------------------------------------------------
 
@@ -4176,22 +3590,11 @@ module ImageScheduler : Scheduler.S with
 
 \subsection{[[retrieve/img.ml]]}
 
-<<constant [[Img.gif_anim_load]]>>=
-(* Images are a special case of embedded data, because Tk caches them
-   internally. Thus, we attempt to maintain our own cache logic above
-   Tk's one 
- *)
-
-let gif_anim_load = ref false
-@
-
 <<toplevel [[Img._1]]>>=
 (* Advertise ourselfs to the internal cache *)
 let _ =
  Cache.cutlinks := ImageData.remove_reference :: !Cache.cutlinks
 @
-
-
 
 %-------------------------------------------------------------
 
@@ -4372,14 +3775,9 @@ module ImageScheduler = Scheduler.Make(ImageData)
 <<function [[Img.get]]>>
 
 <<function [[Img.update]]>>
-
 @
 
-
 \subsection{[[retrieve/scheduler.mli]]}
-
-
-
 
 %-------------------------------------------------------------
 
@@ -4460,15 +3858,10 @@ module type S =
     val maxsamehost : int ref
   end
 
-
 module Make(J : Data):(S with type shared_data = J.t)
 @
 
-
 \subsection{[[retrieve/scheduler.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<retrieve/scheduler.ml>>=
 (* Scheduled downloading *)
@@ -4950,88 +4343,14 @@ end
 
 \subsection{[[viewers/decoders.mli]]}
 
-
-
-%-------------------------------------------------------------
-
 <<viewers/decoders.mli>>=
 (* Decoders *)
 
 <<signature [[Decoders.insert]]>>
 <<signature [[Decoders.add]]>>
-
 @
-
 
 \subsection{[[viewers/decoders.ml]]}
-
-
-<<function [[Decoders.gzip]]>>=
-(* Note: we must use the feed interface to read from the old dh,
- * and not read directly from the feed_internal file descriptor, because
- * the feed might implement side effects (such as caching).
- * Since we are reading and writing to the same process, we might get
- * deadlocked if we don't watch writes.
- *)
-let gzip dh =
-  let (gread, mwrite) = pipe()
-  and (mread, gwrite) = pipe()
-  in
-  Unix.set_close_on_exec mread;
-  Unix.set_close_on_exec mwrite;
-  
-  match Low.fork() with
-    0 ->  
-      dup2 gread stdin; dup2 gwrite stdout;
-      Munix.execvp "gunzip" [| "gunzip"; "-c" |]
-      (* dh (* fake *) *)
-  | _n ->  
-      close gread; close gwrite;
-     (* it is safe to close feed because the son has a copy *)
-      let newdh =
-       { dh with 
-         dh_headers = rem_contentencoding dh.dh_headers;
-         document_feed = Feed.of_fd mread;
-       }
-      in
-      let buffer = Bytes.create 4096 in
-      let rec copy () =
-      try
-        let n = dh.document_feed.feed_read buffer 0 4096 in
-            if n = 0 then (dclose true dh; close mwrite)
-            else begin
-          dh.document_feed.feed_unschedule();
-          Fileevent.add_fileoutput mwrite
-        (fun () -> 
-          ignore (write mwrite buffer 0 n);
-          Fileevent.remove_fileoutput mwrite;
-          dh.document_feed.feed_schedule copy)
-        end
-      with
-        Unix_error(_e,_,_) -> dclose true dh; close mwrite
-      in
-      dh.document_feed.feed_schedule copy;
-      newdh
-@
-
-
-<<constant [[Decoders.add]]>>=
-let add = Hashtbl.add decoders
-@
-
-<<function [[Decoders.insert]]>>=
-let insert dh =
-(* CERN proxy sets Content-Encoding when return code = 500 ! *)
-  if dh.document_status >= 400 then dh else
-  try
-    Hashtbl.find decoders (String.uppercase_ascii (contentencoding dh.dh_headers)) dh
-  with
-    Not_found -> dh
-  | Unix_error(_,_,_) -> dh
-@
-
-
-%-------------------------------------------------------------
 
 <<viewers/decoders.ml>>=
 open Unix
@@ -5042,24 +4361,14 @@ open Http_headers
 <<constant [[Decoders.decoders]]>>
 
 <<function [[Decoders.gzip]]>>
-  
 
 <<toplevel [[Decoders._1]]>>
 
 <<constant [[Decoders.add]]>>
-
 <<function [[Decoders.insert]]>>
-
 @
 
-
 \subsection{[[viewers/embed.mli]]}
-
-
-
-
-
-%-------------------------------------------------------------
 
 <<viewers/embed.mli>>=
 module EmbeddedScheduler : Scheduler.S with
@@ -5075,199 +4384,7 @@ module EmbeddedScheduler : Scheduler.S with
 <<signature [[Embed.update]]>>
 @
 
-
 \subsection{[[viewers/embed.ml]]}
-
-
-
-<<constant [[Embed.embedded]]>>=
-(* Remember all current embedded objects by their frame *)
-let embedded = (Hashtbl.create 101 : (string, obj) Hashtbl.t)
-@
-
-<<function [[Embed.add_embed]]>>=
-(* add and notify *)
-let add_embed (emb : obj) =
-  Hashtbl.add embedded (Widget.name emb.embed_frame) emb;
-  Frx_synth.send "setembed" emb.embed_frame
-@
-
-<<function [[Embed.when_destroyed]]>>=
-(* when the frame gets destroyed, remove us from the table *)
-let when_destroyed (w : Widget.widget) = Hashtbl.remove embedded (Widget.name w)
-
-@
-
-<<toplevel [[Embed._1]]>>=
-let _ = Protocol.add_destroy_hook when_destroyed
-@
-
-<<function [[Embed.add]]>>=
-(* Queueing an embed *)
-let add (caps : < Cap.network ; .. >) (emb : obj) =
-  let {
-    embed_hlink = link;
-    embed_frame = frame;
-    embed_context = embed_ctx;
-    embed_map = _m;
-    embed_alt = alt_txt;
-  } =
-    emb
-  in
-  (* Put up the ALT text *)
-  List.iter Tk.destroy (Winfo.children frame);
-  pack [ Label.create_named frame "alt" [ Text alt_txt ] ] [];
-  (* Check if the type is defined and a viewer available *)
-  try
-    let given_type = List.assoc "type" embed_ctx#params in
-    let (typ, subtyp), parms = Lexheaders.media_type given_type in
-    try
-      let viewer =
-        try Hashtbl.find embedded_viewers (typ, subtyp) with
-        | Not_found -> Hashtbl.find embedded_viewers (typ, "*")
-      in
-      EmbeddedScheduler.add_request
-        (caps :> < Cap.network >)
-        (Www.make link) embed_ctx#base
-        (* the continuation: it will receive the document *)
-          (fun _url doc ->
-          let doc =
-            Document.
-              { doc with
-                document_headers =
-                  Http_headers.merge_headers doc.document_headers
-                    [ "Content-Type: " ^ given_type ];
-              }
-          in
-          (* Destroy the alt window *)
-          List.iter Tk.destroy (Winfo.children frame);
-          (* Add to our table/notify *)
-          add_embed emb;
-          viewer parms frame embed_ctx doc)
-        (Tk_progress.meter frame)
-    with
-    | Not_found ->
-        (* no viewer for this *)
-        let t = s_ "Embed Error: no viewer for type %s" given_type in
-        pack [ Label.create frame [ Text t ] ] []
-    | Www.Invalid_request (w, msg) ->
-        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-        pack [ Message.create frame [ Text t ] ] []
-    | Hyper.Invalid_link _err ->
-        let t = s_ "Embed Error: invalid link" in
-        pack [ Message.create frame [ Text t ] ] []
-  with
-  | Not_found -> (
-      (* not type given, we have to retrieve to know *)
-      (* Firing the request *)
-      try
-        EmbeddedScheduler.add_request
-          (caps :> < Cap.network >)
-          (Www.make link) embed_ctx#base
-          (* the continuation: it will receive the document *)
-          (* In general, we don't know the type before we get the document *)
-            (fun _url doc -> embedded_viewer frame embed_ctx doc)
-          (Tk_progress.meter frame)
-      with
-      | Www.Invalid_request (w, msg) ->
-          let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-          pack [ Message.create frame [ Text t ] ] []
-      | Hyper.Invalid_link _err ->
-          let t = s_ "Embed Error: invalid link" in
-          pack [ Message.create frame [ Text t ] ] [])
-@
-
-<<function [[Embed.update]]>>=
-let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
-    (embed_ctx : Viewers.context) (doc : Document.t) notchanged =
-  try
-    (* find the date of previous download, (or last-modified ?) *)
-    let date_received = Http_headers.get_header "date" doc.document_headers in
-    let rewrite_wr (wr : Www.request) =
-      wr.www_headers <-
-        ("If-Modified-Since: " ^ date_received) :: wr.www_headers;
-      wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
-      wr
-    in
-    let link = Hyper.default_link (Url.string_of doc.document_address) in
-    (* wrapped viewer : decide if we need to redisplay or not *)
-    let smart_viewer stdviewer frame embed_ctx (newdoc : Document.t) =
-      let newdate =
-        try Http_headers.get_header "date" newdoc.document_headers with
-        | Not_found -> "foo"
-      in
-      if newdate <> date_received then begin
-        List.iter Tk.destroy (Winfo.children frame);
-        stdviewer frame embed_ctx newdoc
-      end
-      else notchanged ()
-    in
-    (* Check if the type is defined and a viewer available *)
-    try
-      let given_type = List.assoc "type" embed_ctx#params in
-      let (typ, subtyp), parms = Lexheaders.media_type given_type in
-      try
-        let viewer =
-          try Hashtbl.find embedded_viewers (typ, subtyp) with
-          | Not_found -> Hashtbl.find embedded_viewers (typ, "*")
-        in
-        EmbeddedScheduler.add_request
-          (caps :> < Cap.network >)
-          (rewrite_wr (Www.make link))
-          embed_ctx#base
-          (* the continuation: it will receive the document *)
-            (fun _url doc ->
-            let doc =
-              Document.
-                {
-                  document_address = doc.document_address;
-                  document_data = doc.document_data;
-                  document_headers =
-                    Http_headers.merge_headers doc.document_headers
-                      [ "Content-Type: " ^ given_type ];
-                }
-            in
-            smart_viewer (viewer parms) frame embed_ctx doc)
-          (Tk_progress.meter frame)
-      with
-      | Not_found ->
-          (* no viewer for this *)
-          let t = s_ "Embed Error: no viewer for type %s" given_type in
-          pack [ Label.create frame [ Text t ] ] []
-      | Www.Invalid_request (w, msg) ->
-          let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-          pack [ Message.create frame [ Text t ] ] []
-      | Hyper.Invalid_link _err ->
-          let t = s_ "Embed Error: invalid link" in
-          pack [ Message.create frame [ Text t ] ] []
-    with
-    | Not_found -> (
-        (* not type given, we have to retrieve to know *)
-        (* Firing the request *)
-        try
-          EmbeddedScheduler.add_request
-            (caps :> < Cap.network >)
-            (rewrite_wr (Www.make link))
-            embed_ctx#base
-            (* the continuation: it will receive the document *)
-            (* In general, we don't know the type before we get the document *)
-              (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
-            (Tk_progress.meter frame)
-        with
-        | Www.Invalid_request (w, msg) ->
-            let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
-            pack [ Message.create frame [ Text t ] ] []
-        | Hyper.Invalid_link _err ->
-            let t = s_ "Embed Error: invalid link" in
-            pack [ Message.create frame [ Text t ] ] [])
-  with
-  | Not_found ->
-      (* Document has no Date: header *)
-      notchanged ()
-@
-
-
-%-------------------------------------------------------------
 
 <<viewers/embed.ml>>=
 (* Embedded documents *)
@@ -5357,9 +4474,7 @@ and rem_viewer = Hashtbl.remove embedded_viewers
 <<function [[Embed.update]]>>
 @
 
-
 \subsection{[[viewers/save.mli]]}
-
 
 <<signature [[Save.transfer]]>>=
 val transfer : Www.request -> Document.handle -> (Unix.file_descr * bool) option -> unit
@@ -5374,7 +4489,6 @@ val tofile : (string -> unit) -> Document.handle -> string -> string -> unit
 val print_command : string ref
 @
 
-
 %-------------------------------------------------------------
 
 <<viewers/save.mli>>=
@@ -5382,15 +4496,14 @@ val print_command : string ref
 <<signature [[Save.transfer]]>>
 <<signature [[Save.tofile]]>>
 
-
 <<signature [[Save.document]]>>
 <<signature [[Save.print_command]]>>
 @
 
-
 \subsection{[[viewers/save.ml]]}
 
 <<function [[Save.f]]>>=
+(* Save to file fname, and apply continuation cont to this file *)
 (* unprotected against Sys_error *)
 let f cont dh fname endmsg =
   let oc = open_out_bin fname in
@@ -5621,7 +4734,6 @@ open Url
 open Www
 open Feed
 
-(* Save to file fname, and apply continuation cont to this file *)
 <<function [[Save.f]]>>
 
 <<function [[Save.tofile]]>>
@@ -5637,8 +4749,6 @@ open Feed
 
 
 <<function [[Save.pipe_from_string]]>>
-
-
 <<function [[Save.pipe_from_file]]>>
 
 <<function [[Save.document]]>>
@@ -5685,10 +4795,8 @@ type hyper_func = {
 (* !!! main entry point!!!! *)
 <<signature [[Viewers.view]]>>
 
-
 <<signature [[Viewers.frame_adopt]]>>
 <<signature [[Viewers.frame_fugue]]>>
-
 @
 
 
@@ -5716,8 +4824,6 @@ let _extern_batch dh ctype =
     s_ "Running metamail with MIME media-type: %s" ctype in
     Save.tofile (metamail ctype) (Decoders.insert dh) outfile endmsg
 @
-
-
 
 %-------------------------------------------------------------
 
@@ -5804,7 +4910,6 @@ end
 (*****************************************************************************)
 (* Interactive viewer *)
 (*****************************************************************************)
-
 <<function [[Viewers.unknown]]>>
 
 <<function [[Viewers.interactive]]>>
@@ -5812,26 +4917,18 @@ end
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-
 <<function [[Viewers.view]]>>
 
 (*****************************************************************************)
 (* Builtin viewers global *)
 (*****************************************************************************)
-
 <<constant [[Viewers.builtin_viewers]]>>
 <<function [[Viewers.add_builtin]]>>
 
 <<function [[Viewers.reset]]>>
-    
 @
 
-
 \subsection{[[viewers/plain.ml]]}
-
-
-
-%-------------------------------------------------------------
 
 <<viewers/plain.ml>>=
 open Tk
@@ -6149,15 +5246,12 @@ let init bg =
 
 <<display/attrs.ml>>=
 
-
 (* Utilities for tags and attributes *)
 
 open Printf
 open Protocol
 open Tk
-
 open Fonts
-
 
 
 (* Delayed and shared configuration of tags *)
@@ -6615,15 +5709,9 @@ class imap (c, items) =
             with
               Not_found -> ())))
 end
- 
-
-
 
 <<function [[Cmap.gfx_mode]]>>
-
-
 @
-
 
 \subsection{[[display/fit.mli]]}
 
@@ -6962,7 +6050,6 @@ open Tk
 <<function [[Fit.vert]]>>
 
 <<function [[Fit.bound_check]]>>
-
 @
 
 
@@ -7147,6 +6234,7 @@ let pxlsz absfont =
     if font_idx < 0 then 0
     else if font_idx >= Array.length !sizes then Array.length !sizes - 1
     else font_idx in
+   !sizes.(safe_idx)
 @
 
 <<constant [[Fonts.tags]]>>=
@@ -7311,17 +6399,13 @@ open Jpf_font
 
 <<function [[Fonts.font_index]]>>
 
-
 <<function [[Fonts.pxlsz]]>>
-   !sizes.(safe_idx)
 
 <<constant [[Fonts.tags]]>>
 
 <<constant [[Fonts.default]]>>
 
 <<function [[Fonts.compute_tag]]>>
-
-
 
 <<function [[Fonts.reset]]>>
 @
@@ -7335,14 +6419,12 @@ val create_named:
   Widget.widget
 @
 
-
 %-------------------------------------------------------------
 
 <<display/hr.mli>>=
 
 <<signature [[Hr.create_named]]>>
 @
-
 
 \subsection{[[display/hr.ml]]}
 
@@ -7374,14 +6456,9 @@ open Tk
 open Html
 
 <<function [[Hr.create_named]]>>
-
 @
 
-
 \subsection{[[display/htbind.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<display/htbind.mli>>=
 
@@ -7452,9 +6529,6 @@ class formmap :
 
 
 \subsection{[[display/htbind.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<display/htbind.ml>>=
 (* Bindings for hypernavigation *)
@@ -7650,8 +6724,6 @@ val annotate:
   Widget.widget -> (Tk.textTag * Html.location) list -> unit
 @
 
-
-
 %-------------------------------------------------------------
 
 <<display/source.mli>>=
@@ -7660,7 +6732,6 @@ val annotate:
 
 <<signature [[Source.view]]>>
 @
-
 
 \subsection{[[display/source.ml]]}
 
@@ -7749,7 +6820,6 @@ open Html
 <<function [[Source.annotate]]>>
 
 <<function [[Source.view]]>>
-
 @
 
 
@@ -7769,7 +6839,6 @@ val create :
 val init : unit -> unit
 @
 
-
 %-------------------------------------------------------------
 
 <<display/ctext.mli>>=
@@ -7778,7 +6847,6 @@ val init : unit -> unit
 
 <<signature [[Ctext.init]]>>
 @
-
 
 \subsection{[[display/ctext.ml]]}
 
@@ -7979,11 +7047,7 @@ and bottom tx = Canvas.yview (Winfo.parent tx) (MoveTo 1.0)
 <<function [[Ctext.init]]>>
 @
 
-
 \subsection{[[display/htmlfmt.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<display/htmlfmt.ml>>=
 (* HTML  "display device" *)
@@ -8082,11 +7146,6 @@ val mode : mode ref
 <<signature [[Imgload.no_images]]>>=
 val no_images : bool ref
 @
-<<signature [[Imgload.gif_anim_auto]]>>=
-val gif_anim_auto : bool ref
-@
-
-
 
 %-------------------------------------------------------------
 
@@ -8101,9 +7160,7 @@ val gif_anim_auto : bool ref
 <<class [[Imgload.loader]] signature>>
 
 <<signature [[Imgload.create]]>>
-
 @
-
 
 \subsection{[[display/imgload.ml]]}
 
@@ -8115,17 +7172,12 @@ type mode = DuringDoc | AfterDocAuto | AfterDocManual
 <<constant [[Imgload.mode]]>>=
 (* Preference settings *)
 let mode = ref AfterDocManual
-
 @
 
 <<constant [[Imgload.no_images]]>>=
 let no_images = ref false
-
 @
 
-<<constant [[Imgload.gif_anim_auto]]>>=
-let gif_anim_auto = ref false
-@
 
 <<function [[Imgload.display]]>>=
 (* Utilities *)
@@ -8514,14 +7566,9 @@ class manual () =
   end
 
 <<function [[Imgload.create]]>>
-
 @
 
-
 \subsection{[[display/html_form.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<display/html_form.mli>>=
 
@@ -8574,11 +7621,7 @@ val init:
 
 @
 
-
 \subsection{[[display/html_form.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<display/html_form.ml>>=
 
@@ -9084,7 +8127,6 @@ let _ =
   Embed.add_viewer ("text", "html") embedded_viewer
 @
 
-
 %-------------------------------------------------------------
 
 <<display/htmlw.ml>>=
@@ -9272,7 +8314,6 @@ end
 
 <<toplevel [[Htmlw._1]]>>
 <<toplevel [[Htmlw._2]]>>
-
 @
 
 <<[[Htmlfmt.gattr]] color cases>>=
@@ -9320,7 +8361,6 @@ val create:
   string -> Htmlfmt.form_behaviour -> Viewers.context -> t
 @
 
-
 %-------------------------------------------------------------
 
 <<display/form.mli>>=
@@ -9330,7 +8370,6 @@ val create:
 <<type [[Form.t]]>>
 
 <<signature [[Form.create]]>>
-
 @
 
 
@@ -9737,7 +8776,6 @@ open Embed
  * Phew.
  *)
 
-
 <<function [[Form.mapi]]>>
 
 <<function [[Form.focus_link]]>>
@@ -9745,42 +8783,29 @@ open Embed
 (* A TEXT or PASSWORD input *)
 <<function [[Form.text_input]]>>
 
-
 <<function [[Form.checkbox_input]]>>
-
 
 (* A RADIO input *)
 <<function [[Form.radio_input]]>>
 
-
 <<function [[Form.image_input]]>>
-
 
 <<function [[Form.submit_input]]>>
 
-
 <<function [[Form.reset_input]]>>
 
-
-
  (* TODO: FILE (RFC 1867) *)
-
-
 
 (* A SELECT list *)
 <<function [[Form.select]]>>
 
 <<function [[Form.textarea]]>>
 
-
 <<function [[Form.create]]>>
 @
 
 
 \subsection{[[display/html_table.mli]]}
-
-
-%-------------------------------------------------------------
 
 <<display/html_table.mli>>=
 (*
@@ -9810,11 +8835,7 @@ val init:
 
 @
 
-
 \subsection{[[display/html_table.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<display/html_table.ml>>=
 open Html
@@ -10998,7 +10019,6 @@ open Htmlfmt
 
 
 <<function [[Htframe.add_frames]]>>
-
 @
 
 
@@ -11087,12 +10107,7 @@ open Fonts
 <<function [[Textw_fo.create]]>>
 @
 
-
 \subsection{[[display/html_disp.mli]]}
-
-
-
-%-------------------------------------------------------------
 
 <<display/html_disp.mli>>=
 
@@ -11108,14 +10123,7 @@ open Fonts
 <<signature functor [[Html_disp.Make]]>>
 @
 
-
 \subsection{[[display/html_disp.ml]]}
-
-
-
-
-
-%-------------------------------------------------------------
 
 <<display/html_disp.ml>>=
 (* HTML Display Machine *)
@@ -11124,11 +10132,9 @@ open Fonts
 <<constant [[Html_disp.attempt_tables]]>>
 
 <<function [[Html_disp.lowernumber]]>>
-
 <<function [[Html_disp.uppernumber]]>>
 
 <<constant [[Html_disp.romans]]>>
-
 <<function [[Html_disp.roman]]>>
 
 <<class [[Html_disp.imgloader]]>>
@@ -11141,7 +10147,6 @@ open Fonts
 <<constant [[Html_disp.default_fo]]>>
 
 <<function [[Html_disp.push_style]]>>
-
 <<function [[Html_disp.pop_style]]>>
 
 <<functor [[Html_disp.Make]]>>
@@ -11156,8 +10161,6 @@ open Fonts
 val create_tachy : Widget.widget -> Low.tachymeter
 @
 
-
-
 %-------------------------------------------------------------
 
 <<gui/about.mli>>=
@@ -11165,7 +10168,6 @@ val create_tachy : Widget.widget -> Low.tachymeter
 
 <<signature [[About.f]]>>
 @
-
 
 \subsection{[[gui/about.ml]]}
 
@@ -11240,7 +10242,6 @@ let create_tachy top =
   o#start;
 @
 
-
 %-------------------------------------------------------------
 
 <<gui/about.ml>>=
@@ -11248,13 +10249,11 @@ open Tk
 
 <<function [[About.f]]>>
 
-
 (* Tachymeter *)
 
 (* gif is 80x65 *)
 <<constant [[About.tachy_data]]>>
 <<constant [[About.park_data]]>>
-
 
 <<constant [[About.pi]]>>
 <<constant [[About.log10]]>>
@@ -11631,9 +10630,6 @@ open Fonts
 
 
 <<function [[Fontprefs.font_select]]>>
-
-    
-
 @
 
 
@@ -11875,17 +10871,6 @@ open Viewers
 
 \subsection{[[gui/plink.mli]]}
 
-<<signature [[Plink.make]]>>=
-val make : Hyper.link -> Www.request
-    (* [make hlink] is an error correcting version of Www.make
-       For invalid links, a dialog box is displayed and offers
-       edition facilities
-     *)
-@
-
-
-%-------------------------------------------------------------
-
 <<gui/plink.mli>>=
 <<signature [[Plink.make]]>>
 @
@@ -11955,7 +10940,6 @@ let rec make hlink =
       | Some hlink -> make hlink
 @
 
-
 %-------------------------------------------------------------
 
 <<gui/plink.ml>>=
@@ -11966,8 +10950,6 @@ open Hyper
 <<function [[Plink.dial]]>>
 
 <<function [[Plink.make]]>>
-
-        
 @
 
 
@@ -12702,29 +11684,21 @@ open Mstring
 
 
 <<function [[Prefs.init_pref]]>>
-
 <<function [[Prefs.set_pref]]>>
 
 <<function [[Prefs.load_pref]]>>
-
 <<function [[Prefs.save_pref]]>>
 
 
 <<function [[Prefs.bool_pref]]>>
-
 <<function [[Prefs.int_pref]]>>
-
 <<function [[Prefs.float_pref]]>>
-
 <<function [[Prefs.string_pref]]>>
-
 <<function [[Prefs.option_pref]]>>
 
 
 <<function [[Prefs.abstract_bool_pref]]>>
-
 <<function [[Prefs.abstract_string_pref]]>>
-
 
 <<function [[Prefs.option_handlers]]>>
 
@@ -12736,27 +11710,18 @@ open Mstring
 module PrefMap = Map.Make(struct type t = string let compare = compare end)
 
 <<function [[Prefs.load_file]]>>
-
 <<function [[Prefs.save_file]]>>
       
 <<type [[Prefs.pref_family]] ([[gui/prefs.ml]])>>
 
 <<function [[Prefs.family]]>>
 
-
 <<function [[Prefs.init]]>>
-
 
 <<function [[Prefs.define]]>>
 @
 
-
 \subsection{[[gui/debug.ml]]}
-
-
-
-
-%-------------------------------------------------------------
 
 <<gui/debug.ml>>=
 
@@ -12764,13 +11729,10 @@ open Protocol
 <<function [[Debug.active_cb]]>>
 
 <<function [[Debug.init]]>>
-
 @
 
 
 \subsection{[[gui/history.mli]]}
-
-%-------------------------------------------------------------
 
 <<gui/history.mli>>=
 
@@ -12788,11 +11750,9 @@ val forward: t -> (Document.id * string option) option
 val contents: t -> entry list
 
 val set_current: t -> entry -> unit
-
 @
 
 \subsection{[[gui/history.ml]]}
-
 
 <<function [[History.contents]]>>=
 let contents h =
@@ -12863,13 +11823,10 @@ let add h did frag =
     Document.DocumentIDSet.iter (Gcache.remove h.h_key) dropped
 @
 
-
-
 <<function [[History.set_current]]>>=
 let set_current h e =
   h.h_current <- e
 @
-
 
 %-------------------------------------------------------------
 
@@ -12894,9 +11851,7 @@ let set_current h e =
 <<function [[History.forward]]>>
 
 <<function [[History.set_current]]>>
-
 @
-
 
 \subsection{[[gui/nav.mli]]}
 
@@ -12927,8 +11882,6 @@ val update : < Cap.network; ..> ->
   t -> Document.id -> bool -> unit
 @
 
-
-
 %-------------------------------------------------------------
 
 <<gui/nav.mli>>=
@@ -12956,11 +11909,9 @@ val update : < Cap.network; ..> ->
 
 \subsection{[[gui/nav.ml]]}
 
-
 <<exception [[Nav.Duplicate]]>>=
 exception Duplicate of Url.t
 @
-
 
 
 <<function [[Nav.nothing_specific]]>>=
@@ -13551,9 +12502,6 @@ and dtd_p = Dtd.names()
 
 \subsection{[[gui/mmm.mli]]}
 
-
-%-------------------------------------------------------------
-
 <<gui/mmm.mli>>=
 <<signature [[Mmm.user_file]]>>
 
@@ -13577,8 +12525,6 @@ and dtd_p = Dtd.names()
 %let client_navigator = navigator false
 %@
 % ???
-
-%-------------------------------------------------------------
 
 <<gui/mmm.ml>>=
 open Fpath_.Operators
@@ -13649,7 +12595,6 @@ open Tk
 <<function [[Mmm.new_window_initial]]>>
 
 <<function [[Mmm.new_window_set]]>>
-
 
 (*****************************************************************************)
 (* initial_navigator() *)
@@ -13778,7 +12723,6 @@ open I18n
 
 \subsection{[[main.ml]]}
 
-
 %-------------------------------------------------------------
 
 <<main.ml>>=
@@ -13820,11 +12764,7 @@ open Fpath_.Operators
 <<toplevel [[Main._1]]>>
 @
 
-
 \subsection{[[main_remote.ml]]}
-
-
-%-------------------------------------------------------------
 
 <<main_remote.ml>>=
 (* Talk to an mmm master *)
@@ -15002,7 +13942,4 @@ end
   (o :> Mmm.tachymeter)
 
 <<toplevel [[Tachy_test._1]]>>
-
 @
-
-

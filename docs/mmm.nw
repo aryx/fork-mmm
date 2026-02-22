@@ -2015,6 +2015,15 @@ and handle_link (h : Hyper.link) : unit =
 in
 @
 
+<<signature [[Plink.make]]>>=
+val make : Hyper.link -> Www.request
+    (* [make hlink] is an error correcting version of Www.make
+       For invalid links, a dialog box is displayed and offers
+       edition facilities
+     *)
+@
+
+
 % wr (-> cache) -> ...
 <<function [[Nav.request.handle_wr]]>>=
 (* Wrapper to deal with general/specific cache *)
@@ -2897,7 +2906,67 @@ in
 @
 % it's to associate shortcuts?
 
+\section{Events}
 
+XXX ???
+
+<<signature [[Glevents.get]]>>=
+val get : string -> (modifier list * xEvent) list 
+@
+
+<<signature [[Glevents.reset]]>>=
+val reset : unit -> unit
+@
+
+<<constant [[Glevents.events]]>>=
+(* A global table for describing events
+ * TODO: use virtual events because here we don't change bindings in 
+ * place after a preference reload
+ *)
+let events = Hashtbl.create 37
+@
+
+<<constant [[Glevents.builtin_defaults]]>>=
+let builtin_defaults = [
+
+  (* tachymeter bindings *)
+  "tachy_about", [[], ButtonPressDetail 3];
+  "tachy_gc",[[], KeyPressDetail "g"; [], KeyPressDetail "c"];
+  "tachy_new", [[], ButtonPressDetail 1];
+  "tachy_sel", [[], ButtonPressDetail 2];
+
+  (* bindings on inlined images *)
+  "loadimage", [[Control], ButtonPressDetail 1];
+  "alt_imap", [[],ButtonPressDetail 1];	(* alt mode client side img map *)
+  "stopanim",  [[], ButtonPressDetail 2];
+  "restartanim", [[Shift], ButtonPressDetail 2];
+  "copyimgurl", [[], ButtonPressDetail 2];
+  "updateimage", [[Shift], ButtonPressDetail 2];
+
+  (* anchor bindings *)
+  "goto", [[], ButtonPressDetail 1];
+  "save", [[Shift], ButtonPressDetail 1];
+  "gotonew", [[], ButtonPressDetail 3];
+  "hypermenu", [[Control], ButtonPressDetail 1];
+]
+@
+% ???
+
+<<constant [[Glevents.get]]>>=
+let get = Hashtbl.find events
+@
+
+<<function [[Glevents.reset]]>>=
+(* This is for preferences *)
+let reset () =
+  Hashtbl.clear events;
+  (* Now: for all names defined in defaults, check a possible overriding value
+     in resources *)
+  List.iter (fun (name,default) ->
+    Hashtbl.add events 
+      name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
+    builtin_defaults
+@
 
 
 %******************************************************************************
@@ -3249,6 +3318,7 @@ let hexchar c =
 
 
 \subsubsection{Forms}
+% see more in next chapter
 
 <<signature [[Urlenc.form_decode]]>>=
 val form_decode : string -> (string * string) list
@@ -9771,6 +9841,21 @@ mach#add_tag "embed"
 
 \subsection{Maps}
 
+% from maps.ml comment:
+%(* Client-side image maps:
+%     the "only" difficulty in implementing client-side image maps is that
+%     the map may well come *after* the image in the document. In general,
+%     anyway, the map may be an arbitrary URL.
+%
+%   We thus have to implement a general delay mechanism for maps : the idea
+%   here is to use a table of maps, each map being accessed by an URI (that is,
+%   an URL plus a fragment).
+%
+%   PROBLEM: we have no idea in general when to flush this table.
+%
+% *)
+
+
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (* Some HTML 3.2 good features *)
 let areas = ref [] in
@@ -10635,6 +10720,197 @@ let embedded_viewer (frame : Widget.widget) (ctx : Viewers.context)
       pack [ l ] []
 @
 
+
+
+
+
+<<constant [[Embed.embedded]]>>=
+(* Remember all current embedded objects by their frame *)
+let embedded = (Hashtbl.create 101 : (string, obj) Hashtbl.t)
+@
+
+<<function [[Embed.add_embed]]>>=
+(* add and notify *)
+let add_embed (emb : obj) =
+  Hashtbl.add embedded (Widget.name emb.embed_frame) emb;
+  Frx_synth.send "setembed" emb.embed_frame
+@
+
+<<function [[Embed.when_destroyed]]>>=
+(* when the frame gets destroyed, remove us from the table *)
+let when_destroyed (w : Widget.widget) = Hashtbl.remove embedded (Widget.name w)
+
+@
+
+<<toplevel [[Embed._1]]>>=
+let _ = Protocol.add_destroy_hook when_destroyed
+@
+
+<<function [[Embed.add]]>>=
+(* Queueing an embed *)
+let add (caps : < Cap.network ; .. >) (emb : obj) =
+  let {
+    embed_hlink = link;
+    embed_frame = frame;
+    embed_context = embed_ctx;
+    embed_map = _m;
+    embed_alt = alt_txt;
+  } =
+    emb
+  in
+  (* Put up the ALT text *)
+  List.iter Tk.destroy (Winfo.children frame);
+  pack [ Label.create_named frame "alt" [ Text alt_txt ] ] [];
+  (* Check if the type is defined and a viewer available *)
+  try
+    let given_type = List.assoc "type" embed_ctx#params in
+    let (typ, subtyp), parms = Lexheaders.media_type given_type in
+    try
+      let viewer =
+        try Hashtbl.find embedded_viewers (typ, subtyp) with
+        | Not_found -> Hashtbl.find embedded_viewers (typ, "*")
+      in
+      EmbeddedScheduler.add_request
+        (caps :> < Cap.network >)
+        (Www.make link) embed_ctx#base
+        (* the continuation: it will receive the document *)
+          (fun _url doc ->
+          let doc =
+            Document.
+              { doc with
+                document_headers =
+                  Http_headers.merge_headers doc.document_headers
+                    [ "Content-Type: " ^ given_type ];
+              }
+          in
+          (* Destroy the alt window *)
+          List.iter Tk.destroy (Winfo.children frame);
+          (* Add to our table/notify *)
+          add_embed emb;
+          viewer parms frame embed_ctx doc)
+        (Tk_progress.meter frame)
+    with
+    | Not_found ->
+        (* no viewer for this *)
+        let t = s_ "Embed Error: no viewer for type %s" given_type in
+        pack [ Label.create frame [ Text t ] ] []
+    | Www.Invalid_request (w, msg) ->
+        let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+        pack [ Message.create frame [ Text t ] ] []
+    | Hyper.Invalid_link _err ->
+        let t = s_ "Embed Error: invalid link" in
+        pack [ Message.create frame [ Text t ] ] []
+  with
+  | Not_found -> (
+      (* not type given, we have to retrieve to know *)
+      (* Firing the request *)
+      try
+        EmbeddedScheduler.add_request
+          (caps :> < Cap.network >)
+          (Www.make link) embed_ctx#base
+          (* the continuation: it will receive the document *)
+          (* In general, we don't know the type before we get the document *)
+            (fun _url doc -> embedded_viewer frame embed_ctx doc)
+          (Tk_progress.meter frame)
+      with
+      | Www.Invalid_request (w, msg) ->
+          let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+          pack [ Message.create frame [ Text t ] ] []
+      | Hyper.Invalid_link _err ->
+          let t = s_ "Embed Error: invalid link" in
+          pack [ Message.create frame [ Text t ] ] [])
+@
+
+<<function [[Embed.update]]>>=
+let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
+    (embed_ctx : Viewers.context) (doc : Document.t) notchanged =
+  try
+    (* find the date of previous download, (or last-modified ?) *)
+    let date_received = Http_headers.get_header "date" doc.document_headers in
+    let rewrite_wr (wr : Www.request) =
+      wr.www_headers <-
+        ("If-Modified-Since: " ^ date_received) :: wr.www_headers;
+      wr.www_headers <- "Pragma: no-cache" :: wr.www_headers;
+      wr
+    in
+    let link = Hyper.default_link (Url.string_of doc.document_address) in
+    (* wrapped viewer : decide if we need to redisplay or not *)
+    let smart_viewer stdviewer frame embed_ctx (newdoc : Document.t) =
+      let newdate =
+        try Http_headers.get_header "date" newdoc.document_headers with
+        | Not_found -> "foo"
+      in
+      if newdate <> date_received then begin
+        List.iter Tk.destroy (Winfo.children frame);
+        stdviewer frame embed_ctx newdoc
+      end
+      else notchanged ()
+    in
+    (* Check if the type is defined and a viewer available *)
+    try
+      let given_type = List.assoc "type" embed_ctx#params in
+      let (typ, subtyp), parms = Lexheaders.media_type given_type in
+      try
+        let viewer =
+          try Hashtbl.find embedded_viewers (typ, subtyp) with
+          | Not_found -> Hashtbl.find embedded_viewers (typ, "*")
+        in
+        EmbeddedScheduler.add_request
+          (caps :> < Cap.network >)
+          (rewrite_wr (Www.make link))
+          embed_ctx#base
+          (* the continuation: it will receive the document *)
+            (fun _url doc ->
+            let doc =
+              Document.
+                {
+                  document_address = doc.document_address;
+                  document_data = doc.document_data;
+                  document_headers =
+                    Http_headers.merge_headers doc.document_headers
+                      [ "Content-Type: " ^ given_type ];
+                }
+            in
+            smart_viewer (viewer parms) frame embed_ctx doc)
+          (Tk_progress.meter frame)
+      with
+      | Not_found ->
+          (* no viewer for this *)
+          let t = s_ "Embed Error: no viewer for type %s" given_type in
+          pack [ Label.create frame [ Text t ] ] []
+      | Www.Invalid_request (w, msg) ->
+          let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+          pack [ Message.create frame [ Text t ] ] []
+      | Hyper.Invalid_link _err ->
+          let t = s_ "Embed Error: invalid link" in
+          pack [ Message.create frame [ Text t ] ] []
+    with
+    | Not_found -> (
+        (* not type given, we have to retrieve to know *)
+        (* Firing the request *)
+        try
+          EmbeddedScheduler.add_request
+            (caps :> < Cap.network >)
+            (rewrite_wr (Www.make link))
+            embed_ctx#base
+            (* the continuation: it will receive the document *)
+            (* In general, we don't know the type before we get the document *)
+              (fun _url doc -> smart_viewer embedded_viewer frame embed_ctx doc)
+            (Tk_progress.meter frame)
+        with
+        | Www.Invalid_request (w, msg) ->
+            let t = s_ "Embed Error: %s\n(%s)" (Url.string_of w.www_url) msg in
+            pack [ Message.create frame [ Text t ] ] []
+        | Hyper.Invalid_link _err ->
+            let t = s_ "Embed Error: invalid link" in
+            pack [ Message.create frame [ Text t ] ] [])
+  with
+  | Not_found ->
+      (* Document has no Date: header *)
+      notchanged ()
+@
+
+
 %******************************************************************************
 \chapter{Images}
 %******************************************************************************
@@ -10730,7 +11006,11 @@ end
 @
 
 
-
+%******************************************************************************
+\chapter{Forms}
+%******************************************************************************
+%alt: section in Html display before, but too important
+% quite important concept
 
 
 %******************************************************************************
@@ -12321,8 +12601,93 @@ let _ =
 @
 
 
+<<function [[Decoders.gzip]]>>=
+(* Note: we must use the feed interface to read from the old dh,
+ * and not read directly from the feed_internal file descriptor, because
+ * the feed might implement side effects (such as caching).
+ * Since we are reading and writing to the same process, we might get
+ * deadlocked if we don't watch writes.
+ *)
+let gzip dh =
+  let (gread, mwrite) = pipe()
+  and (mread, gwrite) = pipe()
+  in
+  Unix.set_close_on_exec mread;
+  Unix.set_close_on_exec mwrite;
+  
+  match Low.fork() with
+    0 ->  
+      dup2 gread stdin; dup2 gwrite stdout;
+      Munix.execvp "gunzip" [| "gunzip"; "-c" |]
+      (* dh (* fake *) *)
+  | _n ->  
+      close gread; close gwrite;
+     (* it is safe to close feed because the son has a copy *)
+      let newdh =
+       { dh with 
+         dh_headers = rem_contentencoding dh.dh_headers;
+         document_feed = Feed.of_fd mread;
+       }
+      in
+      let buffer = Bytes.create 4096 in
+      let rec copy () =
+      try
+        let n = dh.document_feed.feed_read buffer 0 4096 in
+            if n = 0 then (dclose true dh; close mwrite)
+            else begin
+          dh.document_feed.feed_unschedule();
+          Fileevent.add_fileoutput mwrite
+        (fun () -> 
+          ignore (write mwrite buffer 0 n);
+          Fileevent.remove_fileoutput mwrite;
+          dh.document_feed.feed_schedule copy)
+        end
+      with
+        Unix_error(_e,_,_) -> dclose true dh; close mwrite
+      in
+      dh.document_feed.feed_schedule copy;
+      newdh
+@
+
+
+<<constant [[Decoders.add]]>>=
+let add = Hashtbl.add decoders
+@
+
+<<function [[Decoders.insert]]>>=
+let insert dh =
+(* CERN proxy sets Content-Encoding when return code = 500 ! *)
+  if dh.document_status >= 400 then dh else
+  try
+    Hashtbl.find decoders (String.uppercase_ascii (contentencoding dh.dh_headers)) dh
+  with
+    Not_found -> dh
+  | Unix_error(_,_,_) -> dh
+@
+
 
 \section{Animaged GIFs}
+
+<<signature [[Img.gif_anim_load]]>>=
+val gif_anim_load : bool ref
+@
+
+<<constant [[Img.gif_anim_load]]>>=
+(* Images are a special case of embedded data, because Tk caches them
+   internally. Thus, we attempt to maintain our own cache logic above
+   Tk's one 
+ *)
+
+let gif_anim_load = ref false
+@
+
+<<signature [[Imgload.gif_anim_auto]]>>=
+val gif_anim_auto : bool ref
+@
+<<constant [[Imgload.gif_anim_auto]]>>=
+let gif_anim_auto = ref false
+@
+
 
 \section{Audio}
 % <audio>
@@ -15122,6 +15487,131 @@ let norm_crlf lastwascr buf offs len =
   end;
   Bytes.sub_string dest 0 !wpos, !lastiscr
 @
+
+\section{Extensible buffers}
+
+%todo: replaced with the one in ocaml? buffer.mli
+
+<<signature [[Ebuffer.create]]>>=
+val create : int -> t
+  (* [create n] creates a buffer with initial size [n] *)
+@
+
+<<signature [[Ebuffer.output_string]]>>=
+val output_string : t -> string -> unit
+  (* [output_string buf s] appends [s] to [buf] *)
+@
+
+<<signature [[Ebuffer.output_char]]>>=
+val output_char : t -> char -> unit
+  (* [output_char buf c] appends [c] to [buf] *)
+@
+
+<<signature [[Ebuffer.output]]>>=
+val output : t -> string -> int -> int -> unit
+  (* [output buf s offs len] appends [len] characters of [s], starting
+     at offset [offs] to [buf].
+     Raises [Invalid_argument] if [offs] and [len] do not designate a
+     valid substring of [s] *)
+@
+
+<<signature [[Ebuffer.get]]>>=
+val get : t -> string
+  (* [get buf] returns the current contents of [buf] *)
+@
+
+<<signature [[Ebuffer.used]]>>=
+val used : t -> int
+  (* [used buf] returns the current length of [buf] *)
+@
+
+<<signature [[Ebuffer.reset]]>>=
+val reset : t -> unit
+  (* [reset buf] emties [buf] *)  
+@
+
+<<signature [[Ebuffer.t]] abstract>>=
+type t 
+@
+
+
+<<type [[Ebuffer.t]]>>=
+(* Extensible buffers *)
+type t = {
+    mutable buffer : bytes;
+    mutable pos : int;
+    mutable len : int}
+@
+
+<<function [[Ebuffer.create]]>>=
+let create n = {
+   buffer = Bytes.create n;
+   pos = 0;
+   len = n
+   }
+@
+
+<<function [[Ebuffer.reset]]>>=
+let reset buf =
+    buf.pos <- 0
+@
+
+<<function [[Ebuffer.newsize]]>>=
+let newsize old added =
+  if added < old then old + old
+  else old + old + added
+@
+
+<<function [[Ebuffer.output_string]]>>=
+let output_string buf s =
+  let l = String.length s in
+  if buf.pos + l > buf.len then begin
+    let size = newsize buf.len l in
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
+      buf.buffer <- news;
+      buf.len <- size
+    end;
+  Bytes.unsafe_blit_string s 0 buf.buffer buf.pos l;
+  buf.pos <- buf.pos + l
+@
+
+<<function [[Ebuffer.output_char]]>>=
+let output_char buf c =
+  if buf.pos >= buf.len then begin
+    let size = newsize buf.len 1 in
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
+      buf.buffer <- news;
+      buf.len <- size
+    end;
+  Bytes.set buf.buffer buf.pos c;
+  buf.pos <- buf.pos + 1
+@
+
+<<function [[Ebuffer.output]]>>=
+let output buf s ofs l =
+  if buf.pos + l > buf.len then begin
+    let size = newsize buf.len l in
+    let news = Bytes.create size in
+      Bytes.unsafe_blit buf.buffer 0 news 0 buf.pos;
+      buf.buffer <- news;
+      buf.len <- size
+    end;
+  String.blit s ofs buf.buffer buf.pos l;
+  buf.pos <- buf.pos + l
+@
+
+<<function [[Ebuffer.get]]>>=
+let get buf = 
+  Bytes.sub_string buf.buffer 0 buf.pos
+@
+
+<<function [[Ebuffer.used]]>>=
+let used buf =
+  buf.pos
+@
+
 
 \section{Files}
 
