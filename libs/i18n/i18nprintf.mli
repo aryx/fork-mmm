@@ -55,17 +55,14 @@ val fprintf: out_channel -> ('a, out_channel, unit) format -> 'a
            If too few arguments are provided, printing stops just
            before converting the first missing argument. *)
 (*e: signature [[I18nprintf.fprintf]] *)
-
 (*s: signature [[I18nprintf.printf]] *)
 val printf: ('a, out_channel, unit) format -> 'a
         (* Same as [fprintf], but output on [stdout]. *)
 (*e: signature [[I18nprintf.printf]] *)
-
 (*s: signature [[I18nprintf.eprintf]] *)
 val eprintf: ('a, out_channel, unit) format -> 'a
         (* Same as [fprintf], but output on [stderr]. *)
 (*e: signature [[I18nprintf.eprintf]] *)
-
 (*s: signature [[I18nprintf.sprintf]] *)
 val sprintf: ('a, unit, string) format -> 'a
         (* Same as [printf], but return the result of formatting in a

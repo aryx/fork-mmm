@@ -1,10 +1,8 @@
 (*s: http/auth.ml *)
 (* HTTP Basic Authentication *)
 open I18n
-
 open Unix
 open Http_headers
-
 open Www
 
 (*s: type [[Auth.authSpace]] *)
@@ -195,7 +193,6 @@ let load () =
    Error.f (s_ "No authorisation file defined")
 (*e: function [[Auth.load]] *)
 
-
 (*s: function [[Auth.init]] *)
 let init () =
   let check () =
@@ -214,5 +211,4 @@ let init () =
   in
   tim ()
 (*e: function [[Auth.init]] *)
-       
 (*e: http/auth.ml *)

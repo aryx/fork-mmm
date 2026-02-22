@@ -17,7 +17,7 @@ val string_of_protocol: protocol -> string
 (*s: type [[Url.t]] *)
 (* URLs as defined by RFC 1738. Not all components are used for all protocols.
  * The order of the fields below correspond to the actual order in the string:
- *   <protocol>:<user><password>//<host>:<port>/<path>?<search>
+ *   <protocol>://<user>:<password>@<host>:<port>/<path>?<search>
 *)
 type t = 
   { mutable protocol : protocol;
@@ -46,6 +46,4 @@ val distant_path : t -> string
 (*s: exception [[Url.Url_Lexing]] *)
 exception Url_Lexing of string * int
 (*e: exception [[Url.Url_Lexing]] *)
-
-
 (*e: www/url.mli *)

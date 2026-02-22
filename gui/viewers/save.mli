@@ -9,7 +9,6 @@ val transfer : Www.request -> Document.handle -> (Unix.file_descr * bool) option
 val tofile : (string -> unit) -> Document.handle -> string -> string -> unit
 (*e: signature [[Save.tofile]] *)
 
-
 (*s: signature [[Save.document]] *)
 val document : Document.id -> string option -> unit
 (*e: signature [[Save.document]] *)

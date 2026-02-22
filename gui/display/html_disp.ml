@@ -18,7 +18,6 @@ let lowernumber n =
   in 
   if n <= 0 then "*" else f "" (n-1)
 (*e: function [[Html_disp.lowernumber]] *)
-
 (*s: function [[Html_disp.uppernumber]] *)
 let uppernumber n =
   let rec f cur n = 
@@ -36,7 +35,6 @@ let romans = [|
   [| ""; "M"; "MM"; "MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM"; "*MMM" |];
   |]
 (*e: constant [[Html_disp.romans]] *)
-
 (*s: function [[Html_disp.roman]] *)
 let roman n =
   let rec r cur level n =
@@ -181,7 +179,6 @@ let push_style (fo : Htmlfmt.formatter) s =
   try fo.push_attr (Styles.get s)
   with Not_found -> Logs.warn (fun m -> m "Missing style : %s" s)
 (*e: function [[Html_disp.push_style]] *)
-
 (*s: function [[Html_disp.pop_style]] *)
 let pop_style (fo : Htmlfmt.formatter) s =
   try fo.pop_attr (Styles.get s)
@@ -1058,21 +1055,21 @@ module TableLogic = Html_table
     mach#add_tag "embed"
       (fun fo tag -> 
          try
-       let link = Hyper.{
-         h_uri = Html.get_attribute tag "src";
-         h_method = GET;
-         h_context = Some mach#base;
-         h_params = []} in
-       let width =
-         try Some (int_of_string (Html.get_attribute tag "width"))
-         with Not_found -> None
-       and height =
-         try Some (int_of_string (Html.get_attribute tag "height"))
-         with Not_found -> None
-       and alttxt = Html.get_attribute tag "alt" in
+           let link = Hyper.{
+             h_uri = Html.get_attribute tag "src";
+             h_method = GET;
+             h_context = Some mach#base;
+             h_params = []} in
+           let width =
+            try Some (int_of_string (Html.get_attribute tag "width"))
+            with Not_found -> None
+           and height =
+             try Some (int_of_string (Html.get_attribute tag "height"))
+             with Not_found -> None
+           and alttxt = Html.get_attribute tag "alt" in
 
-       let fr = fo.create_embedded "" width height in
-       mach#add_embedded {
+           let fr = fo.create_embedded "" width height in
+           mach#add_embedded {
            embed_hlink = link;
            embed_frame = fr;
            embed_context = mach#ctx#for_embed tag.attributes [];
@@ -1080,8 +1077,8 @@ module TableLogic = Html_table
            embed_alt = alttxt
           }
          with
-       Not_found ->
-         raise (Html.Invalid_Html ("SRC missing in EMBED")))
+          Not_found ->
+           raise (Html.Invalid_Html ("SRC missing in EMBED")))
       ignore_close;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 good features *)

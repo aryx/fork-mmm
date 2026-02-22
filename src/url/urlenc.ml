@@ -134,7 +134,6 @@ let form_encode = function
     ) ;
     Ebuffer.get b
 (*e: function [[Urlenc.form_encode]] *)
-
 (*s: constant [[Urlenc.form_decode]] *)
 let form_decode =
   let ampersand c = c = '&' and equals c = c = '=' in
@@ -146,5 +145,4 @@ let form_decode =
      | _ -> invalid_arg "form_decode")
        (split_str ampersand s))
 (*e: constant [[Urlenc.form_decode]] *)
-         
 (*e: www/urlenc.ml *)

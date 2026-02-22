@@ -64,6 +64,4 @@ let rec make hlink =
     None -> raise (Invalid_link msg)
       | Some hlink -> make hlink
 (*e: function [[Plink.make]] *)
-
-        
 (*e: gui/plink.ml *)

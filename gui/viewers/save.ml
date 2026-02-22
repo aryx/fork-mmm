@@ -7,8 +7,8 @@ open Url
 open Www
 open Feed
 
-(* Save to file fname, and apply continuation cont to this file *)
 (*s: function [[Save.f]] *)
+(* Save to file fname, and apply continuation cont to this file *)
 (* unprotected against Sys_error *)
 let f cont dh fname endmsg =
   let oc = open_out_bin fname in
@@ -194,8 +194,6 @@ let pipe_from_string url data cmd =
   | Unix_error(_,_,_) -> (* pipe failed, fork failed *)
       Error.f (s_ "Can't execute command %s for %s" cmd urls)
 (*e: function [[Save.pipe_from_string]] *)
-
-
 (*s: function [[Save.pipe_from_file]] *)
 let pipe_from_file url f cmd =
   let urls = Url.string_of url in

@@ -1,7 +1,5 @@
 (*s: www/uri.ml *)
 
-
-
 (*s: type [[Uri.abs_uri]] *)
 (* URI utilities. RFC 1630 *)
 type abs_uri = {

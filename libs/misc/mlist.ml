@@ -2,13 +2,13 @@
 (*
  * List utilities
  *)
+
 (*s: function [[Mlist.tln]] *)
 (* tln l n *)
 let rec tln l = function
    0 -> l
  | n -> if l = [] then [] else tln (List.tl l) (pred n)
 (*e: function [[Mlist.tln]] *)
-
 (*s: function [[Mlist.hdn]] *)
 let hdn l =
   let rec h l acc = function
@@ -27,7 +27,6 @@ let except_assoc x =
   in
   ex []
 (*e: function [[Mlist.except_assoc]] *)
-
 (*s: function [[Mlist.exceptq]] *)
 let exceptq x =
   let rec ex acc = function
@@ -38,8 +37,6 @@ let exceptq x =
   ex []
 (*e: function [[Mlist.exceptq]] *)
 
-
-
 (*s: function [[Mlist.rev_do_list]] *)
 (* List.iter from right to left *)
 let rev_do_list f = 
@@ -48,12 +45,10 @@ let rev_do_list f =
   do_list_f
 (*e: function [[Mlist.rev_do_list]] *)
 
-
 (*s: function [[Mlist.do_listi]] *)
 let rec do_listi f n l =
   match l with
     [] -> ()
   | (x::l) -> f n x; do_listi f (succ n) l
 (*e: function [[Mlist.do_listi]] *)
-
 (*e: commons/mlist.ml *)

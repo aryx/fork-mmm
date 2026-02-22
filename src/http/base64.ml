@@ -57,7 +57,6 @@ let decode s =
   Bytes.sub_string res 0 (Bytes.length res - cut)
 (*e: function [[Base64.decode]] *)
 
-
 (*s: constant [[Base64.char64]] *)
 let char64 = Array.make 64 'a'
 (*e: constant [[Base64.char64]] *)
@@ -99,5 +98,4 @@ let encode s =
   for i = 1 to len - origlen do Bytes.set res (Bytes.length res - i) '=' done;
   Bytes.to_string res
 (*e: function [[Base64.encode]] *)
-
 (*e: http/base64.ml *)

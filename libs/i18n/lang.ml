@@ -6,5 +6,4 @@ let lang () =
 (*e: function [[Lang.lang]] *)
 
 (* detect and set LANG information *)
-
 (*e: commons/lang.ml *)

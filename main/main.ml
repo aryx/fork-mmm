@@ -87,6 +87,8 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
   (*x: [[Main.main()]] locals *)
   let sufxfile = ref (Mmm.user_file "mime.types") in
   (*x: [[Main.main()]] locals *)
+  let modules = ref true in
+  (*x: [[Main.main()]] locals *)
   let preffile = ref (Mmm.user_file "MMM.ad") in
   (*x: [[Main.main()]] locals *)
   let palette = ref None in
@@ -94,8 +96,6 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
   let clicktofocus = ref false in
   (*x: [[Main.main()]] locals *)
   let accept_external = ref false in
-  (*x: [[Main.main()]] locals *)
-  let modules = ref true in
   (*e: [[Main.main()]] locals *)
   let level = ref (Some Logs.Warning) in
 
@@ -109,6 +109,9 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
    (*x: [[Main.main()]] command line options *)
    "-suffixes", Arg.String (fun s -> sufxfile := (Fpath.v s)),
    " <file> Suffix file";
+   (*x: [[Main.main()]] command line options *)
+   "-nomodule", Arg.Unit (fun () -> modules := false),
+   " Don't load initial modules";
    (*x: [[Main.main()]] command line options *)
    "-prefs", Arg.String (fun s -> preffile := (Fpath.v s)),
    " <file> Preference File";
@@ -139,9 +142,6 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
    (*x: [[Main.main()]] command line options *)
    "-msgfile", Arg.String (fun s -> I18n.message_file := s),
    " <file> I18n message file";
-   (*x: [[Main.main()]] command line options *)
-   "-nomodule", Arg.Unit (fun () -> modules := false),
-   " Don't load initial modules";
    (*e: [[Main.main()]] command line options *)
   ] @ Logs_.cli_flags level) |> Arg.align
   in

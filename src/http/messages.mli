@@ -38,12 +38,10 @@ type status_line =  {
 type header = string
 (*e: type [[Messages.header]] *)
 
-
 (* HTTP messages: requests and responses
  *  What a client sends to a server is called a request 
  *  What a server answers is called a response
  *)
-
 (*s: type [[Messages.request_message]] *)
 (* HTTP-Message *)
 type request = {
@@ -65,5 +63,4 @@ type response = {
   response_body : string;        (* responde body is *not* the document body *)
 }
 (*e: type [[Messages.response_message]] *)
-
 (*e: http/messages.mli *)

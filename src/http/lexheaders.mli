@@ -7,5 +7,4 @@ val media_type :
 (*s: signature [[Lexheaders.challenge]] *)
 val challenge : Lexing.lexbuf -> Http_headers.authChallenge
 (*e: signature [[Lexheaders.challenge]] *)
-
 (*e: http/lexheaders.mli *)

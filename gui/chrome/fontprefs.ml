@@ -180,7 +180,4 @@ let font_select top getattrs setattrs =
   in
   f, fontspecv, init_pref, set_pref
 (*e: function [[Fontprefs.font_select]] *)
-
-    
-
 (*e: gui/fontprefs.ml *)

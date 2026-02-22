@@ -78,7 +78,6 @@ let output buf s ofs l =
   buf.pos <- buf.pos + l
 (*e: function [[Ebuffer.output]] *)
 
-
 (*s: function [[Ebuffer.get]] *)
 let get buf = 
   Bytes.sub_string buf.buffer 0 buf.pos

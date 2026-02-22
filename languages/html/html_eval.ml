@@ -131,7 +131,6 @@ let ominimize dtd t stack =
                 t.tag_name dump_stack stack),
        return [] stack
 (*e: function [[Html_eval.ominimize]] *)
-
 (*s: function [[Html_eval.cminimize]] *)
 (* close minimize
    [cminimize dtd elem current_stack]
@@ -359,7 +358,6 @@ let sgml_lexer dtd =
     buf := [];
     warnings, correct, tokens, loc
 (*e: function [[Html_eval.sgml_lexer]] ([[html/html_eval.ml]]) *)
-  
   
 (*s: function [[Html_eval.automat]] *)
 let automat dtd lexbuf action error =

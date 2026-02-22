@@ -242,5 +242,4 @@ let _ =
   end;
   destroy top
 (*e: toplevel [[Tachy_test._1]] *)
-
 (*e: extensions/tachy_test.ml *)

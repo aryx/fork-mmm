@@ -25,5 +25,4 @@ val choose : string -> bool
 (*s: signature [[Error.ari]] *)
 val ari : string -> int
 (*e: signature [[Error.ari]] *)
-
 (*e: commons/error.mli *)

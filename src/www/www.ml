@@ -60,8 +60,6 @@ let make (hlink : Hyper.link) : request =
       www_error = !Error.default
     }
 (*e: function [[Www.make]] *)
- 
-
 
 (*s: module Www.UrlSet *)
 (* Table of unresolved active connexions *)
@@ -95,5 +93,4 @@ let rem_active_cnx url =
 (*s: type [[Www.aborter]] *)
 type aborter = unit -> unit
 (*e: type [[Www.aborter]] *)
-
 (*e: www/www.ml *)

@@ -48,7 +48,6 @@ type t = {
  * Phew.
  *)
 
-
 (*s: function [[Form.mapi]] *)
 (* mapi (fun n x -> ...) n0 l *)
 let rec mapi f n l =
@@ -118,7 +117,6 @@ let text_input prev_widget ctx behav top tag =
       raise (Invalid_Html "Missing NAME in TEXT or PASSWORD")
 (*e: function [[Form.text_input]] *)
 
-
 (*s: function [[Form.checkbox_input]] *)
 (* A CHECKBOX input *)
 let checkbox_input prev_widget behav top tag =
@@ -154,7 +152,6 @@ let checkbox_input prev_widget behav top tag =
     Not_found ->
       raise (Invalid_Html "Missing NAME in CHECKBOX")
 (*e: function [[Form.checkbox_input]] *)
-
 
 (* A RADIO input *)
 (*s: function [[Form.radio_input]] *)
@@ -203,7 +200,6 @@ let radio_input prev_widget behav =
     raise (Invalid_Html "Missing NAME in RADIO"))
 (*e: function [[Form.radio_input]] *)
 
-
 (*s: function [[Form.image_input]] *)
 (* An IMAGE input 
  * Q: no target here ?
@@ -232,7 +228,6 @@ let image_input _prev_widget ctx base behav top tag =
     raise (Invalid_Html "missing NAME or SRC in input IMAGE")
 (*e: function [[Form.image_input]] *)
 
-
 (*s: function [[Form.submit_input]] *)
 (* A Submit button *)
 let submit_input _prev_widget ctx behav top tag = 
@@ -253,7 +248,6 @@ let submit_input _prev_widget ctx behav top tag =
       []
 (*e: function [[Form.submit_input]] *)
 
-
 (*s: function [[Form.reset_input]] *)
 let reset_input _prev_widget behav top tag = 
   let l = 
@@ -264,11 +258,7 @@ let reset_input _prev_widget behav top tag =
     pack[b][]
 (*e: function [[Form.reset_input]] *)
 
-
-
  (* TODO: FILE (RFC 1867) *)
-
-
 
 (* A SELECT list *)
 (*s: function [[Form.select]] *)
@@ -392,7 +382,6 @@ let textarea _prev_widget behav top initial tag =
   with
     Not_found -> raise (Invalid_Html "Missing NAME in TEXTAREA")
 (*e: function [[Form.textarea]] *)
-
 
 (*s: function [[Form.create]] *)
 let create base behav ctx =

@@ -13,7 +13,6 @@ type authSpace = {
   }
 (*e: type [[Auth.authSpace]] *)
 
-
 (*s: signature [[Auth.lifetime]] *)
 val lifetime : int ref
 (*e: signature [[Auth.lifetime]] *)

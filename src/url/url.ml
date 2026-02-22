@@ -1,6 +1,5 @@
 (*s: www/url.ml *)
 
-
 (*s: type [[Url.protocol]] *)
 type protocol =
  | HTTP 
@@ -10,7 +9,6 @@ type protocol =
  | TELNET 
  | OtherProtocol of string
 (*e: type [[Url.protocol]] *)
-
 (*s: function [[Url.string_of_protocol]] *)
 let string_of_protocol = function
    FTP -> "ftp"
@@ -26,11 +24,10 @@ let string_of_protocol = function
  | OtherProtocol s -> s
 (*e: function [[Url.string_of_protocol]] *)
 
-
 (*s: type [[Url.t]] *)
 (* URLs as defined by RFC 1738. Not all components are used for all protocols.
  * The order of the fields below correspond to the actual order in the string:
- *   <protocol>:<user><password>//<host>:<port>/<path>?<search>
+ *   <protocol>://<user>:<password>@<host>:<port>/<path>?<search>
 *)
 type t = 
   { mutable protocol : protocol;
@@ -133,5 +130,4 @@ let distant_path urlp =
    | Some p, Some s -> "/" ^ p ^ "?" ^ s
    | None, Some s -> "/?" ^ s (* ??? *)
 (*e: function [[Url.distant_path]] *)
-
 (*e: www/url.ml *)

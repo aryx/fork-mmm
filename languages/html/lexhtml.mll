@@ -248,7 +248,6 @@ and ampersand = parse
     { (fun _lexdata -> "&" )}
 (*e: function [[Lexhtml.ampersand]] *)
 
-
 (*s: function [[Lexhtml.opentag]] *)
 (* TODO 2.0: 
  *   syntax for SHORTTAG YES (need to know the DTD for this !).
@@ -285,7 +284,6 @@ and opentag = parse
        Ebuffer.output_char lexdata.buffer '<';
        text lexbuf lexdata )}
 (*e: function [[Lexhtml.opentag]] *)
-
 (*s: function [[Lexhtml.closetag]] *)
 and closetag = parse
   | ['a'-'z' 'A'-'Z' '0'-'9' '.' '-']+
@@ -349,7 +347,6 @@ and attrib = parse
         Bogus ("invalid attribute name", mk_start lexbuf lexdata)
     )}
 (*e: function [[Lexhtml.attrib]] *)
-
 (*s: function [[Lexhtml.tagattrib]] *)
 and tagattrib = parse
 | [' ' '\t' '\n' '\r']* '=' [' ' '\t' '\n' '\r']*
@@ -357,7 +354,6 @@ and tagattrib = parse
 | "" 
     { (fun _lexdata -> None )}
 (*e: function [[Lexhtml.tagattrib]] *)
-
 (*s: function [[Lexhtml.attribvalue]] *)
 (* This should be dependent on the attribute name *)
 (* people often forget to quote, so try to do something about it *)
@@ -448,5 +444,4 @@ and cdata = parse
     { (fun lexdata ->
         noerr, EOF, mk_loc lexbuf lexdata) }
 (*e: function [[Lexhtml.cdata]] *)
-
 (*e: html/lexhtml.mll *)

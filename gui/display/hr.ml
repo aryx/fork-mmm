@@ -21,5 +21,4 @@ let create_named top name length height solid =
             BorderWidth (Pixels 2); Height (Pixels (height+2))];
   fr
 (*e: function [[Hr.create_named]] *)
-
 (*e: display/hr.ml *)

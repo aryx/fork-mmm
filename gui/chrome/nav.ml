@@ -19,7 +19,7 @@ type t = {
   nav_show_current: Viewers.display_info -> string option (* frag *) -> unit;
 
   (*s: [[Nav.t]] manage history methods *)
-  nav_add_hist : Document.id -> string option -> unit;
+  nav_add_hist : Document.id -> string (* fragment *) option -> unit;
   (*e: [[Nav.t]] manage history methods *)
   (*s: [[Nav.t]] manage active connections methods *)
   nav_add_active : Url.t -> Www.aborter -> unit;
@@ -179,7 +179,7 @@ let nothing_specific _nav _did _wr = raise Not_found
  * Nav.absolutegoto -> Nav.follow_link -> Nav.request <> -> <> (via process)
  *  -> Viewers.f -> Htmlw.viewer | Plan.viewer
 *)
-let process_viewer addhist make_ctx = 
+let process_viewer (addhist : bool) make_ctx = 
  fun nav _wr (dh : Document.handle) ->
   let ctx = make_ctx nav dh.document_id in
   (* ! Viewers ! *)
@@ -299,6 +299,7 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
       ((new stdctx caps (did, nav))#init :> Viewers.context)
     in
 
+    (*s: nested function [[Nav.stdctx.init.make_embed]] *)
     (* a new context for an embedded window *)
     let make_embed_ctx (w : Widget.widget) (targets : Viewers.frame_targets) 
         : Viewers.context = 
@@ -315,6 +316,7 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
       end;
       (newctx#for_embed [] targets :> Viewers.context)
     in
+    (*e: nested function [[Nav.stdctx.init.make_embed]] *)
 
     (* by default, use the cache, don't touch the request *)
     let follow_link (caps : < Cap.network; ..>) _ = 
@@ -322,7 +324,8 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
         (true, id_wr, specific_viewer true)
 
     and save_link (caps : < Cap.network; ..>) _ =
-      request caps nav (process_save None) (true, id_wr, nothing_specific)
+      request caps nav (process_save None)
+         (true, id_wr, nothing_specific)
 
     and copy_link _ = 
       copy_link nav
@@ -335,6 +338,7 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
 
     in 
 
+    (*s: nested function [[Nav.stdctx.init.frame_goto]] *)
     let frame_goto ( caps : < Cap.network; .. > )
          (targets : Viewers.frame_targets) (hlink : Hyper.link) =
       try
@@ -343,49 +347,50 @@ class stdctx (caps : < Cap.network; ..>) (did, nav) =
        | "_blank" ->
         let w = Toplevel.create Widget.default_toplevel [] in
         Embed.add caps { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
+         embed_hlink = hlink;
+         embed_frame = w;
+         embed_context = make_embed_ctx w targets;
+         embed_map = Maps.NoMap;
+         embed_alt = "" }
        | "_self" ->
         let w = List.assoc "_self" targets in
         Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
+         embed_hlink = hlink;
+         embed_frame = w;
+         embed_context = make_embed_ctx w targets;
+         embed_map = Maps.NoMap;
+         embed_alt = "" }
        | "_top" -> follow_link caps targets hlink
        | "_parent" ->
         let w = List.assoc "_parent" targets in
         Embed.add caps { 
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
+         embed_hlink = hlink;
+         embed_frame = w;
+         embed_context = make_embed_ctx w targets;
+         embed_map = Maps.NoMap;
+         embed_alt = "" }
        | s ->
         let w = List.assoc s targets in
         Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
+         embed_hlink = hlink;
+         embed_frame = w;
+         embed_context = make_embed_ctx w targets;
+         embed_map = Maps.NoMap;
+         embed_alt = "" }
       with
        Not_found -> (* if we are in a frame, it is available as _self *)
       try
         let w = List.assoc "_self" targets in
         Embed.add caps {
-        embed_hlink = hlink;
-        embed_frame = w;
-        embed_context = make_embed_ctx w targets;
-        embed_map = Maps.NoMap;
-        embed_alt = "" }
+         embed_hlink = hlink;
+         embed_frame = w;
+         embed_context = make_embed_ctx w targets;
+         embed_map = Maps.NoMap;
+         embed_alt = "" }
       with
         Not_found -> follow_link caps targets hlink
     in
+    (*e: nested function [[Nav.stdctx.init.frame_goto]] *)
 
     !user_navigation |> List.iter super#add_nav;
 
@@ -405,7 +410,8 @@ end
 (*e: class [[Nav.stdctx]] *)
 
 (*s: function [[Nav.make_ctx]] *)
-let make_ctx (caps : < Cap.network; ..>) (nav : t) (did : Document.id) : Viewers.context = 
+let make_ctx (caps : < Cap.network; ..>)
+     (nav : t) (did : Document.id) : Viewers.context = 
   ((new stdctx caps (did, nav))#init :> Viewers.context)
 (*e: function [[Nav.make_ctx]] *)
 
@@ -441,6 +447,7 @@ let follow_link (caps : < Cap.network; ..>)
  *  request -> Retrieve.f -> Http.req (via protos) -> 
  *   process_viewer (via cont) -> 
  *    Viewer.f (as di); nav.nav_show_current di -> Mmm.show_current
+ * 'open URL:' entry | Mmm.navigator.open_sel | ... -> <>
  *)
 let absolutegoto (caps : < Cap.network; ..>) (nav : t) (uri : string) =
   follow_link caps nav (Hyper.default_link uri)

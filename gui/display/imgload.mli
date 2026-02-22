@@ -33,5 +33,4 @@ end
 (* depending on !mode and !no_images will return a different kind of loader *)
 val create : unit -> loader
 (*e: signature [[Imgload.create]] *)
-
 (*e: display/imgload.mli *)

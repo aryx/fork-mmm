@@ -139,7 +139,6 @@ and media_type = parse
 (*e: function [[Lexheaders.media_type]] lexer *)
 
 {
-
 (*s: function [[Lexheaders.media_type]] *)
 let media_type s =
   let lexbuf = Lexing.from_string s in
@@ -147,6 +146,5 @@ let media_type s =
   let l = media_parameters lexbuf in
   mtyp, l 
 (*e: function [[Lexheaders.media_type]] *)
-
 }
 (*e: http/lexheaders.mll *)

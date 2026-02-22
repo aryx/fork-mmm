@@ -1,10 +1,6 @@
 (*s: www/lexurl.mll *)
 {
-
-
-
 open Mlist
-
 open Url
 
 (*s: function [[Lexurl.normalize_port]] *)
@@ -14,7 +10,6 @@ let normalize_port = function
   (* incomplete, but we don't care yet *)
   | _, p -> p
 (*e: function [[Lexurl.normalize_port]] *)
-
 (*s: function [[Lexurl.normalize_host]] *)
 (* lowercase, don't use final . in FQDN *)
 let normalize_host s = 
@@ -24,7 +19,6 @@ let normalize_host s =
   then String.sub s 0 (l-1)
   else s
 (*e: function [[Lexurl.normalize_host]] *)
-
 }
 
 (*s: function [[Lexurl.f]] *)
@@ -242,8 +236,6 @@ and slashpath = parse
 let make s = 
   f (Lexing.from_string s)
 (*e: function [[Lexurl.make]] *)
-
-
 
 (*s: function [[Lexurl.remove_dots]] *)
 let remove_dots s =

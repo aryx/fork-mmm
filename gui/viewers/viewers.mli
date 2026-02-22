@@ -29,8 +29,8 @@ class virtual context : (Document.id * vparams) -> object ('a)
   method goto    : Hyper.link -> unit
   method gotonew : Hyper.link -> unit
   method save    : Hyper.link -> unit
-  method invoke  : string -> Hyper.link -> unit    
   (*x: [[Viewers.context]] hypertext methods signatures *)
+  method invoke  : string -> Hyper.link -> unit    
   method add_nav    : string * hyper_func -> unit
   method hyper_funs : (string * hyper_func) list
   (*e: [[Viewers.context]] hypertext methods signatures *)
@@ -97,7 +97,7 @@ val di_compare : display_info -> display_info -> int
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
-    (Widget.widget ->  context -> Document.handle -> display_info option)
+    (Widget.widget -> context -> Document.handle -> display_info option)
 (*e: type [[Viewers.t]] *)
 
 (*s: signature [[Viewers.add_viewer]] *)
@@ -120,7 +120,6 @@ val reset : unit -> unit
 val f : Widget.widget -> context -> Document.handle -> display_info option
 (*e: signature [[Viewers.view]] *)
 
-
 (*s: signature [[Viewers.frame_adopt]] *)
 val frame_adopt : Widget.widget -> frame_targets -> frame_targets
     (* remap _self and _parent *)
@@ -129,5 +128,4 @@ val frame_adopt : Widget.widget -> frame_targets -> frame_targets
 val frame_fugue : frame_targets -> frame_targets
     (* forget about _self and _parents *)
 (*e: signature [[Viewers.frame_fugue]] *)
-
 (*e: viewers/viewers.mli *)

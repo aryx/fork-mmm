@@ -32,5 +32,4 @@ let init () =
   Frx_rpc.register "camltkdb" (fun _ -> 
     Protocol.debug := not !Protocol.debug)
 (*e: function [[Debug.init]] *)
-
 (*e: gui/debug.ml *)

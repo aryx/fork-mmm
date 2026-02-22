@@ -819,5 +819,4 @@ let _ =
 let _ =
   Embed.add_viewer ("text", "html") embedded_viewer
 (*e: toplevel [[Htmlw._2]] *)
-
 (*e: display/htmlw.ml *)

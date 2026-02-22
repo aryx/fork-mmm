@@ -187,8 +187,6 @@ let rec rem_contentencoding = function
  | x::l -> x :: rem_contentencoding l
 (*e: function [[Http_headers.rem_contentencoding]] *)
 
-
-
 (* 
  * Details for specific headers
  *)
@@ -288,13 +286,13 @@ let default_hints = [
   "flc",	ContentType  "Content-Type: video/fli";
 
    (*s: [[Http_headers.suffixes]] elements *)
+   "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+   (*x: [[Http_headers.suffixes]] elements *)
    "gz",		ContentEncoding  "Content-Encoding: gzip";
    "Z",		ContentEncoding  "Content-Encoding: compress";
 
    "asc",	ContentEncoding  "Content-Encoding: pgp";
    "pgp",	ContentEncoding  "Content-Encoding: pgp";
-   (*x: [[Http_headers.suffixes]] elements *)
-   "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
    (*e: [[Http_headers.suffixes]] elements *)
 ]
 (*e: constant [[Http_headers.default_hints]] *)
@@ -332,7 +330,6 @@ let hints path =
       end
   with Not_found -> [] (* no hint ... *)
 (*e: function [[Http_headers.hints]] *)
-
 
 
 (*s: constant [[Http_headers.status_messages]] *)
@@ -381,6 +378,4 @@ let http_status code =
    status_message = status_message code
   }
 (*e: function [[Http_headers.http_status]] *)
-
-
 (*e: http/http_headers.ml *)

@@ -8,11 +8,9 @@ type mode = DuringDoc | AfterDocAuto | AfterDocManual
 (*s: constant [[Imgload.mode]] *)
 (* Preference settings *)
 let mode = ref AfterDocManual
-
 (*e: constant [[Imgload.mode]] *)
 (*s: constant [[Imgload.no_images]] *)
 let no_images = ref false
-
 (*e: constant [[Imgload.no_images]] *)
 (*s: constant [[Imgload.gif_anim_auto]] *)
 let gif_anim_auto = ref false
@@ -384,5 +382,4 @@ let create () : loader =
     | AfterDocAuto -> (new auto () :> loader)
     | AfterDocManual -> (new manual () :> loader)
 (*e: function [[Imgload.create]] *)
-
 (*e: display/imgload.ml *)

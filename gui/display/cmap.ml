@@ -71,9 +71,6 @@ class imap (c, items) =
             with
               Not_found -> ())))
 end
- 
-
-
 
 (*s: function [[Cmap.gfx_mode]] *)
 (* This is called when the image has been loaded *)
@@ -138,6 +135,4 @@ let gfx_mode emb map c =
   let htobj = new imap(c,items) in
     htobj#init emb.embed_context
 (*e: function [[Cmap.gfx_mode]] *)
-
-
 (*e: display/cmap.ml *)

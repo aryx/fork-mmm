@@ -73,6 +73,7 @@ class virtual context ((did : Document.id),
   method goto hlink    = self#invoke "goto" hlink
   method gotonew hlink = self#invoke "gotonew" hlink
   method save hlink    = self#invoke "save" hlink
+
   method invoke name hlink =
     try (List.assoc name funs).hyper_func targets hlink
     with Not_found -> ()
@@ -80,6 +81,7 @@ class virtual context ((did : Document.id),
   method add_nav (fname, hf) =
     funs <- (fname, hf) :: funs
 
+  (*s: method [[Viewers.context.for_embed]] *)
   (* apply this on a copy ! *)
   method for_embed (vparams: vparams) (newtargets : frame_targets) : 'a =
     {< viewer_params = vparams; 
@@ -91,8 +93,11 @@ class virtual context ((did : Document.id),
           (* assume I'm given new _self and _parent *)
           | l -> l @ frame_fugue targets 
     >}
+  (*e: method [[Viewers.context.for_embed]] *)
+  (*s: method [[Viewers.context.in_embed]] *)
   method in_embed did =
     {< base = did >}
+  (*e: method [[Viewers.context.in_embed]] *)
 
   method virtual log : string -> unit
 end
@@ -258,7 +263,7 @@ let extern (dh : Document.handle) (ctype : string) : unit =
 (* Definition of an internal viewer *)
 type t = 
     Http_headers.media_parameter list -> 
-    (Widget.widget ->  context -> Document.handle -> display_info option)
+    (Widget.widget -> context -> Document.handle -> display_info option)
 (*e: type [[Viewers.t]] *)
 
 (*s: type [[Viewers.spec]] *)
@@ -291,7 +296,6 @@ let rem_viewer ctype =
 (*****************************************************************************)
 (* Interactive viewer *)
 (*****************************************************************************)
-
 (*s: function [[Viewers.unknown]] *)
 let rec unknown (frame : Widget.widget) (ctx : context) (dh : Document.handle)
    : display_info option =
@@ -358,7 +362,6 @@ and interactive frame (ctx : context) (dh : Document.handle) (ctype : string)
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-
 (*s: function [[Viewers.view]] *)
 (* the meat (was called view) *)
 (* Nav.absolutegoto -> Nav.request -> Nav.process_viewer (via process) -> <>
@@ -421,7 +424,6 @@ and f frame (ctx : context) (dh : Document.handle) : display_info option =
 (*****************************************************************************)
 (* Builtin viewers global *)
 (*****************************************************************************)
-
 (*s: constant [[Viewers.builtin_viewers]] *)
 let builtin_viewers = ref []
 (*e: constant [[Viewers.builtin_viewers]] *)
@@ -459,5 +461,4 @@ let reset () =
   (*e: [[Viewers.reset()]] setting other viewers *)
   ()
 (*e: function [[Viewers.reset]] *)
-    
 (*e: viewers/viewers.ml *)

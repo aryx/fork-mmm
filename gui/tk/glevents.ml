@@ -7,7 +7,6 @@ open Tk
  * TODO: use virtual events because here we don't change bindings in 
  * place after a preference reload
  *)
-
 let events = Hashtbl.create 37
 (*e: constant [[Glevents.events]] *)
 
@@ -51,6 +50,4 @@ let reset () =
       name (Tkresource.event_sequence (sprintf "bind<%s>" name) default))
     builtin_defaults
 (*e: function [[Glevents.reset]] *)
-    
-  
 (*e: commons/glevents.ml *)

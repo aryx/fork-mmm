@@ -259,5 +259,4 @@ let bound_check wid width =
       end)));
   (fun () -> !stop_now)
 (*e: function [[Fit.bound_check]] *)
-
 (*e: display/fit.ml *)

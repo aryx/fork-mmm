@@ -59,7 +59,6 @@ let gzip dh =
       dh.document_feed.feed_schedule copy;
       newdh
 (*e: function [[Decoders.gzip]] *)
-  
 
 (*s: toplevel [[Decoders._1]] *)
 let _ =  
@@ -73,7 +72,6 @@ let _ =
 (*s: constant [[Decoders.add]] *)
 let add = Hashtbl.add decoders
 (*e: constant [[Decoders.add]] *)
-
 (*s: function [[Decoders.insert]] *)
 let insert dh =
 (* CERN proxy sets Content-Encoding when return code = 500 ! *)
@@ -84,5 +82,4 @@ let insert dh =
     Not_found -> dh
   | Unix_error(_,_,_) -> dh
 (*e: function [[Decoders.insert]] *)
-
 (*e: viewers/decoders.ml *)

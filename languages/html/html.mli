@@ -105,5 +105,4 @@ type length =
 (*s: signature [[Html.length_of_string]] *)
 val length_of_string : string -> length
 (*e: signature [[Html.length_of_string]] *)
-
 (*e: html/html.mli *)

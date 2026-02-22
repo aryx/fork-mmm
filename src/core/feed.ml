@@ -121,5 +121,4 @@ let of_fd (fd : Unix.file_descr) : t =
 let internal (feed : t) : internal = 
   feed.feed_internal
 (*e: function [[Feed.internal]] *)
-
 (*e: commons/feed.ml *)

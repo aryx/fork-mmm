@@ -1,14 +1,11 @@
 (*s: display/attrs.ml *)
 
-
 (* Utilities for tags and attributes *)
 
 open Printf
 open Protocol
 open Tk
-
 open Fonts
-
 
 
 (* Delayed and shared configuration of tags *)

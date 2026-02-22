@@ -16,17 +16,14 @@
 val asc_wkday : int -> string
     (* [asc_wkday n] maps 0..6 to Sun..Sat *)
 (*e: signature [[Date.asc_wkday]] *)
-
 (*s: signature [[Date.asc_month]] *)
 val asc_month : int -> string
     (* [asc_month n] maps 0..11 to Jan..Dec *)
 (*e: signature [[Date.asc_month]] *)
-
 (*s: signature [[Date.asc]] *)
 val asc : float -> string
     (* [asc uxtime] RFC822 of unix time *)
 (*e: signature [[Date.asc]] *)
-
 (*s: signature [[Date.asc_now]] *)
 val asc_now : unit -> string
     (* [asc_now ()] RFC822 of now *)
@@ -44,5 +41,4 @@ val compare_time : int list * int list -> int
         [year; month; mday; hour; min; sec]
      *)
 (*e: signature [[Date.compare_time]] *)
-
 (*e: commons/date.mli *)

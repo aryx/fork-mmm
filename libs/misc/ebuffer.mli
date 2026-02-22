@@ -14,7 +14,9 @@
 
 (* Extensible buffers *)
 
+(*s: signature [[Ebuffer.t]] abstract *)
 type t 
+(*e: signature [[Ebuffer.t]] abstract *)
 
 (*s: signature [[Ebuffer.create]] *)
 val create : int -> t

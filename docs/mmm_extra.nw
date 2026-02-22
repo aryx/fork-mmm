@@ -12527,6 +12527,7 @@ and dtd_p = Dtd.names()
 % ???
 
 <<gui/mmm.ml>>=
+open Common
 open Fpath_.Operators
 open I18n
 open Tk

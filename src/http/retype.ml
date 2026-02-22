@@ -15,6 +15,4 @@ let f dh =
     let hints = Http_headers.hints url in
     dh.dh_headers <- merge_headers dh.dh_headers hints
 (*e: function [[Retype.f]] *)
-
-
 (*e: http/retype.ml *)

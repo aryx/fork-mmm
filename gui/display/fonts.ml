@@ -110,7 +110,6 @@ let font_index pxlsz =
   (get_index pxlsz) - (!base_index - 3)
 (*e: function [[Fonts.font_index]] *)
 
-
 (*s: function [[Fonts.pxlsz]] *)
 (* Convert an absolute font to a pxlsz *)
 let pxlsz absfont =
@@ -119,8 +118,8 @@ let pxlsz absfont =
     if font_idx < 0 then 0
     else if font_idx >= Array.length !sizes then Array.length !sizes - 1
     else font_idx in
-(*e: function [[Fonts.pxlsz]] *)
    !sizes.(safe_idx)
+(*e: function [[Fonts.pxlsz]] *)
 
 (*s: constant [[Fonts.tags]] *)
 (*
@@ -176,8 +175,6 @@ let rec compute_tag fd =
      Hashtbl.add tags font_key tagdesc;
      tagdesc
 (*e: function [[Fonts.compute_tag]] *)
-
-
 
 (*s: function [[Fonts.reset]] *)
 (* Mapping with preferences : *fontPixels is also used to define our array 

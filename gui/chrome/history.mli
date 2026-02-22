@@ -34,5 +34,4 @@ val forward: t -> (Document.id * string option) option
 val contents: t -> entry list
 
 val set_current: t -> entry -> unit
-
 (*e: gui/history.mli *)

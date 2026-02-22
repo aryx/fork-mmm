@@ -11,7 +11,6 @@ let f () =
     ["Thanks"] |> ignore
 (*e: function [[About.f]] *)
 
-
 (* Tachymeter *)
 
 (* gif is 80x65 *)
@@ -69,7 +68,6 @@ static char break_bits[] = {
    0xb9, 0x4f, 0xba, 0x2f, 0xba, 0x2f, 0xf4, 0x17, 0x08, 0x08};
 "
 (*e: constant [[About.park_data]] *)
-
 
 (*s: constant [[About.pi]] *)
 let pi = 3.1415926 

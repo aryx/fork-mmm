@@ -1,4 +1,5 @@
 (*s: gui/mmm.ml *)
+open Common
 open Fpath_.Operators
 open I18n
 open Tk
@@ -82,9 +83,7 @@ let change_tachy (t : Widget.widget -> Low.tachymeter) =
 
 (*s: function [[Mmm.start_tachy]] *)
 let start_tachy () = 
-  match !container_frame with
-   | Some f -> Low.cur_tachy := !tachy_maker f
-   | None -> ()
+  !container_frame |> Option.iter (fun f -> Low.cur_tachy := !tachy_maker f)
 (*e: function [[Mmm.start_tachy]] *)
 
 (*****************************************************************************)
@@ -236,7 +235,7 @@ let rec navigator (caps: < Cap.network; ..>)
     let loggingv = Textvariable.create_temporary top in
     (*e: local [[Mmm.navigator.loggingv]] *)
     (*s: local [[Mmm.navigator.actives]] *)
-    let actives = (Hashtbl.create 37: (Url.t, Www.aborter) Hashtbl.t) in
+    let actives : (Url.t, Www.aborter) Hashtbl.t = Hashtbl_.create () in
     (*e: local [[Mmm.navigator.actives]] *)
     (*e: [[Mmm.navigator()]] locals before nav setting *)
     let nav = Nav.{ 
@@ -326,9 +325,7 @@ let rec navigator (caps: < Cap.network; ..>)
         aborter()
       );
       Hashtbl.clear actives;
-      match !current_di with
-      | None -> ()
-      | Some di -> di#di_abort
+      !current_di |> Option.iter (fun di -> di#di_abort)
     in
     (*e: function [[Mmm.navigator.abort]] *)
     (*s: function [[Mmm.navigator.open_sel]] *)
@@ -383,9 +380,7 @@ let rec navigator (caps: < Cap.network; ..>)
     (*e: function [[Mmm.navigator.gohome]] *)
     (*s: function [[Mmm.navigator.redisplay]] *)
     let redisplay () =
-      match !current_di with
-      | None -> ()
-      | Some di -> di#di_redisplay
+      !current_di |> Option.iter (fun di -> di#di_redisplay)
     in
     (*e: function [[Mmm.navigator.redisplay]] *)
     (*s: function [[Mmm.navigator.add_to_hotlist]] *)
@@ -405,9 +400,7 @@ let rec navigator (caps: < Cap.network; ..>)
     (*e: function [[Mmm.navigator.load_images]] *)
     (*s: function [[Mmm.navigator.view_source]] *)
     let view_source () =     
-      match !current_di with
-      | None -> ()
-      | Some di -> di#di_source
+      !current_di |> Option.iter (fun di -> di#di_source)
     in
     (*e: function [[Mmm.navigator.view_source]] *)
     (*x: [[Mmm.navigator()]] nested functions *)
@@ -628,6 +621,7 @@ let rec navigator (caps: < Cap.network; ..>)
       [Label (s_ "Version information");
        Command (fun () -> 
           Nav.absolutegoto caps nav (Version.initurl (Lang.lang ())))];
+    (*x: Help menu elements *)
     Menu.add_command helpm
       [Label (s_ "Home Page of MMM");
        Command (fun () -> 
@@ -820,7 +814,6 @@ and new_window_sel (caps: < Cap.network; ..>) =
   with _ -> new_window_initial caps
 (*e: function [[Mmm.new_window_set]] *)
 
-
 (*****************************************************************************)
 (* initial_navigator() *)
 (*****************************************************************************)
@@ -832,7 +825,7 @@ let main_navigator = ref None
 (*s: function [[Mmm.initial_navigator]] *)
 (* main -> <> -> navigator *)
 let initial_navigator (caps : < Cap.network; ..>)
-    (preffile : Fpath.t) (init_url : string option) =
+    (preffile : Fpath.t) (init_url : string option) : unit =
   (*s: [[Mmm.initial_navigator()]] set preferences *)
   preferences := Mmmprefs.f preffile;
   !preferences();

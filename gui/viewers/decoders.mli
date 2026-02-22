@@ -7,5 +7,4 @@ val insert  : Document.handle -> Document.handle
 (*s: signature [[Decoders.add]] *)
 val add : string -> (Document.handle -> Document.handle) -> unit
 (*e: signature [[Decoders.add]] *)
-
 (*e: viewers/decoders.mli *)

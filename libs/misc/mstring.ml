@@ -44,13 +44,11 @@ let hex_to_dec c = match c with
   | 'A'..'F' -> Char.code c - 55 (* 55 = Char.code 'A' - 10 *)
   | _ -> failwith "hex_to_dec"
 (*e: function [[Mstring.hex_to_dec]] *)
-
 (*s: function [[Mstring.dec_to_hex]] *)
 let dec_to_hex i =
   if i < 10 then Char.chr (i + 48)  (* 48 = Char.code '0' *)
   else Char.chr (i + 55)            (* 55 = Char.code 'A' - 10 *)
 (*e: function [[Mstring.dec_to_hex]] *)
-
 (*s: function [[Mstring.hex_to_string]] *)
 (* Converting a hex stored string *)
 let hex_to_string s =
@@ -69,7 +67,6 @@ let gensym =
     incr cnter;
     n ^ string_of_int !cnter)
 (*e: constant [[Mstring.gensym]] *)
-
 (*s: function [[Mstring.egensym]] *)
 let egensym s =
   let cnter = ref 0 in
@@ -135,7 +132,4 @@ let norm_crlf lastwascr buf offs len =
   end;
   Bytes.sub_string dest 0 !wpos, !lastiscr
 (*e: function [[Mstring.norm_crlf]] *)
-
-
-
 (*e: commons/mstring.ml *)

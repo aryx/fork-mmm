@@ -129,5 +129,4 @@ let forward h =
 let set_current h e =
   h.h_current <- e
 (*e: function [[History.set_current]] *)
-
 (*e: gui/history.ml *)

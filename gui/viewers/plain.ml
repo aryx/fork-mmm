@@ -36,6 +36,7 @@ class display_plain ((top : Widget.widget),
     then failwith "too late"
     else Frame.create top [Class "Plain"]
   method frame = frame
+
   method di_widget = frame
   (*e: [[Plain.plain]] frame widget methods *)
   (*s: [[Plain.plain]] init method *)

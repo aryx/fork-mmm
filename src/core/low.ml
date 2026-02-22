@@ -1,9 +1,6 @@
 (*s: commons/low.ml *)
 (* Wrapping of some low-level functions *)
 
-
-
-
 (* Tachymeter support *)
 class  virtual tachymeter = object
   method virtual report_cnx : int -> unit     (* displays number of active cnx *)
@@ -42,7 +39,6 @@ let read fd buf offs l =
     sample_read := !sample_read + n;
     n
 (*e: function [[Low.read]] *)
-
 
 (*
  * Read a line (terminated by \n or \r\n).
@@ -161,7 +157,6 @@ let init () = refresh ()
 let update_idletasks_backend = 
   ref (fun _ -> failwith "no update_idletasks defined")
 
-
 (*s: constant [[Low.last_update]] *)
 (* We need manual refresh for progressive display (?), but we don't
    want to do it too frequently *)
@@ -174,6 +169,4 @@ let update_idletasks () =
     last_update := !global_time
   end
 (*e: function [[Low.update_idletasks]] *)
-
-
 (*e: commons/low.ml *)

@@ -101,7 +101,6 @@ let beautify remove_leading (s : string) =
   done;
   Bytes.sub_string s2 0 !j
 (*e: function [[Html.beautify]] *)
-
 (*s: function [[Html.beautify2]] *)
 (* Remove also trailing space. Used for OPTION tags and TITLE *)
 let beautify2 s =
@@ -293,7 +292,6 @@ let get_attribute tag attr =
   with Not_found ->
     List.assoc (tag.tag_name, attr) default_attributes
 (*e: function [[Html.get_attribute]] *)
-
 (*s: function [[Html.has_attribute]] *)
 let has_attribute tag attr =
      List.mem_assoc attr tag.attributes
@@ -328,5 +326,4 @@ let length_of_string s =
       try LengthPixels (int_of_string s)
       with Failure "int_of_string" -> Nolength
 (*e: function [[Html.length_of_string]] *)
-
 (*e: html/html.ml *)

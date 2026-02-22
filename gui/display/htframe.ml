@@ -312,5 +312,4 @@ let add_frames load_frames kill_body top mach =
 
     (fun _t -> mach#pop_formatter |> ignore; ())
 (*e: function [[Htframe.add_frames]] *)
-
 (*e: display/htframe.ml *)

@@ -11,5 +11,4 @@ module type S =
   end
 
 module Make(Ord: Map.OrderedType): (S with type key = Ord.t)
-
 (*e: commons/ibtree.mli *)

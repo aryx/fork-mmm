@@ -26,7 +26,6 @@ let asc_wkday = function
  | 6 -> "Sat"
  | _ -> assert false
 (*e: function [[Date.asc_wkday]] *)
-
 (*s: function [[Date.asc_month]] *)
 let asc_month = function
    0 -> "Jan"
@@ -43,7 +42,6 @@ let asc_month = function
  | 11 -> "Dec"
  | _ -> assert false
 (*e: function [[Date.asc_month]] *)
-
 (*s: function [[Date.asc]] *)
 (* Produces RFC822 style *)
 let asc ut =
@@ -57,11 +55,9 @@ let asc ut =
     tm.tm_min
     tm.tm_sec
 (*e: function [[Date.asc]] *)
-
 (*s: function [[Date.asc_now]] *)
 let asc_now () = asc (time())
 (*e: function [[Date.asc_now]] *)
-
 
 (*s: function [[Date.commonlog]] *)
 (* Timezone ??? *)
@@ -75,7 +71,6 @@ let commonlog int =
       tm.tm_min
       tm.tm_sec
 (*e: function [[Date.commonlog]] *)
-
 
 (*s: function [[Date.compare_time]] *)
 let rec compare_time = function

@@ -1,6 +1,5 @@
 (*s: commons/log.ml *)
 
-
 (*s: constant [[Log.debug_mode]] *)
 let debug_mode = ref true
 (*e: constant [[Log.debug_mode]] *)
@@ -17,5 +16,4 @@ let debug s =
   if !debug_mode 
   then f s
 (*e: function [[Log.debug]] *)
-
 (*e: commons/log.ml *)

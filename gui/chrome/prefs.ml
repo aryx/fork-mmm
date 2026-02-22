@@ -93,7 +93,6 @@ let init_pref {pref_type = typ; pref_variable = v; _} = match typ with
  | Float r ->  Textvariable.set v (string_of_float !r)
  | AbstractType(i,_) -> i v
 (*e: function [[Prefs.init_pref]] *)
-
 (*s: function [[Prefs.set_pref]] *)
 (* 
  * Set the internal preference value from the editor value (ie textvariable)
@@ -138,7 +137,6 @@ let load_pref pref =
   with
     Not_found -> () (* Never happen if database is complete *)
 (*e: function [[Prefs.load_pref]] *)
-
 (*s: function [[Prefs.save_pref]] *)
 (* 
  * Adds the current pref value (from pref editor) to a preference table
@@ -170,7 +168,6 @@ let bool_pref name r top =
   Checkbutton.configure w [Command (fun () -> set_pref p)];
   p
 (*e: function [[Prefs.bool_pref]] *)
-
 (*s: function [[Prefs.int_pref]] *)
 let int_pref name r top = 
   let v = Textvariable.create_temporary top in
@@ -188,7 +185,6 @@ let int_pref name r top =
   let rec el () = Textvariable.handle v (fun () -> set_pref p; el()) in
   el(); p
 (*e: function [[Prefs.int_pref]] *)
-
 (*s: function [[Prefs.float_pref]] *)
 let float_pref name r top = 
   let v = Textvariable.create_temporary top in
@@ -203,7 +199,6 @@ let float_pref name r top =
   let rec el () = Textvariable.handle v (fun () -> set_pref p; el()) in
   el(); p
 (*e: function [[Prefs.float_pref]] *)
-
 (*s: function [[Prefs.string_pref]] *)
 let string_pref name r top = 
   let v = Textvariable.create_temporary top in
@@ -218,7 +213,6 @@ let string_pref name r top =
   let rec el () = Textvariable.handle v (fun () -> set_pref p; el()) in
   el(); p
 (*e: function [[Prefs.string_pref]] *)
-
 (*s: function [[Prefs.option_pref]] *)
 let option_pref name (i, s, p) top =
   let v = Textvariable.create_temporary top in
@@ -259,7 +253,6 @@ let abstract_bool_pref name i s top =
   Checkbutton.configure w [Command (fun () -> set_pref p)];
   p
 (*e: function [[Prefs.abstract_bool_pref]] *)
-
 (*s: function [[Prefs.abstract_string_pref]] *)
 (*
  * Like string_pref, but with additional handling code
@@ -277,7 +270,6 @@ let abstract_string_pref name i s top =
   let rec el () = Textvariable.handle v (fun () -> set_pref p; el()) in
   el(); p
 (*e: function [[Prefs.abstract_string_pref]] *)
-
 
 (*s: function [[Prefs.option_handlers]] *)
 (*
@@ -330,7 +322,6 @@ let load_file f =
     Protocol.TkError _ -> 
       failwith (s_ "Can't open preference file: %s" f)
 (*e: function [[Prefs.load_file]] *)
-
 (*s: function [[Prefs.save_file]] *)
 let save_file prefmaps f =
   let delimiter = "!!! Don't edit below this line !!!" in
@@ -407,7 +398,6 @@ let family top title preff =
    family_load = load; family_save = save;
    family_title = title}
 (*e: function [[Prefs.family]] *)
-
 
 (*s: function [[Prefs.init]] *)
 (* This is the startup *)
@@ -566,7 +556,6 @@ let rec init filename status interactive mute =
 
   set_current (List.hd families)
 (*e: function [[Prefs.init]] *)
-
 
 (*s: function [[Prefs.define]] *)
 (* Define a preference panel *)

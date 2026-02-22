@@ -193,6 +193,7 @@ let get (caps : < Cap.network; ..>) (did : Document.id) (link : Hyper.link) cont
 (*e: function [[Img.get]] *)
 
 (*s: function [[Img.update]] *)
+(* ??? -> <> *)
 let update (caps : < Cap.network; ..>) (url : Url.t) : unit =
   try
     let (oldi, refs, headers) = ImageData.direct_cache_access url in
@@ -217,5 +218,4 @@ let update (caps : < Cap.network; ..>) (url : Url.t) : unit =
     Not_found ->  (* either not in cache (bogus) or no date *)
       ()
 (*e: function [[Img.update]] *)
-
 (*e: retrieve/img.ml *)

@@ -5,5 +5,4 @@ val f : Document.handle -> unit
    * from URL suffixes if this information is missing from the headers.
    *)
 (*e: signature [[Retype.f]] *)
-
 (*e: http/retype.mli *)

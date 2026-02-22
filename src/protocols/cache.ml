@@ -96,7 +96,7 @@ let postmortem () =
 
 (*s: function [[Cache.find]] *)
 (* Find a document*)
-let find did =
+let find (did : Document.id) : Document.t =
   let entry = List.assoc did !memory in
   entry.cache_lastused <- Unix.time();
   if entry.cache_pending 

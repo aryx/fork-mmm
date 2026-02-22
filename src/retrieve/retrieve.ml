@@ -89,8 +89,10 @@ let wrap_cache cache (dh : Document.handle) : Document.handle =
  *)
 (* f -> Http.req (via protos) cont -> <> (via cont.document_process) -> codex *)
 let rec http_check (caps: < Cap.network; .. > )
-         cache (retry : Hyper.link -> unit)
-         (cont : Document.continuation) (wwwr : Www.request)
+         cache 
+         (retry : Hyper.link -> unit)
+         (cont : Document.continuation) 
+         (wwwr : Www.request)
          (dh : Document.handle) : unit =
   Logs.debug (fun m -> m "Retrieve.http_check");
   try (* the appropriate behavior *)
@@ -131,7 +133,6 @@ let rec http_check (caps: < Cap.network; .. > )
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
-
 (*s: function [[Retrieve.f]] *)
 (*
  * Emitting a request:
@@ -140,8 +141,9 @@ let rec http_check (caps: < Cap.network; .. > )
  *)
 (* Nav.request -> <> -> Http.req (via Protos.get) -> Http.tcp_connect *)
 and f (caps : < Cap.network; ..>) 
-      (request : Www.request) (retry : Hyper.link -> unit) 
-      (cont : Document.continuation) : status = 
+    (request : Www.request)
+    (retry : Hyper.link -> unit) 
+    (cont : Document.continuation) : status = 
   Logs.debug (fun m -> m "Retrieve.f on %s" (Url.string_of request.www_url));
   if Www.is_active_cnx request.www_url
   then InUse
@@ -165,7 +167,6 @@ and f (caps : < Cap.network; ..>)
        raise (Www.Invalid_request (request, s))
    end
 (*e: function [[Retrieve.f]] *)
-
 
 (*****************************************************************************)
 (* Response code -> behavior *)

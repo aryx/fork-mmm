@@ -327,7 +327,6 @@ let full_request (w : string -> unit) (proxy_mode : bool) (wwwr : Www.request) :
   (*e: [[Http.full_request()]] method cases *)
 (*e: function [[Http.full_request]] *)
 
-
 (*s: function [[Http.failed_request]] *)
 (* shared error *)
 let failed_request (wr : Www.request) finish =
@@ -499,7 +498,6 @@ let async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
     end)
 (*e: function [[Http.async_request]] *)
 
-
 (* wrappers for request/response transaction *)
 (*s: function [[Http.start_request]] *)
 let start_request (proxy_mode : bool) (wwwr : Www.request)
@@ -523,8 +521,8 @@ let proxy_request caps (wr : Www.request) (cont : Document.continuation) =
    we retry through the proxy
  *)
 (* Retrieve.f -> req (via protos) -> <> -> tcp_connect -> 
- * start_request (via contf) -> async_request -> process_response ->
- * cont.document_process
+ *  start_request (via contf) -> async_request -> process_response ->
+ *   cont.document_process
  *)
 let request (caps : < Cap.network; ..>)
     (wr : Www.request) (cont : Document.continuation) : cnx =

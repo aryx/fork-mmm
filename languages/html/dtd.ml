@@ -23,7 +23,6 @@ let name t =
   t.dtd_name
 (*e: function [[Dtd.name]] *)
 
-
 (*s: function [[Dtd.sol]] *)
 (* Utils *)
 let sol l =
@@ -237,7 +236,6 @@ let dtd20 =
   dtd
 (*e: constant [[Dtd.dtd20]] *)
 
-
 (*s: function [[Dtd.dump]] *)
 let dump dtd =
   dtd.contents |> Hashtbl.iter (fun s contents -> 
@@ -427,6 +425,7 @@ let names () =
 (*s: toplevel [[Dtd._1]] *)
 let _ = add dtd20; add dtd32
 (*e: toplevel [[Dtd._1]] *)
+
 
 (*s: constant [[Dtd.dtd32f]] *)
 (* Add frames somwhere to dtd32.

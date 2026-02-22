@@ -79,6 +79,5 @@ module type S =
     val maxsamehost : int ref
   end
 
-
 module Make(J : Data):(S with type shared_data = J.t)
 (*e: retrieve/scheduler.mli *)

@@ -200,5 +200,4 @@ let view attach did redisplay errors annotations _coding =
   with Not_found ->
     Error.f "document not in cache"
 (*e: function [[Source.view]] *)
-
 (*e: display/source.ml *)

@@ -36,7 +36,9 @@ val tty_logger : logger
 type handle = {
   document_id : id;
 
-  (* this should help to know what to do even if have not the data yet *)
+  (* this should help to know what to do even if have not the data yet.
+   * Those are response headers.
+   *)
   mutable dh_headers : string list;
     (* HTTP headers of document, or faked ones *)
 
