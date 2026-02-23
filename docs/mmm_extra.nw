@@ -809,6 +809,8 @@ end
 %todo: replace with unix?
 
 <<signature [[Low.read]]>>=
+val count_read : (bytes -> int -> int -> int) -> bytes -> int -> int -> int
+  (* wraps any read function with tachymeter byte accounting *)
 val read : Unix.file_descr -> bytes -> int -> int -> int
   (* Unix.read wrapper, to be used when data transferred has to
      be counted by the tachymeter
@@ -848,6 +850,7 @@ val update_idletasks : unit -> unit
 <<signature [[Low.read]]>>
 
 val read_line: Unix.file_descr -> string
+val read_line_fn : (bytes -> int -> int -> int) -> string
 
 <<signature [[Low.fork]]>>
 
@@ -884,11 +887,13 @@ let cur_tachy = ref (new no_tachy :> tachymeter)
 @
 
 <<function [[Low.read]]>>=
-let read fd buf offs l =
-  let n = Unix.read fd buf offs l in
-    bytes_read := !bytes_read + n;
-    sample_read := !sample_read + n;
-    n
+let count_read read_fn buf offs l =
+  let n = read_fn buf offs l in
+  bytes_read := !bytes_read + n;
+  sample_read := !sample_read + n;
+  n
+
+let read fd = count_read (Unix.read fd)
 @
 
 <<function [[Low.add_fileinput]]>>=
@@ -1009,20 +1014,22 @@ end
  * Read a line (terminated by \n or \r\n).
  *   strips terminator !
  *)
-let read_line fd =
+let read_line_fn (read_fn : bytes -> int -> int -> int) =
   let rec read_rec (buf : bytes) bufsize offs =
-    let n = read fd buf offs 1 in
+    let n = count_read read_fn buf offs 1 in
       if n = 0 then raise End_of_file
       else if Bytes.get buf offs = '\n'
            then (* strips \n and possibly \r  *)
-             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
+             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1
                        else offs in
                Bytes.sub_string buf 0 len
            else let offs = succ offs in
-                  if offs = bufsize 
+                  if offs = bufsize
                   then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
                   else read_rec buf bufsize offs in
-  read_rec (Bytes.create 128) 128 0 
+  read_rec (Bytes.create 128) 128 0
+
+let read_line fd = read_line_fn (read fd) 
 
 
 <<global [[Low.pending_read]]>>
@@ -1611,6 +1618,7 @@ open Mstring
 
 <<www/lexurl.mll>>=
 {
+open Common
 open Mlist
 open Url
 
@@ -2715,6 +2723,7 @@ val verbose: bool ref
 \subsection{[[http/http.ml]]}
 
 <<http/http.ml>>=
+open Common
 open I18n
 
 (*****************************************************************************)
@@ -2733,6 +2742,13 @@ open I18n
 <<global [[Http.proxy_port]]>>
 
 <<constant [[Http.verbose]]>>
+
+let () = Ssl.init ()
+let ssl_ctx =
+  let ctx = Ssl.create_context Ssl.TLSv1_2 Ssl.Client_context in
+  Ssl.set_min_protocol_version ctx Ssl.TLSv1_2;
+  ctx
+
 
 (*****************************************************************************)
 (* Types *)
@@ -3163,11 +3179,12 @@ let fd_of_doc doc =
 
 <<function [[Cache.make_handle]]>>=
 let make_handle wwwr doc =
+  let fd = fd_of_doc doc in
   { document_id = { document_url = wwwr.www_url; document_stamp = no_stamp};
     document_referer = wwwr.www_link.h_context;
     document_status = 200;
     dh_headers = doc.document_headers;
-    document_feed = Feed.of_fd (fd_of_doc doc);
+    document_feed = Feed.make_feed fd (Low.count_read (Unix.read fd));
     document_fragment = wwwr.www_fragment;
     document_logger = tty_logger}
 @
@@ -3177,11 +3194,12 @@ let make_handle wwwr doc =
 let renew_handle dh =
   let did = dh.document_id in
   let doc = find did in
+  let fd = fd_of_doc doc in
   { document_id = dh.document_id;
     document_referer = dh.document_referer;
     document_status = dh.document_status;
     dh_headers = doc.document_headers;
-    document_feed = Feed.of_fd (fd_of_doc doc);
+    document_feed = Feed.make_feed fd (Low.count_read (Unix.read fd));
     document_fragment = dh.document_fragment;
     document_logger = dh.document_logger}
 @
@@ -3206,7 +3224,7 @@ let make_embed_handle doc =
      document_referer = None;
      document_status = 200;
      dh_headers = doc.document_headers;
-     document_feed = Feed.of_fd fd;
+     document_feed = Feed.make_feed fd (Low.count_read (Unix.read fd));
      document_fragment = None;
      document_logger = tty_logger}
 @

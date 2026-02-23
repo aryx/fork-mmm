@@ -48,7 +48,7 @@ let read fd = count_read (Unix.read fd)
  *)
 let read_line_fn (read_fn : bytes -> int -> int -> int) =
   let rec read_rec (buf : bytes) bufsize offs =
-    let n = read_fn buf offs 1 in
+    let n = count_read read_fn buf offs 1 in
       if n = 0 then raise End_of_file
       else if Bytes.get buf offs = '\n'
            then (* strips \n and possibly \r  *)

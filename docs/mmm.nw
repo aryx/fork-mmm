@@ -415,7 +415,7 @@ type t =
 
 <<type [[Url.protocol]]>>=
 type protocol =
- | HTTP 
+ | HTTP | HTTPS
  | FILE | FTP
  | MAILTO | NNTP
  | GOPHER | NEWS | WAIS | PROSPERO
@@ -3024,13 +3024,19 @@ rule f = parse
 % less: could have a Url.default()
 
 <<[[Lexurl.f]] protocol cases>>=
-| "HTTP" ->
+| "HTTP" | "HTTPS" ->
     slashslash lexbuf;
     let h, po = hostport lexbuf in
     let pa, se = pathsearch lexbuf in
-    result.protocol <- HTTP;
+    let proto = 
+      match protocol with 
+      | "HTTP" -> HTTP
+      | "HTTPS" -> HTTPS
+      | _ -> raise (Impossible "see match cases above")
+    in
+    result.protocol <- proto;
     result.host <- h;
-    result.port <- normalize_port (HTTP, po);
+    result.port <- normalize_port (proto, po);
     result.path <- pa;
     result.search <- se
 @
@@ -3047,6 +3053,7 @@ and slashslash =  parse
 <<function [[Lexurl.normalize_port]]>>=
 let normalize_port = function
   | HTTP, Some 80 -> None
+  | HTTPS, Some 443 -> None
   | FTP, Some 21 -> None
   (* incomplete, but we don't care yet *)
   | _, p -> p
@@ -5960,7 +5967,7 @@ type t = {
 
 
 <<signature [[Feed.of_fd]]>>=
-val of_fd : Unix.file_descr -> t
+val make_feed : Unix.file_descr -> (bytes -> int -> int -> int) -> t
 @
 
 XXX split and understand
@@ -5968,7 +5975,8 @@ XXX split and understand
 % ??? -> <>
 <<function [[Feed.of_fd]]>>=
 (* We should distinguish internal/external connections *)
-let of_fd (fd : Unix.file_descr) : t =
+let make_feed (fd : Unix.file_descr) (do_read : bytes -> int -> int -> int) : t =
+
   let is_open = ref true in
   let action = ref None in
   let condition = Condition.create() in
@@ -5977,8 +5985,8 @@ let of_fd (fd : Unix.file_descr) : t =
   (* ASSUMES: this is the first read on the fileevent *)
   let safe_read (buf : bytes) (offs : int) (len : int) : int =
     first_read := false;
-    if !is_open 
-    then Low.read fd buf offs len 
+    if !is_open
+    then do_read buf offs len
     else 0
   in
 
@@ -6070,7 +6078,7 @@ let of_fd (fd : Unix.file_descr) : t =
 val internal : t -> internal
 @
 <<function [[Feed.internal]]>>=
-let internal (feed : t) : internal = 
+let internal (feed : t) : internal =
   feed.feed_internal
 @
 
@@ -6263,6 +6271,7 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 
 <<toplevel [[Protos._2]]>>=
 let _ = Hashtbl.add protos Url.HTTP (Http.req, Cache.tobuffer)
+let _ = Hashtbl.add protos Url.HTTPS (Http.req, Cache.tobuffer)
 @
 
 % Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
@@ -6298,7 +6307,7 @@ let request (caps : < Cap.network; ..>)
   <<[[Http.request()]] if always proxy>>
   else 
     let urlp = wr.www_url in
-    if urlp.protocol = HTTP 
+    if urlp.protocol = HTTP || urlp.protocol = HTTPS
     then
       let host = 
         match urlp.host with
@@ -6308,10 +6317,16 @@ let request (caps : < Cap.network; ..>)
       let port =  
         match urlp.port with
         | Some p -> p
-        | None -> 80  (* default http port *)
+        | None -> 
+          (match urlp.protocol with
+          | HTTP -> 80  (* default http port *)
+          | HTTPS -> 443
+          | _ -> raise (Impossible "can only have HTTP or HTTPS here")
+          )
       in 
-      try 
-        tcp_connect caps host port wr.www_logging
+      let is_https = urlp.protocol = HTTPS in
+      try
+        tcp_connect ~is_https caps host port wr.www_logging
             (fun cnx -> start_request false wr cont  cnx)
             (fun s aborted -> failed_request wr cont.document_finish s aborted)
 
@@ -6333,7 +6348,7 @@ let request (caps : < Cap.network; ..>)
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
 (* req | proxy_req -> request | proxy_request -> <> *)
-let tcp_connect (caps : < Cap.network; ..>)
+let tcp_connect ?(is_https = false) (caps : < Cap.network; ..>)
     (server_name : string) (port : int) logf contf errorf =
 
   (*  Find the inet address *)
@@ -6349,6 +6364,21 @@ let tcp_connect (caps : < Cap.network; ..>)
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, errorf "User abort") in
   logf (s_ "Contacting host...");
+  let ssl_handshake_and_continue cnx =
+    if is_https then
+      (try
+        let s = Ssl.embed_socket cnx#fd ssl_ctx in
+        Ssl.set_client_SNI_hostname s server_name;
+        Ssl.connect s;
+        cnx#set_ssl s;
+        contf cnx
+      with exn ->
+        cnx#close;
+        errorf (s_ "SSL handshake failed with %s: %s" server_name
+                    (Printexc.to_string exn)) false)
+    else
+      contf cnx
+  in
   try
     begin try
       CapUnix.connect caps sock (ADDR_INET(server_addr, port));
@@ -6358,9 +6388,9 @@ let tcp_connect (caps : < Cap.network; ..>)
       Logs.debug (fun m -> m "Connect returned without error !");
 
       (* because we need to return cnx *)
-      Timer_.set 10 (fun () -> 
+      Timer_.set 10 (fun () ->
         (* ! calling the continuation, e.g. start_request *)
-        contf cnx
+        ssl_handshake_and_continue cnx
       );
       cnx
     with Unix.Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
@@ -6394,6 +6424,7 @@ class cnx (sock, finish) =
   (* val finish = finish *)
   val mutable fdclosed = false		(* protect against double close *)
   val mutable aborted = false
+  val mutable ssl_sock : Ssl.socket option = None
 
   method fd = 
     fd
@@ -6401,11 +6432,29 @@ class cnx (sock, finish) =
     aborted
   method set_fd newfd = 
     fd <- newfd
-  method set_status s = 
+  method set_status s =
     status <- s
+  method ssl_socket = ssl_sock
+  method set_ssl s = ssl_sock <- Some s
+
+  method write (buf : bytes) pos len =
+    match ssl_sock with
+    | None   -> Unix.write fd buf pos len
+    | Some s -> Ssl.write s buf pos len
+
+  method read (buf : bytes) pos len =
+    match ssl_sock with
+    | None   -> Low.read fd buf pos len
+    | Some s -> Low.count_read (fun buf offs l ->
+        try Ssl.read s buf offs l
+        with Ssl.Read_error _ -> 0 (* treat all SSL read errors as EOF *)
+      ) buf pos len
 
   method close =
     if not fdclosed then begin
+      (match ssl_sock with
+       | None -> ()
+       | Some s -> (try Ssl.shutdown s with _ -> ()));
       Unix.close fd;
       fdclosed <- true
     end
@@ -6450,7 +6499,7 @@ with Not_found ->
      begin try (* But has there been a cnx actually *)
        let _ = Unix.getpeername sock in
        logf (s_ "connection established");
-       contf cnx
+       ssl_handshake_and_continue cnx
      with Unix.Unix_error(ENOTCONN, "getpeername", _) ->
        cnx#close;
        errorf (s_ "Connection refused to %s" server_name) false
@@ -6510,7 +6559,7 @@ let async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
   let curpos = ref 0 in
   wwwr.www_logging (s_ "Writing request...");
   Fileevent_.add_fileoutput cnx#fd (fun _ ->
-    let n = Unix.write cnx#fd (Bytes.of_string req) !curpos (len - !curpos) in (* blocking ? *)
+    let n = cnx#write (Bytes.of_string req) !curpos (len - !curpos) in (* blocking ? *)
     curpos := !curpos  + n;
     if !curpos = len then begin
       Fileevent_.remove_fileoutput cnx#fd;
@@ -6692,7 +6741,7 @@ let process_response (wwwr : Www.request) (cont : Document.continuation) =
 
       document_status = 0;
       dh_headers = [];
-      document_feed = Feed.of_fd cnx#fd;
+      document_feed = Feed.make_feed cnx#fd cnx#read;
 
       document_logger = Document.tty_logger;
     }
@@ -6727,11 +6776,11 @@ mutable document_status : int;
 try
   if dh.dh_headers = [] then begin
     (* it should be the HTTP Status-Line *)
-    let l = Low.read_line cnx#fd in
+    let l = Low.read_line_fn cnx#read in
     dh.document_status <- (Http_headers.parse_status l).status_code;
     dh.dh_headers <- [l] (* keep it there *)
-  end else 
-     dh.dh_headers <- read_headers cnx#fd dh.dh_headers
+  end else
+     dh.dh_headers <- read_headers cnx#read dh.dh_headers
 with
 (* each branch must unschedule *)
 <<[[Http.process_response()]] feed schedule callback failure cases>>
@@ -6747,13 +6796,13 @@ exception End_of_headers
  *    raises End_of_file
  *    raises Invalid_HTTP_header
  *)
-val read_headers: 
-  Unix.file_descr -> string list -> string list
+val read_headers:
+  (bytes -> int -> int -> int) -> string list -> string list
 @
 % process_response | fake_cgi -> <>
 <<function [[Http.read_headers]]>>=
-let read_headers fd previous =
-  let l = Low.read_line fd in
+let read_headers read_fn previous =
+  let l = Low.read_line_fn read_fn in
    if String.length l = 0 
    then raise End_of_headers (* end of headers *)
    else 
@@ -12147,8 +12196,8 @@ let request wr cont =
               document_referer = wr.www_link.h_context;
               document_status = 304;
               dh_headers = [ sprintf "Date: %s" (Date.asc_now())];
-              document_feed = 
-                Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
+              document_feed = (let fd = openfile "/dev/null" [O_RDONLY] 0 in
+                Feed.make_feed fd (Low.count_read (Unix.read fd)));
               document_fragment = wr.www_fragment;
               document_logger = Document.tty_logger
             } in
@@ -12175,7 +12224,7 @@ let request wr cont =
                  sprintf "Date: %s" (Date.asc_now());
                  sprintf "Last-modified: %s" (Date.asc st.st_mtime)
                 ];
-              document_feed = Feed.of_fd s;
+              document_feed = Feed.make_feed s (Low.count_read (Unix.read s));
               document_fragment = wr.www_fragment;
               document_logger = Document.tty_logger
             } in
@@ -12190,7 +12239,7 @@ let request wr cont =
             document_referer = wr.www_link.h_context;
             document_status = 200;
             dh_headers = ["Content-Type: text/html"];
-            document_feed = Feed.of_fd s;
+            document_feed = Feed.make_feed s (Low.count_read (Unix.read s));
             document_fragment = wr.www_fragment;
             document_logger = Document.tty_logger
            };
@@ -12626,7 +12675,7 @@ let gzip dh =
       let newdh =
        { dh with 
          dh_headers = rem_contentencoding dh.dh_headers;
-         document_feed = Feed.of_fd mread;
+         document_feed = Feed.make_feed mread (Low.count_read (Unix.read mread));
        }
       in
       let buffer = Bytes.create 4096 in
@@ -14543,7 +14592,7 @@ let fake_cgi wwwr cont path =
                 document_referer = wwwr.www_link.h_context;
                 document_status = 0;
                 dh_headers = [];
-                document_feed = Feed.of_fd cmd_in;
+                document_feed = Feed.make_feed cmd_in (Low.count_read (Unix.read cmd_in));
                 document_fragment = wwwr.www_fragment;
                 document_logger = Document.tty_logger} 
       in
@@ -14558,7 +14607,7 @@ let fake_cgi wwwr cont path =
             end
           else 
             dh.dh_headers <- 
-              read_headers cmd_in dh.dh_headers
+              read_headers (Low.read cmd_in) dh.dh_headers
           with
            | End_of_headers ->
                dh.document_feed.feed_unschedule();
@@ -14929,8 +14978,9 @@ val string_of_protocol: protocol -> string
 
 <<function [[Url.string_of_protocol]]>>=
 let string_of_protocol = function
-   FTP -> "ftp"
+ | FTP -> "ftp"
  | HTTP -> "http"
+ | HTTPS -> "https"
  | GOPHER -> "gopher"
  | MAILTO -> "mailto"
  | NEWS -> "news"
@@ -14949,7 +14999,7 @@ val string_of: t -> string
 
 
 <<function [[Url.string_of]]>>=
-let string_of p =
+let string_of (p : t) : string =
   let buf = Ebuffer.create 128 in
   let ws x = Ebuffer.output_string buf x in
   let wc x = Ebuffer.output_char buf x in
@@ -14997,6 +15047,8 @@ let string_of p =
       ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
   | HTTP ->
       ws "http://"; write_hostport 80; write_pathsearch ()
+  | HTTPS ->
+      ws "https://"; write_hostport 443; write_pathsearch ()
   | GOPHER ->
       ws "gopher://"; write_hostport 70; write_slashpath ()
   | MAILTO -> ws "mailto:"; write_path()
