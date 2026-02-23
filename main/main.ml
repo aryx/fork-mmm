@@ -160,6 +160,14 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
   (*s: [[Main.main()]] tk initialisation *)
   let top = Tk.openTkDisplayClass !display "mmm" in
   Wm.withdraw top;
+  (* Load tkimg if available so Tk can handle JPEG (and TIFF) natively.
+     On Debian/Ubuntu install: sudo apt-get install libtk-img *)
+  (try Protocol.tkCommand [|Protocol.TkToken "package";
+                             Protocol.TkToken "require";
+                             Protocol.TkToken "Img"|]
+   with Protocol.TkError _ ->
+     Logs.info (fun m -> m "tkimg not available; JPEG will use %s fallback"
+       !Img.ImageData.jpeg_converter));
   (*x: [[Main.main()]] tk initialisation *)
   if not !clicktofocus 
   then Focus.follows_mouse();

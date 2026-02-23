@@ -19,7 +19,7 @@ module ImageData =
     type t = Tkanim.imageType
 
     let gamma = ref 1.0
-    let jpeg_converter = ref "djpeg"
+    let jpeg_converter = ref "convert"
     let verbose = ref false
 
    (* 
@@ -97,23 +97,25 @@ module ImageData =
     else Still (ImagePhoto (Imagephoto.create [File file; Gamma !gamma]))
       with Protocol.TkError _ -> broken_data
 
-    (* For JPEG, we attempt internal load first, because we might have
-       an extension for loading them *)
+    (* For JPEG, we attempt internal load first (works when tkimg/libtk-img is
+       installed and loaded via 'package require Img' at startup).
+       If that fails, fall back to an external converter (default: ImageMagick
+       'convert') to produce a PPM file that Tk can always read. *)
     let tk_load_jpeg file =
       try Tkanim.Still (ImagePhoto (Imagephoto.create [File file; Gamma !gamma]))
       with Protocol.TkError _ ->
-    let pnmfile = Msys.mktemp "pnm" in
-    let cmd = (!jpeg_converter^" "^file^" > "^pnmfile) in
+    let ppmfile = (Msys.mktemp "img") ^ ".ppm" in
+    let cmd = (!jpeg_converter ^ " " ^ file ^ " " ^ ppmfile) in
     try match Sys.command cmd with
       0 ->
         let img = Tkanim.Still (ImagePhoto (Imagephoto.create
-                     [File pnmfile; Gamma !gamma])) in
-        Msys.rm pnmfile;
+                     [File ppmfile; Gamma !gamma])) in
+        Msys.rm ppmfile;
         img
-    | _ -> Msys.rm pnmfile; broken_data
+    | _ -> Msys.rm ppmfile; broken_data
     with
       Protocol.TkError _ ->
-        Msys.rm pnmfile;
+        Msys.rm ppmfile;
         Still (Bitmap (Predefined "question"))
 
     (* other formats *)
