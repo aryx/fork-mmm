@@ -83,6 +83,9 @@ val get_entity : string -> string
   (* [get_entity "amp"] returns "&" *)
 (*e: signature [[Html.get_entity]] *)
 
+val utf8_of_codepoint : int -> string
+  (* [utf8_of_codepoint 233] returns the UTF-8 encoding of U+00E9 *)
+
 (*s: signature [[Html.get_attribute]] *)
 val get_attribute : tag -> string -> string
   (* [get_attribute tag attrib_name] *)

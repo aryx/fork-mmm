@@ -189,7 +189,12 @@ let create namer spec top ctx =
     match String.length s with
       0 -> ()
     | l ->
-        position := !position + Lexkanji.length s;
+        (* old: was Lexkanji.length but we needed to update the code to
+         * handle Utf8 characters. Tk 8.x assumes utf8 characters so
+         * if we compute here the position wrong, Tk would then highlight
+         * anchors at the wrong position.
+         *)
+        position := !position + Mstring.utf8_length s;
         prev_is_newline := false;
         Ebuffer.output_string buffer s;
     trailing_space := s.[l-1] = ' ';

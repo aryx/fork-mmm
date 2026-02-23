@@ -13,11 +13,13 @@ type code =
   | EUC
   | SJIS
   | ISO8859
+  | UTF8
   | Binary
   | Unknown
 
 let encode_table = (* I am sure this is not correct *)
-  [ "iso[-_]?8859[-_]?.*", ISO8859;
+  [ "utf[-_]?8", UTF8;
+    "iso[-_]?8859[-_]?.*", ISO8859;
     "ascii", ISO8859;
     "iso[-_]?2022[-_]?jp", JIS;
 (*
@@ -36,10 +38,11 @@ let detected_code_names = [
   Code EUC, "euc-jp";
   Code SJIS, "sjis";
   Code ISO8859, "iso-8859";
+  Code UTF8, "utf-8";
   Code Binary, "binary...";
   Code Unknown, "unknown...";
   Mixed, "mixed coded"
-] 
+]
 
 type decoder =
     DecoderASCII
@@ -48,6 +51,7 @@ type decoder =
   | DecoderEUC
   | DecoderSJIS
   | DecoderISO8859
+  | DecoderUTF8
 
 type read_type = bytes -> int -> int -> int
 
@@ -208,9 +212,11 @@ let change_to_sjis c =
   c.decoders <- Some [DecoderASCII; DecoderSJIS]
 let change_to_euc c = 
   c.decoders <- Some [DecoderASCII; DecoderEUC]
-let change_to_iso8859 c = 
+let change_to_iso8859 c =
   c.decoders <- Some [DecoderISO8859]
-let change_to_autodetect c = 
+let change_to_utf8 c =
+  c.decoders <- Some [DecoderUTF8]
+let change_to_autodetect c =
   c.decoders <- None
 
 class read_japanese (read_func, config) =
@@ -224,11 +230,11 @@ class read_japanese (read_func, config) =
   (* val config = config *) 
 
   method set_wholecode =
-    (* ISO8859 is "weak" *)
+    (* ISO8859 and UTF8 are "weak" *)
     match wholecode with
-      Code Unknown | Code ISO8859 -> wholecode <- Code curcode;
+      Code Unknown | Code ISO8859 | Code UTF8 -> wholecode <- Code curcode;
     | Code code ->
-	if curcode <> ISO8859 && curcode <> code then wholecode <- Mixed
+	if curcode <> ISO8859 && curcode <> UTF8 && curcode <> code then wholecode <- Mixed
     | Mixed -> ()
 
   method unknown_junet lexbuf lexdata =
@@ -254,7 +260,13 @@ class read_japanese (read_func, config) =
     if !debug then Log.f "[ISO8859]";
     self#set_code ISO8859;
     self#set_wholecode
-	       
+
+  method unknown_utf8 lexbuf lexdata =
+    iso8859 lexbuf lexdata;
+    if !debug then Log.f "[UTF8]";
+    self#set_code UTF8;
+    self#set_wholecode
+
   method unknown_eucorsjis lexbuf lexdata =
     try
       eucorsjis lexbuf lexdata;
@@ -289,6 +301,7 @@ class read_japanese (read_func, config) =
       | DecoderEUC -> self#unknown_eucjapan
       | DecoderSJIS -> self#unknown_sjis
       | DecoderISO8859 -> self#unknown_iso8859
+      | DecoderUTF8 -> self#unknown_utf8
     in
     let default_config = [DecoderASCII; DecoderJIS; DecoderEUCorSJIS] in
       
@@ -338,6 +351,7 @@ class read_japanese (read_func, config) =
     | EUC -> self#robust eucjapan lexbuf lexdata
     | SJIS -> self#robust sjis lexbuf lexdata
     | ISO8859 -> self#robust iso8859 lexbuf lexdata
+    | UTF8 -> self#robust iso8859 lexbuf lexdata
     | Binary -> remove_garbage lexbuf lexdata (* read 1 char at least *)
 end
 
@@ -368,7 +382,7 @@ let encoder code =
       Mixed -> 
 	Log.f "Submitting forms with mixed encodings. Using JIS"; 
 	s
-    | Code Unknown | Code ISO8859 | Code JIS -> s
+    | Code Unknown | Code ISO8859 | Code UTF8 | Code JIS -> s
     | Code code ->
 	let wstr = 
 	  let lexbuf = Lexing.from_string s in

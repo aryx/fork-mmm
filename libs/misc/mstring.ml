@@ -84,6 +84,24 @@ let rem_trailing_sp s =
   else String.sub s 0 (succ !pos)
 (*e: function [[Mstring.rem_trailing_sp]] *)
 
+
+(* Count Unicode codepoints in a UTF-8 encoded string.
+ * Unlike String.length (bytes) this matches Tk's CharOffset counting. *)
+let utf8_length s =
+  let n = String.length s in
+  let count = ref 0 in
+  let i = ref 0 in
+  while !i < n do
+    let c = Char.code (String.unsafe_get s !i) in
+    if c land 0x80 = 0 then (incr count; incr i)
+    else if c land 0xE0 = 0xC0 then (incr count; i := !i + 2)
+    else if c land 0xF0 = 0xE0 then (incr count; i := !i + 3)
+    else if c land 0xF8 = 0xF0 then (incr count; i := !i + 4)
+    else incr i (* continuation byte: skip *)
+  done;
+  !count
+
+
 (*s: function [[Mstring.catenate_sep]] *)
 let catenate_sep sep =
   function 

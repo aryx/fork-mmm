@@ -1,6 +1,6 @@
 val debug : bool ref
 
-type code = | JIS | EUC | SJIS | ISO8859 | Binary | Unknown
+type code = | JIS | EUC | SJIS | ISO8859 | UTF8 | Binary | Unknown
 
 val encode_table : (string * code) list
 
@@ -15,6 +15,7 @@ type decoder =
   | DecoderEUC
   | DecoderSJIS
   | DecoderISO8859
+  | DecoderUTF8
 
 type read_type = bytes -> int -> int -> int
 
@@ -42,6 +43,7 @@ val change_to_jis : japanese_config -> unit
 val change_to_sjis : japanese_config -> unit
 val change_to_euc : japanese_config -> unit
 val change_to_iso8859 : japanese_config -> unit
+val change_to_utf8 : japanese_config -> unit
 val change_to_autodetect : japanese_config -> unit
 
 val create_read_native : read_type -> read_i18n

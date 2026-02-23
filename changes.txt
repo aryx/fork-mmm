@@ -1,9 +1,10 @@
 # -*- org -*-
 
-* 0.42 (Q1 2026) (resume with 4.14.2, https, dune, Dockerfile/GHA, semgrep, caps)
+* 0.42 (Q1 2026) (resume with 4.14.2, https, utf8, dune, Dockerfile/GHA, semgrep, caps)
 
 ** Features
 - support for https:// protocol (using OCaml bindings to openssl)
+- basic support for utf8 instead of the old latin1 encoding
 
 ** build infra
 - resume compilation of mmm with OCaml 4.14, fixed many unused

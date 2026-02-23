@@ -51,6 +51,12 @@ let mk_end lexbuf lexdata =
 let mk_loc lexbuf lexdata =
   Loc (mk_start lexbuf lexdata, mk_end lexbuf lexdata)
 (*e: helper functions [[Lexhtml.xxx]] *)
+
+let numeric_entity_to_utf8 code =
+  try
+    let n = int_of_string code in
+    if n > 0x10FFFF then " " else Html.utf8_of_codepoint n
+  with Failure _ -> " "
 }
 
 (*s: function [[Lexhtml.html]] *)
@@ -208,13 +214,10 @@ and text = parse
 
 (*s: function [[Lexhtml.ampersand]] *)
 and ampersand = parse
-| '#' ['0'-'9']+ ';' 
+| '#' ['0'-'9']+ ';'
     { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-        let code = String.sub lexeme 1 (String.length lexeme - 2) in
-        try 
-          String.make 1 (Char.chr (int_of_string code))
-        with (* #350 ... *) Invalid_argument _ -> " "
+        numeric_entity_to_utf8 (String.sub lexeme 1 (String.length lexeme - 2))
       )}
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
     { (fun _lexdata ->
@@ -230,10 +233,7 @@ and ampersand = parse
 | '#' ['0'-'9']+
     { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-        let code = String.sub lexeme 1 (String.length lexeme - 1) in
-        try 
-          String.make 1 (Char.chr (int_of_string code))
-        with Invalid_argument _ -> " "
+        numeric_entity_to_utf8 (String.sub lexeme 1 (String.length lexeme - 1))
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
     { (fun _lexdata ->

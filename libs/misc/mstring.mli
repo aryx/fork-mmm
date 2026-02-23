@@ -29,6 +29,8 @@ val egensym : string -> unit -> string
 val rem_trailing_sp : string -> string
 (*e: signature [[Mstring.rem_trailing_sp]] *)
 
+val utf8_length : string -> int
+
 (*s: signature [[Mstring.catenate_sep]] *)
 val catenate_sep : string -> string list -> string
 (*e: signature [[Mstring.catenate_sep]] *)
