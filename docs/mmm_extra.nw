@@ -1115,6 +1115,8 @@ let update_idletasks_backend =
 
 <<signature [[Mstring.rem_trailing_sp]]>>
 
+val utf8_length : string -> int
+
 <<signature [[Mstring.catenate_sep]]>>
 
 <<signature [[Mstring.norm_crlf]]>>
@@ -1139,6 +1141,24 @@ let update_idletasks_backend =
 <<function [[Mstring.egensym]]>>
 
 <<function [[Mstring.rem_trailing_sp]]>>
+
+
+(* Count Unicode codepoints in a UTF-8 encoded string.
+ * Unlike String.length (bytes) this matches Tk's CharOffset counting. *)
+let utf8_length s =
+  let n = String.length s in
+  let count = ref 0 in
+  let i = ref 0 in
+  while !i < n do
+    let c = Char.code (String.unsafe_get s !i) in
+    if c land 0x80 = 0 then (incr count; incr i)
+    else if c land 0xE0 = 0xC0 then (incr count; i := !i + 2)
+    else if c land 0xF0 = 0xE0 then (incr count; i := !i + 3)
+    else if c land 0xF8 = 0xF0 then (incr count; i := !i + 4)
+    else incr i (* continuation byte: skip *)
+  done;
+  !count
+
 
 <<function [[Mstring.catenate_sep]]>>
 
@@ -1990,6 +2010,9 @@ val issp : string -> bool
 
 <<signature [[Html.get_entity]]>>
 
+val utf8_of_codepoint : int -> string
+  (* [utf8_of_codepoint 233] returns the UTF-8 encoding of U+00E9 *)
+
 <<signature [[Html.get_attribute]]>>
 
 <<signature [[Html.has_attribute]]>>
@@ -2061,6 +2084,30 @@ open Printf
   
 <<constant [[Html.ampersand_table]]>>
 
+(* Encode a Unicode codepoint as a UTF-8 string *)
+let utf8_of_codepoint n =
+  if n < 0x80 then
+    String.make 1 (Char.chr n)
+  else if n < 0x800 then begin
+    let b = Bytes.create 2 in
+    Bytes.set b 0 (Char.chr (0xC0 lor (n lsr 6)));
+    Bytes.set b 1 (Char.chr (0x80 lor (n land 0x3F)));
+    Bytes.to_string b
+  end else if n < 0x10000 then begin
+    let b = Bytes.create 3 in
+    Bytes.set b 0 (Char.chr (0xE0 lor (n lsr 12)));
+    Bytes.set b 1 (Char.chr (0x80 lor ((n lsr 6) land 0x3F)));
+    Bytes.set b 2 (Char.chr (0x80 lor (n land 0x3F)));
+    Bytes.to_string b
+  end else if n < 0x110000 then begin
+    let b = Bytes.create 4 in
+    Bytes.set b 0 (Char.chr (0xF0 lor (n lsr 18)));
+    Bytes.set b 1 (Char.chr (0x80 lor ((n lsr 12) land 0x3F)));
+    Bytes.set b 2 (Char.chr (0x80 lor ((n lsr 6) land 0x3F)));
+    Bytes.set b 3 (Char.chr (0x80 lor (n land 0x3F)));
+    Bytes.to_string b
+  end else " "
+
 <<constant [[Html.latin1_normal]]>>
 
 <<function [[Html.init]]>>
@@ -2110,6 +2157,12 @@ open Html
 <<type [[Lexhtml.warnings]]>>
 
 <<helper functions [[Lexhtml.xxx]]>>
+
+let numeric_entity_to_utf8 code =
+  try
+    let n = int_of_string code in
+    if n > 0x10FFFF then " " else Html.utf8_of_codepoint n
+  with Failure _ -> " "
 }
 
 <<function [[Lexhtml.html]]>>

@@ -4158,13 +4158,10 @@ and cdata = parse
 
 <<function [[Lexhtml.ampersand]]>>=
 and ampersand = parse
-| '#' ['0'-'9']+ ';' 
+| '#' ['0'-'9']+ ';'
     { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-        let code = String.sub lexeme 1 (String.length lexeme - 2) in
-        try 
-          String.make 1 (Char.chr (int_of_string code))
-        with (* #350 ... *) Invalid_argument _ -> " "
+        numeric_entity_to_utf8 (String.sub lexeme 1 (String.length lexeme - 2))
       )}
 | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* ';'
     { (fun _lexdata ->
@@ -4180,10 +4177,7 @@ and ampersand = parse
 | '#' ['0'-'9']+
     { (fun _lexdata ->
         let lexeme = Lexing.lexeme lexbuf in
-        let code = String.sub lexeme 1 (String.length lexeme - 1) in
-        try 
-          String.make 1 (Char.chr (int_of_string code))
-        with Invalid_argument _ -> " "
+        numeric_entity_to_utf8 (String.sub lexeme 1 (String.length lexeme - 1))
       )}
  | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
     { (fun _lexdata ->
@@ -4224,12 +4218,12 @@ let get_entity = Hashtbl.find ampersand_table
 
 
 <<constant [[Html.ampersand_table]]>>=
-(* 
- * HTML encoding of ISO-latin1 characters
+(*
+ * HTML named character entities, values encoded as UTF-8
  *  cf Appendix B - Proposed Entities
  *)
 
-let ampersand_table = 
+let ampersand_table =
   (Hashtbl.create 101: (string , string) Hashtbl.t)
 @
 
@@ -4250,13 +4244,13 @@ val init : string -> unit
 
 <<function [[Html.init]]>>=
 let init _lang =
-  latin1_normal |> List.iter (fun (str, c) -> 
-    Hashtbl.add ampersand_table str c) 
+  named_entities |> List.iter (fun (str, c) ->
+    Hashtbl.add ampersand_table str c)
 @
 %  (* (if japan then latin1_japan else latin1_normal)  *)
 
 <<constant [[Html.latin1_normal]]>>=
-let latin1_normal = [
+let named_entities = [
   "amp", 	"&";
   "gt", 	">";
   "lt" , 	"<";
@@ -8505,7 +8499,12 @@ let put_text s =
   match String.length s with
     0 -> ()
   | l ->
-      position := !position + Lexkanji.length s;
+      (* old: was Lexkanji.length but we needed to update the code to
+       * handle Utf8 characters. Tk 8.x assumes utf8 characters so
+       * if we compute here the position wrong, Tk would then highlight
+       * anchors at the wrong position.
+       *)
+      position := !position + Mstring.utf8_length s;
       prev_is_newline := false;
       Ebuffer.output_string buffer s;
   trailing_space := s.[l-1] = ' ';
@@ -13701,102 +13700,105 @@ method set_i18n_encoder enc = i18n_encoder <- enc
 
 
 <<[[latin1_normal]] elements>>=
-"nbsp", 	"\160"; (* non-breaking space *)
-"iexcl",	"\161"; (* inverted exclamation mark *)
-"cent", 	"\162"; (* cent sign*)
-"pound",	"\163"; (* pound sterling sign*)
-"curren",	"\164"; (* general currency sign*)
-"yen",	"\165"; (* yen sign*)
-"brvbar",	"\166"; (* broken (vertical) bar *)
-"sect",	"\167"; (* section sign *)
-"uml",	"\168"; (* umlaut (dieresis) *)
-"copy",	"\169"; (* copyright sign *)
-"ordf",	"\170"; (* ordinal indicator, feminine *)
-"laquo",	"\171"; (* angle quotation mark, left *)
-"not",	"\172"; (* not sign *)
-"shy",	"\173"; (* soft hyphen *)
-"reg",	"\174"; (* registered sign *)
-"macr",	"\175"; (* macron *)
-"deg",	"\176"; (* degree sign *)
-"plusmn",	"\177"; (* plus-or-minus sign *)
-"sup2",	"\178"; (* superscript two *)
-"sup3",	"\179"; (* superscript three *)
-"acute",	"\180"; (* acute accent *)
-"micro",	"\181"; (* micro sign *)
-"para",	"\182"; (* pilcrow (paragraph sign) *)
-"middot",	"\183"; (* middle dot *)
-"cedil",	"\184"; (* cedilla *)
-"sup1",	"\185"; (* superscript one *)
-"ordm",	"\186"; (* ordinal indicator, masculine *)
-"raquo",	"\187"; (* angle quotation mark, right *)
-"frac14",	"\188"; (*  fraction one-quarter *)
-"frac12",	"\189"; (*  fraction one-half *)
-"frac34",	"\190"; (*  fraction three-quarters *)
-"iquest",	"\191"; (*  inverted question mark *)
-"Agrave", 	"\192";	(*  capital A, grave accent *)
-"Aacute", 	"\193";	(*  capital A, acute accent *)
-"Acirc", 	"\194";	(*  capital A, circumflex accent *)
-"Atilde", 	"\195";	(*  capital A, tilde *)
-"Auml", 	"\196";	(*  capital A, dieresis or umlaut mark *)
-"Aring", 	"\197";	(*  capital A, ring *)
-"AElig", 	"\198";	(*  capital AE diphthong (ligature) *)
-"Ccedil", 	"\199";	(*  capital C, cedilla *)
-"Egrave", 	"\200";	(*  capital E, grave accent *)
-"Eacute", 	"\201";	(*  capital E, acute accent *)
-"Ecirc", 	"\202";	(*  capital E, circumflex accent *)
-"Euml", 	"\203";	(*  capital E, dieresis or umlaut mark *)
-"Igrave", 	"\204";	(*  capital I, grave accent *)
-"Iacute", 	"\205";	(*  capital I, acute accent *)
-"Icirc", 	"\206";	(*  capital I, circumflex accent *)
-"Iuml", 	"\207";	(*  capital I, dieresis or umlaut mark *)
-"ETH", 	"\208";	(* capital Eth, Icelandic *)
-"Ntilde", 	"\209";	(*  capital N, tilde *)
-"Ograve", 	"\210";	(*  capital O, grave accent *)
-"Oacute", 	"\211";	(*  capital O, acute accent *)
-"Ocirc", 	"\212";	(*  capital O, circumflex accent *)
-"Otilde", 	"\213";	(*  capital O, tilde *)
-"Ouml", 	"\214";	(*  capital O, dieresis or umlaut mark *)
-"times",	"\215"; (*  multiply sign*)
-"Oslash", 	"\216";	(*  capital O, slash *)
-"Ugrave", 	"\217";	(*  capital U, grave accent *)
-"Uacute", 	"\218";	(*  capital U, acute accent *)
-"Ucirc", 	"\219";	(*  capital U, circumflex accent *)
-"Uuml", 	"\220";	(*  capital U, dieresis or umlaut mark *)
-"Yacute",	"\221"; (*  capital Y, acute accent *)
-"THORN", 	"\222";	(*  capital THORN, Icelandic *)
-"szlig", 	"\223";	(*  small sharp s, German (sz ligature) *)
-"agrave", 	"\224";	(*  small a, grave accent *)
-"aacute", 	"\225";	(*  small a, acute accent *)
-"acirc", 	"\226";	(*  small a, circumflex accent *)
-"atilde", 	"\227";	(*  small a, tilde *)
-"auml", 	"\228";	(*  small a, dieresis or umlaut mark *)
-"aring", 	"\229";	(*  small a, ring *)
-"aelig", 	"\230";	(*  small ae diphthong (ligature) *)
-"ccedil", 	"\231";	(*  small c, cedilla *)
-"egrave", 	"\232";	(*  small e, grave accent *)
-"eacute", 	"\233";	(*  small e, acute accent *)
-"ecirc", 	"\234";	(*  small e, circumflex accent *)
-"euml", 	"\235";	(*  small e, dieresis or umlaut mark *)
-"igrave", 	"\236";	(*  small i, grave accent *)
-"iacute", 	"\237";	(*  small i, acute accent *)
-"icirc", 	"\238";	(*  small i, circumflex accent *)
-"iuml", 	"\239";	(*  small i, dieresis or umlaut mark *)
-"eth", 	"\240";	(* small th, Icelandic *)
-"ntilde", 	"\241";	(*  small n, tilde *)
-"ograve", 	"\242";	(*  small o, grave accent *)
-"oacute", 	"\243";	(*  small o, acute accent *)
-"ocirc", 	"\244";	(*  small o, circumflex accent *)
-"otilde", 	"\245";	(*  small o, tilde *)
-"ouml", 	"\246";	(*  small o, dieresis or umlaut mark *)
-"divide",	"\247"; (*  divide sign *)
-"oslash", 	"\248";	(*  small o, slash *)
-"ugrave", 	"\249";	(*  small u, grave accent *)
-"uacute", 	"\250";	(*  small u, acute accent *)
-"ucirc", 	"\251";	(*  small u, circumflex accent *)
-"uuml", 	"\252";	(*  small u, dieresis or umlaut mark *)
-"yacute", 	"\253";	(*  small y, acute accent *)
-"thorn", 	"\254";	(*  small thorn, Icelandic *)
-"yuml", 	"\255" 	(*  small y, dieresis or umlaut mark *)
+(* old: we were generating single-byte latin1 encoding of the special
+ * symbols but better to generated instead UTF8 chars as Tk assumes UTF8
+ *)
+"nbsp", 	"\194\160"; (* U+00A0 non-breaking space *)
+"iexcl",	"\194\161"; (* U+00A1 inverted exclamation mark *)
+"cent", 	"\194\162"; (* U+00A2 cent sign*)
+"pound",	"\194\163"; (* U+00A3 pound sterling sign*)
+"curren",	"\194\164"; (* U+00A4 general currency sign*)
+"yen",	"\194\165"; (* U+00A5 yen sign*)
+"brvbar",	"\194\166"; (* U+00A6 broken (vertical) bar *)
+"sect",	"\194\167"; (* U+00A7 section sign *)
+"uml",	"\194\168"; (* U+00A8 umlaut (dieresis) *)
+"copy",	"\194\169"; (* U+00A9 copyright sign *)
+"ordf",	"\194\170"; (* U+00AA ordinal indicator, feminine *)
+"laquo",	"\194\171"; (* U+00AB angle quotation mark, left *)
+"not",	"\194\172"; (* U+00AC not sign *)
+"shy",	"\194\173"; (* U+00AD soft hyphen *)
+"reg",	"\194\174"; (* U+00AE registered sign *)
+"macr",	"\194\175"; (* U+00AF macron *)
+"deg",	"\194\176"; (* U+00B0 degree sign *)
+"plusmn",	"\194\177"; (* U+00B1 plus-or-minus sign *)
+"sup2",	"\194\178"; (* U+00B2 superscript two *)
+"sup3",	"\194\179"; (* U+00B3 superscript three *)
+"acute",	"\194\180"; (* U+00B4 acute accent *)
+"micro",	"\194\181"; (* U+00B5 micro sign *)
+"para",	"\194\182"; (* U+00B6 pilcrow (paragraph sign) *)
+"middot",	"\194\183"; (* U+00B7 middle dot *)
+"cedil",	"\194\184"; (* U+00B8 cedilla *)
+"sup1",	"\194\185"; (* U+00B9 superscript one *)
+"ordm",	"\194\186"; (* U+00BA ordinal indicator, masculine *)
+"raquo",	"\194\187"; (* U+00BB angle quotation mark, right *)
+"frac14",	"\194\188"; (* U+00BC fraction one-quarter *)
+"frac12",	"\194\189"; (* U+00BD fraction one-half *)
+"frac34",	"\194\190"; (* U+00BE fraction three-quarters *)
+"iquest",	"\194\191"; (* U+00BF inverted question mark *)
+"Agrave", 	"\195\128"; (* U+00C0 capital A, grave accent *)
+"Aacute", 	"\195\129"; (* U+00C1 capital A, acute accent *)
+"Acirc", 	"\195\130"; (* U+00C2 capital A, circumflex accent *)
+"Atilde", 	"\195\131"; (* U+00C3 capital A, tilde *)
+"Auml", 	"\195\132"; (* U+00C4 capital A, dieresis or umlaut mark *)
+"Aring", 	"\195\133"; (* U+00C5 capital A, ring *)
+"AElig", 	"\195\134"; (* U+00C6 capital AE diphthong (ligature) *)
+"Ccedil", 	"\195\135"; (* U+00C7 capital C, cedilla *)
+"Egrave", 	"\195\136"; (* U+00C8 capital E, grave accent *)
+"Eacute", 	"\195\137"; (* U+00C9 capital E, acute accent *)
+"Ecirc", 	"\195\138"; (* U+00CA capital E, circumflex accent *)
+"Euml", 	"\195\139"; (* U+00CB capital E, dieresis or umlaut mark *)
+"Igrave", 	"\195\140"; (* U+00CC capital I, grave accent *)
+"Iacute", 	"\195\141"; (* U+00CD capital I, acute accent *)
+"Icirc", 	"\195\142"; (* U+00CE capital I, circumflex accent *)
+"Iuml", 	"\195\143"; (* U+00CF capital I, dieresis or umlaut mark *)
+"ETH", 	"\195\144"; (* U+00D0 capital Eth, Icelandic *)
+"Ntilde", 	"\195\145"; (* U+00D1 capital N, tilde *)
+"Ograve", 	"\195\146"; (* U+00D2 capital O, grave accent *)
+"Oacute", 	"\195\147"; (* U+00D3 capital O, acute accent *)
+"Ocirc", 	"\195\148"; (* U+00D4 capital O, circumflex accent *)
+"Otilde", 	"\195\149"; (* U+00D5 capital O, tilde *)
+"Ouml", 	"\195\150"; (* U+00D6 capital O, dieresis or umlaut mark *)
+"times",	"\195\151"; (* U+00D7 multiply sign*)
+"Oslash", 	"\195\152"; (* U+00D8 capital O, slash *)
+"Ugrave", 	"\195\153"; (* U+00D9 capital U, grave accent *)
+"Uacute", 	"\195\154"; (* U+00DA capital U, acute accent *)
+"Ucirc", 	"\195\155"; (* U+00DB capital U, circumflex accent *)
+"Uuml", 	"\195\156"; (* U+00DC capital U, dieresis or umlaut mark *)
+"Yacute",	"\195\157"; (* U+00DD capital Y, acute accent *)
+"THORN", 	"\195\158"; (* U+00DE capital THORN, Icelandic *)
+"szlig", 	"\195\159"; (* U+00DF small sharp s, German (sz ligature) *)
+"agrave", 	"\195\160"; (* U+00E0 small a, grave accent *)
+"aacute", 	"\195\161"; (* U+00E1 small a, acute accent *)
+"acirc", 	"\195\162"; (* U+00E2 small a, circumflex accent *)
+"atilde", 	"\195\163"; (* U+00E3 small a, tilde *)
+"auml", 	"\195\164"; (* U+00E4 small a, dieresis or umlaut mark *)
+"aring", 	"\195\165"; (* U+00E5 small a, ring *)
+"aelig", 	"\195\166"; (* U+00E6 small ae diphthong (ligature) *)
+"ccedil", 	"\195\167"; (* U+00E7 small c, cedilla *)
+"egrave", 	"\195\168"; (* U+00E8 small e, grave accent *)
+"eacute", 	"\195\169"; (* U+00E9 small e, acute accent *)
+"ecirc", 	"\195\170"; (* U+00EA small e, circumflex accent *)
+"euml", 	"\195\171"; (* U+00EB small e, dieresis or umlaut mark *)
+"igrave", 	"\195\172"; (* U+00EC small i, grave accent *)
+"iacute", 	"\195\173"; (* U+00ED small i, acute accent *)
+"icirc", 	"\195\174"; (* U+00EE small i, circumflex accent *)
+"iuml", 	"\195\175"; (* U+00EF small i, dieresis or umlaut mark *)
+"eth", 	"\195\176"; (* U+00F0 small th, Icelandic *)
+"ntilde", 	"\195\177"; (* U+00F1 small n, tilde *)
+"ograve", 	"\195\178"; (* U+00F2 small o, grave accent *)
+"oacute", 	"\195\179"; (* U+00F3 small o, acute accent *)
+"ocirc", 	"\195\180"; (* U+00F4 small o, circumflex accent *)
+"otilde", 	"\195\181"; (* U+00F5 small o, tilde *)
+"ouml", 	"\195\182"; (* U+00F6 small o, dieresis or umlaut mark *)
+"divide",	"\195\183"; (* U+00F7 divide sign *)
+"oslash", 	"\195\184"; (* U+00F8 small o, slash *)
+"ugrave", 	"\195\185"; (* U+00F9 small u, grave accent *)
+"uacute", 	"\195\186"; (* U+00FA small u, acute accent *)
+"ucirc", 	"\195\187"; (* U+00FB small u, circumflex accent *)
+"uuml", 	"\195\188"; (* U+00FC small u, dieresis or umlaut mark *)
+"yacute", 	"\195\189"; (* U+00FD small y, acute accent *)
+"thorn", 	"\195\190"; (* U+00FE small thorn, Icelandic *)
+"yuml", 	"\195\191"  (* U+00FF small y, dieresis or umlaut mark *)
 @
 
 
