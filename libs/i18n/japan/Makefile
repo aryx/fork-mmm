@@ -6,17 +6,9 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-#INCLUDES+=$(TKCOMPFLAGS)
+SRC= japan.ml
 
-SRC= bug.ml \
-     charset.ml wchar.ml wstream.ml \
-     tool.ml \
-     jisx0201.ml \
-     lexkanji.ml \
-     encode.ml \
-     japan.ml
-
-SYSLIBS= str.cma unix.cma 
+SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS=$(TOP)/libs/misc
@@ -44,13 +36,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-lexkanji.ml : lexkanji.mll
-	$(CAMLLEX) lexkanji.mll
-clean::
-	rm -f lexkanji.ml
-beforedepend:: lexkanji.ml
 
 ##############################################################################
 # Literate Programming rules

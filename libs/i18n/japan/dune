@@ -2,9 +2,4 @@
  (public_name mmm.japan)
  (name mmm_japan)
  (wrapped false)
- (libraries
-   mmm.misc
- )
 )
-
-(ocamllex lexkanji)

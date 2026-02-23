@@ -4,7 +4,8 @@
 
 ** Features
 - support for https:// protocol (using OCaml bindings to openssl)
-- basic support for utf8 instead of the old latin1 encoding
+- basic support for utf8 instead of the old latin1 encoding, and remove
+  special support for japanese kanji
 
 ** build infra
 - resume compilation of mmm with OCaml 4.14, fixed many unused
