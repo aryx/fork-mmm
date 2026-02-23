@@ -26,7 +26,7 @@ SRC=main/main.ml
 
 # for the basic browser
 MAINDIRS= \
-  libs/commons libs/misc libs/i18n libs/i18n/japan \
+  libs/commons libs/misc libs/i18n \
   src/globals src/core \
   src/url src/www src/http \
   languages/html \
@@ -140,8 +140,8 @@ mmm.opt:
 	echo TODO
 
 # The standalone HTML syntax checker
-HTMISC=libs/i18n/lang.cmo libs/misc/ebuffer.cmo libs/misc/log.cmo\
-       libs/i18n/japan/lib.cma languages/html/lib.cma
+HTMISC=libs/misc/ebuffer.cmo libs/misc/log.cmo\
+       libs/i18n/lib.cma languages/html/lib.cma
 htparse: $(HTMISC)  main/htparse.cmo
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 

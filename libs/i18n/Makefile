@@ -3,7 +3,7 @@ TOP=../..
 TARGET=lib
 
 # Miscellaneous additional libraries
-SRC= i18nprintf.ml lang.ml i18n.ml
+SRC= i18nprintf.ml lang.ml i18n.ml content_encoding.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=

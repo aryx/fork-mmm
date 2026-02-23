@@ -7,7 +7,7 @@
  (libraries
     camltk
     mmm.commons
-    mmm.japan
+    mmm.i18n
     mmm.www
     mmm.html
     ; mmm.http
