@@ -306,7 +306,7 @@ class  virtual html_parse ((dh : Document.handle)) =
   val mutable size = 
     try Some (Http_headers.contentlength dh.dh_headers)
     with Not_found -> None (* duh *)
-  val mutable feed_read = new Content_encoding.read_i18n (fun _s _o _n -> 0)
+  val mutable feed_read = new Charset.read_i18n (fun _s _o _n -> 0)
 
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
   method lexbuf = lexbuf  
@@ -314,12 +314,12 @@ class  virtual html_parse ((dh : Document.handle)) =
   val mutable lexer = Html_eval.sgml_lexer !Dtd.current
 
   (* Japanese parse configuration *)
-  val jpn_config = Content_encoding.default_config ()
+  val jpn_config = Charset.default_config ()
 
   method parse_init =
     red <- 0;
     feed_read <-
-       Content_encoding.create_read_native self#dh.document_feed.feed_read;
+       Charset.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
     lexer <- Html_eval.sgml_lexer !Dtd.current;
     lexbuf <- 
@@ -502,13 +502,13 @@ class display_html ((top : Widget.widget),
                       Log.f ("MetaCharset detect : " ^ v);
                       begin try
                         let code = 
-                          let code = ref Content_encoding.Unknown in
+                          let code = ref Charset.Unknown in
                           try List.iter (fun (x,c) -> 
                              if Str.string_match (Str.regexp x) v 0 then begin
                                code := c;
                                raise Exit
                              end
-                             ) Content_encoding.encode_table ;
+                             ) Charset.encode_table ;
                              raise Not_found
                           with Exit -> !code
                         in
@@ -569,7 +569,7 @@ class display_html ((top : Widget.widget),
     (* I18n encoder for Forms *)
     (*
     if !Lang.japan then begin
-      mach#set_i18n_encoder (fun s -> Content_encoding.encoder feed_read#get_code s)
+      mach#set_i18n_encoder (fun s -> Charset.encoder feed_read#get_code s)
     end;
     *)
     (*e: [[Htmlw.display_html]] i18 encoder for forms *)

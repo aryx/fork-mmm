@@ -12,7 +12,7 @@ val view:
   (unit -> unit) ->
   (Html.location * string) list ref ->
   (Tk.textTag * Html.location) list ref -> 
-  Content_encoding.detected_code ->
+  Charset.detected_code ->
   unit
 (*e: signature [[Source.view]] *)
 (*e: display/source.mli *)
