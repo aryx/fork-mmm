@@ -379,11 +379,12 @@ let fd_of_doc doc =
 
 (*s: function [[Cache.make_handle]] *)
 let make_handle wwwr doc =
+  let fd = fd_of_doc doc in
   { document_id = { document_url = wwwr.www_url; document_stamp = no_stamp};
     document_referer = wwwr.www_link.h_context;
     document_status = 200;
     dh_headers = doc.document_headers;
-    document_feed = Feed.of_fd (fd_of_doc doc);
+    document_feed = Feed.make_feed fd (Low.count_read (Unix.read fd));
     document_fragment = wwwr.www_fragment;
     document_logger = tty_logger}
 (*e: function [[Cache.make_handle]] *)
@@ -393,11 +394,12 @@ let make_handle wwwr doc =
 let renew_handle dh =
   let did = dh.document_id in
   let doc = find did in
+  let fd = fd_of_doc doc in
   { document_id = dh.document_id;
     document_referer = dh.document_referer;
     document_status = dh.document_status;
     dh_headers = doc.document_headers;
-    document_feed = Feed.of_fd (fd_of_doc doc);
+    document_feed = Feed.make_feed fd (Low.count_read (Unix.read fd));
     document_fragment = dh.document_fragment;
     document_logger = dh.document_logger}
 (*e: function [[Cache.renew_handle]] *)
@@ -423,7 +425,7 @@ let make_embed_handle doc =
      document_referer = None;
      document_status = 200;
      dh_headers = doc.document_headers;
-     document_feed = Feed.of_fd fd;
+     document_feed = Feed.make_feed fd (Low.count_read (Unix.read fd));
      document_fragment = None;
      document_logger = tty_logger}
 (*e: function [[Cache.make_embed_handle]] *)

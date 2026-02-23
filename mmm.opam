@@ -13,6 +13,7 @@ depends: [
   "ppx_deriving"
   "camlp-streams"
   "conf-tk"
+  "ssl"
   "odoc" {with-doc}
 ]
 build: [

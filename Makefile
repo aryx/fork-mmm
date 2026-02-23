@@ -45,6 +45,8 @@ INCLUDEDIRS=$(MAINDIRS) $(GRAPHICSDIR)
 #sandbox/gen crcs
 LIBS=$(MAINDIRS:%=%/lib.cma)
 
+SSLDIR=$(shell ocamlfind query ssl)
+
 # use dynlink for the applet system
 SYSLIBS=unix.cma str.cma  dynlink.cma
 TKLIBS=$(WITH_TK) $(WITH_FRX) $(WITH_JPF) $(WITH_TKANIM) $(WITH_JTK) $(WITH_TK80)
@@ -118,7 +120,7 @@ MAIN=main/main.cmo
 #CRCS= crcs/crcs.cmo crcs/crcsmmm.cmo 
 mmm: $(OBJS) $(CRCS) $(SAFE) $(MAIN)
 	$(OCAMLC) -linkall -custom -ccopt "-L/opt/X11/lib" -o $@ $(LINKFLAGS) \
-         $(SYSLIBS) $(TKLIBS) $^
+         $(SYSLIBS) $(TKLIBS) -I $(SSLDIR) $(SSLDIR)/ssl.cma $^
 # use -linkall for plugins to be included like plain.ml
 
 # The native version does not support applets !

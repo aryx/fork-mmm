@@ -5,7 +5,7 @@
  (name mmm_url)
  (wrapped false)
  (libraries
-    mmm.misc
+    mmm.commons mmm.misc
  )
  (preprocess (pps ppx_deriving.show))
 )

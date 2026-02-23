@@ -1,11 +1,13 @@
 (*s: www/lexurl.mll *)
 {
+open Common
 open Mlist
 open Url
 
 (*s: function [[Lexurl.normalize_port]] *)
 let normalize_port = function
   | HTTP, Some 80 -> None
+  | HTTPS, Some 443 -> None
   | FTP, Some 21 -> None
   (* incomplete, but we don't care yet *)
   | _, p -> p
@@ -37,13 +39,19 @@ rule f = parse
         String.uppercase_ascii (String.sub lexeme 0 (String.length lexeme - 1)) in
       (match protocol with
       (*s: [[Lexurl.f]] protocol cases *)
-      | "HTTP" ->
+      | "HTTP" | "HTTPS" ->
           slashslash lexbuf;
           let h, po = hostport lexbuf in
           let pa, se = pathsearch lexbuf in
-          result.protocol <- HTTP;
+          let proto = 
+            match protocol with 
+            | "HTTP" -> HTTP
+            | "HTTPS" -> HTTPS
+            | _ -> raise (Impossible "see match cases above")
+          in
+          result.protocol <- proto;
           result.host <- h;
-          result.port <- normalize_port (HTTP, po);
+          result.port <- normalize_port (proto, po);
           result.path <- pa;
           result.search <- se
       (*x: [[Lexurl.f]] protocol cases *)

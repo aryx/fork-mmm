@@ -1,4 +1,5 @@
 (*s: http/http.ml *)
+open Common
 open I18n
 
 (*****************************************************************************)
@@ -28,6 +29,13 @@ let proxy_port = ref 80
 (*s: constant [[Http.verbose]] *)
 let verbose = ref false
 (*e: constant [[Http.verbose]] *)
+
+let () = Ssl.init ()
+let ssl_ctx =
+  let ctx = Ssl.create_context Ssl.TLSv1_2 Ssl.Client_context in
+  Ssl.set_min_protocol_version ctx Ssl.TLSv1_2;
+  ctx
+
 
 (*****************************************************************************)
 (* Types *)
@@ -60,6 +68,7 @@ class cnx (sock, finish) =
   (* val finish = finish *)
   val mutable fdclosed = false		(* protect against double close *)
   val mutable aborted = false
+  val mutable ssl_sock : Ssl.socket option = None
 
   method fd = 
     fd
@@ -67,11 +76,29 @@ class cnx (sock, finish) =
     aborted
   method set_fd newfd = 
     fd <- newfd
-  method set_status s = 
+  method set_status s =
     status <- s
+  method ssl_socket = ssl_sock
+  method set_ssl s = ssl_sock <- Some s
+
+  method write (buf : bytes) pos len =
+    match ssl_sock with
+    | None   -> Unix.write fd buf pos len
+    | Some s -> Ssl.write s buf pos len
+
+  method read (buf : bytes) pos len =
+    match ssl_sock with
+    | None   -> Low.read fd buf pos len
+    | Some s -> Low.count_read (fun buf offs l ->
+        try Ssl.read s buf offs l
+        with Ssl.Read_error _ -> 0 (* treat all SSL read errors as EOF *)
+      ) buf pos len
 
   method close =
     if not fdclosed then begin
+      (match ssl_sock with
+       | None -> ()
+       | Some s -> (try Ssl.shutdown s with _ -> ()));
       Unix.close fd;
       fdclosed <- true
     end
@@ -104,7 +131,7 @@ end
 (* Open a TCP connection, asynchronously (except for DNS).
    We pass the continuation *)
 (* req | proxy_req -> request | proxy_request -> <> *)
-let tcp_connect (caps : < Cap.network; ..>)
+let tcp_connect ?(is_https = false) (caps : < Cap.network; ..>)
     (server_name : string) (port : int) logf contf errorf =
 
   (*  Find the inet address *)
@@ -128,6 +155,21 @@ let tcp_connect (caps : < Cap.network; ..>)
   Unix.set_nonblock sock; (* set to non-blocking *)
   let cnx = new cnx (sock, errorf "User abort") in
   logf (s_ "Contacting host...");
+  let ssl_handshake_and_continue cnx =
+    if is_https then
+      (try
+        let s = Ssl.embed_socket cnx#fd ssl_ctx in
+        Ssl.set_client_SNI_hostname s server_name;
+        Ssl.connect s;
+        cnx#set_ssl s;
+        contf cnx
+      with exn ->
+        cnx#close;
+        errorf (s_ "SSL handshake failed with %s: %s" server_name
+                    (Printexc.to_string exn)) false)
+    else
+      contf cnx
+  in
   try
     begin try
       CapUnix.connect caps sock (ADDR_INET(server_addr, port));
@@ -137,9 +179,9 @@ let tcp_connect (caps : < Cap.network; ..>)
       Logs.debug (fun m -> m "Connect returned without error !");
 
       (* because we need to return cnx *)
-      Timer_.set 10 (fun () -> 
+      Timer_.set 10 (fun () ->
         (* ! calling the continuation, e.g. start_request *)
-        contf cnx
+        ssl_handshake_and_continue cnx
       );
       cnx
     with Unix.Unix_error((EINPROGRESS | EWOULDBLOCK | EAGAIN), "connect", _) -> 
@@ -155,7 +197,7 @@ let tcp_connect (caps : < Cap.network; ..>)
            begin try (* But has there been a cnx actually *)
              let _ = Unix.getpeername sock in
              logf (s_ "connection established");
-             contf cnx
+             ssl_handshake_and_continue cnx
            with Unix.Unix_error(ENOTCONN, "getpeername", _) ->
              cnx#close;
              errorf (s_ "Connection refused to %s" server_name) false
@@ -347,8 +389,8 @@ exception End_of_headers
 (*e: exception [[Http.End_of_headers]] *)
 
 (*s: function [[Http.read_headers]] *)
-let read_headers fd previous =
-  let l = Low.read_line fd in
+let read_headers read_fn previous =
+  let l = Low.read_line_fn read_fn in
    if String.length l = 0 
    then raise End_of_headers (* end of headers *)
    else 
@@ -379,7 +421,7 @@ let process_response (wwwr : Www.request) (cont : Document.continuation) =
 
       document_status = 0;
       dh_headers = [];
-      document_feed = Feed.of_fd cnx#fd;
+      document_feed = Feed.make_feed cnx#fd cnx#read;
 
       document_logger = Document.tty_logger;
     }
@@ -416,11 +458,11 @@ let process_response (wwwr : Www.request) (cont : Document.continuation) =
        try
          if dh.dh_headers = [] then begin
            (* it should be the HTTP Status-Line *)
-           let l = Low.read_line cnx#fd in
+           let l = Low.read_line_fn cnx#read in
            dh.document_status <- (Http_headers.parse_status l).status_code;
            dh.dh_headers <- [l] (* keep it there *)
-         end else 
-            dh.dh_headers <- read_headers cnx#fd dh.dh_headers
+         end else
+            dh.dh_headers <- read_headers cnx#read dh.dh_headers
        with
        (* each branch must unschedule *)
        (*s: [[Http.process_response()]] feed schedule callback failure cases *)
@@ -485,7 +527,7 @@ let async_request (proxy_mode : bool) (wwwr : Www.request) cont (cnx : cnx) =
   let curpos = ref 0 in
   wwwr.www_logging (s_ "Writing request...");
   Fileevent_.add_fileoutput cnx#fd (fun _ ->
-    let n = Unix.write cnx#fd (Bytes.of_string req) !curpos (len - !curpos) in (* blocking ? *)
+    let n = cnx#write (Bytes.of_string req) !curpos (len - !curpos) in (* blocking ? *)
     curpos := !curpos  + n;
     if !curpos = len then begin
       Fileevent_.remove_fileoutput cnx#fd;
@@ -532,7 +574,7 @@ let request (caps : < Cap.network; ..>)
   (*e: [[Http.request()]] if always proxy *)
   else 
     let urlp = wr.www_url in
-    if urlp.protocol = HTTP 
+    if urlp.protocol = HTTP || urlp.protocol = HTTPS
     then
       let host = 
         match urlp.host with
@@ -542,10 +584,16 @@ let request (caps : < Cap.network; ..>)
       let port =  
         match urlp.port with
         | Some p -> p
-        | None -> 80  (* default http port *)
+        | None -> 
+          (match urlp.protocol with
+          | HTTP -> 80  (* default http port *)
+          | HTTPS -> 443
+          | _ -> raise (Impossible "can only have HTTP or HTTPS here")
+          )
       in 
-      try 
-        tcp_connect caps host port wr.www_logging
+      let is_https = urlp.protocol = HTTPS in
+      try
+        tcp_connect ~is_https caps host port wr.www_logging
             (fun cnx -> start_request false wr cont  cnx)
             (fun s aborted -> failed_request wr cont.document_finish s aborted)
 

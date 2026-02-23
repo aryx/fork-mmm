@@ -19,7 +19,8 @@ type t = {
 
 (*s: function [[Feed.of_fd]] *)
 (* We should distinguish internal/external connections *)
-let of_fd (fd : Unix.file_descr) : t =
+let make_feed (fd : Unix.file_descr) (do_read : bytes -> int -> int -> int) : t =
+
   let is_open = ref true in
   let action = ref None in
   let condition = Condition.create() in
@@ -28,8 +29,8 @@ let of_fd (fd : Unix.file_descr) : t =
   (* ASSUMES: this is the first read on the fileevent *)
   let safe_read (buf : bytes) (offs : int) (len : int) : int =
     first_read := false;
-    if !is_open 
-    then Low.read fd buf offs len 
+    if !is_open
+    then do_read buf offs len
     else 0
   in
 
@@ -118,7 +119,7 @@ let of_fd (fd : Unix.file_descr) : t =
 (*e: function [[Feed.of_fd]] *)
  
 (*s: function [[Feed.internal]] *)
-let internal (feed : t) : internal = 
+let internal (feed : t) : internal =
   feed.feed_internal
 (*e: function [[Feed.internal]] *)
 (*e: commons/feed.ml *)

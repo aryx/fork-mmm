@@ -148,7 +148,7 @@ let fake_cgi wwwr cont path =
                 document_referer = wwwr.www_link.h_context;
                 document_status = 0;
                 dh_headers = [];
-                document_feed = Feed.of_fd cmd_in;
+                document_feed = Feed.make_feed cmd_in (Low.count_read (Unix.read cmd_in));
                 document_fragment = wwwr.www_fragment;
                 document_logger = Document.tty_logger} 
       in
@@ -163,7 +163,7 @@ let fake_cgi wwwr cont path =
             end
           else 
             dh.dh_headers <- 
-              read_headers cmd_in dh.dh_headers
+              read_headers (Low.read cmd_in) dh.dh_headers
           with
            | End_of_headers ->
                dh.document_feed.feed_unschedule();
@@ -256,8 +256,8 @@ let request wr cont =
               document_referer = wr.www_link.h_context;
               document_status = 304;
               dh_headers = [ sprintf "Date: %s" (Date.asc_now())];
-              document_feed = 
-                Feed.of_fd (openfile "/dev/null" [O_RDONLY] 0);
+              document_feed = (let fd = openfile "/dev/null" [O_RDONLY] 0 in
+                Feed.make_feed fd (Low.count_read (Unix.read fd)));
               document_fragment = wr.www_fragment;
               document_logger = Document.tty_logger
             } in
@@ -284,7 +284,7 @@ let request wr cont =
                  sprintf "Date: %s" (Date.asc_now());
                  sprintf "Last-modified: %s" (Date.asc st.st_mtime)
                 ];
-              document_feed = Feed.of_fd s;
+              document_feed = Feed.make_feed s (Low.count_read (Unix.read s));
               document_fragment = wr.www_fragment;
               document_logger = Document.tty_logger
             } in
@@ -299,7 +299,7 @@ let request wr cont =
             document_referer = wr.www_link.h_context;
             document_status = 200;
             dh_headers = ["Content-Type: text/html"];
-            document_feed = Feed.of_fd s;
+            document_feed = Feed.make_feed s (Low.count_read (Unix.read s));
             document_fragment = wr.www_fragment;
             document_logger = Document.tty_logger
            };

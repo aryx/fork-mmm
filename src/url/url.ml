@@ -2,7 +2,7 @@
 
 (*s: type [[Url.protocol]] *)
 type protocol =
- | HTTP 
+ | HTTP | HTTPS
  | FILE | FTP
  | MAILTO | NNTP
  | GOPHER | NEWS | WAIS | PROSPERO
@@ -11,8 +11,9 @@ type protocol =
 (*e: type [[Url.protocol]] *)
 (*s: function [[Url.string_of_protocol]] *)
 let string_of_protocol = function
-   FTP -> "ftp"
+ | FTP -> "ftp"
  | HTTP -> "http"
+ | HTTPS -> "https"
  | GOPHER -> "gopher"
  | MAILTO -> "mailto"
  | NEWS -> "news"
@@ -51,7 +52,7 @@ exception Url_Lexing of string * int
 (*e: exception [[Url.Invalid_url]] *)
 
 (*s: function [[Url.string_of]] *)
-let string_of p =
+let string_of (p : t) : string =
   let buf = Ebuffer.create 128 in
   let ws x = Ebuffer.output_string buf x in
   let wc x = Ebuffer.output_char buf x in
@@ -99,6 +100,8 @@ let string_of p =
       ws "ftp://"; write_userpass (); write_hostport 21; write_slashpath ()
   | HTTP ->
       ws "http://"; write_hostport 80; write_pathsearch ()
+  | HTTPS ->
+      ws "https://"; write_hostport 443; write_pathsearch ()
   | GOPHER ->
       ws "gopher://"; write_hostport 70; write_slashpath ()
   | MAILTO -> ws "mailto:"; write_path()

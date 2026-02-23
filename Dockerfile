@@ -13,6 +13,7 @@ RUN apt-get install -y build-essential autoconf automake pkgconf
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 RUN apt-get install -y tk-dev tcl-dev libx11-dev 
+RUN apt-get install -y libssl-dev
 
 # Setup OPAM and OCaml
 RUN apt-get install -y opam

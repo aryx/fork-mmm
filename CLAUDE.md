@@ -66,7 +66,9 @@ After `make`, the binaries are: `./mmm`, `./htparse`, `./mmm_remote`.
 
 **dune library names**: Each subdirectory builds a library with a `mmm.*` public name (e.g., `mmm.commons`, `mmm.www`, `mmm.html`, `mmm.retrieve`, `mmm.tk`, `mmm.gui`).
 
-**Literate programming markers**: Source files use `(*s: ... *)` / `(*e: ... *)` / `(*x: ... *)` annotations — these are syncweb (literate programming tool) markers. Do not remove them.
+**Literate programming markers**: Source files use `(*s: ... *)` / `(*e: ... *)` / `(*x: ... *)` annotations — these are syncweb (literate programming tool) markers. Do not remove them. And when adding code, do not try to generate
+them as this will confuse the syncweb tool. Just leave the existing comments
+with markers as is, and also do not reindent them.
 
 ## Semgrep / Cap rules
 

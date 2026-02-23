@@ -10,8 +10,8 @@ exception End_of_headers
  *    raises End_of_file
  *    raises Invalid_HTTP_header
  *)
-val read_headers: 
-  Unix.file_descr -> string list -> string list
+val read_headers:
+  (bytes -> int -> int -> int) -> string list -> string list
 (*e: signature [[Http.read_headers]] *)
 
 (*s: exception [[Http.HTTP_error]] *)

@@ -1,6 +1,8 @@
 (*s: commons/low.mli *)
 
 (*s: signature [[Low.read]] *)
+val count_read : (bytes -> int -> int -> int) -> bytes -> int -> int -> int
+  (* wraps any read function with tachymeter byte accounting *)
 val read : Unix.file_descr -> bytes -> int -> int -> int
   (* Unix.read wrapper, to be used when data transferred has to
      be counted by the tachymeter
@@ -8,6 +10,7 @@ val read : Unix.file_descr -> bytes -> int -> int -> int
 (*e: signature [[Low.read]] *)
 
 val read_line: Unix.file_descr -> string
+val read_line_fn : (bytes -> int -> int -> int) -> string
 
 (*s: signature [[Low.fork]] *)
 val fork : unit -> int

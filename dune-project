@@ -15,6 +15,7 @@
   ppx_deriving
   camlp-streams
   conf-tk
+  ssl
   ;NO: (labltk), we use the vendored more basic camltk in external/
 ))
 

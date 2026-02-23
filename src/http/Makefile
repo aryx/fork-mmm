@@ -1,10 +1,6 @@
 TOP=../..
-##############################################################################
-# Variables
-##############################################################################
-TARGET=lib
 
--include $(TOP)/Makefile.config
+TARGET=lib
 
 SRC= base64.ml lexdate.ml http_headers.ml \
      lexheaders.ml auth.ml \
@@ -14,19 +10,15 @@ SRC= base64.ml lexdate.ml http_headers.ml \
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
+SSLDIR=$(shell ocamlfind query ssl)
+
 INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n \
-   $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www $(TOP)/src/globals
-SYSINCLUDES=
+   $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www $(TOP)/src/globals \
+   $(SSLDIR)
 
-##############################################################################
-# Generic variables
-##############################################################################
-
+-include $(TOP)/Makefile.config
 -include $(TOP)/Makefile.common
 
-##############################################################################
-# Top rules
-##############################################################################
 all:: $(TARGET).cma
 all.opt:: $(TARGET).cmxa
 

@@ -5,6 +5,7 @@
  (libraries
     mmm.commons
     mmm.core mmm.globals mmm.www
+    ssl
  )
  (preprocess (pps ppx_deriving.show))
 )

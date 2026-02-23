@@ -18,7 +18,7 @@ type t = {
 (*e: type [[Feed.t]] *)
 
 (*s: signature [[Feed.of_fd]] *)
-val of_fd : Unix.file_descr -> t
+val make_feed : Unix.file_descr -> (bytes -> int -> int -> int) -> t
 (*e: signature [[Feed.of_fd]] *)
 (*s: signature [[Feed.internal]] *)
 val internal : t -> internal

@@ -33,31 +33,35 @@ let sample_read = ref 0
 (*e: global [[Low.sample_read]] *)
 
 (*s: function [[Low.read]] *)
-let read fd buf offs l =
-  let n = Unix.read fd buf offs l in
-    bytes_read := !bytes_read + n;
-    sample_read := !sample_read + n;
-    n
+let count_read read_fn buf offs l =
+  let n = read_fn buf offs l in
+  bytes_read := !bytes_read + n;
+  sample_read := !sample_read + n;
+  n
+
+let read fd = count_read (Unix.read fd)
 (*e: function [[Low.read]] *)
 
 (*
  * Read a line (terminated by \n or \r\n).
  *   strips terminator !
  *)
-let read_line fd =
+let read_line_fn (read_fn : bytes -> int -> int -> int) =
   let rec read_rec (buf : bytes) bufsize offs =
-    let n = read fd buf offs 1 in
+    let n = read_fn buf offs 1 in
       if n = 0 then raise End_of_file
       else if Bytes.get buf offs = '\n'
            then (* strips \n and possibly \r  *)
-             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1 
+             let len = if offs >= 1 && Bytes.get buf (offs-1) = '\r' then offs-1
                        else offs in
                Bytes.sub_string buf 0 len
            else let offs = succ offs in
-                  if offs = bufsize 
+                  if offs = bufsize
                   then read_rec (Bytes.cat buf (Bytes.create 128)) (bufsize + 128) offs
                   else read_rec buf bufsize offs in
-  read_rec (Bytes.create 128) 128 0 
+  read_rec (Bytes.create 128) 128 0
+
+let read_line fd = read_line_fn (read fd) 
 
 
 (*s: global [[Low.pending_read]] *)

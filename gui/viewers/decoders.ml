@@ -37,7 +37,7 @@ let gzip dh =
       let newdh =
        { dh with 
          dh_headers = rem_contentencoding dh.dh_headers;
-         document_feed = Feed.of_fd mread;
+         document_feed = Feed.make_feed mread (Low.count_read (Unix.read mread));
        }
       in
       let buffer = Bytes.create 4096 in

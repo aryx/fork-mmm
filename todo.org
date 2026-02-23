@@ -1,7 +1,7 @@
 * Big plan
 
 ** TODO changes.txt
-https
+unicode
 applets
 
 ** Overview
@@ -14,12 +14,9 @@ especially css and javascript (and dom)!
 
 "just need a Javascript interpreter and TLS library"
 
-
 *** incorporate mothra/abaco/libhtml/webfs ideas?
 
-
 *** incorporate my pfff/semgrep html/css/js parsers?
-
 
 *** css
 
@@ -115,6 +112,28 @@ should use the referer path to generate the right urls
 
 * Later
 
+** stuff in regular browser
+
+*** CSS
+
+*** Javascript
+
+*** M-+ to enlarge the font
+
+*** Tabs
+
+*** Canvas (part of JS)
+just redirect to cairo?
+
+*** SVG
+
+** stuff not in current browser
+
+*** expose for tabs!
+actually Safari has this now?
+
+*** save full history!
+
 ** gtk/cairo prototype
 #make a mimimal version, no menus, just rendering of an url?
 
@@ -130,26 +149,6 @@ try to have format/ independent of tk and display?
 htmlfmt.mli, html_form. html_table, attrs?
 
 *** less: try to make class polymorphic? have 'widget at more places?
-
-** stuff in regular browser
-
-*** CSS
-
-*** Javascript
-
-*** M-+ to enlarge the font
-
-*** Tabs
-
-*** Canvas (part of JS)
-just redirect to cairo?
-
-** stuff not in current browser
-
-*** expose for tabs!
-actually Safari has this now?
-
-*** save full history!
 
 ** misc
 

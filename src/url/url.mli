@@ -1,7 +1,7 @@
 (*s: www/url.mli *)
 (*s: type [[Url.protocol]] *)
 type protocol =
- | HTTP 
+ | HTTP | HTTPS
  | FILE | FTP
  | MAILTO | NNTP
  | GOPHER | NEWS | WAIS | PROSPERO
