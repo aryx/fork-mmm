@@ -9,22 +9,18 @@
 (*                                                                     *)
 (***********************************************************************)
 
-open Tk
-open Dload
-open Viewers
-
-type applet_callback = Widget.widget -> context -> unit
+type applet_callback = Widget.widget -> Viewers.context -> unit
 
 (* Oups. This is defined in Dload *)
 let register name cb = 
-  if !in_load then Dload.register name cb
+  if !Dload.in_load then Dload.register name cb
 
 (* [error frame errmsg] reports an Error in applet evaluation (that is,
    in evaluation of entry points, since callbacks are on a different 
    thread of control). [frame] is the applet frame. *)
 let error frame msg =
   let t = I18n.sprintf "Applet Error: %s" msg in
-  pack[Label.create frame [Text t]][]
+  Tk.pack[Label.create frame [Text t]][]
 
 (* [call table frame context]
    calls the main entry point of an applet
@@ -42,7 +38,7 @@ let call table frame ctx =
   try
     let foo = Hashtbl.find table fname in
     (* destroy the alt window of the frame*)
-    List.iter destroy (Winfo.children frame);
+    List.iter Tk.destroy (Winfo.children frame);
     try 
       Printexc.print (foo frame) ctx
     with

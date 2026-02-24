@@ -1,13 +1,3 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
 
 (* The type of entry point functions registered by the applet *)
 type applet_callback = Widget.widget -> Viewers.context -> unit

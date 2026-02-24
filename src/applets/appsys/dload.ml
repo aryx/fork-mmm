@@ -8,13 +8,8 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+open Common
 open Fpath_.Operators
-
-open Printf
-open Tk
-open Mstring
-open Document
-open Viewers
 
 let paranoid = ref true  (* selects default capabilities *)
 
@@ -47,7 +42,7 @@ let dynlinkerror = function
  
 
 (* The type of entry point functions registered by the applet *)
-type applet_callback = Widget.widget -> context -> unit
+type applet_callback = Widget.widget -> Viewers.context -> unit
 
 (* The "foreign" module fake cache : what we keep in memory *)
 type t = {
@@ -181,7 +176,7 @@ let load_local (file : string) =
   end
 
 (* Low-level loading of a foreign bytecode stored in a tmp file *)
-let unsafe_load doc file =
+let unsafe_load (doc : Document.t) file =
   if !in_load then Error.f (I18n.sprintf "Already loading a module")
   else begin
     in_load := true;
@@ -221,7 +216,7 @@ let unsafe_load doc file =
       
 
 let ask url =
-  0 = Frx_dialog.f Widget.default_toplevel (gensym "accept")
+  0 = Frx_dialog.f Widget.default_toplevel (Mstring.gensym "accept")
        "MMM Question"
        (I18n.sprintf  "Unsigned bytecode file %s" (Url.string_of url))
        (Predefined "question") 1
@@ -246,7 +241,7 @@ type applet_kind =
   | Source
 
 (* may raise Invalid_HTTP_header e *)
-let applet_kind doc file =
+let applet_kind (doc : Document.t) file =
   let kind () =
     (* TODO: pass caps *)
     let ic = open_in file
@@ -280,7 +275,7 @@ let applet_kind doc file =
       failwith "dontkeep"
 
 (* Load a foreign bytecode *)
-let load doc =
+let load (doc : Document.t) =
   let url = doc.document_address in
   Logs.info (fun m -> m "dynamic loading doc %s" (Url.string_of url));
   (* do we have it already loaded ? TODO: check last modified *)
@@ -306,7 +301,7 @@ let load doc =
 	Source ->
 	  (* the mmmc script is part of the distribution *)
 	  let byt = Msys.mktemp "apcode" in
-	  let cmd = sprintf "mmmc %s %s" !!file byt in
+	  let cmd = spf "mmmc %s %s" !!file byt in
 	  begin match Sys.command cmd with
 	    0 -> 
 	      unsafe_load doc byt; 

@@ -1,19 +1,5 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
 
-
-open Document
-open Viewers
-
-type applet_callback = Widget.widget -> context -> unit
+type applet_callback = Widget.widget -> Viewers.context -> unit
 
 val register : string -> applet_callback -> unit
 

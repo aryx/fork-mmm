@@ -1,11 +1,3 @@
-open Tk
-open Unix
-open Document
-open Viewers
-open Feed
-open Dload
-open Applets
-open Http_headers
 
 (* was in viewers.mli
 class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
@@ -27,7 +19,7 @@ end
 
 class trivial_display (w, url) =
  object
-  inherit display_info ()
+  inherit Viewers.display_info ()
   (* val w = w *)
   (* val url = url *)
 
@@ -64,24 +56,24 @@ end
  *)
 let is_update this_headers loaded_headers =
   try
-    let this_date = get_header "date" this_headers
-    and loaded_date = get_header "date" loaded_headers in
+    let this_date = Http_headers.get_header "date" this_headers
+    and loaded_date = Http_headers.get_header "date" loaded_headers in
      this_date <> loaded_date
   with
     Not_found ->  (* no date means update *)
       true
 
-let applet_viewer _parms frame ctx doc =
+let applet_viewer _parms frame ctx (doc : Document.t) =
   let url = doc.document_address in
   let invoke frame ftable =
     (* we need another level of frame where to bind the update event *)
     let f = Frame.create frame [Class "Caml"] in
-    pack [f][Expand true; Fill Fill_Both];
+    Tk.pack [f][Expand true; Fill Fill_Both];
     (* if we are asked to update, do it *)
     let caps = Cap.network_caps_UNSAFE () in
     Frx_synth.bind f "update"
       (fun _ -> Embed.update caps frame ctx doc (fun () -> ()));
-    call ftable f ctx
+    Applets.call ftable f ctx
   in
   try
     (* If the bytecode is loaded, run the thing; else fail *)
@@ -91,13 +83,13 @@ let applet_viewer _parms frame ctx doc =
 	  Dload.remove url;
 	  raise Not_found
 	end else
-	error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
+	Applets.error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
     | Unavailable old ->
 	if is_update doc.document_headers old then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else
-	  error frame (I18n.sprintf "%s is not available" (Url.string_of url));
+	  Applets.error frame (I18n.sprintf "%s is not available" (Url.string_of url));
     | Loaded cmo ->
 	if is_update doc.document_headers cmo.module_info then begin
 	  Dload.remove url;
@@ -123,7 +115,7 @@ let applet_viewer _parms frame ctx doc =
    If the bytecode has been alread loaded, don't do anything.
    Else, proceed to load it (no entry point available !).
  *)
-let code_viewer _parms frame ctx dh =
+let code_viewer _parms frame ctx (dh : Document.handle) =
   let url = dh.document_id.document_url in
   try
     match Dload.get url with
@@ -132,7 +124,7 @@ let code_viewer _parms frame ctx dh =
 	  Dload.remove url;
 	  raise Not_found
 	end else begin
-	  dclose true dh;
+	  Document.dclose true dh;
 	  Error.f (I18n.sprintf "%s was rejected" (Url.string_of url));
 	  None
 	end
@@ -141,7 +133,7 @@ let code_viewer _parms frame ctx dh =
 	  Dload.remove url;
 	  raise Not_found
 	end else begin
-	  dclose true dh;
+	  Document.dclose true dh;
 	  Error.f (I18n.sprintf "%s is not available" (Url.string_of url));
 	  None
 	end
@@ -150,10 +142,10 @@ let code_viewer _parms frame ctx dh =
 	  Dload.remove url;
 	  raise Not_found
 	end else begin
-	  dclose true dh;
+	  Document.dclose true dh;
 	  let f = Frame.create frame [] in
-	  pack [f][Expand true; Fill Fill_Both];
-	  call cmo.module_functions f ctx;
+	  Tk.pack [f][Expand true; Fill Fill_Both];
+	  Applets.call cmo.module_functions f ctx;
 	  Some (new trivial_display (f, url))
 	end
   with
@@ -161,7 +153,7 @@ let code_viewer _parms frame ctx dh =
       let f = Frame.create frame [] in
       (* Otherwise, queue it, and if it's the first request for this applet,
 	 save the code and loadit when finished *)
-      if Dload.add_pending_applet url (fun ftable -> call ftable f ctx)
+      if Dload.add_pending_applet url (fun ftable -> Applets.call ftable f ctx)
       then begin
       	let fname = Msys.mktemp "bytc"
       	and buffer = Bytes.create 2048 in
@@ -171,9 +163,9 @@ let code_viewer _parms frame ctx dh =
             try
               let n = dh.document_feed.feed_read buffer 0 2048 in
               if n = 0 then begin
-              	dclose true dh;
+              	Document.dclose true dh;
               	close_out oc;
-		let doc = { document_address = dh.document_id.document_url;
+		let doc = Document.{ document_address = dh.document_id.document_url;
 			     document_data = FileData(Fpath.v fname,true);
 			     document_headers = dh.dh_headers} in
 		Cache.add dh.document_id doc;
@@ -182,8 +174,8 @@ let code_viewer _parms frame ctx dh =
               end else
 		output oc buffer 0 n
             with
-              Unix_error(_,_,_) ->
-              	dclose true dh;
+              Unix.Unix_error(_,_,_) ->
+              	Document.dclose true dh;
 	      	close_out oc;
 	      	Msys.rm fname;
 	      	Error.f (I18n.sprintf "Error during loading of bytecode")

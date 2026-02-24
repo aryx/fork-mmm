@@ -10,9 +10,7 @@
 (***********************************************************************)
 
 (* A PGP decoder *)
-open Msys
-open Mstring
-open Tk
+
 (* 
    decoding goes as follows:
     pgp -f +batchmode < signed > unsigned 2> log
@@ -58,7 +56,7 @@ let batch_pgp signed clear pgplog  =
 
 
 let check url signed_file =
- let clear_file = mktemp "clear" in
+ let clear_file = Msys.mktemp "clear" in
    let rec attempt () =
      let (lin, lout) = Unix.pipe() in
        match Low.fork() with
@@ -74,7 +72,7 @@ let check url signed_file =
 	  match st with
 	      WEXITED n -> 
 	         begin match
-		  Frx_dialog.f Widget.default_toplevel (gensym "pgp")
+		  Frx_dialog.f Widget.default_toplevel (Mstring.gensym "pgp")
 		    "PGP Authentification" 
       	       	    (I18n.sprintf "PGP diagnostic for %s\n%s" url res)
 		    (Predefined "question")

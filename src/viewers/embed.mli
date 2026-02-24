@@ -2,11 +2,13 @@
 module EmbeddedScheduler : Scheduler.S with
   type shared_data = Document.t
 
+type viewer = 
+  Http_headers.media_parameter list -> 
+  Widget.widget -> Viewers.context -> Document.t -> unit
+
 (*s: signature [[Embed.add_viewer]] *)
 val add_viewer : 
-  Http_headers.media_type -> 
-  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
-    Document.t -> unit) -> unit
+  Http_headers.media_type -> viewer -> unit
 (*e: signature [[Embed.add_viewer]] *)
 
 (*s: signature [[Embed.rem_viewer]] *)

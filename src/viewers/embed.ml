@@ -69,6 +69,10 @@ module EmbeddedScheduler = Scheduler.Make (EmbeddedData)
 (*s: constant [[Embed.embedded_viewers]] *)
 (* Embedded viewers *)
 
+type viewer = 
+  Http_headers.media_parameter list -> 
+  Widget.widget -> Viewers.context -> Document.t -> unit
+
 let embedded_viewers = Hashtbl.create 11
 
 (*e: constant [[Embed.embedded_viewers]] *)

@@ -1,10 +1,15 @@
-wrong indentation at many places
-
 lots of nested functions, lots of very long functions
 
-use of exceptions for regular flow
+use of exceptions for regular flow (but true that Not_found
+ in a browser context is useful for headers logic)
 
 lots of objects where simple records would work
 
 lots of curry and partial app that makes the code harder to understand
- (I prefer to eta expand)
+ (I prefer to eta expand, but true that continuation-style encourage
+ partial applications)
+
+lots of open (but using records was more annoying in old OCaml
+without type-directed disambiguation of fields) 
+
+wrong indentation at many places
