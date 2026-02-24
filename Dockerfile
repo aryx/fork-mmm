@@ -30,10 +30,13 @@ RUN ./configure
 # Now let's build from source
 COPY . .
 
-RUN eval $(opam env) && make depend
-
 # ocamltk
 RUN eval $(opam env) && cd external/ocamltk && ./configure --with-config=./site.config && make && make opt && make install
+
+# we now need to compile first ocamltk before make depend as we use ln
+# to files on camltk for the applet system
+RUN eval $(opam env) && make depend
+
 
 # mmm
 RUN eval $(opam env) && make

@@ -65,7 +65,7 @@ let load_initial_modules () =
   with
   | Not_found (* Sys.getenv *) ->
       prerr_endline "Please specify the HOME environment variable";
-      exit (-1)
+      raise (Exit.ExitCode (-1))
   | Unix.Unix_error (e, fname, arg) ->
       Error.f (I18n.sprintf
 		 "Error during loading of initial modules\n%s: %s %s"

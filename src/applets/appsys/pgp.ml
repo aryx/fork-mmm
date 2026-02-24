@@ -54,7 +54,7 @@ let batch_pgp signed clear pgplog  =
     Unix.Unix_error(e, _, _) ->
       Printf.eprintf "%s\n" (Unix.error_message e);
       flush Stdlib.stderr;
-      exit 1
+      raise (Exit.ExitCode 1)
 
 
 let check url signed_file =

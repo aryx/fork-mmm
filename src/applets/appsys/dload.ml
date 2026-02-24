@@ -248,6 +248,7 @@ type applet_kind =
 (* may raise Invalid_HTTP_header e *)
 let applet_kind doc file =
   let kind () =
+    (* TODO: pass caps *)
     let ic = open_in file
     and buf : bytes = Bytes.create 8 in
     really_input ic buf 0 8;

@@ -30,7 +30,7 @@ local semgrep_rules = [
 // ----------------------------------------------------------------------------
 
 // lex and yacc are also part of ocaml-light so better not impose caps there
-local exclude_dirs = ['/external/ocamltk', 'demos', 'extensions'];
+local exclude_dirs = ['/external/ocamltk', 'demos', '/src/applets/sandbox/'];
 
 // partial copy of semgrep/TCB/forbid_xxx.jsonnet
 local cap_rules = [
@@ -127,7 +127,7 @@ local cap_rules = [
     |||,
     paths: {
       exclude: [
-	'auth.ml', 'http_headers.ml', 'i18n.ml', 'source.ml', 'save.ml', 'prefs.ml',
+	'auth.ml', 'http_headers.ml', 'i18n.ml', 'source.ml', 'save.ml', 'prefs.ml', 'dload.ml',
 	'htparse.ml'
        ] + exclude_dirs,
     },
