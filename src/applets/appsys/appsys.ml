@@ -71,16 +71,19 @@ let load_initial_modules () =
 let init initialp =
   Logs.info (fun m -> m "Loading applet system");
   (* Dynamic linking init : both common applets and specific applets *)
-  (* old: Dynlink.init();
-  Dynlink.add_available_units Crcs.crc_unit_list;
-  Dynlink.add_available_units Crcsmmm.crc_unit_list;
-  TODO: use instead Dynlink.set_allowed_units
+  (* old: but modern OCaml does not need anymore to use this old API
+   *  Dynlink.init();
+   *  Dynlink.add_available_units Crcs.crc_unit_list;
+   *  Dynlink.add_available_units Crcsmmm.crc_unit_list;
   *)
-  (*Dynlink.set_allowed_units ["Safe418"]; *)
-(* pad: TODO, infer using `ocamlc -where`
-  Dynlink.add_interfaces ["Pervasives"; "Unix"] 
-    ["/opt/local/lib/ocaml"];
-*)
+  (* TODO: use instead Dynlink.set_allowed_units ? 
+   * TODO: allow_only does not seem to work :(
+   *)
+  Dynlink.allow_only ["Safe419"];
+ (* old? needed? pad: TODO, infer using `ocamlc -where`
+     Dynlink.add_interfaces ["Pervasives"; "Unix"] 
+      ["/opt/local/lib/ocaml"];
+  *)
 
   (* Load local applets *)
   if initialp then load_initial_modules();
