@@ -1,5 +1,8 @@
 (*s: gui/prefs.ml *)
 (* Preferences *)
+
+open Fpath_.Operators
+
 open I18n
 open Tk
 open Mstring
@@ -314,13 +317,13 @@ let option_handlers mapping read_internal write_internal =
 module PrefMap = Map.Make(struct type t = string let compare = compare end)
 
 (*s: function [[Prefs.load_file]] *)
-let load_file f =
+let load_file (f : Fpath.t) =
   (* It just loads the file as resource *)
   try
-    Tkresource.readfile f Interactive
+    Tkresource.readfile !!f Interactive
   with
     Protocol.TkError _ -> 
-      failwith (s_ "Can't open preference file: %s" f)
+      failwith (s_ "Can't open preference file: %s" !!f)
 (*e: function [[Prefs.load_file]] *)
 (*s: function [[Prefs.save_file]] *)
 let save_file prefmaps f =
@@ -402,7 +405,8 @@ let family top title preff =
 (*s: function [[Prefs.init]] *)
 (* This is the startup *)
 
-let rec init filename status interactive mute =
+let rec init (filename : Fpath.t ref) status interactive 
+    (mute : (unit -> unit) list) =
   let top = Toplevel.create_named Widget.default_toplevel "prefs" 
                  [Class "MMMPrefs"] in
    Wm.title_set top (s_ "MMM Preferences");
@@ -429,7 +433,7 @@ let rec init filename status interactive mute =
   pack [hgroup] [Side Side_Top; Fill Fill_Both; Expand true];
   pack [buttonsf] [Side Side_Bottom];
 
-  Textvariable.set preffilev !filename;	(* for the file selector *)
+  Textvariable.set preffilev (!! !filename);	(* for the file selector *)
 
   (* We must load the file because some elements of the panel depend
      on resources defined in this file *)
@@ -438,9 +442,8 @@ let rec init filename status interactive mute =
     with Failure s -> pref_error s
   end;
 
-
   (* Then we must do the mute stuff *)
-    List.iter (fun f -> f()) mute;
+  mute |> List.iter (fun f -> f());
 
   (* Then we can build the families *)
   let families = List.map (fun f -> f hgroup) interactive in
@@ -449,7 +452,8 @@ let rec init filename status interactive mute =
   List.iter (fun f -> f.family_load ()) families;
 
   let reset () =
-    destroy top; status := None;
+    destroy top; 
+    status := None;
     init filename status interactive mute
   in
 
@@ -462,7 +466,7 @@ let rec init filename status interactive mute =
             may affect the displayed menus *)
           if Sys.file_exists s then begin
             destroy top;
-            filename := s;
+            filename := Fpath.v s;
             init filename status interactive mute
           end
           else
@@ -481,7 +485,7 @@ let rec init filename status interactive mute =
       [] -> ()
         | [s] ->
         Textvariable.set preffilev s;
-        filename := s;
+        filename := Fpath.v s;
        begin
               try 
         save_file (List.map (fun f -> f.family_save()) families) s;
@@ -559,13 +563,14 @@ let rec init filename status interactive mute =
 
 (*s: function [[Prefs.define]] *)
 (* Define a preference panel *)
-let define filename interactive mute =
+let define (filename : Fpath.t) interactive mute =
   let inited = ref None 
   and current_file = ref filename in
   (function () -> 
     match !inited with
-      Some w -> Wm.deiconify w
+    | Some w -> Wm.deiconify w
     | None -> (* we have been destroyed ! *)
-    init current_file inited interactive mute)
+      init current_file inited interactive mute
+   )
 (*e: function [[Prefs.define]] *)
 (*e: gui/prefs.ml *)

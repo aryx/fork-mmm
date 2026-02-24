@@ -1,3 +1,10 @@
+/confdefs.h
+/config.cache
+/config.status
+/Makefile.camltk
+/Makefile.config
+/tkanim/ext/Makefile
+
 /compiler/lexer.ml
 /compiler/parser.ml
 /compiler/parser.mli

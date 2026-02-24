@@ -20,3 +20,4 @@ let f frame ctx =
     Not_found -> failwith "Navigation not available"
 
 let _ = Applets.register "f" f
+let _ = Applets.register "main" f

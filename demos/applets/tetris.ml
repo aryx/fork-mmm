@@ -621,8 +621,8 @@ let f fw ctx =
            (fun url image ->
 	     match image with
 	       Still (ImagePhoto img) ->
-		 let w = Imagephoto.width img
-		 and h = Imagephoto.height img in
+		 let _w = Imagephoto.width img
+		 and _h = Imagephoto.height img in
 		 Canvas.configure_image canvas i [ImagePhoto img]
 	     | _ -> failwith "I need an ImagePhoto")
    in
@@ -757,3 +757,5 @@ let f fw ctx =
     game_init ()
 
 let _ = Applets.register "Game" f  
+
+let _ = Applets.register "main" f

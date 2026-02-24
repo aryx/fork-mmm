@@ -32,9 +32,7 @@ MAINDIRS= \
   languages/html \
   src/protocols src/retrieve \
   src/tk src/viewers src/display src/chrome \
-  src/applets/appsys
-
-#  sandbox \
+  src/applets/appsys src/applets/sandbox
 
 # for clean: target
 MOREDIRS=demos/applets demos/sboard

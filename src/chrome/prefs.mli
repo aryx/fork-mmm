@@ -98,7 +98,7 @@ val resource_name : string -> string
 
 (*s: signature [[Prefs.define]] *)
 val define :
-    string ->
+    Fpath.t ->
     (Widget.widget -> pref_family) list -> (unit -> unit) list -> unit -> unit
     (* [define filename pref_builders pref_mute]
        returns a function that displays the preference panel

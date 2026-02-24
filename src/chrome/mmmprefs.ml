@@ -264,7 +264,8 @@ let families = [ network; html; i18n; images; progs; cache; applets;
 (*e: constant [[Mmmprefs.families]] *)
 
 (*s: function [[Mmmprefs.f]] *)
+(* main -> Mmm.initial_navigator -> <> *)
 let f (preffile : Fpath.t) = 
-  Prefs.define !!preffile families mute
+  Prefs.define preffile families mute
 (*e: function [[Mmmprefs.f]] *)
 (*e: gui/mmmprefs.ml *)

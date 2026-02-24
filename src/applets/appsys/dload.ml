@@ -144,7 +144,8 @@ let flush_pending_applets url ftable =
 let in_load = ref false
 
 (* Loading of local extensions *)
-let load_local file = 
+let load_local (file : string) = 
+  Logs.info (fun m -> m "loading %s" file);
   if !in_load then Error.f (I18n.sprintf "Already loading a module")
   else begin
    in_load := true;
@@ -280,6 +281,7 @@ let applet_kind doc file =
 (* Load a foreign bytecode *)
 let load doc =
   let url = doc.document_address in
+  Logs.info (fun m -> m "dynamic loading doc %s" (Url.string_of url));
   (* do we have it already loaded ? TODO: check last modified *)
   try
     ignore (Hashtbl.find mod_cache url) (* then forget it *)

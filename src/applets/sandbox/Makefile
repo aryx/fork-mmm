@@ -9,6 +9,8 @@ TARGET=lib
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
+OBJS=gen/safe418.cmo gen/safe418mmm.cmo
+
 INCLUDEDIRS= \
  $(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n \
  $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www \

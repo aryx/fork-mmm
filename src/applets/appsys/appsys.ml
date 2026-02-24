@@ -79,10 +79,12 @@ let init initialp =
   Dynlink.add_available_units Crcsmmm.crc_unit_list;
   TODO: use instead Dynlink.set_allowed_units
   *)
+  (*Dynlink.set_allowed_units ["Safe418"]; *)
 (* pad: TODO, infer using `ocamlc -where`
   Dynlink.add_interfaces ["Pervasives"; "Unix"] 
     ["/opt/local/lib/ocaml"];
 *)
+
   (* Load local applets *)
   if initialp then load_initial_modules();
   Mmmprefs.plug_applets applets_pref

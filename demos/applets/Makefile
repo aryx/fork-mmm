@@ -6,15 +6,15 @@ CAMLDEP=ocamldep
 
 TOP=../..
 
-COMPFLAGS= -I $(TOP)/applets/sandbox/gen
+COMPFLAGS= -I $(TOP)/src/applets/sandbox/gen
 
-OBJS=foo.cmo goto.cmo
+OBJS=foo.cmo goto.cmo taquin.cmo tetris.cmo
 
 # cube3d.cmo molecule.cmo \
 #     mondrian.cmo taquin.cmo \
 #     goto.cmo slide.cmo icons.cmo \
 #     morph.cma \
-#     eyes.cmo dancing.cmo japanese.cmo rotimage.cmo tetris.cmo
+#     eyes.cmo dancing.cmo japanese.cmo rotimage.cmo
 
 all: $(OBJS)
 

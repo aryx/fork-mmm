@@ -36,9 +36,7 @@
 #dune
 _build
 
-#external/ocamltk
-/external/ocamltk/confdefs.h
-/external/ocamltk/config.cache
+# see also external/ocamltk/.gitignore
 #external/stdlib/*
 
 /docs/lineage.dot
@@ -68,65 +66,30 @@ _build
 /demos/sboard/surfboard
 /demos/sboard/surfboard_remote
 
+# codegen
+#src/applets/sandbox/gen/*.*
+src/applets/sandbox/gen/safe418.ml
+src/applets/sandbox/gen/safe418.mli
+src/applets/sandbox/gen/safe418mmm.ml
+src/applets/sandbox/gen/safe418mmm.mli
+
+src/applets/sandbox/safefrx.ml
+src/applets/sandbox/safefrx.mli
+src/applets/sandbox/safejtk.ml
+src/applets/sandbox/safejtk.mli
+src/applets/sandbox/safetk.ml
+src/applets/sandbox/safetk.mli
+src/applets/sandbox/safetkanim.ml
+src/applets/sandbox/safetkanim.mli
+
 #Makefile and co
-/external/ocamltk/config.status
 
 #misc
-/safe/crcs.ml.bak
-/safe/crcsmmm.ml.bak
-/safe/crcs.ml
-/safe/crcsmmm.ml
-
-/safe/safe418mmm.ml
-/safe/safe418mmm.mli
-/safe/gen/safe418.ml
-/safe/gen/safe418.mli
-/safe/gen/safe418mmm.ml
-/safe/gen/safe418mmm.mli
-
-/external/ocamltk/Makefile.camltk
-/external/ocamltk/Makefile.config
-/external/ocamltk/tkanim/ext/Makefile
-
-/safe/safe418.ml
-/safe/safe418.mli
-/safe/safefrx.ml
-/safe/safefrx.mli
-/safe/safejtk.ml
-/safe/safejtk.mli
-/safe/safetk.ml
-/safe/safetk.mli
-/safe/safetkanim.ml
-/safe/safetkanim.mli
-
 /ocamldoc.out
 /commons/ocamldoc.out
 /viewers/ocamldoc.out
 
-extensions/sandbox/crcs.ml
-extensions/sandbox/crcs.ml.bak
-extensions/sandbox/crcsmmm.ml
-extensions/sandbox/crcsmmm.ml.bak
-extensions/sandbox/safefrx.ml
-extensions/sandbox/safefrx.mli
-extensions/sandbox/safejtk.ml
-extensions/sandbox/safejtk.mli
-extensions/sandbox/safetk.ml
-extensions/sandbox/safetk.mli
-extensions/sandbox/safetkanim.ml
-extensions/sandbox/safetkanim.mli
-
-/crcs/crcs.ml.bak
-/crcs/crcsmmm.ml.bak
-
 /dependencies.marshall
-extensions/sandbox/gen/*.*
 
 /Browser.pdf
 /graph_code.marshall
-
-/extensions/crcs/crcs.ml.bak
-/extensions/crcs/crcsmmm.ml.bak
-
-
-

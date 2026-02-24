@@ -284,7 +284,8 @@ let viewers : (Http_headers.media_type, spec) Hashtbl.t =
 
 (*s: function [[Viewers.add_viewer]] *)
 (* That's for internal viewers only *)
-let add_viewer ctype viewer =
+let add_viewer ctype (viewer : t) =
+  Logs.info (fun m -> m "adding viewer for %s/%s" (fst ctype) (snd ctype));
   Hashtbl.add viewers ctype (Internal viewer)
 (*e: function [[Viewers.add_viewer]] *)
 
@@ -429,12 +430,20 @@ let builtin_viewers = ref []
 (*e: constant [[Viewers.builtin_viewers]] *)
 (*s: function [[Viewers.add_builtin]] *)
 let add_builtin t v =
+  (* This will not work because add_builtin is usually called
+   * for toplevel vars like let _ = add_builtin ... in plain.ml
+   * at the moment where Logs are not yet enabled
+ Logs.info (fun m -> m "adding builtin viewer for %s/%s"
+          (fst t) (snd t));
+  *)
   builtin_viewers := (t,v) :: !builtin_viewers
 (*e: function [[Viewers.add_builtin]] *)
 
 (*s: function [[Viewers.reset]] *)
-(* ?? -> <> *)
+(* ??? -> <> *)
 let reset () =
+  Logs.info (fun m -> m "resetting viewers");
+
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 

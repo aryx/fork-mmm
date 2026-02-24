@@ -27,8 +27,13 @@
   (like in my other projects such as codemap/efuns/osemgrep)
 - copy commons/ from xix 
 - start to use capabilities (especially Cap.network)
+- restore the applet (and sandbox) system
+
+* -----------------------------------------------------------------------
 
 * beta (Q1 2015) (maintenance)
+
+* -----------------------------------------------------------------------
 
 * alpha (Q1 2011) (fork)
 
@@ -45,3 +50,5 @@
 * 0.417
 
 * Pre 0.417
+
+* -----------------------------------------------------------------------
