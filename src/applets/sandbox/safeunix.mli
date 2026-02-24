@@ -130,11 +130,11 @@ val openfile : string -> open_flag list -> file_perm -> file_descr
            a file descriptor on the named file. *)
 val close : file_descr -> unit
         (* Close a file descriptor. *)
-val read : file_descr -> string -> int -> int -> int
+val read : file_descr -> bytes -> int -> int -> int
         (* [read fd buff ofs len] reads [len] characters from descriptor
            [fd], storing them in string [buff], starting at position [ofs]
            in string [buff]. Return the number of characters actually read. *)
-val write : file_descr -> string -> int -> int -> int
+val write : file_descr -> bytes -> int -> int -> int
         (* [write fd buff ofs len] writes [len] characters to descriptor
            [fd], taking them from string [buff], starting at position [ofs]
            in string [buff]. Return the number of characters actually

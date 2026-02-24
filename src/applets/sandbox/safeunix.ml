@@ -133,10 +133,9 @@ type file_perm = int
         (* The type of file access rights. *)
 
 let openfile fname flags perm =
-  let name = String.copy fname in
-  if ask (FileR name)
-  then {file_descr = openfile name flags perm; fd_status = true}
-  else raise (Unix_error (EACCES, "openfile", name))
+  if ask (FileR fname)
+  then {file_descr = openfile fname flags perm; fd_status = true}
+  else raise (Unix_error (EACCES, "openfile", fname))
 
 let close wfd =
   if wfd.fd_status then begin
@@ -215,10 +214,9 @@ type dir_handle = {
   }
 
 let opendir fname =
-  let name = String.copy fname in
-  if ask (FileR name)
+  if ask (FileR fname)
   then {dir_handle = opendir fname; dh_status = true}
-  else raise (Unix_error (EACCES, "opendir", name))
+  else raise (Unix_error (EACCES, "opendir", fname))
 
 let readdir dh =
   if dh.dh_status then readdir dh.dir_handle

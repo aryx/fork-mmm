@@ -17,15 +17,15 @@ module GetIO(C: sig val capabilities: t end) =
   let ask = ask C.capabilities
   
 type in_channel = {
-  in_channel : Pervasives.in_channel;
+  in_channel : Stdlib.in_channel;
   mutable in_status : bool
   }
 type out_channel = {
-  out_channel : Pervasives.out_channel;
+  out_channel : Stdlib.out_channel;
   mutable out_status : bool
   }
 
-type open_flag = Pervasives.open_flag =
+type open_flag = Stdlib.open_flag =
     Open_rdonly | Open_wronly | Open_append
   | Open_creat | Open_trunc | Open_excl
   | Open_binary | Open_text | Open_nonblock
@@ -35,20 +35,20 @@ let denied () = raise (Sys_error (I18n.sprintf "Permission denied"))
 (* Do *not* give standard channels stdin/stdout/stderr *)
 
 let open_out name =
-  let name = String.copy name in
+
   if ask (FileW name)
   then {out_channel = open_out name; out_status = true}
   else denied()
 
 let open_out_bin name =
-  let name = String.copy name in
+
   if ask (FileW name)
   then {out_channel = open_out_bin name;
       	out_status = true}
   else denied()
 
 let open_out_gen flags mode name =
-  let name = String.copy name in
+
   if ask (FileW name)
   then {out_channel = open_out_gen flags mode name;
       	out_status = true}
@@ -105,19 +105,19 @@ let close_out woc =
 (* General input functions *)
 
 let open_in name =
-  let name = String.copy name in
+
   if ask (FileR name)
   then {in_channel = open_in name; in_status = true}
   else denied()
 
 let open_in_bin name =
-  let name = String.copy name in
+
   if ask (FileR name)
   then {in_channel = open_in_bin name; in_status = true}
   else denied()
 
 let open_in_gen flags mode name =
-  let name = String.copy name in
+
   if ask (FileR name)
   then {in_channel = open_in_gen flags mode name; in_status = true}
   else denied()

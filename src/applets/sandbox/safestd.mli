@@ -122,7 +122,7 @@ external ( >= ) : 'a -> 'a -> bool = "%greaterequal"
            of [(=)], mutable structures are compared by contents.
            Comparison between functional values raises [Invalid_argument].
            Comparison between cyclic structures may not terminate. *)
-external compare : 'a -> 'a -> int = "compare"
+external compare : 'a -> 'a -> int = "caml_compare"
         (* [compare x y] returns [0] if [x=y], a negative integer if
            [x<y], and a positive integer if [x>y]. The same restrictions
            as for [=] apply. [compare] can be used as the comparison function
@@ -230,28 +230,28 @@ external ( *. ) : float -> float -> float = "%mulfloat"
         (* Floating-point multiplication *)
 external ( /. ) : float -> float -> float = "%divfloat"
         (* Floating-point division. *)
-external ( ** ) : float -> float -> float = "power_float" "pow" "float"
+val ( ** ) : float -> float -> float
         (* Exponentiation *)
-external sqrt : float -> float = "sqrt_float" "sqrt" "float"
+val sqrt : float -> float
         (* Square root *)
-external exp : float -> float = "exp_float" "exp" "float"
-external log : float -> float = "log_float" "log" "float"
-external log10 : float -> float = "log10_float" "log10" "float"
+val exp : float -> float
+val log : float -> float
+val log10 : float -> float
         (* Exponential, natural logarithm, base 10 logarithm. *)
-external cos : float -> float = "cos_float" "cos" "float"
-external sin : float -> float = "sin_float" "sin" "float"
-external tan : float -> float = "tan_float" "tan" "float"
-external acos : float -> float = "acos_float" "acos" "float"
-external asin : float -> float = "asin_float" "asin" "float"
-external atan : float -> float = "atan_float" "atan" "float"
-external atan2 : float -> float -> float = "atan2_float" "atan2" "float"
+val cos : float -> float
+val sin : float -> float
+val tan : float -> float
+val acos : float -> float
+val asin : float -> float
+val atan : float -> float
+val atan2 : float -> float -> float
         (* The usual trigonometric functions *)
-external cosh : float -> float = "cosh_float" "cosh" "float"
-external sinh : float -> float = "sinh_float" "sinh" "float"
-external tanh : float -> float = "tanh_float" "tanh" "float"
+val cosh : float -> float
+val sinh : float -> float
+val tanh : float -> float
         (* The usual hyperbolic trigonometric functions *)
-external ceil : float -> float = "ceil_float" "ceil" "float"
-external floor : float -> float = "floor_float" "floor" "float"
+val ceil : float -> float
+val floor : float -> float
         (* Round the given float to an integer value.
            [floor f] returns the greatest integer value less than or
            equal to [f].
@@ -259,19 +259,19 @@ external floor : float -> float = "floor_float" "floor" "float"
            equal to [f]. *)
 external abs_float : float -> float = "%absfloat"
         (* Return the absolute value of the argument. *)
-external mod_float : float -> float -> float = "fmod_float" "fmod" "float"
+val mod_float : float -> float -> float
         (* [mod_float a b] returns the remainder of [a] with respect to
            [b].  The returned value is [a -. n *. b], where [n]
            is the quotient [a /. b] rounded towards zero to an integer. *)
-external frexp : float -> float * int = "frexp_float"
+val frexp : float -> float * int
         (* [frexp f] returns the pair of the significant
            and the exponent of [f].  When [f] is zero, the
            significant [x] and the exponent [n] of [f] are equal to
            zero.  When [f] is non-zero, they are defined by
            [f = x *. 2 ** n] and [0.5 <= x < 1.0]. *)
-external ldexp : float -> int -> float = "ldexp_float"
+val ldexp : float -> int -> float
         (* [ldexp x n] returns [x *. 2 ** n]. *)
-external modf : float -> float * float = "modf_float"
+val modf : float -> float * float
         (* [modf f] returns the pair of the fractional and integral
            part of [f]. *)
 external float : int -> float = "%floatofint"
@@ -320,7 +320,7 @@ val bool_of_string : string -> bool
            ["true"] or ["false"]. *)
 val string_of_int : int -> string
         (* Return the string representation of an integer, in decimal. *)
-external int_of_string : string -> int = "int_of_string"
+val int_of_string : string -> int
         (* Convert the given string to an integer.
            The string is read in decimal (by default) or in hexadecimal,
            octal or binary if the string begins with [0x], [0o] or [0b]
@@ -329,7 +329,7 @@ external int_of_string : string -> int = "int_of_string"
            a valid representation of an integer. *)
 val string_of_float : float -> string
         (* Return the string representation of a floating-point number. *)
-external float_of_string : string -> float = "float_of_string"
+val float_of_string : string -> float
         (* Convert the given string to a float.
            The result is unspecified if the given string is not
            a valid representation of a float. *)
@@ -697,7 +697,7 @@ type statistics
 module type S =
   sig
     type key
-    type 'a t
+    type !'a t
     val create : int -> 'a t
     val clear : 'a t -> unit
     val reset : 'a t -> unit
@@ -705,14 +705,21 @@ module type S =
     val add : 'a t -> key -> 'a -> unit
     val remove : 'a t -> key -> unit
     val find : 'a t -> key -> 'a
+    val find_opt : 'a t -> key -> 'a option
     val find_all : 'a t -> key -> 'a list
     val replace : 'a t -> key -> 'a -> unit
     val mem : 'a t -> key -> bool
     val iter : (key -> 'a -> unit) -> 'a t -> unit
+    val filter_map_inplace : (key -> 'a -> 'a option) -> 'a t -> unit
     val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
     val length : 'a t -> int
-
     val stats: 'a t -> statistics
+    val to_seq : 'a t -> (key * 'a) Seq.t
+    val to_seq_keys : _ t -> key Seq.t
+    val to_seq_values : 'a t -> 'a Seq.t
+    val add_seq : 'a t -> (key * 'a) Seq.t -> unit
+    val replace_seq : 'a t -> (key * 'a) Seq.t -> unit
+    val of_seq : (key * 'a) Seq.t -> 'a t
   end
 
 module Make(H : HashedType) : (S with type key = H.t)
@@ -756,17 +763,17 @@ module Lexing : sig
 
 type lexbuf
 
-val from_string : string -> lexbuf
+val from_string : ?with_positions:bool -> string -> lexbuf
         (* Create a lexer buffer which reads from
            the given string. Reading starts from the first character in
            the string. An end-of-input condition is generated when the
            end of the string is reached. *)
-val from_function : (string -> int -> int) -> lexbuf
+val from_function : ?with_positions:bool -> (bytes -> int -> int) -> lexbuf
         (* Create a lexer buffer with the given function as its reading method.
            When the scanner needs more characters, it will call the given
-           function, giving it a character string [s] and a character
-           count [n]. The function should put [n] characters or less in [s],
-           starting at character number 0, and return the number of characters
+           function, giving it a byte sequence [s] and a character
+           count [n]. The function should put [n] bytes or less in [s],
+           starting at character number 0, and return the number of bytes
            provided. A return value of 0 means end of input. *)
 
 (*** Functions for lexer semantic actions *)
@@ -1026,150 +1033,47 @@ module type OrderedType =
 module type S =
   sig
     type key
-    (** The type of the map keys. *)
-
-    type (+'a) t
-    (** The type of maps from type [key] to type ['a]. *)
-
+    type !+'a t
     val empty: 'a t
-    (** The empty map. *)
-
     val is_empty: 'a t -> bool
-    (** Test whether a map is empty or not. *)
-
     val mem: key -> 'a t -> bool
-    (** [mem x m] returns [true] if [m] contains a binding for [x],
-       and [false] otherwise. *)
-
     val add: key -> 'a -> 'a t -> 'a t
-    (** [add x y m] returns a map containing the same bindings as
-       [m], plus a binding of [x] to [y]. If [x] was already bound
-       in [m], its previous binding disappears. *)
-
+    val update: key -> ('a option -> 'a option) -> 'a t -> 'a t
     val singleton: key -> 'a -> 'a t
-    (** [singleton x y] returns the one-element map that contains a binding [y]
-        for [x].
-        @since 3.12.0
-     *)
-
     val remove: key -> 'a t -> 'a t
-    (** [remove x m] returns a map containing the same bindings as
-       [m], except for [x] which is unbound in the returned map. *)
-
-    val merge:
-         (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t
-    (** [merge f m1 m2] computes a map whose keys is a subset of keys of [m1]
-        and of [m2]. The presence of each such binding, and the corresponding
-        value, is determined with the function [f].
-        @since 3.12.0
-     *)
-
+    val merge: (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t
+    val union: (key -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
     val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
-    (** Total ordering between maps.  The first argument is a total ordering
-        used to compare data associated with equal keys in the two maps. *)
-
     val equal: ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-    (** [equal cmp m1 m2] tests whether the maps [m1] and [m2] are
-       equal, that is, contain equal keys and associate them with
-       equal data.  [cmp] is the equality predicate used to compare
-       the data associated with the keys. *)
-
     val iter: (key -> 'a -> unit) -> 'a t -> unit
-    (** [iter f m] applies [f] to all bindings in map [m].
-       [f] receives the key as first argument, and the associated value
-       as second argument.  The bindings are passed to [f] in increasing
-       order with respect to the ordering over the type of the keys. *)
-
     val fold: (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-    (** [fold f m a] computes [(f kN dN ... (f k1 d1 a)...)],
-       where [k1 ... kN] are the keys of all bindings in [m]
-       (in increasing order), and [d1 ... dN] are the associated data. *)
-
     val for_all: (key -> 'a -> bool) -> 'a t -> bool
-    (** [for_all p m] checks if all the bindings of the map
-        satisfy the predicate [p].
-        @since 3.12.0
-     *)
-
     val exists: (key -> 'a -> bool) -> 'a t -> bool
-    (** [exists p m] checks if at least one binding of the map
-        satisfy the predicate [p].
-        @since 3.12.0
-     *)
-
     val filter: (key -> 'a -> bool) -> 'a t -> 'a t
-    (** [filter p m] returns the map with all the bindings in [m]
-        that satisfy predicate [p].
-        @since 3.12.0
-     *)
-
+    val filter_map: (key -> 'a -> 'b option) -> 'a t -> 'b t
     val partition: (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
-    (** [partition p m] returns a pair of maps [(m1, m2)], where
-        [m1] contains all the bindings of [s] that satisfy the
-        predicate [p], and [m2] is the map with all the bindings of
-        [s] that do not satisfy [p].
-        @since 3.12.0
-     *)
-
     val cardinal: 'a t -> int
-    (** Return the number of bindings of a map.
-        @since 3.12.0
-     *)
-
     val bindings: 'a t -> (key * 'a) list
-    (** Return the list of all bindings of the given map.
-       The returned list is sorted in increasing order with respect
-       to the ordering [Ord.compare], where [Ord] is the argument
-       given to {!Map.Make}.
-        @since 3.12.0
-     *)
-
     val min_binding: 'a t -> (key * 'a)
-    (** Return the smallest binding of the given map
-       (with respect to the [Ord.compare] ordering), or raise
-       [Not_found] if the map is empty.
-        @since 3.12.0
-     *)
-
+    val min_binding_opt: 'a t -> (key * 'a) option
     val max_binding: 'a t -> (key * 'a)
-    (** Same as {!Map.S.min_binding}, but returns the largest binding
-        of the given map.
-        @since 3.12.0
-     *)
-
+    val max_binding_opt: 'a t -> (key * 'a) option
     val choose: 'a t -> (key * 'a)
-    (** Return one binding of the given map, or raise [Not_found] if
-       the map is empty. Which binding is chosen is unspecified,
-       but equal bindings will be chosen for equal maps.
-        @since 3.12.0
-     *)
-
+    val choose_opt: 'a t -> (key * 'a) option
     val split: key -> 'a t -> 'a t * 'a option * 'a t
-    (** [split x m] returns a triple [(l, data, r)], where
-          [l] is the map with all the bindings of [m] whose key
-        is strictly less than [x];
-          [r] is the map with all the bindings of [m] whose key
-        is strictly greater than [x];
-          [data] is [None] if [m] contains no binding for [x],
-          or [Some v] if [m] binds [v] to [x].
-        @since 3.12.0
-     *)
-
     val find: key -> 'a t -> 'a
-    (** [find x m] returns the current binding of [x] in [m],
-       or raises [Not_found] if no such binding exists. *)
-
+    val find_opt: key -> 'a t -> 'a option
+    val find_first: (key -> bool) -> 'a t -> key * 'a
+    val find_first_opt: (key -> bool) -> 'a t -> (key * 'a) option
+    val find_last: (key -> bool) -> 'a t -> key * 'a
+    val find_last_opt: (key -> bool) -> 'a t -> (key * 'a) option
     val map: ('a -> 'b) -> 'a t -> 'b t
-    (** [map f m] returns a map with same domain as [m], where the
-       associated value [a] of all bindings of [m] has been
-       replaced by the result of the application of [f] to [a].
-       The bindings are passed to [f] in increasing order
-       with respect to the ordering over the type of the keys. *)
-
     val mapi: (key -> 'a -> 'b) -> 'a t -> 'b t
-    (** Same as {!Map.S.map}, but the function receives as arguments both the
-       key and the associated value for each binding of the map. *)
-
+    val to_seq: 'a t -> (key * 'a) Seq.t
+    val to_rev_seq: 'a t -> (key * 'a) Seq.t
+    val to_seq_from: key -> 'a t -> (key * 'a) Seq.t
+    val add_seq: (key * 'a) Seq.t -> 'a t -> 'a t
+    val of_seq: (key * 'a) Seq.t -> 'a t
   end
 
 module Make(Ord : OrderedType) : (S with type key = Ord.t)
@@ -1347,6 +1251,7 @@ module type S =
            except [x]. If [x] was not in [s], [s] is returned unchanged. *)
     val union : t -> t -> t
     val inter : t -> t -> t
+    val disjoint : t -> t -> bool
     val diff : t -> t -> t
         (* Union, intersection and set difference. *)
     val compare : t -> t -> int
@@ -1362,6 +1267,7 @@ module type S =
         (* [iter f s] applies [f] in turn to all elements of [s].
            The order in which the elements of [s] are presented to [f]
            is unspecified. *)
+    val map : (elt -> elt) -> t -> t
     val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
         (* [fold f s a] computes [(f xN ... (f x2 (f x1 a))...)],
            where [x1 ... xN] are the elements of [s].
@@ -1376,6 +1282,7 @@ module type S =
     val filter : (elt -> bool) -> t -> t
         (* [filter p s] returns the set of all elements in [s]
            that satisfy predicate [p]. *)
+    val filter_map : (elt -> elt option) -> t -> t
     val partition : (elt -> bool) -> t -> t * t
         (* [partition p s] returns a pair of sets [(s1, s2)], where
            [s1] is the set of all the elements of [s] that satisfy the
@@ -1392,16 +1299,29 @@ module type S =
         (* Return the smallest element of the given set
            (with respect to the [Ord.compare] ordering), or raise
            [Not_found] if the set is empty. *)
+    val min_elt_opt : t -> elt option
     val max_elt : t -> elt
         (* Same as [min_elt], but returns the largest element of the
            given set. *)
+    val max_elt_opt : t -> elt option
     val choose : t -> elt
         (* Return one element of the given set, or raise [Not_found] if
            the set is empty. Which element is chosen is unspecified,
            but equal elements will be chosen for equal sets. *)
+    val choose_opt : t -> elt option
     val split: elt -> t -> t * bool * t
-    (* @since 4.01.0 *)
     val find: elt -> t -> elt
+    val find_opt : elt -> t -> elt option
+    val find_first : (elt -> bool) -> t -> elt
+    val find_first_opt : (elt -> bool) -> t -> elt option
+    val find_last : (elt -> bool) -> t -> elt
+    val find_last_opt : (elt -> bool) -> t -> elt option
+    val of_list : elt list -> t
+    val to_seq_from : elt -> t -> elt Seq.t
+    val to_seq : t -> elt Seq.t
+    val to_rev_seq : t -> elt Seq.t
+    val add_seq : elt Seq.t -> t -> t
+    val of_seq : elt Seq.t -> t
   end
 
 module Make(Ord : OrderedType) : (S with type elt = Ord.t)
@@ -1517,13 +1437,6 @@ external get : string -> int -> char = "%string_safe_get"
            Raise [Invalid_argument] if [n] is outside the range
            0 to [(String.length s - 1)].
            You can also write [s.[n]] instead of [String.get s n]. *)
-external set : string -> int -> char -> unit = "%string_safe_set"
-        (* [String.set s n c] modifies string [s] in place,
-           replacing the character number [n] by [c].
-           Raise [Invalid_argument] if [n] is outside the range
-           0 to [(String.length s - 1)].
-           You can also write [s.[n] <- c] instead of [String.set s n c]. *)
-
 val make : int -> char -> string
         (* [String.make n c] returns a fresh string of length [n],
            filled with the character [c].
@@ -1538,22 +1451,13 @@ val sub : string -> int -> int -> string
            Raise [Invalid_argument] if [start] and [len] do not
            designate a valid substring of [s]; that is, if [start < 0],
            or [len < 0], or [start + len > String.length s]. *)
-val fill : string -> int -> int -> char -> unit
-        (* [String.fill s start len c] modifies string [s] in place,
-           replacing the characters number [start] to [start + len - 1]
-           by [c].
-           Raise [Invalid_argument] if [start] and [len] do not
-           designate a valid substring of [s]. *)
-val blit : string -> int ->
-           string -> int -> int -> unit
-        (* [String.blit src srcoff dst dstoff len] copies [len] characters
+val blit : string -> int -> bytes -> int -> int -> unit
+        (* [String.blit src srcoff dst dstoff len] copies [len] bytes
            from string [src], starting at character number [srcoff], to
-           string [dst], starting at character number [dstoff]. It works
-           correctly even if [src] and [dst] are the same string,
-           and the source and destination chunks overlap.
+           byte sequence [dst], starting at character number [dstoff].
            Raise [Invalid_argument] if [srcoff] and [len] do not
            designate a valid substring of [src], or if [dstoff] and [len]
-           do not designate a valid substring of [dst]. *)
+           do not designate a valid range of [dst]. *)
 
 val concat : string -> string list -> string
         (* [String.concat sep sl] catenates the list of strings [sl],
