@@ -11,9 +11,11 @@ SRC= pgp.ml capabilities.ml dload.ml applets.ml appview.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
-INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/globals \
- $(TOP)/www $(TOP)/http \
- $(TOP)/protocols $(TOP)/viewers
+INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n/ \
+ $(TOP)/globals \
+ $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http \
+ $(TOP)/src/protocols \
+ $(TOP)/gui/viewers
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 
@@ -40,7 +42,3 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-##############################################################################
-# Literate Programming rules
-##############################################################################

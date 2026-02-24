@@ -34,7 +34,7 @@ class trivial_display (w, url) =
   method di_widget = w
   method di_abort = ()
   method di_destroy = if Winfo.exists w then Tk.destroy w
-  method di_fragment f = ()
+  method di_fragment _f = ()
   method di_redisplay = ()
   method di_title = Url.string_of url
   method di_source = ()
@@ -71,34 +71,35 @@ let is_update this_headers loaded_headers =
     Not_found ->  (* no date means update *)
       true
 
-let applet_viewer parms frame ctx doc =
+let applet_viewer _parms frame ctx doc =
   let url = doc.document_address in
   let invoke frame ftable =
     (* we need another level of frame where to bind the update event *)
     let f = Frame.create frame [Class "Caml"] in
     pack [f][Expand true; Fill Fill_Both];
     (* if we are asked to update, do it *)
+    let caps = Cap.network_caps_UNSAFE () in
     Frx_synth.bind f "update"
-      (fun _ -> Embed.update frame ctx doc (fun () -> ()));
+      (fun _ -> Embed.update caps frame ctx doc (fun () -> ()));
     call ftable f ctx
   in
   try
     (* If the bytecode is loaded, run the thing; else fail *)
     match Dload.get url with
     | Rejected old ->
-	if is_update doc.document_info old then begin
+	if is_update doc.document_headers old then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else
 	error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
     | Unavailable old ->
-	if is_update doc.document_info old then begin
+	if is_update doc.document_headers old then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else
 	  error frame (I18n.sprintf "%s is not available" (Url.string_of url));
     | Loaded cmo ->
-	if is_update doc.document_info cmo.module_info then begin
+	if is_update doc.document_headers cmo.module_info then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else
@@ -122,12 +123,12 @@ let applet_viewer parms frame ctx doc =
    If the bytecode has been alread loaded, don't do anything.
    Else, proceed to load it (no entry point available !).
  *)
-let code_viewer parms frame ctx dh =
+let code_viewer _parms frame ctx dh =
   let url = dh.document_id.document_url in
   try
     match Dload.get url with
     | Rejected old ->
-	if is_update dh.document_headers old then begin
+	if is_update dh.dh_headers old then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else begin
@@ -136,7 +137,7 @@ let code_viewer parms frame ctx dh =
 	  None
 	end
     | Unavailable old ->
-	if is_update dh.document_headers old then begin
+	if is_update dh.dh_headers old then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else begin
@@ -145,7 +146,7 @@ let code_viewer parms frame ctx dh =
 	  None
 	end
     | Loaded cmo ->
-	if is_update dh.document_headers cmo.module_info then begin
+	if is_update dh.dh_headers cmo.module_info then begin
 	  Dload.remove url;
 	  raise Not_found
 	end else begin
@@ -153,7 +154,7 @@ let code_viewer parms frame ctx dh =
 	  let f = Frame.create frame [] in
 	  pack [f][Expand true; Fill Fill_Both];
 	  call cmo.module_functions f ctx;
-	  Some (new Viewers.trivial_display (f, url))
+	  Some (new trivial_display (f, url))
 	end
   with
     Not_found ->
@@ -163,7 +164,7 @@ let code_viewer parms frame ctx dh =
       if Dload.add_pending_applet url (fun ftable -> call ftable f ctx)
       then begin
       	let fname = Msys.mktemp "bytc"
-      	and buffer = String.create 2048 in
+      	and buffer = Bytes.create 2048 in
       	let oc = open_out_bin fname in
       	dh.document_feed.feed_schedule
        	  (fun _ ->
@@ -173,8 +174,8 @@ let code_viewer parms frame ctx dh =
               	dclose true dh;
               	close_out oc;
 		let doc = { document_address = dh.document_id.document_url;
-			     document_data = FileData(fname,true);
-			     document_info = dh.document_headers} in
+			     document_data = FileData(Fpath.v fname,true);
+			     document_headers = dh.dh_headers} in
 		Cache.add dh.document_id doc;
 		Cache.finished dh.document_id;
 	      	Dload.load doc
@@ -188,6 +189,6 @@ let code_viewer parms frame ctx dh =
 	      	Error.f (I18n.sprintf "Error during loading of bytecode")
 		  );
       end;
-      Some (new Viewers.trivial_display(f, url))
+      Some (new trivial_display(f, url))
 
 

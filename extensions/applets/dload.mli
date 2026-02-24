@@ -33,7 +33,7 @@ val add_pending_applet :
   Url.t -> ((string, applet_callback) Hashtbl.t -> unit) -> bool
 (* returns true if this is the first applet for this bytecode *)
 
-val load: Document.document  -> unit
+val load: Document.t  -> unit
 
 val load_local : string -> unit
 

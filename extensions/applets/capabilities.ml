@@ -321,7 +321,7 @@ let ask capa r =
 let require_capa capa r =
   let param, q = get_question r
   and mode = string_of_mode capa.mode in
-  let param = String.copy param in
+  (* old: let param = String.copy param in, but string are immutable now *)
   if capa.mode = Extend then begin
     let title =
       I18n.sprintf "Security Rights asked by %s" (Url.string_of capa.who) in

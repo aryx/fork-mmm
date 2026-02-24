@@ -8,6 +8,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+open Fpath_.Operators
 
 open Printf
 open Tk
@@ -19,7 +20,7 @@ let paranoid = ref true  (* selects default capabilities *)
 
 (* This is now available as Dynlink.error_message, but not i18n *)
 let dynlinkerror = function
-   Dynlink.Not_a_bytecode_file s ->
+   Dynlink.Not_a_bytecode_file _s ->
      I18n.sprintf "Not a bytecode file"
  | Dynlink.Inconsistent_import s ->
      I18n.sprintf "Inconsistent import: %s" s
@@ -31,14 +32,19 @@ let dynlinkerror = function
      I18n.sprintf "Error while linking: %s Undefined global: %s" s v
  | Dynlink.Linking_error (s, Dynlink.Unavailable_primitive v) ->
      I18n.sprintf "Error while linking: %s Unavailable primitive: %s" s v
- | Dynlink.Corrupted_interface s ->
+ | Dynlink.Corrupted_interface _s ->
      I18n.sprintf "Corrupted interface"
  | Dynlink.Linking_error (s, Dynlink.Uninitialized_global v) ->
      I18n.sprintf "Error while linking: %s Uninitialized global: %s" s v
+(*
  | Dynlink.File_not_found s ->
      I18n.sprintf "Cannot find file %s in search path" s
  | Dynlink.Cannot_open_dll s ->
      I18n.sprintf "Error while loading shared library: %s" s
+*)
+ | other ->
+     Dynlink.error_message other
+ 
 
 (* The type of entry point functions registered by the applet *)
 type applet_callback = Widget.widget -> context -> unit
@@ -191,7 +197,7 @@ let unsafe_load doc file =
       in_load := false;
       Hashtbl.add mod_cache url (Loaded
 				   { module_address = Url.string_of url;
-				     module_info = doc.document_info;
+				     module_info = doc.document_headers;
 				     module_functions = funtable;
 				   });
      (* "run" the applets (evaluate continuations that run the entry point) *)
@@ -242,11 +248,11 @@ type applet_kind =
 let applet_kind doc file =
   let kind () =
     let ic = open_in file
-    and buf = String.create 8 in
+    and buf : bytes = Bytes.create 8 in
     really_input ic buf 0 8;
     close_in ic;
-    if buf = "Caml1999" then Bytecode false else 
-    if String.sub buf 0 2 = "(*" || String.sub buf 0 5 = "open " then Source
+    if Bytes.to_string buf = "Caml1999" then Bytecode false else 
+    if Bytes.sub_string buf 0 2 = "(*" || Bytes.sub_string buf 0 5 = "open " then Source
     else (* check suffix *)
       match Mstring.get_suffix (Url.string_of doc.document_address) with
 	"ml" -> Source
@@ -254,13 +260,13 @@ let applet_kind doc file =
       | "pgp" | "scmo" -> Bytecode true
       | _ -> (* assume pgp signed... *) Bytecode true
   in
-  match Lexheaders.media_type (Http_headers.contenttype doc.document_info) with
+  match Lexheaders.media_type (Http_headers.contenttype doc.document_headers) with
   | ("application", "x-caml-applet"), [] -> (* do magic number trick *)
       kind ()
   | ("application", "x-caml-applet"), l -> 
       begin
 	try 
-	  match String.lowercase (List.assoc "encoding" l) with
+	  match String.lowercase_ascii (List.assoc "encoding" l) with
 	    "source" -> Source
 	  | "signed-bytecode" -> Bytecode true
 	  | "bytecode" -> Bytecode false
@@ -283,51 +289,52 @@ let load doc =
 	remove the file after loading. If the file is from the cache,
 	it is NOT our responsability to remove it
       *)
-      let file,remove = match doc.document_data with
-    	FileData(file,_) -> file, false
-      | MemoryData buf ->
+      let file, remove = 
+       match doc.document_data with
+       | FileData(file,_) -> file, false
+       | MemoryData buf ->
 	  let file = Msys.mktemp "mmmbuf" in
 	  let oc = open_out file in
 	  output_string oc (Ebuffer.get buf);
 	  close_out oc;
-	  file, true
+	  Fpath.v file, true
       in
-      try match applet_kind doc file with
+      try match applet_kind doc !!file with
 	Source ->
 	  (* the mmmc script is part of the distribution *)
 	  let byt = Msys.mktemp "apcode" in
-	  let cmd = sprintf "mmmc %s %s" file byt in
+	  let cmd = sprintf "mmmc %s %s" !!file byt in
 	  begin match Sys.command cmd with
 	    0 -> 
 	      unsafe_load doc byt; 
 	      Msys.rm byt;
-	      if remove then Msys.rm file
-	  | n -> 
+	      if remove then Msys.rm !!file
+	  | _n -> 
 	      Error.f (I18n.sprintf "Can't compile applet %s"
 			 (Url.string_of url));
 	      Msys.rm byt;
-	      if remove then Msys.rm file
+	      if remove then Msys.rm !!file
 	  end
       |	Bytecode true ->
-	   begin match Pgp.check (Url.string_of url) file with
+	   begin match Pgp.check (Url.string_of url) !!file with
 	     Some clear ->
 	       unsafe_load doc clear;
 	       Msys.rm clear;
-	       if remove then Msys.rm file
+	       if remove then Msys.rm !!file
 	   | None -> (* was refused or malformed *)
-	       if remove then Msys.rm file;
+	       if remove then Msys.rm !!file;
 	       failwith "dontkeep"
 	   end
       |	Bytecode false ->
 	  if ask url then begin
-	    unsafe_load doc file;
-	    if remove then Msys.rm file;
+	    unsafe_load doc !!file;
+	    if remove then Msys.rm !!file;
 	  end else begin
-	    if remove then Msys.rm file;
+	    if remove then Msys.rm !!file;
 	    failwith "dontkeep"
 	  end
      with
        Failure "dontkeep" ->
-	 if remove then Msys.rm file;
-	 Hashtbl.add mod_cache url (Rejected doc.document_info);
+	 if remove then Msys.rm !!file;
+	 Hashtbl.add mod_cache url (Rejected doc.document_headers);
 	 Error.f (I18n.sprintf "%s was rejected" (Url.string_of url))

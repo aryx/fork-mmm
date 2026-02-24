@@ -13,7 +13,6 @@
 open Msys
 open Mstring
 open Tk
-open Unix
 (* 
    decoding goes as follows:
     pgp -f +batchmode < signed > unsigned 2> log
@@ -29,48 +28,49 @@ when Content-Encoding was specified as PGP
 (* Read on a channel until eof *)
 let read_all chan =
   let len = 1024 in
-  let rec read_chunk buffer offs = 
-    let chunk = read chan buffer offs len in
-    if chunk = 0 then String.sub buffer 0 offs else
+  let rec read_chunk (buffer : bytes) (offs : int) : string = 
+    let chunk = Unix.read chan buffer offs len in
+    if chunk = 0 then Bytes.sub_string buffer 0 offs else
       let newoffs = offs + chunk
-      and l = String.length buffer in
+      and l = Bytes.length buffer in
         if newoffs + len > l then
-          let newbuf = String.create (2*l+len) in
-           String.unsafe_blit buffer 0 newbuf 0 newoffs;
+          let newbuf = Bytes.create (2*l+len) in
+           Bytes.unsafe_blit buffer 0 newbuf 0 newoffs;
            read_chunk newbuf newoffs
         else
            read_chunk buffer newoffs
   in
-  read_chunk (String.create 2048) 0
+  read_chunk (Bytes.create 2048) 0
 
 let batch_pgp signed clear pgplog  =
-  let oin = openfile signed [O_RDONLY] 0 
-  and oout = openfile clear  [O_WRONLY; O_CREAT] 0o600 in
-   dup2 oin stdin; close oin;
-   dup2 oout stdout; close oout;
-   dup2 pgplog stderr; close pgplog;
+  let oin = Unix.openfile signed [O_RDONLY] 0 
+  and oout = Unix.openfile clear  [O_WRONLY; O_CREAT] 0o600 in
+   Unix.dup2 oin Unix.stdin; Unix.close oin;
+   Unix.dup2 oout Unix.stdout; Unix.close oout;
+   Unix.dup2 pgplog Unix.stderr; Unix.close pgplog;
   try
-    execvp "pgp" [| "pgp"; "+batchmode=on"; "+verbose=0"; "-f" |]
+    Unix.execvp "pgp" [| "pgp"; "+batchmode=on"; "+verbose=0"; "-f" |]
   with
-    Unix_error(e, _, _) ->
+    Unix.Unix_error(e, _, _) ->
       Printf.eprintf "%s\n" (Unix.error_message e);
-      flush Pervasives.stderr;
+      flush Stdlib.stderr;
       exit 1
 
 
 let check url signed_file =
  let clear_file = mktemp "clear" in
    let rec attempt () =
-     let (lin, lout) = pipe() in
+     let (lin, lout) = Unix.pipe() in
        match Low.fork() with
-       	 0 -> close lin;
-	      batch_pgp signed_file clear_file lout;
-	      None
+       	 0 -> Unix.close lin;
+	      batch_pgp signed_file clear_file lout
+               (* never reached *)
+	      (* old: None *)
        | n ->
-       	  close lout;
+       	  Unix.close lout;
 	  let res = read_all lin in
-	  close lin;
-	  let p, st = waitpid [] n in
+	  Unix.close lin;
+	  let _p, st = Unix.waitpid [] n in
 	  match st with
 	      WEXITED n -> 
 	         begin match

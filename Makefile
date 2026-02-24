@@ -32,11 +32,11 @@ MAINDIRS= \
   languages/html \
   src/protocols src/retrieve \
   gui/tk gui/viewers gui/display gui/chrome \
+  extensions/applets
 
-#  applets \
 #  sandbox \
-# dynamically loaded extensions
 
+# for clean: target
 MOREDIRS=demos/applets demos/sboard extensions extensions/applets extensions/sandbox
 
 MAKESUBDIRS= $(MAINDIRS)

@@ -1,0 +1,12 @@
+(library
+ (public_name mmm.applets)
+ (name mmm_applets)
+ (wrapped false)
+ (libraries
+    mmm.commons mmm.misc
+    mmm.www
+    mmm.viewers
+    mmm.gui
+ )
+ (preprocess (pps ppx_deriving.show))
+)

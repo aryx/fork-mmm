@@ -73,9 +73,11 @@ let load_initial_modules () =
 
 let init initialp =
   (* Dynamic linking init : both common applets and specific applets *)
-  Dynlink.init();
+  (* old: Dynlink.init();
   Dynlink.add_available_units Crcs.crc_unit_list;
   Dynlink.add_available_units Crcsmmm.crc_unit_list;
+  TODO: use instead Dynlink.set_allowed_units
+  *)
 (* pad: TODO, infer using `ocamlc -where`
   Dynlink.add_interfaces ["Pervasives"; "Unix"] 
     ["/opt/local/lib/ocaml"];
