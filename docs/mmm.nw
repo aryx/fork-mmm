@@ -11110,6 +11110,8 @@ end
 "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
 @
 
+\section{Initialisation}
+
 <<[[Main.main()]] applet system initialisation>>=
 (* The applet system.
  * This loads the local modules also, so any setup that might be
@@ -11140,7 +11142,7 @@ let applet_init = ref (fun _ -> ())
 @
 
 
-%\subsection{Applet user menu}
+\section{Module menu}
 % see later
 
 % (*      Menu.add_command othersm
@@ -11160,6 +11162,7 @@ let applet_init = ref (fun _ -> ())
 %      ];
 % *)
 
+\section{Applet user menu}
 
 <<[[Mmm.navigator()]] User menu>>=
 (* User menu, extensible by applets *)
@@ -11198,7 +11201,7 @@ let add_user_menu entry f =
   Frx_synth.broadcast "user_menu"
 @
 
-
+\section{Machine hooks}
 
 <<signature [[Html_disp.add_hook]]>>=
 val add_hook: (machine -> unit) -> unit
