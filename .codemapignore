@@ -2,3 +2,6 @@
 safestd.mli
 safestr.mli
 safeunix.mli
+
+# already have similar file in demos/applets/tetris.ml
+/external/ocamltk/examples/tetris.ml
