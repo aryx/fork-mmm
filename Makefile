@@ -32,7 +32,7 @@ MAINDIRS= \
   languages/html \
   src/protocols src/retrieve \
   gui/tk gui/viewers gui/display gui/chrome \
-  extensions/applets
+  applets/appsys
 
 #  sandbox \
 
@@ -136,6 +136,8 @@ mmmx.bin: $(OBJS:.cmo=.cmx) $(MAIN:.cmo=.cmx)
 #$(TARGET): $(LIBS) $(OBJS) gui.cmo main_gtk.cmo
 #	$(OCAMLC) -cclib -L/opt/X11/lib  $(BYTECODE_STATIC) -o $@ $(OTHERSYSLIBS) $(SYSLIBS) threads.cma $(GTKLOOP) $(TKLIBS) $^
 
+#TODO: will also need to adjust applet system to load .cmxs
+# (which is possible now)
 mmm.opt:
 	echo TODO
 

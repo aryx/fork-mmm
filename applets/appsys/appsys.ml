@@ -72,6 +72,7 @@ let load_initial_modules () =
 		 fname (Unix.error_message e) arg)
 
 let init initialp =
+  Logs.info (fun m -> m "Loading applet system");
   (* Dynamic linking init : both common applets and specific applets *)
   (* old: Dynlink.init();
   Dynlink.add_available_units Crcs.crc_unit_list;

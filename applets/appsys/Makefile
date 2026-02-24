@@ -6,16 +6,16 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= pgp.ml capabilities.ml dload.ml applets.ml appview.ml
+SRC= pgp.ml capabilities.ml dload.ml applets.ml appview.ml appsys.ml
 
 SYSLIBS= str.cma unix.cma 
 LIBS=
 
 INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n/ \
- $(TOP)/globals \
+ $(TOP)/src/globals \
  $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http \
  $(TOP)/src/protocols \
- $(TOP)/gui/viewers
+ $(TOP)/gui/viewers $(TOP)/gui/chrome
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 

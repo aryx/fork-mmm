@@ -56,6 +56,7 @@ _build
 /misc/lexpath.ml
 /libs/commons/lexpath.ml
 /src/url/lexurl.ml
+/libs/misc/lexpath.ml
 
 #binaries
 /mmm
