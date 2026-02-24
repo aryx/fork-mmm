@@ -12,12 +12,12 @@ module Html : sig
   }
 
   type token =
-     PCData of string
-   | CData of string
+     Doctype of string
    | OpenTag of tag
    | CloseTag of string
+   | PCData of string
+   | CData of string
    | Comment of string
-   | Doctype of string
    | EOF
 
   type location = Loc of int * int
@@ -72,15 +72,15 @@ type fontInfo =
  | FontIndex of int
  | FontDelta of int
 
-type gattr = 
-     Margin of int
-  |  Justification of string
-  |  Font of fontInfo		        (* mostly size and face *)
-  |  FgColor of string
+type gattr =
+     FgColor of string
   |  BgColor of string
+  |  Font of fontInfo		        (* mostly size and face *)
+  |  Margin of int
+  |  Spacing of int
+  |  Justification of string
   |  Underlined
   |  Striked
-  |  Spacing of int
   |  Superscript
   |  Lowerscript
 
@@ -92,20 +92,13 @@ type objmap =
   | FormMap of (int * int -> Hyper.link)
 
 
-type embobject = {
-  embed_hlink : Hyper.link;               (* hyperlink to the object *)
-  embed_frame : Widget.widget;  
-     (* the frame where the viewers can do their stuff *)
-  embed_context : Viewers.context;
-  embed_map : objmap;                  (* associated map *)
-  embed_alt : string
- }
+type embobject = Embed.obj
 
 class  virtual imgloader : (unit) -> object
-  method virtual add_image : embobject -> unit	 (* add one image *)
+  method virtual add_image : < Cap.network > -> embobject -> unit (* add one image *)
   method virtual flush_images : unit	         (* flush when document is loaded *)
   method virtual load_images : unit		 (* manual flush *)
-  method virtual update_images : unit
+  method virtual update_images : < Cap.network > -> unit
 end
 
 type formatterSpec = 
@@ -119,31 +112,31 @@ type formatter = {
     (* make sure the following text will start on a new line *)
   close_paragraph: unit -> unit;  	(* Close a paragraph *)
     (* make sure there is an eol after the current text *)
-  print_newline : bool -> unit;		(* Force a line break *)
   print_verbatim : string -> unit;	(* Print as-is *)
   format_string : string -> unit;	(* Line wrap, newlines don't count *)
-  flush : unit -> unit;			(* Flush the device *)
-  (* Predefined Images *)
-  hr : Html.length -> int -> bool -> unit;  (* [hr width height solid] *)
-  bullet : string -> unit;
+  print_newline : bool -> unit;		(* Force a line break *)
   (* Graphical attributes *)
-  set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
   push_attr : gattr list -> unit;
   pop_attr : gattr list -> unit;
+  set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
+  (* Predefined Images *)
+  bullet : string -> unit;
+  hr : Html.length -> int -> bool -> unit;  (* [hr width height solid] *)
   (* Structure primitives *)
   isindex : string -> string -> unit;		(* <ISINDEX> *)
+  add_mark : string -> unit;
   start_anchor : unit -> unit;
   end_anchor : Hyper.link -> unit;
-  add_mark : string -> unit;
   (* Embedding primitives *)
-  create_embedded : 
+  create_embedded :
      string -> int option -> int option -> Widget.widget;
-       (* [create_embedded align w h ]: 
+       (* [create_embedded align w h ]:
           returns a widget that we can pass as target to the embed manager.
           Should respect background color ?
         *)
   (* Re-centering on a fragment *)
-  see_frag : string option -> unit
+  see_frag : string option -> unit;
+  flush : unit -> unit;			(* Flush the device *)
   }
 
 class  virtual machine : (unit) -> object
@@ -176,7 +169,7 @@ end
 
 module Get(C: sig val capabilities: Capabilities.t end) : sig
    val add_html_display_hook : (machine -> unit) -> unit
-   val add_object : embobject -> unit
+   val add_object : < Cap.network; .. > -> embobject -> unit
      (* queue an embedded object *)
 
 
@@ -189,11 +182,11 @@ module Get(C: sig val capabilities: Capabilities.t end) : sig
    (* The following allows demonstrations/replay *)
    type navigator
    val new_window : Url.t -> navigator option
-   val follow_link : navigator -> Hyper.link -> unit
+   val follow_link : < Cap.network; .. > -> navigator -> Hyper.link -> unit
    val destroy_window : navigator -> unit
 
-   val new_window_initial : unit -> unit
-   val new_window_sel : unit -> unit
+   val new_window_initial : < Cap.network; .. > -> unit
+   val new_window_sel : < Cap.network; .. > -> unit
 
    (* Embedded Viewers *)
    val add_embedded_viewer : 

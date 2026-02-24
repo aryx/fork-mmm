@@ -25,7 +25,7 @@ end
 module Feed : sig
   type internal
   type t = {
-    feed_read : string -> int -> int -> int;
+    feed_read : bytes -> int -> int -> int;
     feed_schedule : (unit -> unit) -> unit;
     feed_unschedule : unit -> unit;
     feed_close : unit -> unit;
@@ -75,10 +75,10 @@ module Lexurl : sig
   end
 
 module Hyper : sig
-  type link_method = 
-     GET 
-   | HEAD
+  type link_method =
+     GET
    | POST of string
+   | HEAD
 
   type link = {
     h_uri : string;
@@ -109,12 +109,12 @@ module Www : sig
  * Requests
  *)
 
-type request =  { 
+type request =  {
     www_link : Hyper.link;        (* the link that produced this request *)
+    mutable www_headers : string list;		  (* additional headers *)
+    mutable www_auth : (string * string) list;  (* basic auth *)
     www_url : Url.t;	          (* parsed version *)
     www_fragment : string option; (* because viewer is passed down *)
-    mutable www_auth : (string * string) list;  (* basic auth *)
-    mutable www_headers : string list;		  (* additional headers *)
     mutable www_logging : string -> unit;	  (* logging *)
     mutable www_error : Error.t
   }
@@ -132,7 +132,7 @@ end
 
 module Document : sig
   (* identification of a Web document *)
-  type document_id = {
+  type id = {
     document_url : Url.t;
       (* URL of the document *)
     document_stamp : int
@@ -140,34 +140,36 @@ module Document : sig
     }
 
   (* This type can't be used. Exported for typing purposes only *)
-  type logger 
+  type logger
 
   (* Handles to document requested by the applet through the navigator *)
   type handle = {
-    document_id : document_id;
+    document_id : id;
       (* identification of the document *)
 
-    mutable document_status : int;
-  
+    mutable dh_headers : string list;
+      (* HTTP headers of document, or faked ones.
+         In NN3.0, the only possible headers are Content-Type,
+         Content-Length (not necessary valid), and
+         Last-Modified (not necessary valid)
+       *)
+
     document_feed : Feed.t;
       (* where to get the data *)
 
-    document_referer : string option;
-      (* URL of refering document, if any *)
-    mutable document_headers : string list;
-      (* HTTP headers of document, or faked ones.
-         In NN3.0, the only possible headers are Content-Type,
-         Content-Length (not necessary valid), and 
-         Last-Modified (not necessary valid)
-       *)
+    mutable document_status : int;
+
     document_fragment : string option;
       (* fragment (#foo) if any *)
+
+    document_referer : string option;
+      (* URL of refering document, if any *)
 
     mutable document_logger : logger
       (* how to log information relative to this document processing *)
     }
 
-  type document_continuation = {
+  type continuation = {
     document_process : handle -> unit;
       (* The callback invoked when the request for a document succeeds.
          The argument [handle] contains a Feed, from which one can
@@ -197,21 +199,18 @@ type frame_targets = (string * Widget.widget) list
     hyper_func : frame_targets -> Hyper.link -> unit
     }
 
-class  virtual context : (Document.document_id * vparams) -> object ('a)
-  method base : Document.document_id
+class  virtual context : (Document.id * vparams) -> object ('a)
+  method base : Document.id
   method params : vparams
   method goto : Hyper.link -> unit
   method gotonew : Hyper.link -> unit
   method save : Hyper.link -> unit
   method virtual log : string -> unit
-  method invoke : string -> Hyper.link -> unit    
+  method invoke : string -> Hyper.link -> unit
   method add_nav : string * hyper_func -> unit
   method for_embed : vparams -> frame_targets -> 'a
-  method in_embed : Document.document_id -> 'a
+  method in_embed : Document.id -> 'a
   method hyper_funs : (string * hyper_func) list
-  (* pad: this is just because of some ugly bugs in camlp4o *)
-  method with_target: frame_targets -> 'a
-  method with_viewer_params: (string * string) list -> 'a
 end
 
 end
@@ -266,7 +265,7 @@ module Retrieval(C: sig val capabilities: Capabilities.t end) : sig
 
 val whoami : Url.t
 
-val retrieve : Hyper.link -> Document.document_continuation -> unit
+val retrieve : Hyper.link -> Document.continuation -> unit
   (* [retrieve link conts] retrieves a document obtained by [link]
      through the navigator interface.
    *)

@@ -10,14 +10,14 @@ type fontInfo = Fonts.fontInfo =
  | FontDelta of int
 
 type gattr = Htmlfmt.gattr =
-     Margin of int
-  |  Justification of string
-  |  Font of fontInfo		        (* mostly size and face *)
-  |  FgColor of string
+     FgColor of string
   |  BgColor of string
+  |  Font of fontInfo		        (* mostly size and face *)
+  |  Margin of int
+  |  Spacing of int
+  |  Justification of string
   |  Underlined
   |  Striked
-  |  Spacing of int
   |  Superscript
   |  Lowerscript
 
@@ -29,21 +29,14 @@ type objmap = Maps.t =
   | NoMap				(* no additionnal navigation *)
   | FormMap of (int * int -> Hyper.link)
 
-type embobject = Embed.embobject = {
-  embed_hlink : Hyper.link;               (* hyperlink to the object *)
-  embed_frame : Widget.widget;  
-     (* the frame where the viewers can do their stuff *)
-  embed_context : Viewers.context;
-  embed_map : objmap;                  (* associated map *)
-  embed_alt : string
- }
+type embobject = Embed.obj
 
 class  virtual imgloader (unit : unit) =
  object
-  method virtual add_image : embobject -> unit	 (* add one image *)
+  method virtual add_image : < Cap.network > -> embobject -> unit (* add one image *)
   method virtual flush_images : unit	         (* flush when document is loaded *)
   method virtual load_images : unit		 (* manual flush *)
-  method virtual update_images : unit
+  method virtual update_images : < Cap.network > -> unit
 end
 
 type formatterSpec = Htmlfmt.formatterSpec =
@@ -57,31 +50,31 @@ type formatter = Htmlfmt.formatter = {
     (* make sure the following text will start on a new line *)
   close_paragraph: unit -> unit;  	(* Close a paragraph *)
     (* make sure there is an eol after the current text *)
-  print_newline : bool -> unit;		(* Force a line break *)
   print_verbatim : string -> unit;	(* Print as-is *)
   format_string : string -> unit;	(* Line wrap, newlines don't count *)
-  flush : unit -> unit;			(* Flush the device *)
-  (* Predefined Images *)
-  hr : Html.length -> int -> bool -> unit;  (* [hr width height solid] *)
-  bullet : string -> unit;
+  print_newline : bool -> unit;		(* Force a line break *)
   (* Graphical attributes *)
-  set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
   push_attr : gattr list -> unit;
   pop_attr : gattr list -> unit;
+  set_defaults : string -> gattr list -> unit;     (* bg, fg, links *)
+  (* Predefined Images *)
+  bullet : string -> unit;
+  hr : Html.length -> int -> bool -> unit;  (* [hr width height solid] *)
   (* Structure primitives *)
   isindex : string -> string -> unit;		(* <ISINDEX> *)
+  add_mark : string -> unit;
   start_anchor : unit -> unit;
   end_anchor : Hyper.link -> unit;
-  add_mark : string -> unit;
   (* Embedding primitives *)
-  create_embedded : 
+  create_embedded :
      string -> int option -> int option -> Widget.widget;
-       (* [create_embedded align w h ]: 
+       (* [create_embedded align w h ]:
           returns a widget that we can pass as target to the embed manager.
           Should respect background color ?
         *)
   (* Re-centering on a fragment *)
-  see_frag : string option -> unit
+  see_frag : string option -> unit;
+  flush : unit -> unit;			(* Flush the device *)
   }
 
 class  virtual machine (unit : unit) =
@@ -157,7 +150,7 @@ module Get(C: sig val capabilities: t end) = struct
 
 (* Navigation *)
   type navigator = Nav.t
-  let new_window = Mmm.navigator false
+  let new_window = Mmm.navigator (Cap.network_caps_UNSAFE ()) false
 (* note: by construction (navigator is an abstract type, and all values
    of type navigator passed to the applets correspond to windows created
    by the applet), this means that the applet cannot destroy windows it has
@@ -165,7 +158,7 @@ module Get(C: sig val capabilities: t end) = struct
   let destroy_window nav =
     Tk.destroy (Winfo.toplevel nav.nav_viewer_frame)
 
-  let follow_link nav h = Nav.follow_link nav h
+  let follow_link caps nav h = Nav.follow_link caps nav h
       
   let new_window_initial = Mmm.new_window_initial
 
@@ -187,7 +180,7 @@ module Get(C: sig val capabilities: t end) = struct
 
 
 (* Retrieval machinery *)
-  type retrievalStatus = Retrieve.retrievalStatus =
+  type retrievalStatus = Retrieve.status =
   	Started of (unit -> unit)  | InUse
 
   type behaviour = Retrieve.behaviour =

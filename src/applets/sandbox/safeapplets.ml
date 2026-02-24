@@ -17,11 +17,8 @@ open Hyper
 open Url
 open Www
 
-(* Various copy functions to avoid nasty holes *)
-(* copy a string option *)
-let copy_field = function
-    None -> None
-  | Some s -> Some (String.copy s)
+(* Strings are immutable in modern OCaml, copies are no-ops *)
+let copy_field x = x
 
 (* copy an url, possibly masking the username/password information *)
 let copy_url url maskid = {
@@ -35,11 +32,11 @@ let copy_url url maskid = {
 }
 
 let copy_link link = {
-  h_uri = String.copy link.h_uri;
+  h_uri = link.h_uri;
   h_context = copy_field link.h_context;
   h_method = link.h_method;
-  h_params = List.map (fun (x,y) -> String.copy x, String.copy y) link.h_params
-} 
+  h_params = link.h_params
+}
 
 module Retrieval(C: sig val capabilities: Capabilities.t end) = struct
 
