@@ -22,7 +22,7 @@ TARGET=mmm
 
 OPTPROGS= $(PROGS:=.opt)
 
-SRC=main/main.ml
+SRC=src/main/main.ml
 
 # for the basic browser
 MAINDIRS= \
@@ -101,7 +101,7 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 
 clean::
-	rm -f main/*.cm*
+	rm -f src/main/*.cm*
 clean::
 	set -e; for i in $(MAKESUBDIRS) $(MOREDIRS); do $(MAKE) -C $$i clean; done 
 
@@ -113,7 +113,7 @@ depend::
 OBJS= $(LIBS) $(TXTDISP)
 
 # Entry point
-MAIN=main/main.cmo
+MAIN=src/main/main.cmo
 
 # Exported sandbox libraries
 #SAFE= applets/appsys.cmo sandbox/gen/safe418.cmo sandbox/gen/safe418mmm.cmo
@@ -144,11 +144,11 @@ mmm.opt:
 # The standalone HTML syntax checker
 HTMISC=libs/misc/ebuffer.cmo libs/misc/log.cmo\
        libs/i18n/lib.cma languages/html/lib.cma
-htparse: $(HTMISC)  main/htparse.cmo
+htparse: $(HTMISC)  src/main/htparse.cmo
 	$(CAMLC) $(LINKFLAGS) -o $@ $^
 
 # Remote command
-mmm_remote: libs/commons/lib.cma main/main_remote.cmo 
+mmm_remote: libs/commons/lib.cma src/main/main_remote.cmo 
 	$(CAMLC) -custom -o $@ unix.cma $^
 
 clean::

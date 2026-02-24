@@ -37,8 +37,8 @@ SRC= \
   \
   src/core/feed.mli\
   src/core/feed.ml\
-  gui/tk/glevents.mli\
-  gui/tk/glevents.ml\
+  src/tk/glevents.mli\
+  src/tk/glevents.ml\
   src/core/hotlist.ml\
   \
   src/globals/version.mli\
@@ -99,80 +99,80 @@ SRC= \
   src/retrieve/progress.ml\
   src/retrieve/retrieve.mli\
   src/retrieve/retrieve.ml\
-  gui/tk/img.mli\
-  gui/tk/img.ml\
+  src/tk/img.mli\
+  src/tk/img.ml\
   src/retrieve/scheduler.mli\
   src/retrieve/scheduler.ml\
   \
-  gui/viewers/decoders.mli\
-  gui/viewers/decoders.ml\
-  gui/viewers/embed.mli\
-  gui/viewers/embed.ml\
-  gui/viewers/save.mli\
-  gui/viewers/save.ml\
-  gui/viewers/viewers.mli\
-  gui/viewers/viewers.ml\
-  gui/viewers/plain.ml\
+  src/viewers/decoders.mli\
+  src/viewers/decoders.ml\
+  src/viewers/embed.mli\
+  src/viewers/embed.ml\
+  src/viewers/save.mli\
+  src/viewers/save.ml\
+  src/viewers/viewers.mli\
+  src/viewers/viewers.ml\
+  src/viewers/plain.ml\
   \
-  gui/display/attrs.mli\
-  gui/display/attrs.ml\
-  gui/display/cmap.ml\
-  gui/display/fit.mli\
-  gui/display/fit.ml\
-  gui/display/fonts.mli\
-  gui/display/fonts.ml\
-  gui/display/hr.mli\
-  gui/display/hr.ml\
-  gui/display/htbind.mli\
-  gui/display/htbind.ml\
-  gui/display/source.mli\
-  gui/display/source.ml\
-  gui/display/ctext.mli\
-  gui/display/ctext.ml\
-  gui/display/htmlfmt.ml\
-  gui/display/imgload.mli\
-  gui/display/imgload.ml\
-  gui/display/html_form.mli\
-  gui/display/html_form.ml\
-  gui/display/htmlw.mli\
-  gui/display/htmlw.ml\
-  gui/display/form.mli\
-  gui/display/form.ml\
-  gui/display/html_table.mli\
-  gui/display/html_table.ml\
-  gui/display/styles.mli\
-  gui/display/styles.ml\
-  gui/display/table.mli\
-  gui/display/table.ml\
-  gui/display/htframe.ml\
-  gui/display/textw_fo.mli\
-  gui/display/textw_fo.ml\
-  gui/display/html_disp.mli\
-  gui/display/html_disp.ml\
+  src/display/attrs.mli\
+  src/display/attrs.ml\
+  src/display/cmap.ml\
+  src/display/fit.mli\
+  src/display/fit.ml\
+  src/display/fonts.mli\
+  src/display/fonts.ml\
+  src/display/hr.mli\
+  src/display/hr.ml\
+  src/display/htbind.mli\
+  src/display/htbind.ml\
+  src/display/source.mli\
+  src/display/source.ml\
+  src/display/ctext.mli\
+  src/display/ctext.ml\
+  src/display/htmlfmt.ml\
+  src/display/imgload.mli\
+  src/display/imgload.ml\
+  src/display/html_form.mli\
+  src/display/html_form.ml\
+  src/display/htmlw.mli\
+  src/display/htmlw.ml\
+  src/display/form.mli\
+  src/display/form.ml\
+  src/display/html_table.mli\
+  src/display/html_table.ml\
+  src/display/styles.mli\
+  src/display/styles.ml\
+  src/display/table.mli\
+  src/display/table.ml\
+  src/display/htframe.ml\
+  src/display/textw_fo.mli\
+  src/display/textw_fo.ml\
+  src/display/html_disp.mli\
+  src/display/html_disp.ml\
   \
-  gui/chrome/about.mli\
-  gui/chrome/about.ml\
-  gui/chrome/fontprefs.ml\
-  gui/chrome/gcache.mli\
-  gui/chrome/gcache.ml\
-  gui/chrome/plink.mli\
-  gui/chrome/plink.ml\
-  gui/chrome/prefs.mli\
-  gui/chrome/prefs.ml\
-  gui/chrome/debug.ml\
-  gui/chrome/history.mli\
-  gui/chrome/history.ml\
-  gui/chrome/nav.mli\
-  gui/chrome/nav.ml\
-  gui/chrome/mmmprefs.mli\
-  gui/chrome/mmmprefs.ml\
-  gui/chrome/mmm.mli\
-  gui/chrome/mmm.ml\
-  gui/chrome/cci.ml\
+  src/chrome/about.mli\
+  src/chrome/about.ml\
+  src/chrome/fontprefs.ml\
+  src/chrome/gcache.mli\
+  src/chrome/gcache.ml\
+  src/chrome/plink.mli\
+  src/chrome/plink.ml\
+  src/chrome/prefs.mli\
+  src/chrome/prefs.ml\
+  src/chrome/debug.ml\
+  src/chrome/history.mli\
+  src/chrome/history.ml\
+  src/chrome/nav.mli\
+  src/chrome/nav.ml\
+  src/chrome/mmmprefs.mli\
+  src/chrome/mmmprefs.ml\
+  src/chrome/mmm.mli\
+  src/chrome/mmm.ml\
+  src/chrome/cci.ml\
   \
-  main/main.ml\
-  main/main_remote.ml\
-  main/htparse.ml\
+  src/main/main.ml\
+  src/main/main_remote.ml\
+  src/main/htparse.ml\
   \
   extensions/audio.ml\
   extensions/images.ml\
@@ -181,7 +181,6 @@ SRC= \
   extensions/tachy_space.ml\
   extensions/tachy_test.ml\
 
-#  commons/common.ml\
 
 SRC_VIEWS=${SRC:%=../%}
 
