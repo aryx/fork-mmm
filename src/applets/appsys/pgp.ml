@@ -1,3 +1,4 @@
+(*s: pgp.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Calves                                    *)
@@ -23,6 +24,7 @@ when Content-Encoding was specified as PGP
 
 *)
 
+(*s: function [[Pgp.read_all]] *)
 (* Read on a channel until eof *)
 let read_all chan =
   let len = 1024 in
@@ -39,7 +41,9 @@ let read_all chan =
            read_chunk buffer newoffs
   in
   read_chunk (Bytes.create 2048) 0
+(*e: function [[Pgp.read_all]] *)
 
+(*s: function [[Pgp.batch_pgp]] *)
 let batch_pgp signed clear pgplog  =
   let oin = Unix.openfile signed [O_RDONLY] 0 
   and oout = Unix.openfile clear  [O_WRONLY; O_CREAT] 0o600 in
@@ -53,43 +57,47 @@ let batch_pgp signed clear pgplog  =
       Printf.eprintf "%s\n" (Unix.error_message e);
       flush Stdlib.stderr;
       raise (Exit.ExitCode 1)
+(*e: function [[Pgp.batch_pgp]] *)
 
 
+(*s: function [[Pgp.check]] *)
 let check url signed_file =
  let clear_file = Msys.mktemp "clear" in
    let rec attempt () =
      let (lin, lout) = Unix.pipe() in
        match Low.fork() with
-       	 0 -> Unix.close lin;
-	      batch_pgp signed_file clear_file lout
+         0 -> Unix.close lin;
+          batch_pgp signed_file clear_file lout
                (* never reached *)
-	      (* old: None *)
+          (* old: None *)
        | n ->
-       	  Unix.close lout;
-	  let res = read_all lin in
-	  Unix.close lin;
-	  let _p, st = Unix.waitpid [] n in
-	  match st with
-	      WEXITED n -> 
-	         begin match
-		  Frx_dialog.f Widget.default_toplevel (Mstring.gensym "pgp")
-		    "PGP Authentification" 
-      	       	    (I18n.sprintf "PGP diagnostic for %s\n%s" url res)
-		    (Predefined "question")
-		    (if n = 0 then 0 else 1)
-		    ["Accept"; "Reject"; "Retry"] with
-            	 |  0 -> (* yeah *) Some clear_file
-		 | 1 -> (* duh *) Msys.rm clear_file; None
-		 | 2 -> attempt ()
+          Unix.close lout;
+      let res = read_all lin in
+      Unix.close lin;
+      let _p, st = Unix.waitpid [] n in
+      match st with
+          WEXITED n -> 
+             begin match
+          Frx_dialog.f Widget.default_toplevel (Mstring.gensym "pgp")
+            "PGP Authentification" 
+                   (I18n.sprintf "PGP diagnostic for %s\n%s" url res)
+            (Predefined "question")
+            (if n = 0 then 0 else 1)
+            ["Accept"; "Reject"; "Retry"] with
+              |  0 -> (* yeah *) Some clear_file
+         | 1 -> (* duh *) Msys.rm clear_file; None
+         | 2 -> attempt ()
                  | _ -> assert false
-		 end
-	    | _ -> 
-	       Msys.rm clear_file;
-      	       Error.f "PGP aborted";
-	       None
+         end
+        | _ -> 
+           Msys.rm clear_file;
+              Error.f "PGP aborted";
+           None
    in
    attempt()
+(*e: function [[Pgp.check]] *)
 
 
 
 
+(*e: pgp.ml *)

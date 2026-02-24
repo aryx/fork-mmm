@@ -1,3 +1,4 @@
+(*s: appview.ml *)
 
 (* was in viewers.mli
 class trivial_display : (Widget.widget * Url.t) -> (* #display_info *)
@@ -50,6 +51,7 @@ end
  *  load the file)
  *)
 
+(*s: function [[Appview.is_update]] *)
 (* Note: since we look in the cache of loaded applets, we must check 
  * that this is actually the *same* version of the applet that we
  * are trying to run
@@ -62,7 +64,9 @@ let is_update this_headers loaded_headers =
   with
     Not_found ->  (* no date means update *)
       true
+(*e: function [[Appview.is_update]] *)
 
+(*s: function [[Appview.applet_viewer]] *)
 let applet_viewer _parms frame ctx (doc : Document.t) =
   let url = doc.document_address in
   let invoke frame ftable =
@@ -79,37 +83,39 @@ let applet_viewer _parms frame ctx (doc : Document.t) =
     (* If the bytecode is loaded, run the thing; else fail *)
     match Dload.get url with
     | Rejected old ->
-	if is_update doc.document_headers old then begin
-	  Dload.remove url;
-	  raise Not_found
-	end else
-	Applets.error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
+    if is_update doc.document_headers old then begin
+      Dload.remove url;
+      raise Not_found
+    end else
+    Applets.error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
     | Unavailable old ->
-	if is_update doc.document_headers old then begin
-	  Dload.remove url;
-	  raise Not_found
-	end else
-	  Applets.error frame (I18n.sprintf "%s is not available" (Url.string_of url));
+    if is_update doc.document_headers old then begin
+      Dload.remove url;
+      raise Not_found
+    end else
+      Applets.error frame (I18n.sprintf "%s is not available" (Url.string_of url));
     | Loaded cmo ->
-	if is_update doc.document_headers cmo.module_info then begin
-	  Dload.remove url;
-	  raise Not_found
-	end else
-	  invoke frame cmo.module_functions
+    if is_update doc.document_headers cmo.module_info then begin
+      Dload.remove url;
+      raise Not_found
+    end else
+      invoke frame cmo.module_functions
   with
     Not_found ->
       (* Otherwise, queue it, and if it's the first request for this applet,
-	 load the bytecode *)
+     load the bytecode *)
       if Dload.add_pending_applet url (invoke frame)
       then
-    	Dload.load doc (* This will flush the queue of invocations.
-			  Since loading is interactive, other calls 
-			  to applet_viewer for the same applet may occur
-			  concurrently, in which case their invocation
-			  will be stored in the queue and flushed after
-			  loading.
-			  *)
+     Dload.load doc (* This will flush the queue of invocations.
+(*e: function [[Appview.applet_viewer]] *)
+              Since loading is interactive, other calls 
+              to applet_viewer for the same applet may occur
+              concurrently, in which case their invocation
+              will be stored in the queue and flushed after
+              loading.
+              *)
 
+(*s: function [[Appview.code_viewer]] *)
 (* If we load code directly (e.g. by clicking on a link pointing to a
    bytecode file).
    If the bytecode has been alread loaded, don't do anything.
@@ -120,67 +126,69 @@ let code_viewer _parms frame ctx (dh : Document.handle) =
   try
     match Dload.get url with
     | Rejected old ->
-	if is_update dh.dh_headers old then begin
-	  Dload.remove url;
-	  raise Not_found
-	end else begin
-	  Document.dclose true dh;
-	  Error.f (I18n.sprintf "%s was rejected" (Url.string_of url));
-	  None
-	end
+    if is_update dh.dh_headers old then begin
+      Dload.remove url;
+      raise Not_found
+    end else begin
+      Document.dclose true dh;
+      Error.f (I18n.sprintf "%s was rejected" (Url.string_of url));
+      None
+    end
     | Unavailable old ->
-	if is_update dh.dh_headers old then begin
-	  Dload.remove url;
-	  raise Not_found
-	end else begin
-	  Document.dclose true dh;
-	  Error.f (I18n.sprintf "%s is not available" (Url.string_of url));
-	  None
-	end
+    if is_update dh.dh_headers old then begin
+      Dload.remove url;
+      raise Not_found
+    end else begin
+      Document.dclose true dh;
+      Error.f (I18n.sprintf "%s is not available" (Url.string_of url));
+      None
+    end
     | Loaded cmo ->
-	if is_update dh.dh_headers cmo.module_info then begin
-	  Dload.remove url;
-	  raise Not_found
-	end else begin
-	  Document.dclose true dh;
-	  let f = Frame.create frame [] in
-	  Tk.pack [f][Expand true; Fill Fill_Both];
-	  Applets.call cmo.module_functions f ctx;
-	  Some (new trivial_display (f, url))
-	end
+    if is_update dh.dh_headers cmo.module_info then begin
+      Dload.remove url;
+      raise Not_found
+    end else begin
+      Document.dclose true dh;
+      let f = Frame.create frame [] in
+      Tk.pack [f][Expand true; Fill Fill_Both];
+      Applets.call cmo.module_functions f ctx;
+      Some (new trivial_display (f, url))
+    end
   with
     Not_found ->
       let f = Frame.create frame [] in
       (* Otherwise, queue it, and if it's the first request for this applet,
-	 save the code and loadit when finished *)
+     save the code and loadit when finished *)
       if Dload.add_pending_applet url (fun ftable -> Applets.call ftable f ctx)
       then begin
-      	let fname = Msys.mktemp "bytc"
-      	and buffer = Bytes.create 2048 in
-      	let oc = open_out_bin fname in
-      	dh.document_feed.feed_schedule
-       	  (fun _ ->
+       let fname = Msys.mktemp "bytc"
+       and buffer = Bytes.create 2048 in
+       let oc = open_out_bin fname in
+       dh.document_feed.feed_schedule
+          (fun _ ->
             try
               let n = dh.document_feed.feed_read buffer 0 2048 in
               if n = 0 then begin
-              	Document.dclose true dh;
-              	close_out oc;
-		let doc = Document.{ document_address = dh.document_id.document_url;
-			     document_data = FileData(Fpath.v fname,true);
-			     document_headers = dh.dh_headers} in
-		Cache.add dh.document_id doc;
-		Cache.finished dh.document_id;
-	      	Dload.load doc
+               Document.dclose true dh;
+               close_out oc;
+        let doc = Document.{ document_address = dh.document_id.document_url;
+                 document_data = FileData(Fpath.v fname,true);
+                 document_headers = dh.dh_headers} in
+        Cache.add dh.document_id doc;
+        Cache.finished dh.document_id;
+           Dload.load doc
               end else
-		output oc buffer 0 n
+        output oc buffer 0 n
             with
               Unix.Unix_error(_,_,_) ->
-              	Document.dclose true dh;
-	      	close_out oc;
-	      	Msys.rm fname;
-	      	Error.f (I18n.sprintf "Error during loading of bytecode")
-		  );
+               Document.dclose true dh;
+           close_out oc;
+           Msys.rm fname;
+           Error.f (I18n.sprintf "Error during loading of bytecode")
+          );
       end;
       Some (new trivial_display(f, url))
+(*e: function [[Appview.code_viewer]] *)
 
 
+(*e: appview.ml *)

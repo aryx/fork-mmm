@@ -174,6 +174,18 @@ SRC= \
   src/main/main_remote.ml\
   src/main/htparse.ml\
   \
+  src/applets/appsys/applets.mli \
+  src/applets/appsys/applets.ml \
+  src/applets/appsys/appsys.mli \
+  src/applets/appsys/appsys.ml \
+  src/applets/appsys/appview.mli \
+  src/applets/appsys/appview.ml \
+  src/applets/appsys/capabilities.mli \
+  src/applets/appsys/capabilities.ml \
+  src/applets/appsys/dload.mli \
+  src/applets/appsys/dload.ml \
+  src/applets/appsys/pgp.ml \
+  \
   extensions/audio.ml\
   extensions/images.ml\
   extensions/remove_simple_table.ml\

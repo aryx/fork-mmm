@@ -1,3 +1,4 @@
+(*s: dload.ml *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Calves                                    *)
@@ -11,9 +12,12 @@
 open Common
 open Fpath_.Operators
 
+(*s: constant [[Dload.paranoid]] *)
 let paranoid = ref true  (* selects default capabilities *)
+(*e: constant [[Dload.paranoid]] *)
 
 (* This is now available as Dynlink.error_message, but not i18n *)
+(*s: function [[Dload.dynlinkerror]] *)
 let dynlinkerror = function
    Dynlink.Not_a_bytecode_file _s ->
      I18n.sprintf "Not a bytecode file"
@@ -39,24 +43,33 @@ let dynlinkerror = function
 *)
  | other ->
      Dynlink.error_message other
+(*e: function [[Dload.dynlinkerror]] *)
  
 
 (* The type of entry point functions registered by the applet *)
+(*s: type [[Dload.applet_callback]] *)
 type applet_callback = Widget.widget -> Viewers.context -> unit
+(*e: type [[Dload.applet_callback]] *)
 
 (* The "foreign" module fake cache : what we keep in memory *)
+(*s: type [[Dload.t]] *)
 type t = {
   module_address : string;		(* the URL of the bytecode *)
   module_info : string list;		(* headers *)
   module_functions : (string, applet_callback) Hashtbl.t
   } 
+(*e: type [[Dload.t]] *)
 
+(*s: type [[Dload.mod_status]] *)
 type mod_status = 
     Unavailable of string list
   | Rejected of string list
   | Loaded of t
+(*e: type [[Dload.mod_status]] *)
 
+(*s: constant [[Dload.mod_cache]] *)
 let mod_cache = (Hashtbl.create 53 : (Url.t, mod_status) Hashtbl.t)
+(*e: constant [[Dload.mod_cache]] *)
 
 let get = Hashtbl.find mod_cache
 and iter f = Hashtbl.iter f mod_cache
@@ -72,12 +85,17 @@ and remove = Hashtbl.remove mod_cache
    condition).
  *)
 
+(*s: constant [[Dload.register_queue]] *)
 let register_queue = Queue.create()
+(*e: constant [[Dload.register_queue]] *)
 
+(*s: function [[Dload.register]] *)
 (* This is the one that we export to applets *)
 let register name f =
   Queue.add (name, f) register_queue
+(*e: function [[Dload.register]] *)
 
+(*s: function [[Dload.register_flush]] *)
 (* Create a hashtable of functions
    This is called after loading the bytecode
  *)
@@ -91,15 +109,19 @@ let register_flush () =
     names
   with
     Queue.Empty -> names
+(*e: function [[Dload.register_flush]] *)
 
 (* We need to resynchronize applet evaluation : several <EMBED> may 
    use the same SRC bytecode. The navigator will request us to load
    several times the same bytecode.
  *)
 
+(*s: constant [[Dload.pending_loads]] *)
 let pending_loads = (Hashtbl.create 37 :
 (Url.t, ((string, applet_callback) Hashtbl.t -> unit) Queue.t) Hashtbl.t)
+(*e: constant [[Dload.pending_loads]] *)
 
+(*s: function [[Dload.add_pending_applet]] *)
 (* add to queue while loading
  *   DO NOT CALL THIS if the bytecode is already loaded
  *   The queue will be flushed whenever the bytecode gets loaded
@@ -112,7 +134,9 @@ let add_pending_applet url cont =
       Queue.add cont q; (* add continuation *)
       Hashtbl.add pending_loads url q;
       true
+(*e: function [[Dload.add_pending_applet]] *)
 
+(*s: function [[Dload.flush_pending_applets]] *)
 (* Evaluate all pending continuations for this bytecode *)
 let flush_pending_applets url ftable =
   try
@@ -120,13 +144,14 @@ let flush_pending_applets url ftable =
     Hashtbl.remove pending_loads url;
     try
       while true do
-	(Queue.take q) ftable
+    (Queue.take q) ftable
       done
     with
       Queue.Empty -> ()
   with 
     Not_found -> (* url not in pending_loads table. Is that an error ? *)
       ()
+(*e: function [[Dload.flush_pending_applets]] *)
 
 
 (* Dynlink is not reentrant + security requires it to be in critical
@@ -136,8 +161,11 @@ let flush_pending_applets url ftable =
        2- The queue of functions
  *)
 
+(*s: constant [[Dload.in_load]] *)
 let in_load = ref false
+(*e: constant [[Dload.in_load]] *)
 
+(*s: function [[Dload.load_local]] *)
 (* Loading of local extensions *)
 let load_local (file : string) = 
   Logs.info (fun m -> m "loading %s" file);
@@ -154,10 +182,10 @@ let load_local (file : string) =
      let funtable = register_flush() in
      in_load := false;
      Hashtbl.add mod_cache url (Loaded 
-				  { module_address = Url.string_of url;
-				    module_info = [];
-				    module_functions = funtable;
-				  });
+                  { module_address = Url.string_of url;
+                    module_info = [];
+                    module_functions = funtable;
+                  });
      (* "run" the applets (evaluate continuations that run the entry point) *)
      flush_pending_applets url funtable;
    with e ->
@@ -167,14 +195,16 @@ let load_local (file : string) =
      in_load := false;
      match e with
      | Dynlink.Error e -> 
-	 Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
-      	       	       	         (Url.string_of url) (dynlinkerror e))
+     Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                                (Url.string_of url) (dynlinkerror e))
      | e ->
-	 Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
-      	       	       	         (Url.string_of url)
-      	       	       	       	 (Printexc.to_string e))
+     Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                                (Url.string_of url)
+                                (Printexc.to_string e))
   end
+(*e: function [[Dload.load_local]] *)
 
+(*s: function [[Dload.unsafe_load]] *)
 (* Low-level loading of a foreign bytecode stored in a tmp file *)
 let unsafe_load (doc : Document.t) file =
   if !in_load then Error.f (I18n.sprintf "Already loading a module")
@@ -192,10 +222,10 @@ let unsafe_load (doc : Document.t) file =
       let funtable = register_flush() in
       in_load := false;
       Hashtbl.add mod_cache url (Loaded
-				   { module_address = Url.string_of url;
-				     module_info = doc.document_headers;
-				     module_functions = funtable;
-				   });
+                   { module_address = Url.string_of url;
+                     module_info = doc.document_headers;
+                     module_functions = funtable;
+                   });
      (* "run" the applets (evaluate continuations that run the entry point) *)
       flush_pending_applets url funtable;
     with e ->
@@ -203,24 +233,27 @@ let unsafe_load (doc : Document.t) file =
       ignore (register_flush());
       in_load := false;
       match e with
-	Dynlink.Error e -> 
-	  Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
-      	       	                (Url.string_of url) (dynlinkerror e));
-	  failwith "dontkeep"
+    Dynlink.Error e -> 
+      Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                               (Url.string_of url) (dynlinkerror e));
+      failwith "dontkeep"
       | e ->
-	  Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
-      	       	       	         (Url.string_of url)
-      	       	       	       	 (Printexc.to_string e));
-	  failwith "dontkeep"
+      Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                                (Url.string_of url)
+                                (Printexc.to_string e));
+      failwith "dontkeep"
   end
+(*e: function [[Dload.unsafe_load]] *)
       
 
+(*s: function [[Dload.ask]] *)
 let ask url =
   0 = Frx_dialog.f Widget.default_toplevel (Mstring.gensym "accept")
        "MMM Question"
        (I18n.sprintf  "Unsigned bytecode file %s" (Url.string_of url))
        (Predefined "question") 1
        ["Accept"; "Reject"]
+(*e: function [[Dload.ask]] *)
 
 
 (* In which form is the applet ?
@@ -236,10 +269,13 @@ let ask url =
  *)
 
 
+(*s: type [[Dload.applet_kind]] *)
 type applet_kind =
     Bytecode of bool (* signed ? *)
   | Source
+(*e: type [[Dload.applet_kind]] *)
 
+(*s: function [[Dload.applet_kind]] *)
 (* may raise Invalid_HTTP_header e *)
 let applet_kind (doc : Document.t) file =
   let kind () =
@@ -252,7 +288,7 @@ let applet_kind (doc : Document.t) file =
     if Bytes.sub_string buf 0 2 = "(*" || Bytes.sub_string buf 0 5 = "open " then Source
     else (* check suffix *)
       match Mstring.get_suffix (Url.string_of doc.document_address) with
-	"ml" -> Source
+    "ml" -> Source
       | "cmo" | "cma" -> Bytecode false
       | "pgp" | "scmo" -> Bytecode true
       | _ -> (* assume pgp signed... *) Bytecode true
@@ -262,18 +298,20 @@ let applet_kind (doc : Document.t) file =
       kind ()
   | ("application", "x-caml-applet"), l -> 
       begin
-	try 
-	  match String.lowercase_ascii (List.assoc "encoding" l) with
-	    "source" -> Source
-	  | "signed-bytecode" -> Bytecode true
-	  | "bytecode" -> Bytecode false
-	  | _ -> kind ()
-      	with
-	  Not_found -> kind ()
+    try 
+      match String.lowercase_ascii (List.assoc "encoding" l) with
+        "source" -> Source
+      | "signed-bytecode" -> Bytecode true
+      | "bytecode" -> Bytecode false
+      | _ -> kind ()
+       with
+      Not_found -> kind ()
       end
   | _, _ ->
       failwith "dontkeep"
+(*e: function [[Dload.applet_kind]] *)
 
+(*s: function [[Dload.load]] *)
 (* Load a foreign bytecode *)
 let load (doc : Document.t) =
   let url = doc.document_address in
@@ -284,55 +322,57 @@ let load (doc : Document.t) =
   with
     Not_found ->
      (* actually load it from some file. [remove] says if we should
-	remove the file after loading. If the file is from the cache,
-	it is NOT our responsability to remove it
+    remove the file after loading. If the file is from the cache,
+    it is NOT our responsability to remove it
       *)
       let file, remove = 
        match doc.document_data with
        | FileData(file,_) -> file, false
        | MemoryData buf ->
-	  let file = Msys.mktemp "mmmbuf" in
-	  let oc = open_out file in
-	  output_string oc (Ebuffer.get buf);
-	  close_out oc;
-	  Fpath.v file, true
+      let file = Msys.mktemp "mmmbuf" in
+      let oc = open_out file in
+      output_string oc (Ebuffer.get buf);
+      close_out oc;
+      Fpath.v file, true
       in
       try match applet_kind doc !!file with
-	Source ->
-	  (* the mmmc script is part of the distribution *)
-	  let byt = Msys.mktemp "apcode" in
-	  let cmd = spf "mmmc %s %s" !!file byt in
-	  begin match Sys.command cmd with
-	    0 -> 
-	      unsafe_load doc byt; 
-	      Msys.rm byt;
-	      if remove then Msys.rm !!file
-	  | _n -> 
-	      Error.f (I18n.sprintf "Can't compile applet %s"
-			 (Url.string_of url));
-	      Msys.rm byt;
-	      if remove then Msys.rm !!file
-	  end
+    Source ->
+      (* the mmmc script is part of the distribution *)
+      let byt = Msys.mktemp "apcode" in
+      let cmd = spf "mmmc %s %s" !!file byt in
+      begin match Sys.command cmd with
+        0 -> 
+          unsafe_load doc byt; 
+          Msys.rm byt;
+          if remove then Msys.rm !!file
+      | _n -> 
+          Error.f (I18n.sprintf "Can't compile applet %s"
+             (Url.string_of url));
+          Msys.rm byt;
+          if remove then Msys.rm !!file
+      end
       |	Bytecode true ->
-	   begin match Pgp.check (Url.string_of url) !!file with
-	     Some clear ->
-	       unsafe_load doc clear;
-	       Msys.rm clear;
-	       if remove then Msys.rm !!file
-	   | None -> (* was refused or malformed *)
-	       if remove then Msys.rm !!file;
-	       failwith "dontkeep"
-	   end
+       begin match Pgp.check (Url.string_of url) !!file with
+         Some clear ->
+           unsafe_load doc clear;
+           Msys.rm clear;
+           if remove then Msys.rm !!file
+       | None -> (* was refused or malformed *)
+           if remove then Msys.rm !!file;
+           failwith "dontkeep"
+       end
       |	Bytecode false ->
-	  if ask url then begin
-	    unsafe_load doc !!file;
-	    if remove then Msys.rm !!file;
-	  end else begin
-	    if remove then Msys.rm !!file;
-	    failwith "dontkeep"
-	  end
+      if ask url then begin
+        unsafe_load doc !!file;
+        if remove then Msys.rm !!file;
+      end else begin
+        if remove then Msys.rm !!file;
+        failwith "dontkeep"
+      end
      with
        Failure "dontkeep" ->
-	 if remove then Msys.rm !!file;
-	 Hashtbl.add mod_cache url (Rejected doc.document_headers);
-	 Error.f (I18n.sprintf "%s was rejected" (Url.string_of url))
+     if remove then Msys.rm !!file;
+     Hashtbl.add mod_cache url (Rejected doc.document_headers);
+     Error.f (I18n.sprintf "%s was rejected" (Url.string_of url))
+(*e: function [[Dload.load]] *)
+(*e: dload.ml *)
