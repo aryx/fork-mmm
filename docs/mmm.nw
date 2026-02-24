@@ -10,7 +10,6 @@
 %******************************************************************************
 
 %recent:
-% - charon browser in inferno, has jscript support!
 % - https://browser.engineering/layout.html
 
 %------------------------------------------------------------------------------
@@ -67,7 +66,7 @@
 {\Huge 
 Principia Softwarica: The Web Browser [[mmm]]
 }\\
-{version 0.1}
+{version 0.2}
 }
 
 \author{
@@ -110,7 +109,8 @@ you fully understand how things work under the hood.
 
 \section{[[mmm]]}
 
-% chose mmm, written in ocaml, small, elegant.
+% chose mmm, written in ocaml, small, elegant, quite feature complete
+% with even applet system.
 
 \section{Other Web browsers}
 
@@ -129,7 +129,7 @@ Here are other candidates that were considered but ultimately discarded:
 % huge now
 
 \item khtml/webkit/blink (kconqueror, safari, chrome)
-% started from scratch by kde people originally, now used by google/apple
+% started from scratch by KDE people originally, now used by google/apple
 % huge
 
 \item netsurf
@@ -152,6 +152,7 @@ Here are other candidates that were considered but ultimately discarded:
 %mini:
 % - vado: very basic html rendering in haskell
 %   https://github.com/chrisdone/vado
+% - robinson
 
 
 % see wikipedia page on history of web browser, pretty good, I have it printed.
@@ -182,10 +183,25 @@ Here are other candidates that were considered but ultimately discarded:
 Most of this document is actually source code from MMM, so
 those parts are copyright by INRIA.
 
+% for mmm itself
 <<copyright header v6>>=
 (***********************************************************************)
 (*                                                                     *)
 (*                           The V6 Engine                             *)
+(*                                                                     *)
+(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
+(*                                                                     *)
+(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
+(*  Automatique.  Distributed only by permission.                      *)
+(*                                                                     *)
+(***********************************************************************)
+@
+
+% for applet system
+<<copyright header calves>>=
+(***********************************************************************)
+(*                                                                     *)
+(*                           Calves                                    *)
 (*                                                                     *)
 (*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
 (*                                                                     *)
@@ -200,7 +216,7 @@ License.
 
 \section{Acknowledgments}
 
-I would like to thank of course Francois Rouaix
+I would like to thank of course Francois Rouaix,
 the main author of MMM.
 
 
@@ -321,25 +337,27 @@ let version_number =
 
 \section{[[hello.js]]}
 
+%alt: 
+% \section{OCaml applets}
+% \section{[[hello.cmo]]}
+
 \section{Code organization}
 
-% commons/: utilities
-% globals/: config
-% www/: uri, url, request
-% html/: html parsing
-% http/: http protocol
-% protocols/: protocol dispatcher, more protocols (file, mailto), and
+% libs/commons/ libs/misc libs/i18n: utilities
+% src/www/ src/url/: uri, url, request
+% languages/html/: html parsing
+% src/http/: http protocol
+% src/protocols/: protocol dispatcher, more protocols (file, mailto), and
 %  document cache
-% retrieve/: networking stuff, connexions
-% viewers/: viewer dispatcher, and text/plain simpler viewer
-% display/: rendering engine
-% gui/: chrome
-
-% skipped for now: 
-% i18n/japan/ 
-% applets/ sandbox/ crcs/ 
-% extensions/
+% src/retrieve/: networking stuff, connexions
+% src/viewers/: viewer dispatcher, and text/plain simpler viewer
+% src/display/: rendering engine
+% src/chrome/ : gui (was called gui before)
+% src/applets/: applet system and sandbox
 % demos/ 
+
+%TODO
+% extensions/
 
 \section{Software architecture}
 
@@ -351,6 +369,7 @@ let version_number =
 % to hang the whole thing, so need to manage async requests,
 % and so have callbacks (called continuation here) when things
 % are ready.
+% Rely on Tk select()-based concurrency.
 
 %todo: see docs/website/tech.html
 
@@ -422,6 +441,7 @@ type protocol =
  | TELNET 
  | OtherProtocol of string
 @
+% HTTPS!
 
 % will see later parsing function for URL: Lexurl.make()
 
@@ -984,6 +1004,8 @@ type t =
 @
 % from document handle you'll be able to read the data
 
+% see also later Embed.viewer
+
 \subsection{[[Viewers.viewers]]}
 
 <<constant [[Viewers.viewers]]>>=
@@ -1413,7 +1435,8 @@ end
 <<type [[Main.caps]]>>=
 (* Need:
  *  - Cap.network: obviously, this is a Web browser
- *  - open_in: for ??
+ *  - TODO: Cap.exec for mmmc, convert (ImageMagic jpeg converter), metamail
+ *  - open_in: for file://, for ??
  *)
 type caps = < 
    Cap.open_in;
@@ -1617,6 +1640,8 @@ Debug.init();                       (* debugging RPC *)
 %Cache.init(), see next section
 %Auth.init(), see Security chapter
 %Debug.init(), see Debugging in appendix
+
+% Debugging RPC? which RPC?
 
 \subsection{Initial fake URL and HTML document}
 
@@ -2300,6 +2325,7 @@ let rec safe_loop () =
       safe_loop()
 @
 
+% select() under the hood for concurrency mouse/kbd/fileIO/networkIO ?
 
 %******************************************************************************
 \chapter{Navigator Interface}
@@ -2414,8 +2440,13 @@ Entry.configure e [TextVariable entryv; TextWidth 40];
 
 \section{Canvas}
 
+% viewer_frame ?
 
 \section{History}
+
+% widget? menu? 
+% see the history menu later
+
 
 <<[[Nav.process_viewer()]] add in cache and history the document>>=
 if addhist 
@@ -2439,12 +2470,21 @@ let add_hist (did : Document.id) (frag : string option) =
 in
 @
 
+% update_vhistory? 
+% use forward ref because this will be called later
+% navigator | ... -> <>
+<<[[Mmm.navigator()]] locals>>=
+let update_vhistory = ref (fun () -> ()) (* duh *) in
+@
+
+
 % this is a local because each navigator will have its own
 % history
 <<local [[Mmm.navigator.hist]]>>=
 let hist = History.create 
   { document_url = initial_url; document_stamp = Document.no_stamp } in
 @
+
 
 
 
@@ -2702,11 +2742,6 @@ update_vhistory := (fun () ->
 @
 % why use ref for update_vhistory ?
 
-% use forward ref because this will be called later
-% navigator | ... -> <>
-<<[[Mmm.navigator()]] locals>>=
-let update_vhistory = ref (fun () -> ()) (* duh *) in
-@
 
 <<[[Mmm.navigator()]] call [[update_vhistory]]>>=
 !update_vhistory();
@@ -2784,8 +2819,11 @@ let home_mmm = function
   | _ -> assert false
 @
 
+%\section{User menu}
+% later when talk about applets
 
-\section{Status bar}
+
+\section{Status log} % bar}
 %less: it's actually on the right of the buttons for now,
 % but should be in status bar I think
 
@@ -3059,6 +3097,7 @@ and slashslash =  parse
 @
 
 <<function [[Lexurl.normalize_port]]>>=
+(* coupling: with Http.request where those port numbers are also used *)
 let normalize_port = function
   | HTTP, Some 80 -> None
   | HTTPS, Some 443 -> None
@@ -3270,6 +3309,8 @@ let keep_quoted =
 
 \subsection{Encoding}
 % unparsing? escaping?
+
+% TODO: utf8 here?
 
 \subsubsection{Decoding}
 
@@ -4268,6 +4309,7 @@ let named_entities = [
 ]
 @
 % see more in language or special chars section
+%TODO: rename to named_entities elements chunk name
 
 \subsubsection{Strict mode}
 
@@ -5691,6 +5733,7 @@ val f : < Cap.network; .. > ->
    Document.continuation -> (* the handlers *)
    status
 @
+% retry for redirection url
 
 <<type [[Retrieve.retrievalStatus]]>>=
 type status =
@@ -5784,6 +5827,7 @@ let rec http_check (caps: < Cap.network; .. > )
         let cacheable = wwwr.www_link.h_method = GET in
         cont.document_process
           (if cacheable then wrap_cache cache dh else dh)
+
     | Stop msg ->
         Document.dclose true dh;
         cont.document_finish false;
@@ -5792,16 +5836,20 @@ let rec http_check (caps: < Cap.network; .. > )
         Document.dclose true dh;
         cont.document_finish false;
         wwwr.www_error#f msg
+
     | Retry hlink ->
         Document.dclose true dh;
         cont.document_finish false;
+        (* Retry! will do another web request *)
         retry hlink
+
     | Restart transform ->
         Document.dclose true dh;
         f caps wwwr retry 
          { cont with 
            document_process = (fun dh -> cont.document_process (transform dh))}
         |> ignore; (* we should probably do something of the result ! *)
+
   with Not_found ->
      (* default behavior is to call the normal continuation 
       * BUT WE DON'T CACHE !
@@ -5952,17 +6000,19 @@ let rem_active_cnx url =
 (* An abstract notion of connection *)
 type internal = Unix.file_descr
 @
-%less: why not put as abstract type for real then?
+%less: why not put as abstract type for real then? who is using Feed.internal ()?
 
 <<type [[Feed.t]]>>=
 type t = {
   feed_read : bytes -> int -> int -> int;
 
   feed_schedule : (unit -> unit) -> unit;
+  (* for abort? *)
   feed_unschedule : unit -> unit;
 
   feed_close : unit -> unit;
 
+  (* for ?? *)
   feed_internal : internal  
 }
 @
@@ -6241,6 +6291,9 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 % will see http://, main protocol, see also file://, mailto://
 % in extra protocol chapter, later
 
+%trans: seen general retrieve mechanism and protos; will now
+% focus on main one: http protocol and retrieve
+
 %rappel:
 %<<signature Protos.get>>=
 %val get: Url.protocol ->
@@ -6275,6 +6328,7 @@ let no_meter = (fun _ _ -> () : Scheduler.progress_func)
 let _ = Hashtbl.add protos Url.HTTP (Http.req, Cache.tobuffer)
 let _ = Hashtbl.add protos Url.HTTPS (Http.req, Cache.tobuffer)
 @
+%HTTPS! added by me (and Claude :))
 
 % Nav.request -> Retrieve.f (wr where wr protocol = HTTP) -> <> 
 %  (as Retrieve.f.req <- Protos.get HTTP wr <- Hashtbl.add protos (<>) <- _top
@@ -7079,6 +7133,9 @@ let ht_of_stamp ut =
      }
 @
 
+\section{HTTPS and TLS and SSL}
+% SSL code here
+
 %******************************************************************************
 \chapter{Viewers}
 %******************************************************************************
@@ -7185,7 +7242,7 @@ let add_builtin t v =
 <<signature [[Viewers.reset]]>>=
 val reset : unit -> unit
 @
-% ??? -> <>
+
 <<function [[Viewers.reset]]>>=
 (* ??? -> <> *)
 let reset () =
@@ -7827,6 +7884,10 @@ let rec interactive cont dh =
 %******************************************************************************
 % display/, html layout engine
 
+%trans:
+% again seen many viewers, and now focus on main one, html(/css/js) viewer!
+
+%TODO: put Htmlw.viewer signature here
 
 <<[[Main.main()]] misc initialisation>>=
 (* Various stuff for the HTML viewer, needing Tk *)
@@ -7834,6 +7895,7 @@ Ctext.init();
 Attrs.init !Textw_fo.html_bg; (* built the bullet images *)
 @
 % ???
+
 
 \section{The display info, [[Htmlw.display_html]]}
 % The display info
@@ -9482,6 +9544,7 @@ mach#add_tag "dl" open_dl close_dl;
 
 \subsection{Anchors, [[<a>]]}
 
+
 <<type [[Html_disp.Make.anchor_type]]>>=
 type anchor_type = HREF | NAME
 @
@@ -9743,7 +9806,9 @@ mach#add_tag "img"
 ;
 @
 
+%\subsection{Embedded, [[<embed>]]}
 
+% called for img
 <<[[Htmlfmt.formatter]] embedding primitives methods>>=
 create_embedded : 
    string -> int option -> int option -> Widget.widget;
@@ -9904,7 +9969,7 @@ mach#add_tag "embed"
 @
 
 
-\subsection{Maps}
+\subsection{Maps, [[<map>]]}
 
 % from maps.ml comment:
 %(* Client-side image maps:
@@ -10728,6 +10793,7 @@ method di_update =
 
 \section{Embedded viewers}
 
+%TODO: put Embed.viewer here
 
 <<signature [[Embed.add_viewer]]>>=
 val add_viewer : 
@@ -10984,6 +11050,10 @@ let update (caps : < Cap.network ; .. >) (frame : Widget.widget)
 %alt: include in previous chapter? section of embed?
 % seems pretty important and special to deserve its own chapter?
 
+% adding images in web browser was fundamental! huge shift,
+% first was Viola and then Mosaic and that's when web started to
+% really explode.
+
 <<[[Html_disp.machine]] image methods>>=
 method virtual imgmanager : imgloader
 @
@@ -11073,6 +11143,10 @@ end
 @
 
 
+% support tk-img many formats
+
+\section{[[convert]] fallback}
+
 %******************************************************************************
 \chapter{Forms}
 %******************************************************************************
@@ -11121,6 +11195,19 @@ end
 "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
 @
 
+%TODO: also "ml" compiled by mmmc ?
+
+<<signature [[Appview.code_viewer]]>>=
+val code_viewer: Viewers.t
+@
+
+<<signature [[Appview.applet_viewer]]>>=
+val applet_viewer: Embed.viewer
+@
+
+\section{[[hello_applet.cmo]]}
+%alt: in overview chapter
+
 \section{Initialisation}
 
 <<[[Main.main()]] applet system initialisation>>=
@@ -11133,43 +11220,18 @@ end
 Appsys.init !modules;
 @
 
-<<[[Main.main()]] locals>>=
-let modules = ref true in
-@
-<<[[Main.main()]] command line options>>=
-"-nomodule", Arg.Unit (fun () -> modules := false),
-" Don't load initial modules";
-@
+\section{Loading OCaml bytecode: [[Dynlink]]}
 
+\section{Applet viewers}
 
+\section{Sandboxing}
 
-<<signature [[Version.applet_init]]>>=
-@
-<<constant [[Version.applet_init]]>>=
-@
+\section{Capabilities}
 
+\section{Advanced features}
+%alt: in Extra features chapter
 
-\section{Module menu}
-% see later
-
-% (*      Menu.add_command othersm
-%     [Label (s_ "Caml Modules"); 
-%      Command (fun _ -> Applets.edit())];
-%    Menu.add_command othersm
-%     [Label (s_ "Load Caml Extension");
-%   Command (fun _ ->
-%              Fileselect.f (s_ "Load Caml Extension")
-%          (function [] -> ()
-%                  | [s] -> Applets.load_local s
-%              | l -> raise (Failure "multiple selection"))
-%          "*.cmo"
-%          ""
-%          false
-%          false)
-%      ];
-% *)
-
-\section{Applet user menu}
+\subsection{Applet user menu}
 
 <<[[Mmm.navigator()]] User menu>>=
 (* User menu, extensible by applets *)
@@ -11208,7 +11270,7 @@ let add_user_menu entry f =
   Frx_synth.broadcast "user_menu"
 @
 
-\section{Machine hooks}
+\subsection{Machine hooks}
 
 <<signature [[Html_disp.add_hook]]>>=
 val add_hook: (machine -> unit) -> unit
@@ -11230,6 +11292,274 @@ let user_hooks = ref []
 
 %\section{Modules}?
 % separate from Applets?
+
+\subsection{Initial modules}
+
+<<[[Main.main()]] locals>>=
+let modules = ref true in
+@
+<<[[Main.main()]] command line options>>=
+"-nomodule", Arg.Unit (fun () -> modules := false),
+" Don't load initial modules";
+@
+
+\subsubsection{Module menu}
+% see later
+
+% (*      Menu.add_command othersm
+%     [Label (s_ "Caml Modules"); 
+%      Command (fun _ -> Applets.edit())];
+%    Menu.add_command othersm
+%     [Label (s_ "Load Caml Extension");
+%   Command (fun _ ->
+%              Fileselect.f (s_ "Load Caml Extension")
+%          (function [] -> ()
+%                  | [s] -> Applets.load_local s
+%              | l -> raise (Failure "multiple selection"))
+%          "*.cmo"
+%          ""
+%          false
+%          false)
+%      ];
+% *)
+
+
+\subsection{Loading OCaml Source}
+% mmmc
+
+
+%******************************************************************************
+\chapter{Web developer tools}
+%******************************************************************************
+%alt: developer tools, html developer tools
+
+\section{View source}
+
+%TODO: view-source: ... protocol in theory
+
+<<Document menu elements>>=
+[Label (s_ "View Source")    ; Command view_source]
+@
+
+<<function [[Mmm.navigator.view_source]]>>=
+let view_source () =     
+  !current_di |> Option.iter (fun di -> di#di_source)
+in
+@
+
+<<[[Viewers.display_info]] other virtual methods signatures>>=
+method virtual di_source : unit 	        (* source viewer *)
+@
+
+% easy case, actually could return the whole document
+<<[[Plain.plain]] other methods or fields>>=
+method di_source = ()
+@
+% no need return source, you already see the source of the .txt file
+
+<<[[Htmlw.display_html]] other methods or fields>>=
+method di_source = self#source
+
+(* The source is attached to this frame so we can destroy the interior widgets*)
+method source =
+  if pending 
+  then Error.f (s_ "Cannot view document source (pending)")
+  else Source.view frame did (fun () -> self#redisplay) errors annotations
+         feed_read#get_code
+@
+
+<<signature [[Source.view]]>>=
+val view:
+  Widget.widget ->
+  Document.id ->
+  (unit -> unit) ->
+  (Html.location * string) list ref ->
+  (Tk.textTag * Html.location) list ref -> 
+  Charset.detected_code ->
+  unit
+@
+% argh, very complicated signature
+
+% apparently it also allow to modify the html! nice! mmm is also an html editor!
+
+<<function [[Source.view]]>>=
+(* Commit modifies the cache *)
+let view attach did redisplay errors annotations _coding =
+  try 
+    let doc = Cache.find did in
+    (* load : take document from cache and put it in text widget
+       commit : take source of text widget and store in cache
+       save : save to original URL. supported only on file:, could be
+              supported on http: with put ?
+     *)
+    let load, cachesave, saveurl =
+      match doc.document_data with
+      | FileData (fname,_) ->
+          let tmpfile = Msys.mktemp "buf" in
+          (* load *)
+          (fun t ->
+             let ic = open_in !!fname in
+             let buf = Bytes.create 2048 in
+             try
+               while true do
+                 let n = input ic buf 0 2048 in
+                 if n = 0 
+                 then raise End_of_file
+                 else Text.insert t textEnd 
+                        (if n = 2048 then Bytes.to_string buf else Bytes.sub_string buf 0 n) []
+               done
+             with End_of_file -> close_in ic
+          ),
+
+         (* commit *)
+         (fun t ->
+            let oc = open_out tmpfile in
+            output_string oc
+            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+            close_out oc;
+            (* SWITCH CACHE *)
+            doc.document_data <- FileData(Fpath.v tmpfile, true)),
+
+        (* save *)
+        Some (fun t ->
+          let oc = open_out !!fname in
+          output_string oc
+            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
+          close_out oc;
+          (* SWITCH CACHE *)
+          doc.document_data <- FileData(fname, false)
+       )
+
+      | MemoryData buf ->
+          (* load *)
+          (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
+          (* commit *)
+          (fun t -> 
+             Ebuffer.reset buf;
+             Ebuffer.output_string buf
+              (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
+          None
+    in
+    let top = Toplevel.create attach [Class "MMMSource"] in
+    Wm.title_set top "HTML source display";
+
+    let errorv = Textvariable.create_temporary top in
+    let f, t = 
+      new_scrollable_text top [Foreground Black; Background White] false in
+    let f' = Frame.create_named top "buttons" [] in
+    let dismiss = Button.create_named f' "dismiss"
+      [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] in
+    let commit = Button.create_named f' "commit" [Text (s_ "Commit")] in
+    let save = Button.create_named f' "save" [Text (s_ "Save")] in
+    let err = Button.create_named f' "errors" [] in
+    let ferr = Frame.create top [] in
+    let err_msg = 
+      Label.create_named ferr "error" 
+            [Relief Sunken;TextVariable errorv; Anchor W]
+  in
+
+  (* Error display and looping *)
+  let error_idx = ref [] in
+  let get_msg idx =
+    let rec f = function
+        [] -> raise Not_found
+      | (s,e,msg)::l ->
+        if Text.compare t s LE idx && Text.compare t idx LE e then msg
+     else f l in
+    f !error_idx in
+  let show_error = Text.yview_index t in
+  (* alternative is : Text.see t but is less practical *)
+  let loop_in_errors  = 
+    let current = ref None in
+    (fun () ->
+      match !current with
+       None -> (* select the first error *)
+      let (s,e,_) = List.hd !error_idx in
+       current := Some e;
+       show_error s
+      | Some s -> (* select the next one *)
+        try
+         let (s,e) = Text.tag_nextrange t "errors" s textEnd in
+       current := Some (TextIndex (e,[]));
+       show_error (TextIndex(s,[]))
+     with _ -> (* no more *)
+       let (s,e,_) = List.hd !error_idx in
+        current := Some e;
+        show_error s) in
+
+  let mark_errors () =
+    error_idx := [];
+    List.iter (fun (Loc(s,e),msg) ->
+      let idxs = abs_index s
+      and idxe = abs_index e in
+      Text.tag_add t "errors" idxs idxe;
+      error_idx := (idxs, idxe, msg) :: !error_idx)
+        !errors;
+    match List.length !errors with
+      0 ->
+       Button.configure err [Text (s_ "No Errors"); State Disabled]
+    | _n ->
+    Button.configure err
+        [Text (s_ "%d errors" (List.length !errors));
+         State Normal; Command loop_in_errors]
+  and decorate = annotate t
+  in
+  let reset () =
+    (* if we delete the tag, we delete the bindings. 
+     * we can't use the old indexes since the buffer might have changed ! *)
+     let rec remall = function
+        [] -> ()
+      | [_x] -> ()
+      | s::e::l ->
+       Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
+       remall l
+      in
+    remall (Text.tag_ranges t "errors");
+    errors := [];
+    Button.configure err 
+       [Text (s_ "Display Errors"); Command mark_errors; State Normal]
+
+  in
+     Button.configure commit
+        [Command (fun () -> reset(); cachesave t; redisplay())];
+     (match saveurl with
+        None -> Button.configure save [State Disabled]
+      | Some f -> 
+          Button.configure save
+          [Command (fun () -> reset(); f t; redisplay())]);
+     Button.configure err 
+       [Text (s_ "Display Errors");
+        Command (fun () -> mark_errors(); decorate !annotations);
+        State Normal];
+     Text.configure t [Background (NamedColor "white")];
+     Text.tag_configure t "errors" [Underline true];
+     Text.tag_bind t "errors" [[], Enter]
+       (BindSet ([Ev_MouseX; Ev_MouseY],
+     (fun ei ->
+        (* The index of the click position *)
+        let i = Text.index t
+            (TextIndex (AtXY (ei.ev_MouseX, ei.ev_MouseY), [])) in
+          try
+        Textvariable.set errorv (get_msg (TextIndex(i,[])))
+          with
+        Not_found -> ())));
+     Text.tag_bind t "errors" [[], Leave]
+       (BindSet ([], (fun _ei -> Textvariable.set errorv "")));
+
+      pack [dismiss;commit;save;err][Side Side_Left];
+      pack [err_msg] [Side Side_Left; Expand true; Fill Fill_X];
+    pack [ferr][Side Side_Top; Fill Fill_X];
+    pack [f'][Side Side_Top; Fill Fill_X];
+    pack [f][Fill Fill_Both; Expand true; Side Side_Bottom];
+
+  Frx_text.addsearch t;
+  load t
+
+  with Not_found ->
+    Error.f "document not in cache"
+@
+% so complicated function again
+
 
 
 %******************************************************************************
@@ -12855,237 +13185,6 @@ let _ =
 
 
 %******************************************************************************
-\chapter{Developer tools}
-%******************************************************************************
-
-\section{View source}
-
-<<Document menu elements>>=
-[Label (s_ "View Source")    ; Command view_source]
-@
-
-<<function [[Mmm.navigator.view_source]]>>=
-let view_source () =     
-  !current_di |> Option.iter (fun di -> di#di_source)
-in
-@
-
-<<[[Viewers.display_info]] other virtual methods signatures>>=
-method virtual di_source : unit 	        (* source viewer *)
-@
-
-% easy case, actually could return the whole document
-<<[[Plain.plain]] other methods or fields>>=
-method di_source = ()
-@
-% no need return source, you already see the source of the .txt file
-
-<<[[Htmlw.display_html]] other methods or fields>>=
-method di_source = self#source
-
-(* The source is attached to this frame so we can destroy the interior widgets*)
-method source =
-  if pending 
-  then Error.f (s_ "Cannot view document source (pending)")
-  else Source.view frame did (fun () -> self#redisplay) errors annotations
-         feed_read#get_code
-@
-
-<<signature [[Source.view]]>>=
-val view:
-  Widget.widget ->
-  Document.id ->
-  (unit -> unit) ->
-  (Html.location * string) list ref ->
-  (Tk.textTag * Html.location) list ref -> 
-  Charset.detected_code ->
-  unit
-@
-% argh, very complicated signature
-
-% apparently it also allow to modify the html! nice! mmm is also an html editor!
-
-<<function [[Source.view]]>>=
-(* Commit modifies the cache *)
-let view attach did redisplay errors annotations _coding =
-  try 
-    let doc = Cache.find did in
-    (* load : take document from cache and put it in text widget
-       commit : take source of text widget and store in cache
-       save : save to original URL. supported only on file:, could be
-              supported on http: with put ?
-     *)
-    let load, cachesave, saveurl =
-      match doc.document_data with
-      | FileData (fname,_) ->
-          let tmpfile = Msys.mktemp "buf" in
-          (* load *)
-          (fun t ->
-             let ic = open_in !!fname in
-             let buf = Bytes.create 2048 in
-             try
-               while true do
-                 let n = input ic buf 0 2048 in
-                 if n = 0 
-                 then raise End_of_file
-                 else Text.insert t textEnd 
-                        (if n = 2048 then Bytes.to_string buf else Bytes.sub_string buf 0 n) []
-               done
-             with End_of_file -> close_in ic
-          ),
-
-         (* commit *)
-         (fun t ->
-            let oc = open_out tmpfile in
-            output_string oc
-            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-            close_out oc;
-            (* SWITCH CACHE *)
-            doc.document_data <- FileData(Fpath.v tmpfile, true)),
-
-        (* save *)
-        Some (fun t ->
-          let oc = open_out !!fname in
-          output_string oc
-            (Text.get t (TextIndex(LineChar(0,0), [])) textEnd);
-          close_out oc;
-          (* SWITCH CACHE *)
-          doc.document_data <- FileData(fname, false)
-       )
-
-      | MemoryData buf ->
-          (* load *)
-          (fun t -> Text.insert t textEnd (Ebuffer.get buf) []),
-          (* commit *)
-          (fun t -> 
-             Ebuffer.reset buf;
-             Ebuffer.output_string buf
-              (Text.get t (TextIndex(LineChar(0,0), [])) textEnd)),
-          None
-    in
-    let top = Toplevel.create attach [Class "MMMSource"] in
-    Wm.title_set top "HTML source display";
-
-    let errorv = Textvariable.create_temporary top in
-    let f, t = 
-      new_scrollable_text top [Foreground Black; Background White] false in
-    let f' = Frame.create_named top "buttons" [] in
-    let dismiss = Button.create_named f' "dismiss"
-      [Text (s_ "Dismiss"); Command (fun _ -> destroy top)] in
-    let commit = Button.create_named f' "commit" [Text (s_ "Commit")] in
-    let save = Button.create_named f' "save" [Text (s_ "Save")] in
-    let err = Button.create_named f' "errors" [] in
-    let ferr = Frame.create top [] in
-    let err_msg = 
-      Label.create_named ferr "error" 
-            [Relief Sunken;TextVariable errorv; Anchor W]
-  in
-
-  (* Error display and looping *)
-  let error_idx = ref [] in
-  let get_msg idx =
-    let rec f = function
-        [] -> raise Not_found
-      | (s,e,msg)::l ->
-        if Text.compare t s LE idx && Text.compare t idx LE e then msg
-     else f l in
-    f !error_idx in
-  let show_error = Text.yview_index t in
-  (* alternative is : Text.see t but is less practical *)
-  let loop_in_errors  = 
-    let current = ref None in
-    (fun () ->
-      match !current with
-       None -> (* select the first error *)
-      let (s,e,_) = List.hd !error_idx in
-       current := Some e;
-       show_error s
-      | Some s -> (* select the next one *)
-        try
-         let (s,e) = Text.tag_nextrange t "errors" s textEnd in
-       current := Some (TextIndex (e,[]));
-       show_error (TextIndex(s,[]))
-     with _ -> (* no more *)
-       let (s,e,_) = List.hd !error_idx in
-        current := Some e;
-        show_error s) in
-
-  let mark_errors () =
-    error_idx := [];
-    List.iter (fun (Loc(s,e),msg) ->
-      let idxs = abs_index s
-      and idxe = abs_index e in
-      Text.tag_add t "errors" idxs idxe;
-      error_idx := (idxs, idxe, msg) :: !error_idx)
-        !errors;
-    match List.length !errors with
-      0 ->
-       Button.configure err [Text (s_ "No Errors"); State Disabled]
-    | _n ->
-    Button.configure err
-        [Text (s_ "%d errors" (List.length !errors));
-         State Normal; Command loop_in_errors]
-  and decorate = annotate t
-  in
-  let reset () =
-    (* if we delete the tag, we delete the bindings. 
-     * we can't use the old indexes since the buffer might have changed ! *)
-     let rec remall = function
-        [] -> ()
-      | [_x] -> ()
-      | s::e::l ->
-       Text.tag_remove t "errors" (TextIndex(s,[])) (TextIndex(e,[]));
-       remall l
-      in
-    remall (Text.tag_ranges t "errors");
-    errors := [];
-    Button.configure err 
-       [Text (s_ "Display Errors"); Command mark_errors; State Normal]
-
-  in
-     Button.configure commit
-        [Command (fun () -> reset(); cachesave t; redisplay())];
-     (match saveurl with
-        None -> Button.configure save [State Disabled]
-      | Some f -> 
-          Button.configure save
-          [Command (fun () -> reset(); f t; redisplay())]);
-     Button.configure err 
-       [Text (s_ "Display Errors");
-        Command (fun () -> mark_errors(); decorate !annotations);
-        State Normal];
-     Text.configure t [Background (NamedColor "white")];
-     Text.tag_configure t "errors" [Underline true];
-     Text.tag_bind t "errors" [[], Enter]
-       (BindSet ([Ev_MouseX; Ev_MouseY],
-     (fun ei ->
-        (* The index of the click position *)
-        let i = Text.index t
-            (TextIndex (AtXY (ei.ev_MouseX, ei.ev_MouseY), [])) in
-          try
-        Textvariable.set errorv (get_msg (TextIndex(i,[])))
-          with
-        Not_found -> ())));
-     Text.tag_bind t "errors" [[], Leave]
-       (BindSet ([], (fun _ei -> Textvariable.set errorv "")));
-
-      pack [dismiss;commit;save;err][Side Side_Left];
-      pack [err_msg] [Side Side_Left; Expand true; Fill Fill_X];
-    pack [ferr][Side Side_Top; Fill Fill_X];
-    pack [f'][Side Side_Top; Fill Fill_X];
-    pack [f][Fill Fill_Both; Expand true; Side Side_Bottom];
-
-  Frx_text.addsearch t;
-  load t
-
-  with Not_found ->
-    Error.f "document not in cache"
-@
-% so complicated function again
-
-
-
-%******************************************************************************
 \chapter{Advanced Topics}
 %******************************************************************************
 
@@ -14542,6 +14641,7 @@ let _ = add dtd32f
 
 
 \section{Fake CGI}
+% put in Web developer tools?
 
 <<[[File.request()]] if CGI path>>=
 if is_cgi path 

@@ -1490,8 +1490,6 @@ open I18n
 <<function [[Hotlist.f]]>>
 @
 
-\section{[[globals/]]}
-
 \subsection{[[globals/version.mli]]}
 
 <<globals/version.mli>>=
@@ -1504,7 +1502,6 @@ open I18n
 
 <<signature [[Version.helpurl]]>>
 <<signature [[Version.home]]>>
-<<signature [[Version.applet_init]]>>
 @
 
 \subsection{[[globals/version.ml]]}
@@ -1528,8 +1525,6 @@ open I18n
 <<function [[Version.helpurl]]>>
 
 <<function [[Version.html]]>>
-
-<<constant [[Version.applet_init]]>>
 @
 
 \section{[[www/]]}
@@ -12803,7 +12798,7 @@ open I18n
 @
 
 
-\section{[[]]}
+\section{[[main/]]}
 
 \subsection{[[main.ml]]}
 
@@ -14027,7 +14022,7 @@ end
 
 <<toplevel [[Tachy_test._1]]>>
 @
-\section{[[./]]}
+\section{[[applets/]]}
 
 \subsection*{[[applets.ml]]}
 
@@ -14090,16 +14085,7 @@ let get_toplevel_widget options =
 %-------------------------------------------------------------
 
 <<applets.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header calves>>
 
 <<type [[Applets.applet_callback]]>>
 
@@ -14505,23 +14491,9 @@ end
               *)
 
 <<function [[Appview.code_viewer]]>>
-
-
 @
-
 
 \subsection*{[[appview.mli]]}
-
-<<signature [[Appview.code_viewer]]>>=
-val code_viewer: Viewers.t
-@
-
-<<signature [[Appview.applet_viewer]]>>=
-val applet_viewer: Embed.viewer
-@
-
-
-%-------------------------------------------------------------
 
 <<appview.mli>>=
 
@@ -14820,16 +14792,7 @@ let require capa l =
 %-------------------------------------------------------------
 
 <<capabilities.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header calves>>
 
 (* 
  A simple capability manager : each applet get its own list of access rights.
@@ -15059,16 +15022,6 @@ val get : unit -> t
 %-------------------------------------------------------------
 
 <<capabilities.mli>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
 
 (* The rights as stored *)
 <<type [[Capabilities.right (capabilities.mli)]]>>
@@ -15430,16 +15383,8 @@ let load (doc : Document.t) =
 %-------------------------------------------------------------
 
 <<dload.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
+<<copyright header calves>>
+
 open Common
 open Fpath_.Operators
 
@@ -15696,17 +15641,7 @@ let check url signed_file =
 %-------------------------------------------------------------
 
 <<pgp.ml>>=
-(***********************************************************************)
-(*                                                                     *)
-(*                           Calves                                    *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-
+<<copyright header calves>>
 (* A PGP decoder *)
 
 (* 
