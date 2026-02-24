@@ -18,10 +18,12 @@
 
 ** test infra
 - Dockerfile and docker.yml Github Actions CI check
+
+** dev infra
 - semgrep.jsonnet and semgrep.yml CI check
 
 ** internals
-- introduce intermediate libs/, languages/, src/, and gui/ folders
+- introduce intermediate libs/, languages/, and src/, folders
   (like in my other projects such as codemap/efuns/osemgrep)
 - copy commons/ from xix 
 - start to use capabilities (especially Cap.network)
