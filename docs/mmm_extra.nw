@@ -3683,7 +3683,7 @@ module ImageData =
     type t = Tkanim.imageType
 
     let gamma = ref 1.0
-    let jpeg_converter = ref "djpeg"
+    let jpeg_converter = ref "convert"
     let verbose = ref false
 
    (* 
@@ -3761,23 +3761,25 @@ module ImageData =
     else Still (ImagePhoto (Imagephoto.create [File file; Gamma !gamma]))
       with Protocol.TkError _ -> broken_data
 
-    (* For JPEG, we attempt internal load first, because we might have
-       an extension for loading them *)
+    (* For JPEG, we attempt internal load first (works when tkimg/libtk-img is
+       installed and loaded via 'package require Img' at startup).
+       If that fails, fall back to an external converter (default: ImageMagick
+       'convert') to produce a PPM file that Tk can always read. *)
     let tk_load_jpeg file =
       try Tkanim.Still (ImagePhoto (Imagephoto.create [File file; Gamma !gamma]))
       with Protocol.TkError _ ->
-    let pnmfile = Msys.mktemp "pnm" in
-    let cmd = (!jpeg_converter^" "^file^" > "^pnmfile) in
+    let ppmfile = (Msys.mktemp "img") ^ ".ppm" in
+    let cmd = (!jpeg_converter ^ " " ^ file ^ " " ^ ppmfile) in
     try match Sys.command cmd with
       0 ->
         let img = Tkanim.Still (ImagePhoto (Imagephoto.create
-                     [File pnmfile; Gamma !gamma])) in
-        Msys.rm pnmfile;
+                     [File ppmfile; Gamma !gamma])) in
+        Msys.rm ppmfile;
         img
-    | _ -> Msys.rm pnmfile; broken_data
+    | _ -> Msys.rm ppmfile; broken_data
     with
       Protocol.TkError _ ->
-        Msys.rm pnmfile;
+        Msys.rm ppmfile;
         Still (Bitmap (Predefined "question"))
 
     (* other formats *)
@@ -8265,7 +8267,7 @@ class  virtual html_parse ((dh : Document.handle)) =
   val mutable size = 
     try Some (Http_headers.contentlength dh.dh_headers)
     with Not_found -> None (* duh *)
-  val mutable feed_read = new Japan.read_i18n (fun _s _o _n -> 0)
+  val mutable feed_read = new Charset.read_i18n (fun _s _o _n -> 0)
 
   val mutable (*private*) lexbuf = Lexing.from_string "" (* duh *)
   method lexbuf = lexbuf  
@@ -8273,12 +8275,12 @@ class  virtual html_parse ((dh : Document.handle)) =
   val mutable lexer = Html_eval.sgml_lexer !Dtd.current
 
   (* Japanese parse configuration *)
-  val jpn_config = Japan.default_config ()
+  val jpn_config = Charset.default_config ()
 
   method parse_init =
     red <- 0;
     feed_read <-
-       Japan.create_read_native self#dh.document_feed.feed_read;
+       Charset.create_read_native self#dh.document_feed.feed_read;
     (* Q: do we need to restart a new sgml_lexer ? *)
     lexer <- Html_eval.sgml_lexer !Dtd.current;
     lexbuf <- 

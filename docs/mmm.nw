@@ -1518,6 +1518,14 @@ Mailto.internal_backend          := Tk_mailto.internal;
 <<[[Main.main()]] tk initialisation>>=
 let top = Tk.openTkDisplayClass !display "mmm" in
 Wm.withdraw top;
+(* Load tkimg if available so Tk can handle JPEG (and TIFF) natively.
+   On Debian/Ubuntu install: sudo apt-get install libtk-img *)
+(try Protocol.tkCommand [|Protocol.TkToken "package";
+                           Protocol.TkToken "require";
+                           Protocol.TkToken "Img"|]
+ with Protocol.TkError _ ->
+   Logs.info (fun m -> m "tkimg not available; JPEG will use %s fallback"
+     !Img.ImageData.jpeg_converter));
 @
 % withdraw??
 % class? for preference file later?
@@ -10403,13 +10411,13 @@ if not !ignore_meta_charset then begin
                   Log.f ("MetaCharset detect : " ^ v);
                   begin try
                     let code = 
-                      let code = ref Japan.Unknown in
+                      let code = ref Charset.Unknown in
                       try List.iter (fun (x,c) -> 
                          if Str.string_match (Str.regexp x) v 0 then begin
                            code := c;
                            raise Exit
                          end
-                         ) Japan.encode_table ;
+                         ) Charset.encode_table ;
                          raise Not_found
                       with Exit -> !code
                     in
@@ -12880,7 +12888,7 @@ val view:
   (unit -> unit) ->
   (Html.location * string) list ref ->
   (Tk.textTag * Html.location) list ref -> 
-  Japan.detected_code -> 
+  Charset.detected_code ->
   unit
 @
 % argh, very complicated signature
@@ -13481,7 +13489,7 @@ let sprintf (fmt : ('a, unit, string) format) =
 (* I18n encoder for Forms *)
 (*
 if !Lang.japan then begin
-  mach#set_i18n_encoder (fun s -> Japan.encoder feed_read#get_code s)
+  mach#set_i18n_encoder (fun s -> Charset.encoder feed_read#get_code s)
 end;
 *)
 @
