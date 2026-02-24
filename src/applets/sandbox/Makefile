@@ -10,16 +10,17 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS= \
- $(TOP)/libs/commons \
- $(TOP)/www $(TOP)/http $(TOP)/languages/html \
- $(TOP)/retrieve $(TOP)/protocols $(TOP)/viewers \
- $(TOP)/applets $(TOP)/display $(TOP)/gui \
- $(TOP)/tk \
+ $(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n \
+ $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www \
+ $(TOP)/src/http $(TOP)/languages/html \
+ $(TOP)/src/retrieve $(TOP)/src/protocols $(TOP)/src/viewers \
+ $(TOP)/src/applets/appsys $(TOP)/src/display $(TOP)/src/chrome \
+ $(TOP)/src/tk \
  gen
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 
-all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo ../crcs/crcs.cmo ../crcs/crcsmmm.cmo
+all:: gen/safe418.cmi gen/safe418.cmo gen/safe418mmm.cmi gen/safe418mmm.cmo
 
 gen/safe418mmm.mli: gen/safe418.mli safemmm.mli
 	(echo '(* Automatically generated. Do NOT edit *)'; \
@@ -36,13 +37,6 @@ safe418mmm.cmo: safe418mmm.cmi \
 	                    gen/safe418mmm.ml $(APPSYS) $(OBJS)
 	$(CAMLC) $(SYSINCLUDES) $(INCLUDES) $(COMPFLAGS) -c gen/safe418mmm.ml
 
-../crcs/crcsmmm.ml: safe418mmm.cmi
-	-mv $@ $@.bak
-	$(LIBDIR)/extract_crc -I gen -I $(LIBDIR) \
-	  Safe418mmm \
-	  > $@ || rm $@
-	@-diff $@ $@.bak || echo "WARNING: CRCs have changed"
-
 beforedepend:: gen/safe418mmm.ml gen/safe418mmm.mli
 
 clean::
@@ -53,7 +47,7 @@ clean::
 safe-precheck:
 	md5 $(CAMLTKDIR)/*.cmi | sort -n | md5
 
-safe: safe-common safe-mmm ../crcs/crcs.ml ../crcs/crcsmmm.ml
+safe: safe-common safe-mmm
 
 ##############################################################################
 # Generic variables
@@ -73,14 +67,8 @@ $(TARGET).cma: $(OBJS)
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 
-$(TARGET).top: $(OBJS) $(LIBS)
-	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
-clean::
-	rm -f $(TARGET).top
 
 ##############################################################################
-# Literate Programming rules
 ##############################################################################
 
 # This file should be included in applications wishing to support
@@ -142,18 +130,10 @@ safejtk.ml:
 safejtk.mli:
 	-ln -s $(CAMLTKDIR)/safejtk.mli $@
 
-../crcs/crcs.ml : safe418.cmi
-	-mv $@ $@.bak
-	$(LIBDIR)/extract_crc -I gen -I $(LIBDIR) \
-	  Oo Safe418 \
-	  > $@ || rm $@
-	@-diff $@ $@.bak || echo "WARNING: CRCs have changed"
-
 clean:: clean-safe
 
 distclean::
 	make clean
-	rm -f ../crcs/crcs.ml ../crcs/crcsmmm.ml
 
 clean-safe:
 	rm -f safe418.cm*
@@ -162,6 +142,5 @@ clean-safe:
 	      safefrx.ml safefrx.mli \
 	      safetkanim.ml safetkanim.mli \
 	      safejtk.ml safejtk.mli	
-
 depend::
 	$(OCAMLDEP) -I gen *.mli *.ml gen/*.ml* > .depend

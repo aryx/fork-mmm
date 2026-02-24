@@ -82,7 +82,8 @@ let rec retrieve hlink cont =
   match wr.www_url.protocol with
     MAILTO -> raise Denied
   | _ ->
-    if Nav.dont_check_cache wr then ignore (Retrieve.f wr retry real_cont)
+    let caps = Cap.network_caps_UNSAFE () in
+    if Nav.dont_check_cache wr then ignore (Retrieve.f caps wr retry real_cont)
     else 
       let did = {document_url = wr.www_url; document_stamp = no_stamp} in
       try
@@ -90,13 +91,14 @@ let rec retrieve hlink cont =
 	  real_cont.document_process (Cache.make_handle wr doc)
       with 
 	Not_found -> (* we don't have the document *)
-	  ignore (Retrieve.f wr retry real_cont)
+	  ignore (Retrieve.f caps wr retry real_cont)
 
 (* Images are public, although they also may contain private information *)
 (* JPF : progression callback is inavailable in applets *)
 (*          it is just for keeping consistency *)
 let get_image hlink cont =
-  Img.get {document_url = C.capabilities.who; document_stamp = no_stamp}
+  let caps = Cap.network_caps_UNSAFE () in
+  Img.get caps {document_url = C.capabilities.who; document_stamp = no_stamp}
           hlink cont Progress.no_meter
 
 end

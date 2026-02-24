@@ -215,7 +215,6 @@ module Printf = Printf
 module Queue = Queue
 module Random = Random
 module Set = Set
-module Sort = Sort
 module Stack = Stack
 module Stream = Stream
 module Buffer = Buffer

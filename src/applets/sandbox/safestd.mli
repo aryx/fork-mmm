@@ -997,33 +997,6 @@ val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list;;
         *)
 end
 
-module Sort : sig
-(* Module [Sort]: sorting and merging lists *)
-
-(* This module is obsolete and exists only for backward compatibility.
-   The sorting functions in [Array] and [List] should be used instead.
-   The new functions are faster and use less memory.
-*)
-
-val list : ('a -> 'a -> bool) -> 'a list -> 'a list
-        (* Sort a list in increasing order according to an ordering predicate.
-           The predicate should return [true] if its first argument is
-           less than or equal to its second argument. *)
-
-val array : ('a -> 'a -> bool) -> 'a array -> unit
-        (* Sort an array in increasing order according to an
-           ordering predicate.
-           The predicate should return [true] if its first argument is
-           less than or equal to its second argument.
-           The array is sorted in place. *)
-
-val merge : ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
-        (* Merge two lists according to the given predicate.
-           Assuming the two argument lists are sorted according to the
-           predicate, [merge] returns a sorted list containing the elements
-           from the two lists. The behavior is undefined if the two
-           argument lists were not sorted. *)
-end
 
 module Map : sig
 (* Module [Map]: association tables over ordered types *)

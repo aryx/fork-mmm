@@ -124,6 +124,8 @@ type open_flag = Unix.open_flag =
   | O_SHARE_DELETE
   | O_CLOEXEC                   (** Set the close-on-exec flag on the
                                    descriptor returned by {!openfile} *)
+  (* NEW *)
+  | O_KEEPEXEC
 
         (* The flags to [open]. *)
 
