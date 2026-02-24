@@ -1,8 +1,5 @@
 (* This module of the applet system is specific to MMM *)
 
-open Tk
-open Prefs
-
 (* Pref stuff *)
 let active = ref false
 
@@ -39,9 +36,9 @@ let pref_set v =
 
 (* Preference panel for applets *)
 let applets_pref top =
-  family top (I18n.sprintf "Applets") [
-    abstract_bool_pref "Active" pref_init pref_set;
-    bool_pref "Paranoid" Dload.paranoid
+  Prefs.family top (I18n.sprintf "Applets") [
+    Prefs.abstract_bool_pref "Active" pref_init pref_set;
+    Prefs.bool_pref "Paranoid" Dload.paranoid
     ]
 
 
@@ -88,5 +85,3 @@ let init initialp =
   (* Load local applets *)
   if initialp then load_initial_modules();
   Mmmprefs.plug_applets applets_pref
-
-let _ = Version.applet_init := init

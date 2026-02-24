@@ -232,7 +232,7 @@ let main (caps : < caps; Cap.stdout; Cap.stderr; .. >)
    * However, preference initialisation must happen *after* initialisation
    * of the applet system
    *)
-  !Version.applet_init !modules;
+  Appsys.init !modules;
   (*e: [[Main.main()]] applet system initialisation *)
   (*s: [[Main.main()]] mmm server initialisation *)
   (* This must occur after most initialisations *)

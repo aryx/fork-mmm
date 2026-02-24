@@ -24,7 +24,5 @@ val helpurl : string -> string (* help url *)
 val home_mmm : string -> string    (* MMM home page *)
 (*e: signature [[Version.home]] *)
 (*s: signature [[Version.applet_init]] *)
-(*-*)
-val applet_init : (bool -> unit) ref
 (*e: signature [[Version.applet_init]] *)
 (*e: globals/version.mli *)

@@ -34,9 +34,6 @@ MAINDIRS= \
   src/tk src/viewers src/display src/chrome \
   src/applets/appsys src/applets/sandbox
 
-# for clean: target
-MOREDIRS=demos/applets demos/sboard
-
 MAKESUBDIRS= $(MAINDIRS)
 
 INCLUDEDIRS=$(MAINDIRS) $(GRAPHICSDIR)
@@ -101,7 +98,7 @@ rec.opt:
 clean::
 	rm -f src/main/*.cm*
 clean::
-	set -e; for i in $(MAKESUBDIRS) $(MOREDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
 
 depend::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done

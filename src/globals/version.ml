@@ -105,7 +105,5 @@ get an updated copy.
 (*e: function [[Version.html]] *)
 
 (*s: constant [[Version.applet_init]] *)
-(* Make it easier to compile both bytecode and native versions *)
-let applet_init = ref (fun _ -> ())
 (*e: constant [[Version.applet_init]] *)
 (*e: globals/version.ml *)

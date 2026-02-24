@@ -15,6 +15,7 @@
     mmm.viewers
     mmm.display
     mmm.gui
+    mmm.applets
  )
  (modules
    Main
