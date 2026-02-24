@@ -38,8 +38,8 @@ INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc \
  $(TOP)/libs/i18n \
  $(TOP)/src/core $(TOP)/src/globals \
  $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http $(TOP)/languages/html \
- $(TOP)/gui/viewers $(TOP)/src/retrieve $(TOP)/src/protocols \
- $(TOP)/gui/tk
+ $(TOP)/src/retrieve $(TOP)/src/protocols \
+ $(TOP)/src/viewers $(TOP)/src/tk
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 

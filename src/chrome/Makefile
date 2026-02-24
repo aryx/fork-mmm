@@ -21,7 +21,7 @@ INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc \
  $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http \
  $(TOP)/languages/html $(TOP)/src/protocols \
  $(TOP)/src/retrieve \
- $(TOP)/gui/tk $(TOP)/gui/viewers $(TOP)/gui/display \
+ $(TOP)/src/tk $(TOP)/src/viewers $(TOP)/src/display \
 
 SYSINCLUDES=$(TKCOMPFLAGS)
 

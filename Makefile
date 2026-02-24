@@ -31,13 +31,13 @@ MAINDIRS= \
   src/url src/www src/http \
   languages/html \
   src/protocols src/retrieve \
-  gui/tk gui/viewers gui/display gui/chrome \
-  applets/appsys
+  src/tk src/viewers src/display src/chrome \
+  src/applets/appsys
 
 #  sandbox \
 
 # for clean: target
-MOREDIRS=demos/applets demos/sboard extensions extensions/applets extensions/sandbox
+MOREDIRS=demos/applets demos/sboard
 
 MAKESUBDIRS= $(MAINDIRS)
 
