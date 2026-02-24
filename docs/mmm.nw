@@ -7145,7 +7145,8 @@ val add_viewer : Http_headers.media_type -> t -> unit
 @
 <<function [[Viewers.add_viewer]]>>=
 (* That's for internal viewers only *)
-let add_viewer ctype viewer =
+let add_viewer ctype (viewer : t) =
+  Logs.info (fun m -> m "adding viewer for %s/%s" (fst ctype) (snd ctype));
   Hashtbl.add viewers ctype (Internal viewer)
 @
 
@@ -7169,6 +7170,12 @@ val add_builtin : Http_headers.media_type -> t -> unit
 @
 <<function [[Viewers.add_builtin]]>>=
 let add_builtin t v =
+  (* This will not work because add_builtin is usually called
+   * for toplevel vars like let _ = add_builtin ... in plain.ml
+   * at the moment where Logs are not yet enabled
+ Logs.info (fun m -> m "adding builtin viewer for %s/%s"
+          (fst t) (snd t));
+  *)
   builtin_viewers := (t,v) :: !builtin_viewers
 @
 % but when those one get selected then?
@@ -7180,8 +7187,10 @@ val reset : unit -> unit
 @
 % ??? -> <>
 <<function [[Viewers.reset]]>>=
-(* ?? -> <> *)
+(* ??? -> <> *)
 let reset () =
+  Logs.info (fun m -> m "resetting viewers");
+
   (* Reset the viewer table *)
   Hashtbl.clear viewers;
 
@@ -10722,9 +10731,7 @@ method di_update =
 
 <<signature [[Embed.add_viewer]]>>=
 val add_viewer : 
-  Http_headers.media_type -> 
-  (Http_headers.media_parameter list -> Widget.widget -> Viewers.context ->
-    Document.t -> unit) -> unit
+  Http_headers.media_type -> viewer -> unit
 @
 
 <<signature [[Embed.rem_viewer]]>>=
@@ -10734,6 +10741,10 @@ val rem_viewer :  Http_headers.media_type -> unit
 
 <<constant [[Embed.embedded_viewers]]>>=
 (* Embedded viewers *)
+
+type viewer = 
+  Http_headers.media_parameter list -> 
+  Widget.widget -> Viewers.context -> Document.t -> unit
 
 let embedded_viewers = Hashtbl.create 11
 
@@ -11119,7 +11130,7 @@ end
  * However, preference initialisation must happen *after* initialisation
  * of the applet system
  *)
-!Version.applet_init !modules;
+Appsys.init !modules;
 @
 
 <<[[Main.main()]] locals>>=
@@ -11133,12 +11144,8 @@ let modules = ref true in
 
 
 <<signature [[Version.applet_init]]>>=
-(*-*)
-val applet_init : (bool -> unit) ref
 @
 <<constant [[Version.applet_init]]>>=
-(* Make it easier to compile both bytecode and native versions *)
-let applet_init = ref (fun _ -> ())
 @
 
 
