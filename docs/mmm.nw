@@ -1062,6 +1062,15 @@ method add_nav    : string * hyper_func -> unit
 method hyper_funs : (string * hyper_func) list
 @
 
+<<type [[Viewers.hyper_func]]>>=
+type hyper_func = {
+  hyper_visible : bool;
+  hyper_title : string;
+
+  hyper_func : frame_targets -> Hyper.link -> unit
+}
+@
+
 
 
 <<class [[Viewers.context]]>>=
@@ -5407,6 +5416,7 @@ val parse_request : string -> Messages.request_line
 % we need to parse response, not request 
 
 <<function [[Http_headers.parse_request]]>>=
+(* Request-Line = Method SP Request-URI SP HTTP-Version CRLF *)
 (* CHECK: Normally the URI should be encoded (no spaces ?) *)
 let parse_request s =
  try
@@ -6255,6 +6265,18 @@ let update (caps : < Cap.network; ..>) (url : Url.t) : unit =
 
 
 \section{Scheduling}
+
+<<toplevel comment [[Scheduler]]>>=
+(*
+ * Certain kind of documents need to be shared, such as in-lined images.
+ * In this case, instead of working with Retrieve.f and the normal
+ * document continuation, we queue the request to a scheduler, with a
+ * continuation to be applied to an object representing the shared 
+ * information for that document.
+ * E.G: for in-lined images, the shared information is the Tk-handle to
+ * the image.
+ *)
+@
 
 
 
@@ -7565,6 +7587,7 @@ let suffixes =
 @
 
 <<toplevel [[Http_headers._1]]>>=
+(* Even if we don't have a suffix file... *)
 (* If the suffix file says otherwise, it will have priority *)
 let _ = 
   default_hints |> List.iter (fun (s,t) -> Hashtbl.add suffixes s t)
@@ -7887,8 +7910,14 @@ let rec interactive cont dh =
 %trans:
 % again seen many viewers, and now focus on main one, html(/css/js) viewer!
 
+<<signature [[Htmlw.display_html]]>>=
+(* automatically added to list of viewers via toplevel stmt *)
+val viewer : Viewers.t
+@
+
 %TODO: put Htmlw.viewer signature here
 
+XXX
 <<[[Main.main()]] misc initialisation>>=
 (* Various stuff for the HTML viewer, needing Tk *)
 Ctext.init();
@@ -8728,7 +8757,62 @@ mach#add_tag "head" ignore_open ignore_close;
 mach#add_tag "title" ignore_open ignore_close;
 @
 
-\subsubsection*{[[<base>]]}
+\subsubsection{[[<meta>]]}
+
+<<[[Htmlw.display_html]] set meta tag>>=
+let meta_charset = ref None in
+(* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
+if not !ignore_meta_charset then begin 
+  mach#add_tag "meta" (fun _fo tag ->
+   try 
+     let h = Html.get_attribute tag "http-equiv" in
+     let v = Html.get_attribute tag "content" in
+     match String.lowercase_ascii h with
+     | "content-type" ->
+          begin try
+            let (t,h), l = Lexheaders.media_type v in
+            if String.lowercase_ascii t <> "text" ||
+               String.lowercase_ascii h <> "html" then begin
+                 Log.f ("Unknown meta content-type = "^t^"/"^h);
+                raise Exit
+            end;
+            try 
+              List.iter (fun (h,v) ->
+                if String.lowercase_ascii h = "charset" then begin
+                  let v = String.lowercase_ascii v in
+                  Log.f ("MetaCharset detect : " ^ v);
+                  begin try
+                    let code = 
+                      let code = ref Charset.Unknown in
+                      try List.iter (fun (x,c) -> 
+                         if Str.string_match (Str.regexp x) v 0 then begin
+                           code := c;
+                           raise Exit
+                         end
+                         ) Charset.encode_table ;
+                         raise Not_found
+                      with Exit -> !code
+                    in
+                    (* feed_read#set_code code; this does not work... *)
+                    meta_charset := Some code
+                  with Not_found ->
+                    Log.f (v ^ ": I don't know this charset")
+                  end;
+                  raise Exit
+               end) l;
+            with Exit -> ()
+          with _ -> () (* if failed to parse, ignore it *)
+        end
+     | _ -> ()
+   with Not_found -> ()
+ )
+ ignore_close
+  end;
+@
+
+
+
+\subsubsection{[[<base>]]}
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (*
@@ -8749,7 +8833,7 @@ mach#add_tag "base"
 ;
 @
 
-\subsubsection*{[[<isindex>]]}
+\subsubsection{[[<isindex>]]}
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (*
@@ -8786,7 +8870,7 @@ isindex = (fun prompt base ->
 );
 @
 
-\subsubsection*{[[<link>]]}
+\subsubsection{[[<link>]]}
 
 <<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
 (*
@@ -9761,148 +9845,24 @@ let length_of_string s =
       with Failure "int_of_string" -> Nolength
 @
 
-\subsection{Images, [[<img>]]}
-
-<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
-(*
- * 5.10 Image: <IMG>
- *)
-mach#add_tag "img"
-  (fun fo tag -> 
-     try
-       let src = Html.get_attribute tag "src" in
-       let align = Html.get_attribute tag "align" in
-
-       let width = 
-         try Some (int_of_string (Html.get_attribute tag "width"))
-         with Not_found | Failure "int_of_string" -> None
-       in
-       let height = 
-         try Some (int_of_string (Html.get_attribute tag "height"))
-         with Not_found | Failure "int_of_string" -> None
-       in
-
-       <<[[Html_disp.Make.init()]] IMG case, let alt>>
-       let w = fo.create_embedded align width height in
-       let link = Hyper.{ 
-         h_uri = src; 
-         h_context = Some mach#base;
-         h_method = GET; 
-         h_params = []
-       } in
-       <<[[Html_disp.Make.init()]] IMG case, let map>>
-       let caps = Cap.network_caps_UNSAFE () in
-       mach#imgmanager#add_image caps
-         { embed_hlink = link;
-           embed_frame = w;
-           embed_context = mach#ctx#for_embed tag.attributes [];
-           embed_map = map;
-           embed_alt = alt
-          }
-     with Not_found -> (* only on SRC *)
-       raise (Html.Invalid_Html "missing SRC in IMG"))
-
-  ignore_close
-;
-@
-
-%\subsection{Embedded, [[<embed>]]}
-
-% called for img
-<<[[Htmlfmt.formatter]] embedding primitives methods>>=
-create_embedded : 
-   string -> int option -> int option -> Widget.widget;
-     (* [create_embedded align w h ]: 
-    returns a widget that we can pass as target to the embed manager.
-    Should respect background color ?
-  *)
-@
-<<function [[Textfw_fo.create.create_embedded]]>>=
-create_embedded = begin
-  (* avoid space leak in Tk hash table : reuse the same names *)
-  let embsym = Mstring.egensym "emb" in
-
-  (fun _a w h ->
-     let f = Frame.create_named thtml (embsym()) [Class "HtmlEmbedded"] in
-     if !usecolors 
-     then Frame.configure f [Background (NamedColor !bg)];
-
-     (* To solve the focus problem 
-     Tk.bindtags  f ((WidgetBindings thtml) :: Tk.bindtags_get f);
-     bind f [[],Enter] (BindSet ([], fun _ -> Focus.set thtml)); 
-      *)
-     (* -- end *)
-     (match w, h with
-      | Some w, Some h ->
-          Frame.configure f [Width (Pixels w); Height (Pixels h);
-          BorderWidth (Pixels 0)];
-           Pack.propagate_set f false
-      | _, _ -> ()
-     );
-     put_embedded f "";
-     f
-  )
-end;
-@
+%\subsection{Images, [[<img>]]}
+% now later
 
 
-<<[[Html_disp.Make.init()]] IMG case, let map>>=
-(* some people use both ismap and usemap...
- *  prefer usemap
- *)
-let map =
-  try 
-    let mapname = Html.get_attribute tag "usemap"  in
-    Maps.ClientSide { 
-      h_uri = mapname;
-      h_context = Some mach#base;
-      h_method = GET;
-      h_params = []
-    }
-  with Not_found -> 
-    if !in_anchor 
-    then
-      if Html.has_attribute tag "ismap"
-      then Maps.ServerSide !anchor_link
-      else Maps.Direct !anchor_link
-    else NoMap
-in
-@
-
-
-<<[[Html_disp.Make.init()]] IMG case, let alt>>=
-let alt = 
-  try Html.get_attribute tag "alt"
-  with Not_found ->
-    let image_name = 
-      let pos = 
-        let cpos = ref (String.length src) in
-        try
-          while !cpos > 0 do
-            match src.[!cpos - 1] with
-            | '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
-            | _ -> decr cpos
-          done;
-          0
-       with Exit -> !cpos
-     in
-     if pos = String.length src 
-     then "IMAGE"
-     else String.sub src pos (String.length src - pos)
-  in
-  Printf.sprintf "[%s]" image_name	 
-in          
-@
-
-\subsection{Forms}
-
-<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
-(* FORMS: they are defined elsewhere (html_form) *)
-FormLogic.init mach;
-(* standard basic HTML2.0 initialisation stops here *)
-@
+%\subsection{Forms}
+% now in next chapter
 
 \subsection{Tables}
+% separater chapter?
+
+<<type [[Htmlfmt.width_constraint]]>>=
+(* Table manager *)
+type width_constraint =
+  | TopWidth				(* toplevel window size*)
+  | FixedWidth of int			(* width is given in pixels *)
+  | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
+@
+
 
 <<signature [[Html_disp.attempt_tables]]>>=
 val attempt_tables : bool ref
@@ -9930,43 +9890,9 @@ else begin
 end;
 @
 
-\subsection{Embedded elements, [[<embed>]]}
+%\subsection{Embedded elements, [[<embed>]]}
+%alt: now later
 
-<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
-(* EMBED
- *  The definition is a mix of what was done for earlier versions
- *  of MMM and Netscape Navigator. The reason is to get compatible HTML for
- *  Caml Applets in both browsers.
- *)
-mach#add_tag "embed"
-  (fun fo tag -> 
-     try
-       let link = Hyper.{
-         h_uri = Html.get_attribute tag "src";
-         h_method = GET;
-         h_context = Some mach#base;
-         h_params = []} in
-       let width =
-        try Some (int_of_string (Html.get_attribute tag "width"))
-        with Not_found -> None
-       and height =
-         try Some (int_of_string (Html.get_attribute tag "height"))
-         with Not_found -> None
-       and alttxt = Html.get_attribute tag "alt" in
-
-       let fr = fo.create_embedded "" width height in
-       mach#add_embedded {
-       embed_hlink = link;
-       embed_frame = fr;
-       embed_context = mach#ctx#for_embed tag.attributes [];
-       embed_map = NoMap; (* yet *)
-       embed_alt = alttxt
-      }
-     with
-      Not_found ->
-       raise (Html.Invalid_Html ("SRC missing in EMBED")))
-  ignore_close;
-@
 
 
 \subsection{Maps, [[<map>]]}
@@ -10174,6 +10100,22 @@ let get name =
 
 <<[[Htmlfmt.gattr]] font cases>>=
 | Font of Fonts.fontInfo		        (* mostly size and face *)
+@
+
+%todo? http://www.google.com/fonts
+
+% http://www.ampsoft.net/webdesign-l/WindowsMacFonts.html
+
+<<[[Plain.plain#init]] setup fonts>>=
+(*
+(* pick up the fixed font *)
+let attrs_fixed   = Styles.get_font "fixed" in
+let attrs_default = Styles.get_font "default" in
+let fd = 
+  Fonts.merge (Fonts.merge !Fonts.default attrs_default) attrs_fixed in
+let (_, opts) = Fonts.compute_tag fd in
+Text.configure text opts;
+*)
 @
 
 \subsubsection{[[<basefont>]]}
@@ -10418,99 +10360,11 @@ let frame_fugue targets =
   ff [] targets
 @
 
-\section{Styles}
-
+%\section{Styles}
 % Styles.get
 
-\section{Fonts}
-
-%todo? http://www.google.com/fonts
-
-% http://www.ampsoft.net/webdesign-l/WindowsMacFonts.html
-
-<<[[Plain.plain#init]] setup fonts>>=
-(*
-(* pick up the fixed font *)
-let attrs_fixed   = Styles.get_font "fixed" in
-let attrs_default = Styles.get_font "default" in
-let fd = 
-  Fonts.merge (Fonts.merge !Fonts.default attrs_default) attrs_fixed in
-let (_, opts) = Fonts.compute_tag fd in
-Text.configure text opts;
-*)
-@
-
-\section{Forms}
-
-<<type [[Htmlfmt.input_kind]]>>=
-(* Form manager *)
-type input_kind = EntryInput | FileInput | OtherInput
-@
-
-\section{Tables}
-
-<<type [[Htmlfmt.width_constraint]]>>=
-(* Table manager *)
-type width_constraint =
-  | TopWidth				(* toplevel window size*)
-  | FixedWidth of int			(* width is given in pixels *)
-  | UnknownWidth of (unit -> bool)	(* constraint to satisfy *)
-@
 
 \section{XXX}
-
-\subsection{Meta tag}
-
-<<[[Htmlw.display_html]] set meta tag>>=
-let meta_charset = ref None in
-(* <META HTTP-EQUIV="Content-Type" CONTENT="*/*;CHARSET=*"> stuff *)
-if not !ignore_meta_charset then begin 
-  mach#add_tag "meta" (fun _fo tag ->
-   try 
-     let h = Html.get_attribute tag "http-equiv" in
-     let v = Html.get_attribute tag "content" in
-     match String.lowercase_ascii h with
-     | "content-type" ->
-          begin try
-            let (t,h), l = Lexheaders.media_type v in
-            if String.lowercase_ascii t <> "text" ||
-               String.lowercase_ascii h <> "html" then begin
-                 Log.f ("Unknown meta content-type = "^t^"/"^h);
-                raise Exit
-            end;
-            try 
-              List.iter (fun (h,v) ->
-                if String.lowercase_ascii h = "charset" then begin
-                  let v = String.lowercase_ascii v in
-                  Log.f ("MetaCharset detect : " ^ v);
-                  begin try
-                    let code = 
-                      let code = ref Charset.Unknown in
-                      try List.iter (fun (x,c) -> 
-                         if Str.string_match (Str.regexp x) v 0 then begin
-                           code := c;
-                           raise Exit
-                         end
-                         ) Charset.encode_table ;
-                         raise Not_found
-                      with Exit -> !code
-                    in
-                    (* feed_read#set_code code; this does not work... *)
-                    meta_charset := Some code
-                  with Not_found ->
-                    Log.f (v ^ ": I don't know this charset")
-                  end;
-                  raise Exit
-               end) l;
-            with Exit -> ()
-          with _ -> () (* if failed to parse, ignore it *)
-        end
-     | _ -> ()
-   with Not_found -> ()
- )
- ignore_close
-  end;
-@
 
 
 \subsection{Annotations}
@@ -10607,6 +10461,54 @@ warnings |> List.iter (fun (reason, pos) ->
 % Incremental!
 
 \section{XXX}
+
+<<toplevel [[Htmlw._2]]>>=
+let _ =
+  Embed.add_viewer ("text", "html") embedded_viewer
+@
+
+
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* EMBED
+ *  The definition is a mix of what was done for earlier versions
+ *  of MMM and Netscape Navigator. The reason is to get compatible HTML for
+ *  Caml Applets in both browsers.
+ *)
+mach#add_tag "embed"
+  (fun fo tag -> 
+     try
+       let link = Hyper.{
+         h_uri = Html.get_attribute tag "src";
+         h_method = GET;
+         h_context = Some mach#base;
+         h_params = []} in
+       let width =
+        try Some (int_of_string (Html.get_attribute tag "width"))
+        with Not_found -> None
+       and height =
+         try Some (int_of_string (Html.get_attribute tag "height"))
+         with Not_found -> None
+       and alttxt = Html.get_attribute tag "alt" in
+
+       let fr = fo.create_embedded "" width height in
+       mach#add_embedded {
+       embed_hlink = link;
+       embed_frame = fr;
+       embed_context = mach#ctx#for_embed tag.attributes [];
+       embed_map = NoMap; (* yet *)
+       embed_alt = alttxt
+      }
+     with
+      Not_found ->
+       raise (Html.Invalid_Html ("SRC missing in EMBED")))
+  ignore_close;
+@
+
+
+
+
+
 
 <<method [[Viewers.context.for_embed]]>>=
 (* apply this on a copy ! *)
@@ -10793,7 +10695,11 @@ method di_update =
 
 \section{Embedded viewers}
 
-%TODO: put Embed.viewer here
+<<type [[Embed.viewer]]>>=
+type viewer = 
+  Http_headers.media_parameter list -> 
+  Widget.widget -> Viewers.context -> Document.t -> unit
+@
 
 <<signature [[Embed.add_viewer]]>>=
 val add_viewer : 
@@ -10805,15 +10711,9 @@ val rem_viewer :  Http_headers.media_type -> unit
 @
 
 
+
 <<constant [[Embed.embedded_viewers]]>>=
-(* Embedded viewers *)
-
-type viewer = 
-  Http_headers.media_parameter list -> 
-  Widget.widget -> Viewers.context -> Document.t -> unit
-
 let embedded_viewers = Hashtbl.create 11
-
 @
 
 <<function [[Embed.embedded_viewer]]>>=
@@ -11083,6 +10983,140 @@ method di_load_images = ()
 % no image in plain text
 
 
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(*
+ * 5.10 Image: <IMG>
+ *)
+mach#add_tag "img"
+  (fun fo tag -> 
+     try
+       let src = Html.get_attribute tag "src" in
+       let align = Html.get_attribute tag "align" in
+
+       let width = 
+         try Some (int_of_string (Html.get_attribute tag "width"))
+         with Not_found | Failure "int_of_string" -> None
+       in
+       let height = 
+         try Some (int_of_string (Html.get_attribute tag "height"))
+         with Not_found | Failure "int_of_string" -> None
+       in
+
+       <<[[Html_disp.Make.init()]] IMG case, let alt>>
+       let w = fo.create_embedded align width height in
+       let link = Hyper.{ 
+         h_uri = src; 
+         h_context = Some mach#base;
+         h_method = GET; 
+         h_params = []
+       } in
+       <<[[Html_disp.Make.init()]] IMG case, let map>>
+       let caps = Cap.network_caps_UNSAFE () in
+       mach#imgmanager#add_image caps
+         { embed_hlink = link;
+           embed_frame = w;
+           embed_context = mach#ctx#for_embed tag.attributes [];
+           embed_map = map;
+           embed_alt = alt
+          }
+     with Not_found -> (* only on SRC *)
+       raise (Html.Invalid_Html "missing SRC in IMG"))
+
+  ignore_close
+;
+@
+
+%\subsection{Embedded, [[<embed>]]}
+
+% called for img
+<<[[Htmlfmt.formatter]] embedding primitives methods>>=
+create_embedded : 
+   string -> int option -> int option -> Widget.widget;
+     (* [create_embedded align w h ]: 
+    returns a widget that we can pass as target to the embed manager.
+    Should respect background color ?
+  *)
+@
+<<function [[Textfw_fo.create.create_embedded]]>>=
+create_embedded = begin
+  (* avoid space leak in Tk hash table : reuse the same names *)
+  let embsym = Mstring.egensym "emb" in
+
+  (fun _a w h ->
+     let f = Frame.create_named thtml (embsym()) [Class "HtmlEmbedded"] in
+     if !usecolors 
+     then Frame.configure f [Background (NamedColor !bg)];
+
+     (* To solve the focus problem 
+     Tk.bindtags  f ((WidgetBindings thtml) :: Tk.bindtags_get f);
+     bind f [[],Enter] (BindSet ([], fun _ -> Focus.set thtml)); 
+      *)
+     (* -- end *)
+     (match w, h with
+      | Some w, Some h ->
+          Frame.configure f [Width (Pixels w); Height (Pixels h);
+          BorderWidth (Pixels 0)];
+           Pack.propagate_set f false
+      | _, _ -> ()
+     );
+     put_embedded f "";
+     f
+  )
+end;
+@
+
+
+<<[[Html_disp.Make.init()]] IMG case, let map>>=
+(* some people use both ismap and usemap...
+ *  prefer usemap
+ *)
+let map =
+  try 
+    let mapname = Html.get_attribute tag "usemap"  in
+    Maps.ClientSide { 
+      h_uri = mapname;
+      h_context = Some mach#base;
+      h_method = GET;
+      h_params = []
+    }
+  with Not_found -> 
+    if !in_anchor 
+    then
+      if Html.has_attribute tag "ismap"
+      then Maps.ServerSide !anchor_link
+      else Maps.Direct !anchor_link
+    else NoMap
+in
+@
+
+
+<<[[Html_disp.Make.init()]] IMG case, let alt>>=
+let alt = 
+  try Html.get_attribute tag "alt"
+  with Not_found ->
+    let image_name = 
+      let pos = 
+        let cpos = ref (String.length src) in
+        try
+          while !cpos > 0 do
+            match src.[!cpos - 1] with
+            | '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
+            | _ -> decr cpos
+          done;
+          0
+       with Exit -> !cpos
+     in
+     if pos = String.length src 
+     then "IMAGE"
+     else String.sub src pos (String.length src - pos)
+  in
+  Printf.sprintf "[%s]" image_name	 
+in          
+@
+
+
+
 <<[[Htmlw.display_html]] load images methods>>=
 method di_load_images = 
   (* load our images *)
@@ -11153,6 +11187,17 @@ end
 %alt: section in Html display before, but too important
 % quite important concept
 
+<<type [[Htmlfmt.input_kind]]>>=
+(* Form manager *)
+type input_kind = EntryInput | FileInput | OtherInput
+@
+
+<<[[Html_disp.Make.init()]] HTML elements machine initialisation>>=
+(* FORMS: they are defined elsewhere (html_form) *)
+FormLogic.init mach;
+(* standard basic HTML2.0 initialisation stops here *)
+@
+
 
 %******************************************************************************
 \chapter{CSS}
@@ -11172,8 +11217,11 @@ end
 % selectors
 
 \section{Lexing}
+%alt: in parsing chapter
 
 \section{Parsing}
+
+\section{Evaluating}
 
 
 %******************************************************************************
@@ -11181,32 +11229,77 @@ end
 %******************************************************************************
 
 \section{Lexing}
+%alt: in parsing chapter
 
 \section{Parsing}
+
+\section{Evaluating}
 
 
 
 %******************************************************************************
 \chapter{Applets}
 %******************************************************************************
-% and modules
+% and "mmm modules"
+
+%trans: a new kind of viewer!
+
+<<signature [[Appview.code_viewer]]>>=
+val viewer: Viewers.t
+@
+% for file:hello_applet.cmo
+
+% especially embed viewer!
+
+<<signature [[Appview.applet_viewer]]>>=
+val embed_viewer: Embed.viewer
+@
+% for <embed ... >
+
+%history:
+% Java applet was the main one, but died when replaced by
+% javascript scripting instead.
+% why?
+% anyway, interesting to see an applet system, see capabilities,
+% dynamic loading, security, interesting!
+
+\section{[[hello_applet.cmo]]}
+%alt: in overview chapter
+
+% see tetris.html
+%        <EMBED SRC="tetris.cmo"
+%               TYPE="application/x-caml-applet"
+%               FUNCTION="Game" WIDTH=280 HEIGHT=340>
+%        </EMBED>
+
+% there is also <applet> ? I saw "applet" before in html display machine
 
 <<[[Http_headers.suffixes]] elements>>=
 "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
 @
 
-%TODO: also "ml" compiled by mmmc ?
+% also "ml" compiled by mmmc automatically, see later
 
-<<signature [[Appview.code_viewer]]>>=
-val code_viewer: Viewers.t
+\section{Data structures}
+
+<<type [[Dload.t]]>>=
+(* The "foreign" module fake cache : what we keep in memory *)
+type t = {
+  module_address : string;		(* the URL of the bytecode *)
+  module_info : string list;		(* headers *)
+  module_functions : (string, applet_callback) Hashtbl.t
+  } 
 @
 
-<<signature [[Appview.applet_viewer]]>>=
-val applet_viewer: Embed.viewer
+<<type [[Dload.applet_callback]]>>=
+(* The type of entry point functions registered by the applet *)
+type applet_callback = Widget.widget -> Viewers.context -> unit
 @
 
-\section{[[hello_applet.cmo]]}
-%alt: in overview chapter
+% register system saw in hello_applet.ml before
+<<type [[Applets.applet_callback]]>>=
+type applet_callback = Widget.widget -> Viewers.context -> unit
+@
 
 \section{Initialisation}
 
@@ -11220,16 +11313,746 @@ val applet_viewer: Embed.viewer
 Appsys.init !modules;
 @
 
+<<signature [[Appsys.init]]>>=
+val init: bool (* whether to load also initial modules *) -> unit
+@
+
+
+<<function [[Appsys.init]]>>=
+(* Dynamic linking init : both common applets and specific applets *)
+let init initialp =
+  Logs.info (fun m -> m "Loading applet system");
+  <<[[Appsys.init()]] sandbox restrictions>>
+  <<[[Appsys.init()]] load local applets>>
+  <<[[Appsys.init()]] plug mmm applets preferences>>
+@
+
+<<[[Appsys.init()]] plug mmm applets preferences>>=
+Mmmprefs.plug_applets applets_pref
+@
+% will see later preferences feature but readable enough to
+% understand
+
+<<function [[Appsys.applets_pref]]>>=
+(* Preference panel for applets *)
+let applets_pref top =
+  Prefs.family top (I18n.sprintf "Applets") [
+    Prefs.abstract_bool_pref "Active" pref_init pref_set;
+      <<[[Appsys.applets_pref]] other elements>>
+    ]
+@
+
+<<function [[Appsys.pref_init]]>>=
+(* set display from prefs *)
+let pref_init v =
+  Textvariable.set v (if !active then "1" else "0")
+@
+
+<<constant [[Appsys.active]]>>=
+(* Pref stuff *)
+let active = ref false
+@
+
+<<function [[Appsys.pref_set]]>>=
+let pref_set v =
+  match Textvariable.get v with
+  | "1" -> if !active then () else begin
+             active := true;
+             activate()
+            end
+  | _ -> if not !active then () else begin
+           active := false;
+           deactivate()
+         end
+@
+
+
+<<constant [[Appsys.types]]>>=
+let types = [
+  "application","x-caml-applet"
+] 
+@
+% finally!
+% and with 
+% "cmo", ContentType "Content-Type: application/x-caml-applet; encoding=bytecode";
+% then when mmm demos/applets/tetris.cmo it will load it
+% (thx to file:// rewrite)
+% Can also do via tetris.html EMBED
+
+
+<<function [[Appsys.activate]]>>=
+let activate () =
+  types |> List.iter (fun ctype -> 
+    Viewers.add_viewer ctype Appview.viewer;
+    Embed.add_viewer ctype Appview.embed_viewer
+  )
+@
+
+<<function [[Appsys.deactivate]]>>=
+let deactivate () =
+  types |> List.iter (fun ctype ->
+    Viewers.rem_viewer ctype;
+    Embed.rem_viewer ctype
+  )
+@
+
+% so if applet active set in ~/.mmm/Mmm.ad, then
+% it will be loaded during initial_navigator call
+% to preferences := Mmmprefs.f preffile;
+% and it will call activate()
+
+\section{Viewers}
+
+\subsection{Regular viewer}
+
+<<function [[Appview.code_viewer]]>>=
+(* If we load code directly (e.g. by clicking on a link pointing to a
+   bytecode file).
+   If the bytecode has been alread loaded, don't do anything.
+   Else, proceed to load it (no entry point available !).
+ *)
+let viewer : Viewers.t =
+  fun _parms frame (ctx : Viewers.context) (dh : Document.handle) 
+     : Viewers.display option ->
+  let url = dh.document_id.document_url in
+  try
+    match Dload.get url with
+    <<[[Appview.viewer()]] match [[Dload.get]] cases>>
+  with
+    <<[[Appview.viewer()]] exn handler>>
+@
+
+<<signature [[Dload.get]]>>=
+val get : Url.t -> mod_status
+@
+
+<<type [[Dload.mod_status]]>>=
+type mod_status =
+  | Loaded of t
+  | Unavailable of string list
+  | Rejected of string list
+@
+
+
+
+<<[[Appview.viewer()]] match [[Dload.get]] cases>>=
+| Loaded cmo ->
+  <<[[Appview.viewer()]] in [[Loaded]] case, if [[is_update]]>>
+  else
+  begin
+    Document.dclose true dh;
+    let f = Frame.create frame [] in
+    Tk.pack [f][Expand true; Fill Fill_Both];
+    Applets.call cmo.module_functions f ctx;
+    Some (new trivial_display (f, url))
+  end
+@
+
+<<signature [[Applets.call]]>>=
+val call : (string, applet_callback) Hashtbl.t  -> 
+           Widget.widget -> Viewers.context -> unit
+@
+
+<<class [[Appview.trivial_display]]>>=
+class trivial_display (w, url) =
+ object
+  inherit Viewers.display_info ()
+  (* val w = w *)
+  (* val url = url *)
+
+  method di_widget = w
+  method di_abort = ()
+  method di_destroy = if Winfo.exists w then Tk.destroy w
+  method di_fragment _f = ()
+  method di_redisplay = ()
+  method di_title = Url.string_of url
+  method di_source = ()
+  method di_load_images = ()
+  method di_update = ()
+end
+@
+% just show the widget
+
+
+
+
+<<[[Appview.viewer()]] in [[Loaded]] case, if [[is_update]]>>=
+if is_update dh.dh_headers cmo.module_info then begin
+  Dload.remove url;
+  raise Not_found
+end
+@
+% will see that this force the reloading of the bytecode, Not_found exn
+
+<<signature [[Dload.remove]]>>=
+val remove : Url.t -> unit
+@
+
+<<function [[Appview.is_update]]>>=
+(* Note: since we look in the cache of loaded applets, we must check 
+ * that this is actually the *same* version of the applet that we
+ * are trying to run
+ *)
+let is_update this_headers loaded_headers =
+  try
+    let this_date = Http_headers.get_header "date" this_headers
+    and loaded_date = Http_headers.get_header "date" loaded_headers in
+     this_date <> loaded_date
+  with
+    Not_found ->  (* no date means update *)
+      true
+@
+
+
+<<[[Appview.viewer()]] match [[Dload.get]] cases>>=
+| Rejected old ->
+  if is_update dh.dh_headers old then begin
+    Dload.remove url;
+    raise Not_found
+  end
+  else
+  begin
+    Document.dclose true dh;
+    Error.f (I18n.sprintf "%s was rejected" (Url.string_of url));
+    None
+  end
+@
+<<[[Appview.viewer()]] match [[Dload.get]] cases>>=
+| Unavailable old ->
+  if is_update dh.dh_headers old then begin
+    Dload.remove url;
+    raise Not_found
+  end
+  else
+  begin
+    Document.dclose true dh;
+    Error.f (I18n.sprintf "%s is not available" (Url.string_of url));
+    None
+  end
+@
+
+
+
+\subsection{Embed viewer}
+
+<<function [[Appview.applet_viewer]]>>=
+let embed_viewer : Embed.viewer =
+ fun _parms frame (ctx : Viewers.context) (doc : Document.t) : unit ->
+  let url = doc.document_address in
+
+  let invoke frame ftable =
+    (* we need another level of frame where to bind the update event *)
+    let f = Frame.create frame [Class "Caml"] in
+    Tk.pack [f][Expand true; Fill Fill_Both];
+
+    let caps = Cap.network_caps_UNSAFE () in
+    (* if we are asked to update, do it *)
+    Frx_synth.bind f "update"
+      (fun _ -> Embed.update caps frame ctx doc (fun () -> ()));
+
+    Applets.call ftable f ctx
+  in
+  try
+    (* If the bytecode is loaded, run the thing; else fail *)
+    match Dload.get url with
+    <<[[Appview.embed_viewer]] match [[Dload.get]] cases>>
+  with
+    <<[[Appview.embed_viewer]] exn handler>>
+@
+
+<<[[Appview.embed_viewer]] match [[Dload.get]] cases>>=
+| Loaded cmo ->
+  if is_update doc.document_headers cmo.module_info then begin
+    Dload.remove url;
+    raise Not_found
+  end else
+    invoke frame cmo.module_functions
+@
+
+
+
+
+<<[[Appview.embed_viewer]] match [[Dload.get]] cases>>=
+| Rejected old ->
+  if is_update doc.document_headers old then begin
+    Dload.remove url;
+    raise Not_found
+  end else
+   Applets.error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
+@
+
+% Error.f -> Applets.error
+
+<<signature [[Applets.error]]>>=
+val error : Widget.widget -> string -> unit
+@
+
+<<function [[Applets.error]]>>=
+(* [error frame errmsg] reports an Error in applet evaluation (that is,
+   in evaluation of entry points, since callbacks are on a different 
+   thread of control). [frame] is the applet frame. *)
+let error frame msg =
+  let t = I18n.sprintf "Applet Error: %s" msg in
+  Tk.pack[Label.create frame [Text t]][]
+@
+
+
+<<[[Appview.embed_viewer]] match [[Dload.get]] cases>>=
+| Unavailable old ->
+  if is_update doc.document_headers old then begin
+    Dload.remove url;
+    raise Not_found
+  end else
+    Applets.error frame (I18n.sprintf "%s is not available" (Url.string_of url));
+@
+
+
+
 \section{Loading OCaml bytecode: [[Dynlink]]}
 
-\section{Applet viewers}
+
+\subsection{[[mod_cache]]}
+
+<<constant [[Dload.mod_cache]]>>=
+let mod_cache  : (Url.t, mod_status) Hashtbl.t = Hashtbl_.create ()
+@
+<<function [[Dload.remove]]>>=
+let remove = Hashtbl.remove mod_cache
+@
+
+<<function [[Dload.iter]]>>=
+let iter f = Hashtbl.iter f mod_cache
+@
+<<signature [[Dload.iter]]>>=
+val iter : (Url.t -> mod_status -> unit) -> unit
+@
+%DEAD?
+
+
+<<function [[Dload.get]]>>=
+let get = Hashtbl.find mod_cache
+@
+% so actually will raise Not_found first time load new bytecode
+
+
+
+% finally Not_found. Actually Dload.get is a hashtbl lookup in a cache
+% so it will fail the very first time and raise Not_found
+<<[[Appview.viewer()]] exn handler>>=
+Not_found ->
+  let f = Frame.create frame [] in
+  (* Otherwise, queue it, and if it's the first request for this applet,
+     save the code and loadit when finished *)
+  if Dload.add_pending_applet url (fun ftable -> Applets.call ftable f ctx)
+  then begin
+   let fname = Msys.mktemp "bytc"
+   and buffer = Bytes.create 2048 in
+   let oc = open_out_bin fname in
+   dh.document_feed.feed_schedule
+      (fun _ ->
+        try
+          let n = dh.document_feed.feed_read buffer 0 2048 in
+          if n = 0 then begin
+           Document.dclose true dh;
+           close_out oc;
+           let doc = Document.{ document_address = dh.document_id.document_url;
+             document_data = FileData(Fpath.v fname,true);
+             document_headers = dh.dh_headers} in
+           Cache.add dh.document_id doc;
+           Cache.finished dh.document_id;
+
+           Dload.load doc
+
+          end else
+           output oc buffer 0 n
+        with
+          Unix.Unix_error(_,_,_) ->
+           Document.dclose true dh;
+           close_out oc;
+           Msys.rm fname;
+           Error.f (I18n.sprintf "Error during loading of bytecode")
+      );
+  end;
+  Some (new trivial_display(f, url))
+@
+
+<<signature [[Dload.add_pending_applet]]>>=
+val add_pending_applet :
+  Url.t -> ((string, applet_callback) Hashtbl.t -> unit) -> bool
+(* returns true if this is the first applet for this bytecode *)
+@
+
+<<signature [[Dload.load]]>>=
+val load: Document.t  -> unit
+@
+
+
+
+<<[[Appview.embed_viewer]] exn handler>>=
+Not_found ->
+  (* Otherwise, queue it, and if it's the first request for this applet,
+    load the bytecode *)
+  if Dload.add_pending_applet url (invoke frame)
+  then
+   Dload.load doc (* This will flush the queue of invocations.
+          Since loading is interactive, other calls 
+          to applet_viewer for the same applet may occur
+          concurrently, in which case their invocation
+          will be stored in the queue and flushed after
+          loading.
+          *)
+@
+
+\subsection{[[Dload.load()]]}
+
+<<function [[Dload.load]]>>=
+(* Load a foreign bytecode, populate mod_cache *)
+let load (doc : Document.t) : unit  =
+  let url = doc.document_address in
+  Logs.info (fun m -> m "dynamic loading doc %s" (Url.string_of url));
+  (* do we have it already loaded ? TODO: check last modified *)
+  try
+    ignore (Hashtbl.find mod_cache url) (* then forget it *)
+  with
+    Not_found ->
+     (* actually load it from some file. [remove] says if we should
+        remove the file after loading. If the file is from the cache,
+        it is NOT our responsability to remove it
+      *)
+      let file, remove = 
+        match doc.document_data with
+        | FileData(file,_) -> file, false
+        | MemoryData buf ->
+          let file = Msys.mktemp "mmmbuf" in
+          let oc = open_out file in
+          output_string oc (Ebuffer.get buf);
+          close_out oc;
+          Fpath.v file, true
+      in
+      try 
+        match applet_kind doc !!file with
+        <<[[Dload.load()]] match [[applet_kind]] cases>>
+      with
+       Failure "dontkeep" ->
+         if remove then Msys.rm !!file;
+         Hashtbl.add mod_cache url (Rejected doc.document_headers);
+         Error.f (I18n.sprintf "%s was rejected" (Url.string_of url))
+@
+
+\subsection{Applet kind}
+
+<<type [[Dload.applet_kind]]>>=
+type applet_kind =
+  | Bytecode of bool (* signed ? *)
+  | Source
+@
+
+
+<<function [[Dload.applet_kind]]>>=
+(* may raise Invalid_HTTP_header e *)
+let applet_kind (doc : Document.t) (file : string) =
+  let kind () =
+    (* TODO: pass caps *)
+    let ic = open_in file
+    and buf : bytes = Bytes.create 8 in
+    really_input ic buf 0 8;
+    close_in ic;
+    if Bytes.to_string buf = "Caml1999" then Bytecode false else 
+    if Bytes.sub_string buf 0 2 = "(*" || Bytes.sub_string buf 0 5 = "open " then Source
+    else (* check suffix *)
+      match Mstring.get_suffix (Url.string_of doc.document_address) with
+      | "ml" -> Source
+      | "cmo" | "cma" -> Bytecode false
+      | "pgp" | "scmo" -> Bytecode true
+      | _ -> (* assume pgp signed... *) Bytecode true
+  in
+  match Lexheaders.media_type (Http_headers.contenttype doc.document_headers) with
+  | ("application", "x-caml-applet"), [] -> (* do magic number trick *)
+      kind ()
+  | ("application", "x-caml-applet"), l -> 
+      begin
+        try 
+          match String.lowercase_ascii (List.assoc "encoding" l) with
+          | "source" -> Source
+          | "signed-bytecode" -> Bytecode true
+          | "bytecode" -> Bytecode false
+          | _ -> kind ()
+       with
+         Not_found -> kind ()
+    end
+  | _, _ ->
+      failwith "dontkeep"
+@
+
+
+<<[[Dload.load()]] match [[applet_kind]] cases>>=
+| Bytecode false ->
+  if ask url then begin
+    unsafe_load doc !!file;
+    if remove then Msys.rm !!file;
+  end else begin
+    if remove then Msys.rm !!file;
+    failwith "dontkeep"
+  end
+@
+
+<<function [[Dload.ask]]>>=
+let ask (url : Url.t) : bool =
+  0 = Frx_dialog.f Widget.default_toplevel (Mstring.gensym "accept")
+       "MMM Question"
+       (I18n.sprintf  "Unsigned bytecode file %s" (Url.string_of url))
+       (Predefined "question") 1
+       ["Accept"; "Reject"]
+@
+
+
+\subsection{Low-level unsafe load}
+
+<<signature [[Dload.in_load]]>>=
+val in_load : bool ref
+@
+<<constant [[Dload.in_load]]>>=
+let in_load = ref false
+@
+
+% See hello_applet.ml, Applet.register ...
+<<signature [[Applets.register]]>>=
+val register : string -> applet_callback -> unit
+@
+
+<<constant [[Dload.register_queue]]>>=
+(* Register queue
+   The queue is used to make a separate hashtbl for each loaded bytecode,
+   and thus give some "proper" name space to each applet.
+   e.g. an applet has toplevel expressions such as
+   let _ = Applets.register 
+   NOTE: register must be protected so that it's available only during
+   load time. (and even with this protection, it's subject to race
+   condition).
+ *)
+let register_queue = Queue.create()
+@
+
+
+<<function [[Dload.unsafe_load]]>>=
+(* Low-level loading of a foreign bytecode stored in a tmp file *)
+let unsafe_load (doc : Document.t) file =
+  if !in_load then Error.f (I18n.sprintf "Already loading a module")
+  else begin
+    in_load := true;
+    let url = doc.document_address in
+    <<[[Dload.unsafe_load()]] set capabilities>>
+    (* prepare the register queue *)
+    Queue.clear register_queue;
+
+    try
+      (* Dynlink call, finally *)
+      Dynlink.loadfile_private file;
+
+      <<[[Dload.unsafe_load()]] reset capabilities>>
+      let funtable = register_flush() in
+      in_load := false;
+
+      Hashtbl.add mod_cache url (Loaded
+                   { module_address = Url.string_of url;
+                     module_info = doc.document_headers;
+                     module_functions = funtable;
+                   });
+
+      (* "run" the applets (evaluate continuations that run the entry point) *)
+      flush_pending_applets url funtable;
+    with e -> 
+     <<[[Dload.unsafe_load()]] exn [[e]] handler>>
+  end
+@
+
+
+
+<<[[Dload.unsafe_load()]] exn [[e]] handler>>=
+Capabilities.reset();
+ignore (register_flush());
+in_load := false;
+(match e with
+| Dynlink.Error e -> 
+    Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                          (Url.string_of url) (dynlinkerror e));
+    failwith "dontkeep"
+| e ->
+    Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                           (Url.string_of url)
+                           (Printexc.to_string e));
+    failwith "dontkeep"
+)
+@
+
+<<function [[Applets.register]]>>=
+(* Oups. This is defined in Dload *)
+let register name cb = 
+  if !Dload.in_load then Dload.register name cb
+@
+% if not in load? can't call it dynamically later on purpose?
+
+<<signature [[Dload.register]]>>=
+val register : string -> applet_callback -> unit
+@
+
+
+\subsection{Registered functions}
+
+<<function [[Dload.register]]>>=
+(* This is the one that we export to applets *)
+let register name f =
+  Queue.add (name, f) register_queue
+@
+
+
+<<function [[Dload.register_flush]]>>=
+(* Create a hashtable of functions
+   This is called after loading the bytecode
+ *)
+let register_flush () =
+  let names = Hashtbl_.create () in
+  try
+    while true do
+      let (name,f) = Queue.take register_queue in
+      Hashtbl.add names name f
+    done;
+    names
+  with
+    Queue.Empty -> names
+@
+
+\subsection{Pending loads}
+
+<<constant [[Dload.pending_loads]]>>=
+let pending_loads :
+  (Url.t, ((string, applet_callback) Hashtbl.t -> unit) Queue.t) Hashtbl.t
+   = Hashtbl_.create ()
+@
+
+<<function [[Dload.add_pending_applet]]>>=
+(* add to queue while loading
+ *   DO NOT CALL THIS if the bytecode is already loaded
+ *   The queue will be flushed whenever the bytecode gets loaded
+ *)
+let add_pending_applet url cont =
+    (* we already have a queue of applets waiting for url *)
+    if Hashtbl.mem pending_loads url then false else
+      (* this is the first request for this Url *)
+      let q = Queue.create() in
+      Queue.add cont q; (* add continuation *)
+      Hashtbl.add pending_loads url q;
+      true
+@
+
+
+<<function [[Dload.flush_pending_applets]]>>=
+(* Evaluate all pending continuations for this bytecode *)
+let flush_pending_applets url ftable =
+  try
+    let q = Hashtbl.find pending_loads url in
+    Hashtbl.remove pending_loads url;
+    try
+      while true do
+       (Queue.take q) ftable
+      done
+    with
+      Queue.Empty -> ()
+  with 
+    Not_found -> (* url not in pending_loads table. Is that an error ? *)
+      ()
+@
+
+
+\section{Calling OCaml bytecode}
+
+<<function [[Applets.call]]>>=
+(* [call table frame context]
+   calls the main entry point of an applet
+   [table] : table of entry points registered by a bytecode file
+   [frame] : applet frame
+   [context] : Viewers.context
+     viewer_params contains attributes of the EMBED tag
+*)
+let call table frame ctx =
+  let fname = 
+    try
+      List.assoc "function" ctx#params
+    with
+      Not_found -> "main" (* default entry point *) in
+  try
+    let foo = Hashtbl.find table fname in
+    (* destroy the alt window of the frame*)
+    List.iter Tk.destroy (Winfo.children frame);
+    try 
+      Printexc.print (foo frame) ctx
+    with
+      e -> error frame 
+        (I18n.sprintf "Applet function \"%s\" raised exception: %s"
+           fname (Printexc.to_string e))
+  with
+    Not_found ->
+      (* mismatch between EMBED function= and registered entry points *)
+      error frame (I18n.sprintf "Applet function \"%s\" not found" fname)
+@
+
 
 \section{Sandboxing}
 
+<<[[Appsys.init()]] sandbox restrictions>>=
+(* old: modern OCaml does not need anymore to use this old API
+ *  Dynlink.init();
+ *  Dynlink.add_available_units Crcs.crc_unit_list;
+ *  Dynlink.add_available_units Crcsmmm.crc_unit_list;
+*)
+(* TODO: use instead Dynlink.set_allowed_units ? 
+ * TODO: allow_only does not seem to work :(
+ *)
+Dynlink.allow_only ["Safe419"];
+* old? needed? pad: TODO, infer using `ocamlc -where`
+   Dynlink.add_interfaces ["Pervasives"; "Unix"] 
+    ["/opt/local/lib/ocaml"];
+*)
+@
+
 \section{Capabilities}
+
+
+<<[[Dload.unsafe_load()]] set capabilities>>=
+Capabilities.set 
+  ((if !paranoid then Capabilities.strict_default url
+    else Capabilities.lenient_default url));
+@
+
+<<[[Dload.unsafe_load()]] reset capabilities>>=
+Capabilities.reset();
+@
+
+\subsection{Paranoid setting}
+
+<<signature [[Dload.paranoid]]>>=
+val paranoid : bool ref
+@
+<<constant [[Dload.paranoid]]>>=
+let paranoid = ref true  (* selects default capabilities *)
+@
+
+<<[[Appsys.applets_pref]] other elements>>=
+Prefs.bool_pref "Paranoid" Dload.paranoid
+@
+
+
+
 
 \section{Advanced features}
 %alt: in Extra features chapter
+
+
+%\subsection{Paranoid capabilities}
+%alt: before
+
+\subsection{Applet preferences}
+% seen before
 
 \subsection{Applet user menu}
 
@@ -11290,10 +12113,25 @@ let user_hooks = ref []
 !user_hooks |> List.iter (fun f -> f (mach :> machine));
 @
 
+\subsection{External windows}
+
+<<signature [[Applets.get_toplevel_widget]]>>=
+val get_toplevel_widget : Tk.options list -> Widget.widget
+@
+
+
+<<function [[Applets.get_toplevel_widget]]>>=
+(* Support for "external" windows *)
+let get_toplevel_widget options = 
+  Toplevel.create Widget.default_toplevel options
+@
+% called by a few functions
+
+
 %\section{Modules}?
 % separate from Applets?
 
-\subsection{Initial modules}
+\subsection{Initial modules and [[mmm -nomodule]]}
 
 <<[[Main.main()]] locals>>=
 let modules = ref true in
@@ -11303,8 +12141,85 @@ let modules = ref true in
 " Don't load initial modules";
 @
 
-\subsubsection{Module menu}
+<<[[Appsys.init()]] load local applets>>=
+(* Load local applets *)
+if initialp then load_initial_modules();
+@
+
+<<function [[Appsys.load_initial_modules]]>>=
+(* Load "initial modules" residing in user directory (~/.mmm) *)
+let load_initial_modules () =
+  try
+    let dir = 
+      Filename.concat (Filename.concat (Sys.getenv "HOME") ".mmm") 
+                      (string_of_int Version.number) in
+    if Sys.file_exists dir then
+    let dh = Unix.opendir dir in
+    try
+      while true do
+        let f = Unix.readdir dh in
+        if Filename.check_suffix f ".cmo" then
+          Dload.load_local (Filename.concat dir f)
+        done
+    with
+     | End_of_file -> Unix.closedir dh
+     | e -> Unix.closedir dh; raise e
+  with
+  | Not_found (* Sys.getenv *) ->
+      prerr_endline "Please specify the HOME environment variable";
+      raise (Exit.ExitCode (-1))
+  | Unix.Unix_error (e, fname, arg) ->
+      Error.f (I18n.sprintf
+         "Error during loading of initial modules\n%s: %s %s"
+         fname (Unix.error_message e) arg)
+@
+
+<<signature [[Dload.load_local]]>>=
+val load_local : string -> unit
+@
+
+<<function [[Dload.load_local]]>>=
+(* Loading of local extensions *)
+let load_local (file : string) = 
+  Logs.info (fun m -> m "loading local mmm extension %s" file);
+  if !in_load then Error.f (I18n.sprintf "Already loading a module")
+  else begin
+   in_load := true;
+   let url = Lexurl.make ("file://"^file) in
+   Capabilities.set (Capabilities.local_default url);
+   (* prepare the register queue *)
+   Queue.clear register_queue; (* this is not needed actually *)
+   try
+     Dynlink.loadfile_private file;
+     Capabilities.reset();
+     let funtable = register_flush() in
+     in_load := false;
+     Hashtbl.add mod_cache url (Loaded 
+                  { module_address = Url.string_of url;
+                    module_info = [];
+                    module_functions = funtable;
+                  });
+     (* "run" the applets (evaluate continuations that run the entry point) *)
+     flush_pending_applets url funtable;
+   with e ->
+     (* In case of any error here *)
+     Capabilities.reset();
+     ignore (register_flush());
+     in_load := false;
+     match e with
+     | Dynlink.Error e -> 
+       Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                                (Url.string_of url) (dynlinkerror e))
+     | e ->
+       Error.f (I18n.sprintf "Failed to load Caml module %s\n%s"
+                                (Url.string_of url)
+                                (Printexc.to_string e))
+  end
+@
+
+%\subsubsection{Module menu}
 % see later
+% TODO restore?
 
 % (*      Menu.add_command othersm
 %     [Label (s_ "Caml Modules"); 
@@ -11325,11 +12240,134 @@ let modules = ref true in
 
 
 \subsection{Loading OCaml Source}
+
 % mmmc
+
+<<[[Dload.load()]] match [[applet_kind]] cases>>=
+| Source ->
+  (* the mmmc script is part of the distribution *)
+  let byt = Msys.mktemp "apcode" in
+  let cmd = spf "mmmc %s %s" !!file byt in
+  begin match Sys.command cmd with
+  | 0 -> 
+      unsafe_load doc byt; 
+      Msys.rm byt;
+      if remove then Msys.rm !!file
+  | _n -> 
+    Error.f (I18n.sprintf "Can't compile applet %s"
+            (Url.string_of url));
+    Msys.rm byt;
+    if remove then Msys.rm !!file
+ end
+@
+
+\subsection{Loading signed bytecode}
+% PGP
+
+<<[[Dload.load()]] match [[applet_kind]] cases>>=
+| Bytecode true ->
+  begin 
+   match Pgp.check (Url.string_of url) !!file with
+   | Some clear ->
+     unsafe_load doc clear;
+     Msys.rm clear;
+     if remove then Msys.rm !!file
+   | None -> (* was refused or malformed *)
+     if remove then Msys.rm !!file;
+     failwith "dontkeep"
+ end
+@
+
+<<toplevel comment [[Pgp]]>>=
+(* 
+   decoding goes as follows:
+    pgp -f +batchmode < signed > unsigned 2> log
+   to produce a signed file,
+    pgp -s foo # produces foo.pgp
+ or pgp -sta foo # produces foo.asc
+
+pgp_check is called on file (saved by a scheduler)
+when Content-Encoding was specified as PGP
+*)
+@
+
+
+<<function [[Pgp.check]]>>=
+let check url signed_file =
+ let clear_file = Msys.mktemp "clear" in
+   let rec attempt () =
+     let (lin, lout) = Unix.pipe() in
+       match Low.fork() with
+         0 -> Unix.close lin;
+          batch_pgp signed_file clear_file lout
+               (* never reached *)
+          (* old: None *)
+       | n ->
+          Unix.close lout;
+      let res = read_all lin in
+      Unix.close lin;
+      let _p, st = Unix.waitpid [] n in
+      match st with
+          WEXITED n -> 
+             begin match
+          Frx_dialog.f Widget.default_toplevel (Mstring.gensym "pgp")
+            "PGP Authentification" 
+                   (I18n.sprintf "PGP diagnostic for %s\n%s" url res)
+            (Predefined "question")
+            (if n = 0 then 0 else 1)
+            ["Accept"; "Reject"; "Retry"] with
+              |  0 -> (* yeah *) Some clear_file
+         | 1 -> (* duh *) Msys.rm clear_file; None
+         | 2 -> attempt ()
+                 | _ -> assert false
+         end
+        | _ -> 
+           Msys.rm clear_file;
+              Error.f "PGP aborted";
+           None
+   in
+   attempt()
+@
+
+<<function [[Pgp.batch_pgp]]>>=
+let batch_pgp signed clear pgplog  =
+  let oin = Unix.openfile signed [O_RDONLY] 0 
+  and oout = Unix.openfile clear  [O_WRONLY; O_CREAT] 0o600 in
+   Unix.dup2 oin Unix.stdin; Unix.close oin;
+   Unix.dup2 oout Unix.stdout; Unix.close oout;
+   Unix.dup2 pgplog Unix.stderr; Unix.close pgplog;
+  try
+    Unix.execvp "pgp" [| "pgp"; "+batchmode=on"; "+verbose=0"; "-f" |]
+  with
+    Unix.Unix_error(e, _, _) ->
+      Printf.eprintf "%s\n" (Unix.error_message e);
+      flush Stdlib.stderr;
+      raise (Exit.ExitCode 1)
+@
+
+
+<<function [[Pgp.read_all]]>>=
+(* Read on a channel until eof *)
+let read_all chan =
+  let len = 1024 in
+  let rec read_chunk (buffer : bytes) (offs : int) : string = 
+    let chunk = Unix.read chan buffer offs len in
+    if chunk = 0 then Bytes.sub_string buffer 0 offs else
+      let newoffs = offs + chunk
+      and l = Bytes.length buffer in
+        if newoffs + len > l then
+          let newbuf = Bytes.create (2*l+len) in
+           Bytes.unsafe_blit buffer 0 newbuf 0 newoffs;
+           read_chunk newbuf newoffs
+        else
+           read_chunk buffer newoffs
+  in
+  read_chunk (Bytes.create 2048) 0
+@
 
 
 %******************************************************************************
-\chapter{Web developer tools}
+\chapter{Web-developer tools}
 %******************************************************************************
 %alt: developer tools, html developer tools
 
