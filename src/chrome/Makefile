@@ -17,7 +17,7 @@ LIBS=
 
 INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc \
  $(TOP)/libs/i18n $(TOP)/libs/i18n/japan \
- $(TOP)/src/core \ $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http \
+ $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www $(TOP)/src/http \
  $(TOP)/languages/html $(TOP)/src/protocols \
  $(TOP)/src/retrieve \
  $(TOP)/src/tk $(TOP)/src/viewers $(TOP)/src/display \
