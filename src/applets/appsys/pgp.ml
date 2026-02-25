@@ -1,4 +1,5 @@
 (*s: pgp.ml *)
+(*s: copyright header calves *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Calves                                    *)
@@ -9,9 +10,10 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
-
+(*e: copyright header calves *)
 (* A PGP decoder *)
 
+(*s: toplevel comment [[Pgp]] *)
 (* 
    decoding goes as follows:
     pgp -f +batchmode < signed > unsigned 2> log
@@ -21,8 +23,8 @@
 
 pgp_check is called on file (saved by a scheduler)
 when Content-Encoding was specified as PGP
-
 *)
+(*e: toplevel comment [[Pgp]] *)
 
 (*s: function [[Pgp.read_all]] *)
 (* Read on a channel until eof *)
@@ -58,7 +60,6 @@ let batch_pgp signed clear pgplog  =
       flush Stdlib.stderr;
       raise (Exit.ExitCode 1)
 (*e: function [[Pgp.batch_pgp]] *)
-
 
 (*s: function [[Pgp.check]] *)
 let check url signed_file =
@@ -96,8 +97,4 @@ let check url signed_file =
    in
    attempt()
 (*e: function [[Pgp.check]] *)
-
-
-
-
 (*e: pgp.ml *)

@@ -1,25 +1,25 @@
 (*s: dload.mli *)
 
+(*s: type [[Dload.applet_callback]] *)
 (* The type of entry point functions registered by the applet *)
-(*s: type [[Dload.applet_callback (dload.mli)]] *)
 type applet_callback = Widget.widget -> Viewers.context -> unit
-(*e: type [[Dload.applet_callback (dload.mli)]] *)
+(*e: type [[Dload.applet_callback]] *)
 
-(* The "foreign" module fake cache *)
-(*s: type [[Dload.t (dload.mli)]] *)
+(*s: type [[Dload.t]] *)
+(* The "foreign" module fake cache : what we keep in memory *)
 type t = {
   module_address : string;		(* the URL of the bytecode *)
   module_info : string list;		(* headers *)
   module_functions : (string, applet_callback) Hashtbl.t
   } 
-(*e: type [[Dload.t (dload.mli)]] *)
+(*e: type [[Dload.t]] *)
 
-(*s: type [[Dload.mod_status (dload.mli)]] *)
+(*s: type [[Dload.mod_status]] *)
 type mod_status =
-    Unavailable of string list
-  | Rejected of string list
   | Loaded of t
-(*e: type [[Dload.mod_status (dload.mli)]] *)
+  | Unavailable of string list
+  | Rejected of string list
+(*e: type [[Dload.mod_status]] *)
 
 (*s: signature [[Dload.get]] *)
 val get : Url.t -> mod_status
@@ -37,10 +37,10 @@ val register : string -> applet_callback -> unit
 (*s: signature [[Dload.add_pending_applet]] *)
 val add_pending_applet :
   Url.t -> ((string, applet_callback) Hashtbl.t -> unit) -> bool
-(*e: signature [[Dload.add_pending_applet]] *)
-(*s: signature [[Dload.load]] *)
 (* returns true if this is the first applet for this bytecode *)
+(*e: signature [[Dload.add_pending_applet]] *)
 
+(*s: signature [[Dload.load]] *)
 val load: Document.t  -> unit
 (*e: signature [[Dload.load]] *)
 

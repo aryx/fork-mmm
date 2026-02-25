@@ -5,6 +5,7 @@ open Mlist
 open Url
 
 (*s: function [[Lexurl.normalize_port]] *)
+(* coupling: with Http.request where those port numbers are also used *)
 let normalize_port = function
   | HTTP, Some 80 -> None
   | HTTPS, Some 443 -> None

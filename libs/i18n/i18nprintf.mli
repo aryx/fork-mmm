@@ -10,9 +10,9 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(*s: signature [[I18nprintf.fprintf]] *)
 (* Module [Printf]: formatting printing functions *)
 
+(*s: signature [[I18nprintf.fprintf]] *)
 val fprintf: out_channel -> ('a, out_channel, unit) format -> 'a
         (* [fprintf outchan format arg1 ... argN] formats the arguments
            [arg1] to [argN] according to the format string [format],

@@ -1,4 +1,5 @@
 (*s: applets.ml *)
+(*s: copyright header calves *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Calves                                    *)
@@ -9,6 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header calves *)
 
 (*s: type [[Applets.applet_callback]] *)
 type applet_callback = Widget.widget -> Viewers.context -> unit
@@ -51,8 +53,8 @@ let call table frame ctx =
       Printexc.print (foo frame) ctx
     with
       e -> error frame 
-      (I18n.sprintf "Applet function \"%s\" raised exception: %s"
-         fname (Printexc.to_string e))
+        (I18n.sprintf "Applet function \"%s\" raised exception: %s"
+           fname (Printexc.to_string e))
   with
     Not_found ->
       (* mismatch between EMBED function= and registered entry points *)

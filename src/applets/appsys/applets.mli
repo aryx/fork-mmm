@@ -1,8 +1,8 @@
 (*s: applets.mli *)
 
-(*s: type [[Applets.applet_callback (applets.mli)]] *)
+(*s: type [[Applets.applet_callback]] *)
 type applet_callback = Widget.widget -> Viewers.context -> unit
-(*e: type [[Applets.applet_callback (applets.mli)]] *)
+(*e: type [[Applets.applet_callback]] *)
 
 (*s: signature [[Applets.register]] *)
 val register : string -> applet_callback -> unit
@@ -13,7 +13,7 @@ val error : Widget.widget -> string -> unit
 (*e: signature [[Applets.error]] *)
 
 (*s: signature [[Applets.call]] *)
-val call : (string, Widget.widget -> Viewers.context -> unit) Hashtbl.t  -> 
+val call : (string, applet_callback) Hashtbl.t  -> 
            Widget.widget -> Viewers.context -> unit
 (*e: signature [[Applets.call]] *)
 

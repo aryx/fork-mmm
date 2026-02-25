@@ -104,6 +104,7 @@ let rec http_check (caps: < Cap.network; .. > )
         let cacheable = wwwr.www_link.h_method = GET in
         cont.document_process
           (if cacheable then wrap_cache cache dh else dh)
+
     | Stop msg ->
         Document.dclose true dh;
         cont.document_finish false;
@@ -112,16 +113,20 @@ let rec http_check (caps: < Cap.network; .. > )
         Document.dclose true dh;
         cont.document_finish false;
         wwwr.www_error#f msg
+
     | Retry hlink ->
         Document.dclose true dh;
         cont.document_finish false;
+        (* Retry! will do another web request *)
         retry hlink
+
     | Restart transform ->
         Document.dclose true dh;
         f caps wwwr retry 
          { cont with 
            document_process = (fun dh -> cont.document_process (transform dh))}
         |> ignore; (* we should probably do something of the result ! *)
+
   with Not_found ->
      (* default behavior is to call the normal continuation 
       * BUT WE DON'T CACHE !

@@ -132,8 +132,8 @@ let dynamic_fight cell nowrap gameover align =
   | s ->
       if !debug then
     Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
-(*e: function [[Table.dynamic_fight]] *)
       assert false
+(*e: function [[Table.dynamic_fight]] *)
 
 
 (*s: function [[Table.fixed_size]] *)
@@ -164,8 +164,8 @@ let fixed_size cell width nowrap align =
   | s ->
       if !debug then
     Log.f (sprintf "Table.dynamic_size: unknown children class %s" s);
-(*e: function [[Table.fixed_size]] *)
       assert false
+(*e: function [[Table.fixed_size]] *)
 
 (*s: function [[Table.sizing]] *)
 (*

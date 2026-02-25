@@ -18,6 +18,7 @@ object
 end
 *)
 
+(*s: class [[Appview.trivial_display]] *)
 class trivial_display (w, url) =
  object
   inherit Viewers.display_info ()
@@ -34,8 +35,7 @@ class trivial_display (w, url) =
   method di_load_images = ()
   method di_update = ()
 end
-
-
+(*e: class [[Appview.trivial_display]] *)
 
 (* Wrapping up
  * When EMBED is recognized by the HTML display machine, the "embedded object"
@@ -67,53 +67,63 @@ let is_update this_headers loaded_headers =
 (*e: function [[Appview.is_update]] *)
 
 (*s: function [[Appview.applet_viewer]] *)
-let applet_viewer _parms frame ctx (doc : Document.t) =
+let embed_viewer : Embed.viewer =
+ fun _parms frame (ctx : Viewers.context) (doc : Document.t) : unit ->
   let url = doc.document_address in
+
   let invoke frame ftable =
     (* we need another level of frame where to bind the update event *)
     let f = Frame.create frame [Class "Caml"] in
     Tk.pack [f][Expand true; Fill Fill_Both];
-    (* if we are asked to update, do it *)
+
     let caps = Cap.network_caps_UNSAFE () in
+    (* if we are asked to update, do it *)
     Frx_synth.bind f "update"
       (fun _ -> Embed.update caps frame ctx doc (fun () -> ()));
+
     Applets.call ftable f ctx
   in
   try
     (* If the bytecode is loaded, run the thing; else fail *)
     match Dload.get url with
-    | Rejected old ->
-    if is_update doc.document_headers old then begin
-      Dload.remove url;
-      raise Not_found
-    end else
-    Applets.error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
-    | Unavailable old ->
-    if is_update doc.document_headers old then begin
-      Dload.remove url;
-      raise Not_found
-    end else
-      Applets.error frame (I18n.sprintf "%s is not available" (Url.string_of url));
+    (*s: [[Appview.embed_viewer]] match [[Dload.get]] cases *)
     | Loaded cmo ->
-    if is_update doc.document_headers cmo.module_info then begin
-      Dload.remove url;
-      raise Not_found
-    end else
-      invoke frame cmo.module_functions
+      if is_update doc.document_headers cmo.module_info then begin
+        Dload.remove url;
+        raise Not_found
+      end else
+        invoke frame cmo.module_functions
+    (*x: [[Appview.embed_viewer]] match [[Dload.get]] cases *)
+    | Rejected old ->
+      if is_update doc.document_headers old then begin
+        Dload.remove url;
+        raise Not_found
+      end else
+       Applets.error frame (I18n.sprintf "%s was rejected" (Url.string_of url))
+    (*x: [[Appview.embed_viewer]] match [[Dload.get]] cases *)
+    | Unavailable old ->
+      if is_update doc.document_headers old then begin
+        Dload.remove url;
+        raise Not_found
+      end else
+        Applets.error frame (I18n.sprintf "%s is not available" (Url.string_of url));
+    (*e: [[Appview.embed_viewer]] match [[Dload.get]] cases *)
   with
+    (*s: [[Appview.embed_viewer]] exn handler *)
     Not_found ->
       (* Otherwise, queue it, and if it's the first request for this applet,
-     load the bytecode *)
+        load the bytecode *)
       if Dload.add_pending_applet url (invoke frame)
       then
-     Dload.load doc (* This will flush the queue of invocations.
-(*e: function [[Appview.applet_viewer]] *)
+       Dload.load doc (* This will flush the queue of invocations.
               Since loading is interactive, other calls 
               to applet_viewer for the same applet may occur
               concurrently, in which case their invocation
               will be stored in the queue and flushed after
               loading.
               *)
+    (*e: [[Appview.embed_viewer]] exn handler *)
+(*e: function [[Appview.applet_viewer]] *)
 
 (*s: function [[Appview.code_viewer]] *)
 (* If we load code directly (e.g. by clicking on a link pointing to a
@@ -121,44 +131,59 @@ let applet_viewer _parms frame ctx (doc : Document.t) =
    If the bytecode has been alread loaded, don't do anything.
    Else, proceed to load it (no entry point available !).
  *)
-let code_viewer _parms frame ctx (dh : Document.handle) =
+let viewer : Viewers.t =
+  fun _parms frame (ctx : Viewers.context) (dh : Document.handle) 
+     : Viewers.display_info option ->
   let url = dh.document_id.document_url in
   try
     match Dload.get url with
-    | Rejected old ->
-    if is_update dh.dh_headers old then begin
-      Dload.remove url;
-      raise Not_found
-    end else begin
-      Document.dclose true dh;
-      Error.f (I18n.sprintf "%s was rejected" (Url.string_of url));
-      None
-    end
-    | Unavailable old ->
-    if is_update dh.dh_headers old then begin
-      Dload.remove url;
-      raise Not_found
-    end else begin
-      Document.dclose true dh;
-      Error.f (I18n.sprintf "%s is not available" (Url.string_of url));
-      None
-    end
+    (*s: [[Appview.viewer()]] match [[Dload.get]] cases *)
     | Loaded cmo ->
-    if is_update dh.dh_headers cmo.module_info then begin
-      Dload.remove url;
-      raise Not_found
-    end else begin
-      Document.dclose true dh;
-      let f = Frame.create frame [] in
-      Tk.pack [f][Expand true; Fill Fill_Both];
-      Applets.call cmo.module_functions f ctx;
-      Some (new trivial_display (f, url))
-    end
+      (*s: [[Appview.viewer()]] in [[Loaded]] case, if [[is_update]] *)
+      if is_update dh.dh_headers cmo.module_info then begin
+        Dload.remove url;
+        raise Not_found
+      end
+      (*e: [[Appview.viewer()]] in [[Loaded]] case, if [[is_update]] *)
+      else
+      begin
+        Document.dclose true dh;
+        let f = Frame.create frame [] in
+        Tk.pack [f][Expand true; Fill Fill_Both];
+        Applets.call cmo.module_functions f ctx;
+        Some (new trivial_display (f, url))
+      end
+    (*x: [[Appview.viewer()]] match [[Dload.get]] cases *)
+    | Rejected old ->
+      if is_update dh.dh_headers old then begin
+        Dload.remove url;
+        raise Not_found
+      end
+      else
+      begin
+        Document.dclose true dh;
+        Error.f (I18n.sprintf "%s was rejected" (Url.string_of url));
+        None
+      end
+    (*x: [[Appview.viewer()]] match [[Dload.get]] cases *)
+    | Unavailable old ->
+      if is_update dh.dh_headers old then begin
+        Dload.remove url;
+        raise Not_found
+      end
+      else
+      begin
+        Document.dclose true dh;
+        Error.f (I18n.sprintf "%s is not available" (Url.string_of url));
+        None
+      end
+    (*e: [[Appview.viewer()]] match [[Dload.get]] cases *)
   with
+    (*s: [[Appview.viewer()]] exn handler *)
     Not_found ->
       let f = Frame.create frame [] in
       (* Otherwise, queue it, and if it's the first request for this applet,
-     save the code and loadit when finished *)
+         save the code and loadit when finished *)
       if Dload.add_pending_applet url (fun ftable -> Applets.call ftable f ctx)
       then begin
        let fname = Msys.mktemp "bytc"
@@ -171,24 +196,25 @@ let code_viewer _parms frame ctx (dh : Document.handle) =
               if n = 0 then begin
                Document.dclose true dh;
                close_out oc;
-        let doc = Document.{ document_address = dh.document_id.document_url;
+               let doc = Document.{ document_address = dh.document_id.document_url;
                  document_data = FileData(Fpath.v fname,true);
                  document_headers = dh.dh_headers} in
-        Cache.add dh.document_id doc;
-        Cache.finished dh.document_id;
-           Dload.load doc
+               Cache.add dh.document_id doc;
+               Cache.finished dh.document_id;
+
+               Dload.load doc
+
               end else
-        output oc buffer 0 n
+               output oc buffer 0 n
             with
               Unix.Unix_error(_,_,_) ->
                Document.dclose true dh;
-           close_out oc;
-           Msys.rm fname;
-           Error.f (I18n.sprintf "Error during loading of bytecode")
+               close_out oc;
+               Msys.rm fname;
+               Error.f (I18n.sprintf "Error during loading of bytecode")
           );
       end;
       Some (new trivial_display(f, url))
+    (*e: [[Appview.viewer()]] exn handler *)
 (*e: function [[Appview.code_viewer]] *)
-
-
 (*e: appview.ml *)

@@ -1,16 +1,4 @@
 (*s: commons/msys.mli *)
-(*s: copyright header v6 *)
-(***********************************************************************)
-(*                                                                     *)
-(*                           The V6 Engine                             *)
-(*                                                                     *)
-(*          Francois Rouaix, projet Cristal, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  Automatique.  Distributed only by permission.                      *)
-(*                                                                     *)
-(***********************************************************************)
-(*e: copyright header v6 *)
 
 (*s: signature [[Msys.tilde_subst]] *)
 val tilde_subst : string -> string

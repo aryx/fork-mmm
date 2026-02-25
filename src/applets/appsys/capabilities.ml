@@ -1,4 +1,5 @@
 (*s: capabilities.ml *)
+(*s: copyright header calves *)
 (***********************************************************************)
 (*                                                                     *)
 (*                           Calves                                    *)
@@ -9,6 +10,7 @@
 (*  Automatique.  Distributed only by permission.                      *)
 (*                                                                     *)
 (***********************************************************************)
+(*e: copyright header calves *)
 
 (* 
  A simple capability manager : each applet get its own list of access rights.
@@ -85,6 +87,7 @@ let string_of_mode = function
    mechanism to ensure backward compatibility...
  *)
 (*s: type [[Capabilities.right]] *)
+(* The rights as stored *)
 type right =
    FileR of string			(* read access to files *)
  | FileW of string			(* write acces to files *)
@@ -167,9 +170,9 @@ let strict_default url = {
 (*e: function [[Capabilities.strict_default]] *)
 
 
+(*s: constant [[Capabilities.current_capa]] *)
 (* This is the crucial reference from which an applet should get its
    access rights at load-time (and not later) *)
-(*s: constant [[Capabilities.current_capa]] *)
 let current_capa = ref None
 (*e: constant [[Capabilities.current_capa]] *)
 
@@ -279,13 +282,13 @@ let check_Internals capa _ =
 (* GUI *)
 open Tk
 
+(*s: type [[Capabilities.question]] *)
 (* Ask for a capability
  *  isregexp is true when the applet requires caps during load-time
  *   we then simply popup the question
  *  otherwise we check if it's been granted or ask the user (unless
  *  mode is Fixed)
  *)
-(*s: type [[Capabilities.question]] *)
 type 'a question = {
   check_right: t -> string -> bool;
   make_right : string -> right;
@@ -300,10 +303,10 @@ type cright =
   CFileR | CFileW | CDocumentR | CHTMLDisplay | CInternals
 (*e: type [[Capabilities.cright]] *)
 
+(*s: constant [[Capabilities.table]] *)
 (* The argument passed to make_right must be a value owned by US
    (that is, it must not be mutated by the applet)
  *)
-(*s: constant [[Capabilities.table]] *)
 let table = [
   CFileR,
   { check_right = check_FileR;
@@ -342,8 +345,8 @@ let get_question = function
   | Internals -> "", List.assoc CInternals table
 (*e: function [[Capabilities.get_question]] *)
 
-(* This is the function available for Safe libraries *)
 (*s: function [[Capabilities.ask]] *)
+(* This is the function available for Safe libraries *)
 (* REMEMBER TO MAKE COPIES OF ARGUMENT IF MUTABLE *)
 let ask capa r =
   let param, q = get_question r

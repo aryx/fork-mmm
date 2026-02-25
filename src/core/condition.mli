@@ -1,4 +1,6 @@
 (*s: commons/condition.mli *)
+
+(* abstract *)
 type t
 
 type condition_backend = {

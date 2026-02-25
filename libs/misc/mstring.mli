@@ -1,4 +1,5 @@
 (*s: commons/mstring.mli *)
+
 (*s: signature [[Mstring.split_str]] *)
 (* String utilities *)
 val split_str : (char -> bool) -> string -> string list

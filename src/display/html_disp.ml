@@ -943,94 +943,6 @@ module TableLogic = Html_table
       ignore_close
     ;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
-    (*
-     * 5.10 Image: <IMG>
-     *)
-    mach#add_tag "img"
-      (fun fo tag -> 
-         try
-           let src = Html.get_attribute tag "src" in
-           let align = Html.get_attribute tag "align" in
-
-           let width = 
-             try Some (int_of_string (Html.get_attribute tag "width"))
-             with Not_found | Failure "int_of_string" -> None
-           in
-           let height = 
-             try Some (int_of_string (Html.get_attribute tag "height"))
-             with Not_found | Failure "int_of_string" -> None
-           in
-
-           (*s: [[Html_disp.Make.init()]] IMG case, let alt *)
-           let alt = 
-             try Html.get_attribute tag "alt"
-             with Not_found ->
-               let image_name = 
-                 let pos = 
-                   let cpos = ref (String.length src) in
-                   try
-                     while !cpos > 0 do
-                       match src.[!cpos - 1] with
-                       | '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
-                       | _ -> decr cpos
-                     done;
-                     0
-                  with Exit -> !cpos
-                in
-                if pos = String.length src 
-                then "IMAGE"
-                else String.sub src pos (String.length src - pos)
-             in
-             Printf.sprintf "[%s]" image_name	 
-           in          
-           (*e: [[Html_disp.Make.init()]] IMG case, let alt *)
-           let w = fo.create_embedded align width height in
-           let link = Hyper.{ 
-             h_uri = src; 
-             h_context = Some mach#base;
-             h_method = GET; 
-             h_params = []
-           } in
-           (*s: [[Html_disp.Make.init()]] IMG case, let map *)
-           (* some people use both ismap and usemap...
-            *  prefer usemap
-            *)
-           let map =
-             try 
-               let mapname = Html.get_attribute tag "usemap"  in
-               Maps.ClientSide { 
-                 h_uri = mapname;
-                 h_context = Some mach#base;
-                 h_method = GET;
-                 h_params = []
-               }
-             with Not_found -> 
-               if !in_anchor 
-               then
-                 if Html.has_attribute tag "ismap"
-                 then Maps.ServerSide !anchor_link
-                 else Maps.Direct !anchor_link
-               else NoMap
-           in
-           (*e: [[Html_disp.Make.init()]] IMG case, let map *)
-           let caps = Cap.network_caps_UNSAFE () in
-           mach#imgmanager#add_image caps
-             { embed_hlink = link;
-               embed_frame = w;
-               embed_context = mach#ctx#for_embed tag.attributes [];
-               embed_map = map;
-               embed_alt = alt
-              }
-         with Not_found -> (* only on SRC *)
-           raise (Html.Invalid_Html "missing SRC in IMG"))
-
-      ignore_close
-    ;
-    (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
-    (* FORMS: they are defined elsewhere (html_form) *)
-    FormLogic.init mach;
-    (* standard basic HTML2.0 initialisation stops here *)
-    (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* TABLE support *)
     if !attempt_tables 
     then TableLogic.init mach
@@ -1046,40 +958,6 @@ module TableLogic = Html_table
       behave_as "dt" "th";
       behave_as "dd" "td"
     end;
-    (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
-    (* EMBED
-     *  The definition is a mix of what was done for earlier versions
-     *  of MMM and Netscape Navigator. The reason is to get compatible HTML for
-     *  Caml Applets in both browsers.
-     *)
-    mach#add_tag "embed"
-      (fun fo tag -> 
-         try
-           let link = Hyper.{
-             h_uri = Html.get_attribute tag "src";
-             h_method = GET;
-             h_context = Some mach#base;
-             h_params = []} in
-           let width =
-            try Some (int_of_string (Html.get_attribute tag "width"))
-            with Not_found -> None
-           and height =
-             try Some (int_of_string (Html.get_attribute tag "height"))
-             with Not_found -> None
-           and alttxt = Html.get_attribute tag "alt" in
-
-           let fr = fo.create_embedded "" width height in
-           mach#add_embedded {
-           embed_hlink = link;
-           embed_frame = fr;
-           embed_context = mach#ctx#for_embed tag.attributes [];
-           embed_map = NoMap; (* yet *)
-           embed_alt = alttxt
-          }
-         with
-          Not_found ->
-           raise (Html.Invalid_Html ("SRC missing in EMBED")))
-      ignore_close;
     (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
     (* Some HTML 3.2 good features *)
     let areas = ref [] in
@@ -1209,6 +1087,128 @@ module TableLogic = Html_table
     mach#add_tag "script"
       (fun _fo _t -> mach#push_action (fun _s -> ()))
       (fun _fo -> mach#pop_action);
+    (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
+    (* EMBED
+     *  The definition is a mix of what was done for earlier versions
+     *  of MMM and Netscape Navigator. The reason is to get compatible HTML for
+     *  Caml Applets in both browsers.
+     *)
+    mach#add_tag "embed"
+      (fun fo tag -> 
+         try
+           let link = Hyper.{
+             h_uri = Html.get_attribute tag "src";
+             h_method = GET;
+             h_context = Some mach#base;
+             h_params = []} in
+           let width =
+            try Some (int_of_string (Html.get_attribute tag "width"))
+            with Not_found -> None
+           and height =
+             try Some (int_of_string (Html.get_attribute tag "height"))
+             with Not_found -> None
+           and alttxt = Html.get_attribute tag "alt" in
+
+           let fr = fo.create_embedded "" width height in
+           mach#add_embedded {
+           embed_hlink = link;
+           embed_frame = fr;
+           embed_context = mach#ctx#for_embed tag.attributes [];
+           embed_map = NoMap; (* yet *)
+           embed_alt = alttxt
+          }
+         with
+          Not_found ->
+           raise (Html.Invalid_Html ("SRC missing in EMBED")))
+      ignore_close;
+    (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
+    (*
+     * 5.10 Image: <IMG>
+     *)
+    mach#add_tag "img"
+      (fun fo tag -> 
+         try
+           let src = Html.get_attribute tag "src" in
+           let align = Html.get_attribute tag "align" in
+
+           let width = 
+             try Some (int_of_string (Html.get_attribute tag "width"))
+             with Not_found | Failure "int_of_string" -> None
+           in
+           let height = 
+             try Some (int_of_string (Html.get_attribute tag "height"))
+             with Not_found | Failure "int_of_string" -> None
+           in
+
+           (*s: [[Html_disp.Make.init()]] IMG case, let alt *)
+           let alt = 
+             try Html.get_attribute tag "alt"
+             with Not_found ->
+               let image_name = 
+                 let pos = 
+                   let cpos = ref (String.length src) in
+                   try
+                     while !cpos > 0 do
+                       match src.[!cpos - 1] with
+                       | '/' | '\\' (* for f!@#ing DOS users *) -> raise Exit
+                       | _ -> decr cpos
+                     done;
+                     0
+                  with Exit -> !cpos
+                in
+                if pos = String.length src 
+                then "IMAGE"
+                else String.sub src pos (String.length src - pos)
+             in
+             Printf.sprintf "[%s]" image_name	 
+           in          
+           (*e: [[Html_disp.Make.init()]] IMG case, let alt *)
+           let w = fo.create_embedded align width height in
+           let link = Hyper.{ 
+             h_uri = src; 
+             h_context = Some mach#base;
+             h_method = GET; 
+             h_params = []
+           } in
+           (*s: [[Html_disp.Make.init()]] IMG case, let map *)
+           (* some people use both ismap and usemap...
+            *  prefer usemap
+            *)
+           let map =
+             try 
+               let mapname = Html.get_attribute tag "usemap"  in
+               Maps.ClientSide { 
+                 h_uri = mapname;
+                 h_context = Some mach#base;
+                 h_method = GET;
+                 h_params = []
+               }
+             with Not_found -> 
+               if !in_anchor 
+               then
+                 if Html.has_attribute tag "ismap"
+                 then Maps.ServerSide !anchor_link
+                 else Maps.Direct !anchor_link
+               else NoMap
+           in
+           (*e: [[Html_disp.Make.init()]] IMG case, let map *)
+           let caps = Cap.network_caps_UNSAFE () in
+           mach#imgmanager#add_image caps
+             { embed_hlink = link;
+               embed_frame = w;
+               embed_context = mach#ctx#for_embed tag.attributes [];
+               embed_map = map;
+               embed_alt = alt
+              }
+         with Not_found -> (* only on SRC *)
+           raise (Html.Invalid_Html "missing SRC in IMG"))
+
+      ignore_close
+    ;
+    (*x: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
+    (* FORMS: they are defined elsewhere (html_form) *)
+    FormLogic.init mach;
+    (* standard basic HTML2.0 initialisation stops here *)
     (*e: [[Html_disp.Make.init()]] HTML elements machine initialisation *)
   ()
   (*e: function [[Html_disp.Make.init]] *)

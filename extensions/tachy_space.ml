@@ -1,7 +1,7 @@
 (*s: extensions/tachy_space.ml *)
 open Safe418mmm
-open Tk
 
+open Tk
 
 module Provide = struct
   let capabilities = Capabilities.get()

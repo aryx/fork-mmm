@@ -1,4 +1,5 @@
 (*s: retrieve/scheduler.mli *)
+(*s: toplevel comment [[Scheduler]] *)
 (*
  * Certain kind of documents need to be shared, such as in-lined images.
  * In this case, instead of working with Retrieve.f and the normal
@@ -8,7 +9,7 @@
  * E.G: for in-lined images, the shared information is the Tk-handle to
  * the image.
  *)
-
+(*e: toplevel comment [[Scheduler]] *)
 
 (*s: signature [[Scheduler.debug]] *)
 val debug : bool ref

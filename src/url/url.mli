@@ -1,4 +1,5 @@
 (*s: www/url.mli *)
+
 (*s: type [[Url.protocol]] *)
 type protocol =
  | HTTP | HTTPS

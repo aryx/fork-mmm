@@ -1,4 +1,5 @@
 (*s: globals/version.mli *)
+
 (*s: signature [[Version.number]] *)
 (* Version and other builtin strings *)
 val number : int
@@ -23,6 +24,4 @@ val helpurl : string -> string (* help url *)
 (*s: signature [[Version.home]] *)
 val home_mmm : string -> string    (* MMM home page *)
 (*e: signature [[Version.home]] *)
-(*s: signature [[Version.applet_init]] *)
-(*e: signature [[Version.applet_init]] *)
 (*e: globals/version.mli *)

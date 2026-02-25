@@ -42,6 +42,7 @@ type header = string
  *  What a client sends to a server is called a request 
  *  What a server answers is called a response
  *)
+
 (*s: type [[Messages.request_message]] *)
 (* HTTP-Message *)
 type request = {

@@ -1,4 +1,5 @@
 (*s: www/uri.mli *)
+
 (*s: type [[Uri.abs_uri]] *)
 (* URI utilities. RFC 1630 *)
 type abs_uri = {

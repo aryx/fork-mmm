@@ -13,7 +13,8 @@ open Fpath_.Operators
 (*s: type [[Main.caps]] *)
 (* Need:
  *  - Cap.network: obviously, this is a Web browser
- *  - open_in: for ??
+ *  - TODO: Cap.exec for mmmc, convert (ImageMagic jpeg converter), metamail
+ *  - open_in: for file://, for ??
  *)
 type caps = < 
    Cap.open_in;

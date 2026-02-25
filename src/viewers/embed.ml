@@ -66,15 +66,16 @@ end
 (* The embedded data scheduler *)
 module EmbeddedScheduler = Scheduler.Make (EmbeddedData)
 
-(*s: constant [[Embed.embedded_viewers]] *)
 (* Embedded viewers *)
 
+(*s: type [[Embed.viewer]] *)
 type viewer = 
   Http_headers.media_parameter list -> 
   Widget.widget -> Viewers.context -> Document.t -> unit
+(*e: type [[Embed.viewer]] *)
 
+(*s: constant [[Embed.embedded_viewers]] *)
 let embedded_viewers = Hashtbl.create 11
-
 (*e: constant [[Embed.embedded_viewers]] *)
 let add_viewer = Hashtbl.add embedded_viewers
 and rem_viewer = Hashtbl.remove embedded_viewers

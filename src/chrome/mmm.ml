@@ -587,11 +587,11 @@ let rec navigator (caps: < Cap.network; ..>)
       (*s: Document menu elements *)
       [Label (s_ "Load Images")    ; Command load_images];
       (*x: Document menu elements *)
+      [Label (s_ "View Source")    ; Command view_source];
+      (*x: Document menu elements *)
       [Label (s_ "Redisplay")      ; Command redisplay];
       (*x: Document menu elements *)
       [Label (s_ "Add to hotlist") ; Command add_to_hotlist];
-      (*x: Document menu elements *)
-      [Label (s_ "View Source")    ; Command view_source]
       (*e: Document menu elements *)
     ];
     (*e: [[Mmm.navigator()]] Document menu *)

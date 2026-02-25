@@ -31,8 +31,8 @@ let parse_status s =
    raise Not_found
 (*e: function [[Http_headers.parse_status]] *)
 
-(* Request-Line = Method SP Request-URI SP HTTP-Version CRLF *)
 (*s: function [[Http_headers.parse_request]] *)
+(* Request-Line = Method SP Request-URI SP HTTP-Version CRLF *)
 (* CHECK: Normally the URI should be encoded (no spaces ?) *)
 let parse_request s =
  try
@@ -158,6 +158,7 @@ let contentlength l =
 let contentencoding = 
   get_header "content-encoding"
 (*e: functions [[Http_headers.xxx]] [[get_header]] applications *)
+
 let location = 
   get_header "location"
 let challenge = 
@@ -297,8 +298,8 @@ let default_hints = [
 ]
 (*e: constant [[Http_headers.default_hints]] *)
 
-(* Even if we don't have a suffix file... *)
 (*s: toplevel [[Http_headers._1]] *)
+(* Even if we don't have a suffix file... *)
 (* If the suffix file says otherwise, it will have priority *)
 let _ = 
   default_hints |> List.iter (fun (s,t) -> Hashtbl.add suffixes s t)

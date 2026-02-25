@@ -61,7 +61,7 @@ let rec make hlink =
   with
     Invalid_link msg ->
       match dial hlink msg with
-    None -> raise (Invalid_link msg)
+      | None -> raise (Invalid_link msg)
       | Some hlink -> make hlink
 (*e: function [[Plink.make]] *)
 (*e: gui/plink.ml *)

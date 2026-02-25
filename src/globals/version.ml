@@ -103,7 +103,4 @@ get an updated copy.
 "
   |  s -> failwith (Printf.sprintf "language %s not supported here" s)
 (*e: function [[Version.html]] *)
-
-(*s: constant [[Version.applet_init]] *)
-(*e: constant [[Version.applet_init]] *)
 (*e: globals/version.ml *)
