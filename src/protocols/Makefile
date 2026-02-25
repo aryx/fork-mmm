@@ -12,7 +12,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n \
- $(TOP)/src/core $(TOP)/src/globals $(TOP)/src/url $(TOP)/src/www \
+ $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www \
  $(TOP)/src/http
 
 SYSINCLUDES=

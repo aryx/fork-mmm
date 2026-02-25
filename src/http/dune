@@ -3,9 +3,10 @@
  (name mmm_http)
  (wrapped false)
  (libraries
-    mmm.commons
-    mmm.core mmm.globals mmm.www
     ssl
+
+    mmm.commons
+    mmm.core mmm.www
  )
  (preprocess (pps ppx_deriving.show))
 )

@@ -11417,7 +11417,7 @@ let deactivate () =
  *)
 let viewer : Viewers.t =
   fun _parms frame (ctx : Viewers.context) (dh : Document.handle) 
-     : Viewers.display option ->
+     : Viewers.display_info option ->
   let url = dh.document_id.document_url in
   try
     match Dload.get url with
@@ -12013,7 +12013,7 @@ let call table frame ctx =
  * TODO: allow_only does not seem to work :(
  *)
 Dynlink.allow_only ["Safe419"];
-* old? needed? pad: TODO, infer using `ocamlc -where`
+(* old? needed? pad: TODO, infer using `ocamlc -where`
    Dynlink.add_interfaces ["Pervasives"; "Unix"] 
     ["/opt/local/lib/ocaml"];
 *)
@@ -12380,7 +12380,7 @@ let read_all chan =
 %TODO: view-source: ... protocol in theory
 
 <<Document menu elements>>=
-[Label (s_ "View Source")    ; Command view_source]
+[Label (s_ "View Source")    ; Command view_source];
 @
 
 <<function [[Mmm.navigator.view_source]]>>=

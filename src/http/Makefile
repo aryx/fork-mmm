@@ -13,7 +13,7 @@ LIBS=
 SSLDIR=$(shell ocamlfind query ssl)
 
 INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n \
-   $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www $(TOP)/src/globals \
+   $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www \
    $(SSLDIR)
 
 -include $(TOP)/Makefile.config

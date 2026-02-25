@@ -27,8 +27,7 @@ SRC=src/main/main.ml
 # for the basic browser
 MAINDIRS= \
   libs/commons libs/misc libs/i18n \
-  src/globals src/core \
-  src/url src/www src/http \
+  src/core src/url src/www src/http \
   languages/html \
   src/protocols src/retrieve \
   src/tk src/viewers src/display src/chrome \

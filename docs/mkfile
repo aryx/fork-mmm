@@ -41,8 +41,8 @@ SRC= \
   src/tk/glevents.ml\
   src/core/hotlist.ml\
   \
-  src/globals/version.mli\
-  src/globals/version.ml\
+  src/www/version.mli\
+  src/www/version.ml\
   \
   src/www/uri.mli\
   src/www/uri.ml\

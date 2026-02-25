@@ -1,8 +1,0 @@
-(library
- (public_name mmm.globals)
- (name mmm_globals)
- (wrapped false)
- (libraries
- )
- (preprocess (pps ppx_deriving.show))
-)

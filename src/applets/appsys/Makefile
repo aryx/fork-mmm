@@ -12,7 +12,6 @@ SYSLIBS= str.cma unix.cma
 LIBS=
 
 INCLUDEDIRS=$(TOP)/libs/commons $(TOP)/libs/misc $(TOP)/libs/i18n/ \
- $(TOP)/src/globals \
  $(TOP)/src/core $(TOP)/src/url $(TOP)/src/www \
  $(TOP)/src/http $(TOP)/src/protocols \
  $(TOP)/src/viewers $(TOP)/src/chrome
