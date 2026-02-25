@@ -11,6 +11,10 @@
 
 %recent:
 % - https://browser.engineering/layout.html
+% - https://book.servo.org/design-documentation/architecture.html
+%   contains links to other doc about how browser works such as
+%   https://ehsan.github.io/how-browsers-work/#1
+%   https://taligarsiel.com/projects/howbrowserswork1.html
 
 %------------------------------------------------------------------------------
 %history: 
